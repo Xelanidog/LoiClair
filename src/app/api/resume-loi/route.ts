@@ -8,6 +8,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { generateText } from 'ai'; // Core AI SDK (Vercel) pour appels IA unifiés
 import { createXai } from '@ai-sdk/xai'; // Provider xAI/Grok spécifique
 import * as cheerio from 'cheerio'; // Import ESM correct pour parser HTML (évite erreur default export)
+import { SYSTEM_PROMPT_RESUME_LOI, USER_PROMPT_TEMPLATE_RESUME_LOI, PARAMS_RESUME_LOI } from '@/lib/prompts'; // Ajuste le chemin si le fichier est dans lib/ (ou directement './prompts' si au même niveau).
+import { MODEL_RESUME_LOI, MAX_INPUT_CHARS_RESUME_LOI } from '@/lib/prompts'; // Ajoute ces deux pour centraliser.
 
 // Crée le provider xAI avec ta clé (de .env.local).
 // Optimisation : Sécurisé server-side ; modèle Grok-4 par défaut pour vulgarisation précise.
@@ -66,24 +68,25 @@ if (lien.endsWith('.pdf') || contentType.includes('application/pdf')) { // Check
   // Extraction PDF : buffer → texte
   const buffer = await response.arrayBuffer();
   const pdfData = await pdfParse(Buffer.from(buffer));
-  texteComplet = pdfData.text.slice(0, 5000); // Limite à ~5000 chars pour API (optimisation coût)
+texteComplet = pdfData.text.slice(0, MAX_INPUT_CHARS_RESUME_LOI); // Limite importée – ajuste dans prompts.ts pour tests.  
 } else {
   // Extraction HTML : body text propre
   const html = await response.text();
   const $ = cheerio.load(html);
-  texteComplet = $('body').text().replace(/\s+/g, ' ').trim().slice(0, 5000); // Nettoyage + limite
-}
+texteComplet = $('body').text().replace(/\s+/g, ' ').trim().slice(0, MAX_INPUT_CHARS_RESUME_LOI);}
 
 if (!texteComplet) {
   return NextResponse.json({ error: 'Lien erroné ou contenu non encore disponible.' }, { status: 500 }); // Fallback si extraction vide
 }
 
+
 const { text: resume } = await generateText({ // Ouverture de l'objet passé à generateText
-  model: xai('grok-4-1-fast-reasoning'), // Modèle Grok-4 (ajuste si nouveau modèle dispo en 2026)
-  system: 'Tu es un expert en vulgarisation du droit français. Résume ce texte de loi en français courant, accessible : objectif principal, implications concrètes pour les citoyens, neutre et factuel. Structure : "Objectif principal :", "Ce que ça change concrètement :". Limite à 300 mots.', // Prompt système (statique)
-  prompt: `Résume ce texte de loi intitulé "${titre_texte}" : ${texteComplet}`, // Prompt utilisateur avec interpolation
-  maxTokens: 500, // Limite pour réponses concises
-  temperature: 0.7, // Équilibré : factuel sans créativité excessive
+  model: xai(MODEL_RESUME_LOI), // Importé de prompts.ts – change là-bas pour switcher modèles.
+  system: SYSTEM_PROMPT_RESUME_LOI, // Importé – modifie dans prompts.ts sans toucher ici.
+  prompt: USER_PROMPT_TEMPLATE_RESUME_LOI
+  .replace('{titre_texte}', titre_texte || 'Titre inconnu') // Remplace {titre_texte} ; fallback si var manquante pour robustesse.
+  .replace('{texteComplet}', texteComplet || 'Texte non disponible'), // Idem pour {texteComplet}.
+  ...PARAMS_RESUME_LOI, // Spread des params (maxTokens, temperature) – étendable.
 }); // Fermeture correcte de l'appel generateText (parenthèse + point-virgule pour équilibre)
 
 return NextResponse.json({ resume, lien }); // Retour avec résumé et lien officiel utilisé par IA
