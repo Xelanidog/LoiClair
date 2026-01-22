@@ -69,7 +69,7 @@ const sheetVariants = cva(  // Nouvelle constante cva pour gérer les variantes 
 size: {  // Mise à jour pour largeurs relatives au viewport (vw) : s'ajuste à l'écran disponible, avec max-w pour cap.
   sm: "w-[60vw] max-w-[500px] sm:w-[50vw] md:w-[40vw] lg:w-[30vw]",  // Compact, ajuste à 60% base, réduit sur grand écran.
   default: "w-[80vw] max-w-[700px] sm:w-[70vw] md:w-[60vw] lg:w-[50vw]",  // Équilibré, 80% base pour espace sans déborder.
-  lg: "w-[50vw] max-w-[50vw] sm:w-[50vw] md:w-[50vw] lg:w-[50vw]",  // Plus large, ajuste fluidement.
+  lg: "w-[85vw] max-w-[800px] sm:w-[70vw] md:w-[60vw] lg:w-[50vw]",  // Plus large, ajuste fluidement.
   xl: "w-[95vw] max-w-[1000px] sm:w-[90vw] md:w-[80vw] lg:w-[70vw]",  // Généreux pour résumés, cap à 1000px max.
   full: "w-full h-full",  // Plein écran, inchangé.
   content: "",  // Adapte au contenu, inchangé.

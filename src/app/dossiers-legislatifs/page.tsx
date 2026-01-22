@@ -143,6 +143,9 @@ export default function DossiersLegislatifsPage() {
   const [loadingResume, setLoadingResume] = useState(false); // Pour le spinner
   const [lienOfficiel, setLienOfficiel] = useState<string | null>(null); // Lien texte récent utilisé par IA
   const [errorMessage, setErrorMessage] = useState<string | null>(null); // Message erreur API pour panneau
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10; // Nb lois par page – ajuste pour équilibre (ex. 10 pour mobile-heavy)
+  const [totalFiltered, setTotalFiltered] = useState(0);
 
 useEffect(() => {
   if (isSheetOpen) {
@@ -285,10 +288,26 @@ async function fetchResume() {
         if (filtrePeriode === 'plus2ans') return diffDays > 730
         return true
       })
+      
     }
 
-    setLoisFiltrees(filtered)
-  }, [recherche, filtreTypes, filtreStatuts, filtreThemes, filtrePeriode, lois])
+    setTotalFiltered(filtered.length); // ← Ajout ici : stocke le nb total de lois filtrées pour l'utiliser dans la pagination (évite l'erreur "filtered undefined")
+
+    const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+    setLoisFiltrees(paginated); // ← Remplace le setLoisFiltrees(filtered) par ça
+    if (currentPage > Math.ceil(filtered.length / itemsPerPage)) {
+  setCurrentPage(1);
+}
+
+
+  }, [recherche, filtreTypes, filtreStatuts, filtreThemes, filtrePeriode, lois, currentPage])
+
+  // Scroll auto en haut sur changement de page – UX fluide
+useEffect(() => {
+  setTimeout(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, 0); // Délai 0ms pour next tick – fixe timing render
+}, [currentPage]);
 
   // Réinitialisation
   const reinitialiser = () => {
@@ -420,7 +439,7 @@ async function fetchResume() {
 
           <div className="flex items-center gap-6 mt-4 sm:mt-0 w-full sm:w-auto sm:ml-auto justify-end">
             <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">
-              {loisFiltrees.length} résultat{loisFiltrees.length !== 1 ? 's' : ''}
+              {totalFiltered} résultat{totalFiltered !== 1 ? 's' : ''}
             </span>
 
             <Button
@@ -627,6 +646,73 @@ async function fetchResume() {
             </SheetClose>
           </div>
         </SheetContent>
+
+        {/* Bloc pagination – ajoute ça juste après la div ci-dessus, avant le </Sheet> */}
+{totalFiltered > itemsPerPage && ( // filtered est le total avant slice ; calcule-le dans useEffect si besoin
+  <div className="flex items-center justify-center gap-2 mt-6">
+    <Button
+      variant="outline"
+      size="sm"
+      disabled={currentPage === 1}
+      onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+    >
+      Précédent
+    </Button>
+    {/* Numéros pages dynamiques avec ellipsis + centrage sur current */}
+
+{/* Numéros pages dynamiques avec ellipsis + centrage sur current – anti-duplicates */}
+{(() => {
+  const totalPages = Math.ceil(totalFiltered / itemsPerPage);
+
+const pages = [];
+if (totalPages > 1) {
+  // Première page toujours au début
+  pages.push(1);
+
+  // Ellipsis si gap avant range (ajusté pour bords)
+  if (currentPage > 4) pages.push('...');
+
+  // Range centré : ajusté pour inclure 1 si current bas
+  const start = Math.max(1, currentPage - 1); // ← Changé à -1 pour limiter + inclure 1 sur page 1
+  const end = Math.min(totalPages, currentPage + 1); // ← Changé à +1 pour max 3 range (limite 5 total)
+  for (let i = start; i <= end; i++) {
+    if (!pages.includes(i)) pages.push(i); // Anti-duplicate
+  }
+
+  // Ellipsis si gap après range
+  if (currentPage < totalPages - 2) pages.push('...'); // Ajusté pour gap réel
+
+  // Dernière page toujours à la fin, sans duplicate
+  if (totalPages > end && !pages.includes(totalPages)) pages.push(totalPages);
+}
+
+  return pages.map((page, index) => 
+    typeof page === 'string' ? (
+      <Badge key={`ellipsis-${index}`} variant="secondary" className="px-3 py-1 text-muted-foreground">
+        {page}
+      </Badge>
+    ) : (
+      <Button
+        key={`${page}-${index}`} // Key unique avec page+index pour anti-collision
+        variant={currentPage === page ? "default" : "outline"}
+        size="sm"
+        onClick={() => setCurrentPage(page)}
+      >
+        {page}
+      </Button>
+    )
+  );
+})()}
+    <Button
+      variant="outline"
+      size="sm"
+      disabled={currentPage === Math.ceil(totalFiltered / itemsPerPage)}
+      onClick={() => setCurrentPage((prev) => Math.min(prev + 1, Math.ceil(totalFiltered / itemsPerPage)))}
+    >
+      Suivant
+    </Button>
+  </div>
+)}
       </Sheet>
     </div> 
   )
