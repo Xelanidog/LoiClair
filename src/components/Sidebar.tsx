@@ -54,7 +54,7 @@ export default function Sidebar() {
               </span>
             </div>
             <div className="space-y-0.5 pl-5">
-              <Link href="/dashboard/indicateurs">
+              <Link href="/KPIs">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -66,7 +66,7 @@ export default function Sidebar() {
                   Indicateurs clés
                 </Button>
               </Link>
-              <Link href="/dashboard/cette-semaine">
+              <Link href="/KPI">
                 <Button
                   variant="ghost"
                   size="sm"
