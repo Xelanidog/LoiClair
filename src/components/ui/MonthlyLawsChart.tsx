@@ -1,6 +1,6 @@
 'use client'; // Nécessaire pour Recharts (client-side rendering pour interactions).
 
-import { TrendingUp } from 'lucide-react';
+import { TrendingDown, TrendingUp } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, LabelList, XAxis } from 'recharts';
 import {
   Card,
@@ -42,18 +42,15 @@ export function MonthlyLawsChart({ data }: MonthlyLawsChartProps) {
   const trendText = trend > 0 ? `En hausse de ${trend.toFixed(1)}% ce mois` : trend < 0 ? `En baisse de ${Math.abs(trend).toFixed(1)}% ce mois` : 'Stable ce mois';
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Lois déposées par mois</CardTitle>
-        <CardDescription>Derniers 12 mois</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <ChartContainer config={chartConfig}>
-          <BarChart
-            accessibilityLayer
-            data={data}
-            margin={{ top: 20 }}
-          >
+   
+<>
+   
+<ChartContainer config={chartConfig} className="h-[150px] sm:h-[200px] md:h-[250px] w-full pb-6"><BarChart
+  accessibilityLayer
+  data={data}
+  margin={{ top: 20 }}
+  width="100%"  // Force full-width pour contrer le scaling auto de Recharts sur height fixe.
+>
             <CartesianGrid vertical={false} />
             <XAxis
               dataKey="month"
@@ -68,15 +65,14 @@ export function MonthlyLawsChart({ data }: MonthlyLawsChartProps) {
             </Bar>
           </BarChart>
         </ChartContainer>
-      </CardContent>
+
       <CardFooter className="flex-col items-start gap-2 text-sm">
         <div className="flex gap-2 font-medium leading-none">
-          {trendText} <TrendingUp className="h-4 w-4" />
-        </div>
+{trendText} {trend >= 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}        </div>
         <div className="leading-none text-muted-foreground">
           Affichage du nombre total de lois déposées sur les 12 derniers mois
         </div>
       </CardFooter>
-    </Card>
+  </>
   );
 }

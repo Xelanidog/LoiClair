@@ -66,37 +66,27 @@ const chartData = statsData.historique.slice(-12).map(({ mois, count }) => {
   
 export default async function ALaUnePage() {
   return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-3xl font-bold mb-6 text-center">À la une : Activité de l'Assemblée nationale</h1>
-      
-      {/* Chiffre clé du mois courant : Gros et centré pour lisibilité immédiate */}
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>Textes déposés ce mois-ci (janvier 2026)</CardTitle>
-        </CardHeader>
-        <CardContent className="p-4">
-{statsData.mois_courant > 0 ? (
-  <>
-    <p className="text-5xl font-bold text-center">{statsData.mois_courant}</p>
-  </>
-) : (
-  <p className="text-center text-muted-foreground">Aucune donnée ce mois-ci (vérifiez lois.csv).</p>
-)}
+<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
+  <Card className="mb-8 md:mb-0">  {/* mb-0 sur md+ pour aligner sans marge extra */}
+    <CardHeader>
+      <CardTitle>Textes déposés ce mois-ci (janvier 2026)</CardTitle>
+    </CardHeader>
+    <CardContent className="p-4">
+      {statsData.mois_courant > 0 ? (
+        <p className="text-5xl font-bold text-center">{statsData.mois_courant}</p>
+      ) : (
+        <p className="text-center text-muted-foreground">Aucune donnée ce mois-ci (vérifiez lois.csv).</p>
+      )}
+    </CardContent>
+  </Card>
 
-        </CardContent>
-      </Card>
-
-      {/* Historique mensuel : Card séparé pour clarté, permet un scroll progressif et une lecture "histoire" */}
-<Card className="mb-8">
-  <CardHeader>
-    <CardTitle>Évolution des textes déposés</CardTitle>
-  </CardHeader>
-  <CardContent>
-    <MonthlyLawsChart data={chartData} />
-  </CardContent>
-</Card>
-      
-   </div>
+  {/* Card graphique (droite) */}
+  <Card>
+    <CardContent>
+      <MonthlyLawsChart data={chartData} />
+    </CardContent>
+  </Card>
+</div>
   );
 }
