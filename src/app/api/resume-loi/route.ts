@@ -10,6 +10,7 @@ import { createXai } from '@ai-sdk/xai'; // Provider xAI/Grok spécifique
 import * as cheerio from 'cheerio'; // Import ESM correct pour parser HTML (évite erreur default export)
 import { SYSTEM_PROMPT_RESUME_LOI, USER_PROMPT_TEMPLATE_RESUME_LOI, PARAMS_RESUME_LOI } from '@/lib/prompts'; // Ajuste le chemin si le fichier est dans lib/ (ou directement './prompts' si au même niveau).
 import { MODEL_RESUME_LOI, MAX_INPUT_CHARS_RESUME_LOI } from '@/lib/prompts'; // Ajoute ces deux pour centraliser.
+import { SYSTEM_PROMPT_RESUME_CHRONO, USER_PROMPT_TEMPLATE_RESUME_CHRONO, PARAMS_RESUME_CHRONO, MODEL_RESUME_CHRONO, MAX_INPUT_CHARS_RESUME_CHRONO } from '@/lib/prompts';
 
 // Crée le provider xAI avec ta clé (de .env.local).
 // Optimisation : Sécurisé server-side ; modèle Grok-4 par défaut pour vulgarisation précise.
@@ -18,6 +19,7 @@ const xai = createXai({ apiKey: process.env.XAI_API_KEY });
 export async function POST(request: NextRequest) {
   try {
     const { chronologie_complete, titre_texte } = await request.json(); // Reçoit la chrono JSON et titre
+
 
     // Étape 1 : Parser chronologie_complete (JSON string) pour trouver le texte le plus récent
     // On trie par date descendante et prend le dernier avec un lien texte (priorité HTML > PDF)
@@ -79,6 +81,13 @@ if (!texteComplet) {
   return NextResponse.json({ error: 'Lien erroné ou contenu non encore disponible.' }, { status: 500 }); // Fallback si extraction vide
 }
 
+// Étape 3 : Préparer et tronquer la chronologie pour résumé IA (si valide)
+let chronoTronquee = chronologie_complete ? chronologie_complete.slice(0, MAX_INPUT_CHARS_RESUME_CHRONO) : '';
+if (!chronoTronquee || chronoTronquee.length < 50) { // Check basique pour éviter IA sur vide
+  console.warn(`Chrono incomplète pour titre "${titre_texte}" – résumé chrono skipped.`);
+  chronoTronquee = ''; // Fallback vide
+}
+
 
 const { text: resume } = await generateText({ // Ouverture de l'objet passé à generateText
   model: xai(MODEL_RESUME_LOI), // Importé de prompts.ts – change là-bas pour switcher modèles.
@@ -89,8 +98,18 @@ const { text: resume } = await generateText({ // Ouverture de l'objet passé à 
   ...PARAMS_RESUME_LOI, // Spread des params (maxTokens, temperature) – étendable.
 }); // Fermeture correcte de l'appel generateText (parenthèse + point-virgule pour équilibre)
 
-return NextResponse.json({ resume, lien }); // Retour avec résumé et lien officiel utilisé par IA
+const { text: resumeChrono } = await generateText({
+  model: xai(MODEL_RESUME_CHRONO),
+  system: SYSTEM_PROMPT_RESUME_CHRONO,
+  prompt: USER_PROMPT_TEMPLATE_RESUME_CHRONO
+    .replace('{titre_texte}', titre_texte || 'Titre inconnu')
+    .replace('{chronologie_complete}', chronoTronquee || 'Chronologie non disponible'),
+  ...PARAMS_RESUME_CHRONO,
+});
+
+return NextResponse.json({ resume, resumeChrono, lien }); // Retour avec résumé et lien officiel utilisé par IA
 } // Fermeture du try – équilibre pour attacher le catch directement
+
 
 catch (error) { 
   console.error(`Erreur génération résumé pour lien "${lien}":`, error); // Log avec lien pour context ; backticks pour interpolation

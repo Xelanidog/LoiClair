@@ -28,6 +28,7 @@ import {
   SheetClose,
 } from "@/components/ui/sheet"
 import { Loader2 } from 'lucide-react'; // Pour le spinner Shadcn
+import ReactMarkdown from 'react-markdown';
 
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -140,6 +141,7 @@ export default function DossiersLegislatifsPage() {
   const [selectedLoi, setSelectedLoi] = useState<Loi | null>(null)
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [resumeIA, setResumeIA] = useState<string | null>(null); // Stocke le résumé texte
+  const [resumeChrono, setResumeChrono] = useState<string | null>(null); // Stocke le résumé chrono texte
   const [loadingResume, setLoadingResume] = useState(false); // Pour le spinner
   const [lienOfficiel, setLienOfficiel] = useState<string | null>(null); // Lien texte récent utilisé par IA
   const [errorMessage, setErrorMessage] = useState<string | null>(null); // Message erreur API pour panneau
@@ -163,15 +165,14 @@ useEffect(() => {
 
 useEffect(() => {
   if (isSheetOpen && selectedLoi) {
-    setResumeIA(null); // Reset pour nouvelle loi
+    setResumeIA(null);
+    setResumeChrono(null); // Reset
     setLoadingResume(true);
+    fetchResume(); // Appel simple, l'async est gérée dedans
+  }
+}, [isSheetOpen, selectedLoi]); // Dépendances minimales pour éviter re-fetch inutiles
 
 async function fetchResume() {
-  // Reset pour nouvelle loi ; optimisation : évite affichage ancien contenu.
-  setResumeIA(null);
-  setLienOfficiel(null);
-  setErrorMessage(null);
-
   try {
     const response = await fetch('/api/resume-loi', {
       method: 'POST',
@@ -182,32 +183,26 @@ async function fetchResume() {
       }),
     });
 
-    // Plus de throw ici – optimisation : lis toujours le JSON pour gérer errors soft (ex. 400 avec {error: 'msg'})
-    const data = await response.json();
-
-    if (data.error) {
-      // Si API retourne un error JSON, set le message précis sans throw (UX fluide, pas de console polluée)
-      setErrorMessage(data.error); // Ex. : 'Lien erroné ou contenu non encore disponible.'
-      return; // Sort du try sans proceed
+    if (!response.ok) {
+      throw new Error(`Erreur HTTP : ${response.status}`); // Plus précis pour debug
     }
 
-    // Si OK, extrait resume/lien normalement
-    const { resume, lien } = data;
-    setResumeIA(resume);
-    setLienOfficiel(lien);
+    const data = await response.json(); // Ici, data est bien awaitée
+
+    setResumeIA(data.resume || 'Résumé texte non disponible'); // Fallback pour robustesse
+    setResumeChrono(data.resumeChrono || 'Résumé chrono non disponible');
+    setLienOfficiel(data.lien || null);
+    setErrorMessage(null);
   } catch (error) {
-    // Catch pour vrais échecs (ex. réseau, JSON invalide) ; optimisation : log muté pour clean console en dev
-    // console.error('Erreur fetch résumé:', error); // Commenté pour éviter pollution ; réactive si besoin debug
-    setErrorMessage('Désolé, impossible de générer le résumé pour le moment.'); // Fallback générique
+    console.error('Erreur dans fetchResume :', error); // Log pour tracer (visible dans console browser)
+    setErrorMessage('Désolé, impossible de charger le résumé. Vérifiez la connexion ou réessayez.');
+    setResumeIA(null);
+    setResumeChrono(null);
+    setLienOfficiel(null);
   } finally {
-    setLoadingResume(false);
+    setLoadingResume(false); // Toujours stopper le spinner, même en erreur
   }
 }
-
-    fetchResume();
-
-  }
-}, [isSheetOpen, selectedLoi]); // Déclenche sur ouverture + sélection loi
 
   // Chargement CSV
   useEffect(() => {
@@ -627,8 +622,8 @@ useEffect(() => {
     </p>
 
     {/* Résumé IA : Affichage whitespace-pre-wrap pour structure Grok conservée. */}
-    <div className="text-sm leading-relaxed whitespace-pre-wrap">
-      {resumeIA}
+    <div className="text-sm">
+      <ReactMarkdown >{resumeIA}</ReactMarkdown>
     </div>
   </>
 ) : (
@@ -637,6 +632,32 @@ useEffect(() => {
   </p>
 )}
 </div>
+
+{/* Titre section : Résumé IA du parcours de la loi – clair et pédagogique. */}
+<h3 className="text-lg font-medium text-foreground mt-8">Résumé IA du parcours de la loi</h3>
+
+{loadingResume ? (
+  <div className="flex justify-center items-center h-32">
+    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+    <span className="ml-2 text-muted-foreground">Génération du résumé en cours...</span>
+  </div>
+) : errorMessage ? (
+  <p className="text-sm text-destructive italic">
+    {errorMessage}
+  </p>
+) : resumeChrono ? (
+
+
+<div className="text-sm">
+<ReactMarkdown >
+    {resumeChrono}
+  </ReactMarkdown>
+  </div>
+) : (
+  <p className="text-sm text-destructive italic">
+    Chronologie incomplète ou non disponible.
+  </p>
+)}
 
           <div className="absolute bottom-6 right-6">
             <SheetClose asChild>
