@@ -391,7 +391,7 @@ useEffect(() => {
         />
 
         {/* Ligne filtres */}
-        <div className="flex flex-wrap items-center gap-4 sm:gap-6 mb-4">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-2 mb-4">
           {/* Pas de sm:flex-nowrap : on laisse wrap sur mobile, et on garde horizontal sur desktop si place */}
           <MultiSelect
             label="Statut actuel"
@@ -417,10 +417,10 @@ useEffect(() => {
             placeholder="Tous les types"
           />
 
-          <div className="space-y-1 flex-1 min-w-[200px] max-w-[240px]">
+          <div className="space-y-1 flex-1 min-w-[200px] max-w-[320px]">
             <div className="text-xs font-medium text-muted-foreground">Période de dépôt</div>
             <Select value={filtrePeriode} onValueChange={setFiltrePeriode}>
-              <SelectTrigger className="h-10">
+              <SelectTrigger className="hover:bg-muted/70 transition-colors h-10 min-w-[200px] hover:text-foreground">
                 <SelectValue placeholder="Toutes les périodes" />
               </SelectTrigger>
               <SelectContent>
@@ -439,14 +439,14 @@ useEffect(() => {
             </span>
 
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
               onClick={reinitialiser}
-              className="flex items-center gap-1.5"
+              className="h-10 w-10 p-0 ml-0 flex items-center justify-center"
+              title="Réinitialiser les filtres"
             >
               <RotateCcw className="h-4 w-4" />
-              Réinitialiser
-            </Button>
+              </Button>
           </div>
         </div>
 
