@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/sheet"
 import { Loader2 } from 'lucide-react'; // Pour le spinner Shadcn
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm'; // Ajout pour mieux parser les listes et tables Markdown.
 
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -597,7 +598,7 @@ useEffect(() => {
           </SheetHeader>
 
           {/* Contenu du résumé */}
-<div className="space-y-6 py-4">
+<div className="space-y-4 py-4">
   {/* Titre section : Résumé IA du dernier texte disponible – clair et pédagogique. */}
   <h3 className="text-lg font-medium text-foreground">Résumé IA du dernier texte disponible</h3>
 
@@ -622,9 +623,19 @@ useEffect(() => {
     </p>
 
     {/* Résumé IA : Affichage whitespace-pre-wrap pour structure Grok conservée. */}
-    <div className="text-sm">
-      <ReactMarkdown >{resumeIA}</ReactMarkdown>
-    </div>
+<div className="text-sm">
+<ReactMarkdown
+    remarkPlugins={[remarkGfm]} // Active le parsing avancé pour listes fiables.
+    components={{
+      strong: ({ node, ...props }) => <strong className="font-medium" {...props} />, // Modification : mb-1 pour mini-espace sous titre (écart minimal avant texte) ; mt-4 garde séparation entre sections.
+      p: ({ node, ...props }) => <p className="mt-2" {...props} />, // mt-0 pour coller le texte paragraphe au titre sans espace.
+      ul: ({ node, ...props }) => <ul className="list-disc pl-6" {...props} />, // mt-0 pour coller la liste puces au titre ; pl-4 garde indentation légère.
+      li: ({ node, ...props }) => <li {...props} />, // Simple, sans ajouts inutiles.
+    }}
+  >
+    {resumeIA}
+  </ReactMarkdown>
+</div>
   </>
 ) : (
   <p className="text-sm text-destructive italic">
@@ -648,11 +659,18 @@ useEffect(() => {
 ) : resumeChrono ? (
 
 
-<div className="text-sm">
-<ReactMarkdown >
+    <div className="text-sm">
+  <ReactMarkdown
+    remarkPlugins={[remarkGfm]} // Active le parsing avancé pour listes fiables.
+    components={{
+      ul: ({ node, ...props }) => <ul className="list-disc pl-4" {...props} />,
+      li: ({ node, ...props }) => <li className="text-muted-foreground" {...props} />,
+      strong: ({ node, ...props }) => <strong className="block mt-2 font-medium" {...props} />, // Ajout : rend les ** comme blocs avec margin vertical pour écart entre sections.
+    }}
+  >
     {resumeChrono}
   </ReactMarkdown>
-  </div>
+</div>
 ) : (
   <p className="text-sm text-destructive italic">
     Chronologie incomplète ou non disponible.
