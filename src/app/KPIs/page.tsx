@@ -34,9 +34,9 @@ const csvData = csvBuffer.toString();
   
   statsData.mois_courant = depotDates.filter((d: Date) => d >= moisCourantStart && d < now).length;
   
-  const startDate = new Date(2025, 1, 1);
-  const endDate = new Date(2026, 1, 1);
-  const monthlyCounts: { [key: string]: number } = {};
+    const startDate = new Date(now.getFullYear(), now.getMonth() - 23, 1);  // 24 mois en arrière : mois courant -23 pour inclure full 24.
+    const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);     // End = mois suivant pour couvrir courant.
+    const monthlyCounts: { [key: string]: number } = {};
   
   for (let d = new Date(startDate); d < endDate; d.setMonth(d.getMonth() + 1)) {
     const moisKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -58,35 +58,22 @@ const csvData = csvBuffer.toString();
 // pour une intégration directe avec Recharts. Choix d'optimisation : formatage ici server-side pour 
 // éviter du JS client inutile ; utilisation de Intl pour les mois en FR (internationalisation facile) ; 
 // limitation aux 12 derniers mois (slice(-12)) pour focus sur l'historique récent, comme demandé.
-const chartData = statsData.historique.slice(-12).map(({ mois, count }) => {
+const chartData = statsData.historique.slice(-24).map(({ mois, count }) => {
   const [year, month] = mois.split('-').map(Number);
   const monthName = new Intl.DateTimeFormat('fr-FR', { month: 'short' }).format(new Date(year, month - 1));
-  return { month: monthName, lois: count };
+  return { month: `${monthName}-${year}`, lois: count, year };  // Month unique avec -year caché.
 });
   
 export default async function ALaUnePage() {
   return (
 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-  <Card className="mb-8 md:mb-0">  {/* mb-0 sur md+ pour aligner sans marge extra */}
-    <CardHeader>
-      <CardTitle>Textes déposés ce mois-ci (janvier 2026)</CardTitle>
-    </CardHeader>
-    <CardContent className="p-4">
-      {statsData.mois_courant > 0 ? (
-        <p className="text-5xl font-bold text-center">{statsData.mois_courant}</p>
-      ) : (
-        <p className="text-center text-muted-foreground">Aucune donnée ce mois-ci (vérifiez lois.csv).</p>
-      )}
-    </CardContent>
-  </Card>
+  
 
   {/* Card graphique (droite) */}
-  <Card>
-    <CardContent>
-      <MonthlyLawsChart data={chartData} />
-    </CardContent>
-  </Card>
+  
+  <MonthlyLawsChart data={chartData} />
+ 
 </div>
   );
 }
