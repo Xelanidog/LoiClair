@@ -613,11 +613,15 @@ useEffect(() => {
   <h3 className="text-lg font-medium text-foreground">Résumé IA du dernier texte disponible</h3>
 
 {loadingResume ? (
-  <div className="flex justify-center items-center h-32">
-    {/* Spinner pendant chargement – UX fluide comme dashboard LoiClair. */}
-    <Loader2 className="h-6 w-6 animate-spin text-primary" />
-    <span className="ml-2 text-muted-foreground">Génération du résumé en cours...</span>
-  </div>
+<div className="space-y-4 py-4">
+  <Skeleton className="h-6 w-3/4" /> {/* Mime le h3 titre */}
+  <Skeleton className="h-4 w-full" /> {/* Ligne de texte */}
+  <Skeleton className="h-4 w-5/6" />
+  <Skeleton className="h-4 w-2/3" />
+  <Skeleton className="h-6 w-3/4 mt-8" /> {/* Mime le second h3 */}
+  <Skeleton className="h-4 w-full" />
+  <Skeleton className="h-4 w-4/5" />
+</div>
 ) : errorMessage ? (
   <p className="text-sm text-destructive italic">
     {errorMessage}
@@ -658,10 +662,11 @@ useEffect(() => {
 <h3 className="text-lg font-medium text-foreground mt-8">Résumé IA du parcours de la loi</h3>
 
 {loadingResume ? (
-  <div className="flex justify-center items-center h-32">
-    <Loader2 className="h-6 w-6 animate-spin text-primary" />
-    <span className="ml-2 text-muted-foreground">Génération du résumé en cours...</span>
-  </div>
+<div className="space-y-4">
+  <Skeleton className="h-6 w-3/4" /> {/* Titre */}
+  <Skeleton className="h-4 w-full" />
+  <Skeleton className="h-4 w-4/5" />
+</div>
 ) : errorMessage ? (
   <p className="text-sm text-destructive italic">
     {errorMessage}
