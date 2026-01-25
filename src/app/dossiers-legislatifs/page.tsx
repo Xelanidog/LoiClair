@@ -488,7 +488,7 @@ useEffect(() => {
 
       {/* Liste des dossiers – enveloppée dans le Sheet unique pour que les Triggers soient enfants */}
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-        <div className="divide-y divide-border rounded-lg border bg-card">
+        <div className="divide-y divide-border rounded-lg  bg-card">
           {loisFiltrees.length === 0 ? (
             <div className="py-16 text-center text-muted-foreground">
               Aucun dossier ne correspond à votre recherche
