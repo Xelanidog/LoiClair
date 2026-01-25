@@ -30,6 +30,16 @@ import {
 import { Loader2 } from 'lucide-react'; // Pour le spinner Shadcn
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm'; // Ajout pour mieux parser les listes et tables Markdown.
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Skeleton } from '@/components/ui/skeleton';
+
+// Fonction pour gérer le clic sur le bouton : Crée un prompt clair avec le titre de la loi + le lien officiel du texte (utilisé pour le résumé IA), encode pour URL, et ouvre Perplexity dans un nouvel onglet. Pas de dépendances externes. Optimisations cumulées depuis le début de cette page dossiers-legislatifs : on a chargé le CSV robustement (Papa.parse avec filtres uniques triés), implémenté multi-selects minimalistes (Popover/Command pour UX fluide sans state heavy), ajouté pagination centrée avec ellipsis (flex pour responsiveness), fixé animation Sheet Safari (reflow useEffect), optimisé fetch IA (try-catch avec fallbacks et spinner), structuré Markdown pour lisibilité (ReactMarkdown avec plugins pour listes/tables), affiné le Sheet pour un panneau latéral élégant (flex bottom pour boutons alignés, tooltips pour guidance sans overload), et maintenant on allège le prompt IA pour plus d'efficacité (titre + lien au lieu de chrono complète, pour éviter limites URL et favoriser fetch factuel par Perplexity).
+
+const handleDiscussWithAI = (titre, lien) => {
+  const prompt = `Discuter de ce texte de loi avec moi (résumé clair et impacts) : Titre: ${titre}. Lien officiel: ${lien || 'Lien non disponible'}`; // Fallback si lien null pour robustesse
+  const perplexityUrl = `https://www.perplexity.ai/search?q=${encodeURIComponent(prompt)}`;
+  window.open(perplexityUrl, '_blank');
+};
 
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -677,14 +687,34 @@ useEffect(() => {
   </p>
 )}
 
-          <div className="absolute bottom-6 right-6">
-            <SheetClose asChild>
-              <Button variant="outline" size="sm">
-                Fermer
-              </Button>
-            </SheetClose>
-          </div>
-        </SheetContent>
+
+
+<div className="absolute bottom-6 right-6 flex items-center gap-4">
+  <SheetClose asChild>
+    <Button variant="outline" size="sm">
+      Fermer
+    </Button>
+  </SheetClose>
+
+  <TooltipProvider>
+    <Tooltip delayDuration={300}>
+      <TooltipTrigger asChild>
+        <Button 
+          variant="outline" 
+          onClick={() => handleDiscussWithAI(selectedLoi.titre_texte, lienOfficiel)}          className="mt-0"
+        >
+          Discuter de ce texte avec l'IA (Perplexity)
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>
+        <p>Ouvre Perplexity avec le texte pré-chargé (compte gratuit recommandé pour discussions étendues)</p>
+      </TooltipContent>
+    </Tooltip>
+  </TooltipProvider>
+</div>
+
+
+       </SheetContent>
 
         {/* Bloc pagination – ajoute ça juste après la div ci-dessus, avant le </Sheet> */}
 {totalFiltered > itemsPerPage && ( // filtered est le total avant slice ; calcule-le dans useEffect si besoin
