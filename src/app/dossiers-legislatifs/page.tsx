@@ -529,7 +529,7 @@ useEffect(() => {
                           size="sm"
                           className="h-auto p-0 text-primary hover:text-primary/80 justify-start cursor-pointer"
                         >
-                          Résumé IA <Sparkles className="ml-1.5 !h-3 !w-3" />
+                          Résumé et discussion IA <Sparkles className="ml-1.5 !h-3 !w-3" />
                         </Button>
                       </div>
                     </SheetTrigger>
