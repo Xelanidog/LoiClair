@@ -21,7 +21,7 @@ def reconstruire_liens_texte(uid):
     if uid is None:
         return None, None
     # Patterns étendus pour couvrir tous AN (ajout 'RAPP', 'RAPPSNR', 'MIONANR', etc.)
-    if uid.startswith(('PIONANR', 'RIONANR', 'ACINANR', 'ETDIANR', 'AVISANR', 'DECLANR', 'AVCEANR', 'PNREANR', 'RINFANR', 'RAPPANR', 'PRJLANR', 'PIONSNR', 'RAPPSNR', 'MIONANR', 'PRJLSNR')):
+    if uid.startswith(('PIONANR', 'RIONANR', 'ACINANR', 'ETDIANR', 'ALCNANR',  'AVISANR', 'LETTANR', 'AVISSNR', 'DECLANR', 'AVCEANR', 'PNREANR', 'RINFANR', 'RAPPANR', 'PRJLANR', 'PIONSNR', 'RAPPSNR', 'MIONANR', 'PRJLSNR')):
         lien_html = f"https://www.assemblee-nationale.fr/dyn/opendata/{uid}.html"
     else:
         lien_html = None
@@ -73,6 +73,9 @@ def importer_texte(file_path):
             auteurs = {}
         auteur_acteur_ref = auteurs.get('auteur', {}).get('acteur', {}).get('acteurRef') if isinstance(auteurs.get('auteur', {}), dict) else None
         organe_auteur_ref = auteurs.get('auteur', {}).get('organe', {}).get('organeRef') if isinstance(auteurs.get('auteur', {}), dict) else None
+        # Extraction list de tous les auteurs (acteurRef) en jsonb
+        auteurs_list = auteurs.get('auteur', []) if isinstance(auteurs.get('auteur'), list) else [auteurs.get('auteur')] if auteurs.get('auteur') else []
+        auteurs_refs = [auteur.get('acteur', {}).get('acteurRef') for auteur in auteurs_list if isinstance(auteur, dict) and auteur.get('acteur')]
         data = {
             'uid': uid, # Déjà safe, uid est vérifié avant
             'lien_html': lien_html, # Déjà safe de reconstruire_liens_texte
@@ -95,6 +98,7 @@ def importer_texte(file_path):
             'refs_brutes': texte.get('cycleDeVie') if texte.get('cycleDeVie') else None, # Ajouté else None
             'depot_code': depot_code,
             'depot_libelle': depot_libelle,
+            'auteurs_refs': auteurs_refs,
         }
         response = supabase.table('textes').upsert(data, on_conflict='uid').execute()
         if response.data:
