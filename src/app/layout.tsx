@@ -2,8 +2,9 @@
 import type { Metadata } from "next";  // Import pour les métadonnées de la page
 import { GeistSans } from "geist/font/sans";  // Police sans-serif (moderne et minimaliste)
 import { GeistMono } from "geist/font/mono";  // Police mono pour du code ou des données
-
+import Link from "next/link"
 import "./globals.css";  // Styles globaux, incluant ceux de Shadcn/Tailwind
+import { Button } from "@/components/ui/button"
 
 // Composants personnalisés
 import { Logo } from "@/components/ui/Logo";  // Logo du site (export nommé)
@@ -59,9 +60,16 @@ export default function RootLayout({
           </div>
 
           {/* FOOTER EN BAS */}
-          <footer className="border-t py-5 text-center text-xs text-muted-foreground bg-muted/40 mt-auto">
+          <footer className="border-t py-5 z-50 text-center text-xs text-muted-foreground bg-muted/40 mt-auto">
             <div className="container mx-auto">
-              LoiClair • Données publiques officielles • © {new Date().getFullYear()}
+              <Link href="/about">
+              <Button
+              variant="ghost"
+              className="text-xs"
+            
+              >A Propos de LoiClair</Button> 
+               
+          </Link>Données publiques officielles • © {new Date().getFullYear()}
             </div>
           </footer>
         </ThemeProvider>
@@ -69,3 +77,4 @@ export default function RootLayout({
     </html>
   );
 }
+

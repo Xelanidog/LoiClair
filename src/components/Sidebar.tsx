@@ -25,10 +25,8 @@ export default function Sidebar() {
   return (
     <aside
       className="
-        fixed inset-y-0 left-0 z-50                  // Fixe à gauche + pleine hauteur écran
-        w-72 border-r bg-background/95 backdrop-blur 
-        supports-[backdrop-filter]:bg-background/60
-      "
+        fixed inset-y-0 left-0 z-50   
+        w-72 backdrop-blur "
     >
       {/* Zone scrollable = TOUT SAUF la partie À propos en bas */}
       <ScrollArea className="h-[calc(100vh-180px)]">  {/* 180px = hauteur approx. de la zone À propos */}
@@ -78,47 +76,7 @@ export default function Sidebar() {
                   Cette semaine
                 </Button>
               </Link>
-
-            </div>
-          </div>
-
-          {/* ── 2. LES TEXTES ── */}
-          <div>
-            <div className="flex items-center gap-2 px-3 mb-2">
-              <FileText className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Les textes
-              </span>
-            </div>
-            <div className="space-y-0.5 pl-5">
-
-                <Link href="/dossiers-en-cours">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={cn(
-                    "w-full justify-start text-xs h-8 px-4",
-                    isActive("/loi-propose") && "bg-accent text-accent-foreground"
-                  )}
-                >
-                  Lois proposées
-                </Button>
-              </Link>
-
-              <Link href="/lois-promulguees">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={cn(
-                    "w-full justify-start text-xs h-8 px-4",
-                    isActive("/lois-promulguees") && "bg-accent text-accent-foreground"
-                  )}
-                >
-                  Lois promulguées
-                </Button>
-              </Link>
-
-                            <Link href="/dossiers-legislatifs">
+                <Link href="/dossiers-legislatifs">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -220,35 +178,6 @@ export default function Sidebar() {
         </nav>
       </ScrollArea>
 
-      {/* ──────────────────────────────────────────────── */}
-      {/* SECTION À PROPOS – FIXÉE TOUT EN BAS DE L'ÉCRAN */}
-      {/* ──────────────────────────────────────────────── */}
-      <div
-        className="
-          absolute bottom-0 left-0 right-0          // Collé en bas de l'écran
-          bg-background/95 backdrop-blur-sm
-          p-4 z-10                                  // Toujours au-dessus du reste
-        "
-      >
-
-
-        <div className="space-y-0.5 pl-5">
-          <Link href="/about">
-            <Button
-              variant="ghost"
-              size="sm"
-              className={cn(
-                "w-full justify-start text-xs h-8 px-4",
-                isActive("/sources") && "bg-accent text-accent-foreground"
-              )}
-            >
-              A propos
-            </Button>
-          </Link>
-
-          
-        </div>
-      </div>
     </aside>
   )
 }
