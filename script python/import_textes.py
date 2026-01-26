@@ -20,8 +20,10 @@ def reconstruire_liens_texte(uid):
     """Reconstruit liens HTML via uid (force AN pour tous patterns). PDF à None."""
     if uid is None:
         return None, None
-    # Patterns étendus pour couvrir tous AN (ajout 'RAPP', 'RAPPSNR', 'MIONANR', etc.)
-    if uid.startswith(('PIONANR', 'RIONANR', 'ACINANR', 'ETDIANR', 'ALCNANR',  'AVISANR', 'LETTANR', 'AVISSNR', 'DECLANR', 'AVCEANR', 'PNREANR', 'RINFANR', 'RAPPANR', 'PRJLANR', 'PIONSNR', 'RAPPSNR', 'MIONANR', 'PRJLSNR')):
+    # Patterns étendus pour couvrir tous AN - 
+    # A FAIRE - TROUVER LES LIENS POUR DOC SENAT 'AVISSNR''PIONSNR','RAPPSNR''PRJLSNR'
+    # A FAIRE - Trouver les liens pour 
+    if uid.startswith(('PIONANR', 'RIONANR', 'ACINANR', 'ETDIANR', 'ALCNANR',  'AVISANR', 'LETTANR', 'DECLANR', 'AVCEANR', 'PNREANR', 'RINFANR', 'RAPPANR', 'PRJLANR', 'MIONANR', )):
         lien_html = f"https://www.assemblee-nationale.fr/dyn/opendata/{uid}.html"
     else:
         lien_html = None
@@ -71,10 +73,9 @@ def importer_texte(file_path):
             auteurs = auteurs[0] if auteurs else {}
         elif auteurs is None:
             auteurs = {}
-        auteur_acteur_ref = auteurs.get('auteur', {}).get('acteur', {}).get('acteurRef') if isinstance(auteurs.get('auteur', {}), dict) else None
         organe_auteur_ref = auteurs.get('auteur', {}).get('organe', {}).get('organeRef') if isinstance(auteurs.get('auteur', {}), dict) else None
         # Extraction list de tous les auteurs (acteurRef) en jsonb
-        auteurs_list = auteurs.get('auteur', []) if isinstance(auteurs.get('auteur'), list) else [auteurs.get('auteur')] if auteurs.get('auteur') else []
+        auteurs_list = auteurs.get('auteur', []) if isinstance(auteurs.get('auteur'), list) else [auteurs.get('auteur')] if auteurs.get('auteur') else None
         auteurs_refs = [auteur.get('acteur', {}).get('acteurRef') for auteur in auteurs_list if isinstance(auteur, dict) and auteur.get('acteur')]
         data = {
             'uid': uid, # Déjà safe, uid est vérifié avant
@@ -90,7 +91,6 @@ def importer_texte(file_path):
             'classification': classification if classification else None, # Ajouté check (déjà variable)
             'statut_adoption': statut_adoption if statut_adoption else None, # Ajouté check (déjà variable)
             'libelle_statut_adoption': libelle_statut if libelle_statut else None, # Ajouté check (déjà variable)
-            'auteur_acteur_ref': auteur_acteur_ref if auteur_acteur_ref else None, # Ajouté check (déjà variable)
             'num_notice': texte.get('notice', {}).get('numNotice') if texte.get('notice') else None, # Ajouté check sur notice
             'organe_auteur_ref': organe_auteur_ref if organe_auteur_ref else None, # Ajouté check (déjà variable)
             'organe_referent_ref': texte.get('organesReferents', {}).get('organeRef') if texte.get('organesReferents') else None, # Ajouté check sur organesReferents
