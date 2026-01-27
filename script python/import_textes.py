@@ -22,8 +22,9 @@ if not supabase_url or not supabase_key:
     raise ValueError("SUPABASE_URL ou SUPABASE_KEY manquant dans .env.local")
 supabase: Client = create_client(supabase_url, supabase_key)
 
-def reconstruire_liens_texte(uid, date_depot=None, num_notice=None, date_publication=None, date_creation=None):
-    # Cas ETDIANR : PDF avec extraction legislature et num
+def reconstruire_liens_texte(uid, date_depot=None, num_notice=None, date_publication=None, date_creation=None, legislature=None):
+    
+        # Cas ETDIANR : PDF avec extraction legislature et num
     if uid.startswith('ETDIANR'):
         # Exemple uid: ETDIANR5L16B2628
         # Extraire legislature (après L) et num (après B)
@@ -35,6 +36,7 @@ def reconstruire_liens_texte(uid, date_depot=None, num_notice=None, date_publica
         else:
             print(f"Format ETDIANR invalide pour {uid}, lien=None.")
             return None
+
     # Nouveau : Cas LETTANR : PDF avec extraction legislature et num, suffixe _lettre-rectificative.pdf
     if uid.startswith('LETTANR'):
         # Exemple uid: LETTANR5L17B1999
@@ -47,6 +49,7 @@ def reconstruire_liens_texte(uid, date_depot=None, num_notice=None, date_publica
         else:
             print(f"Format LETTANR invalide pour {uid}, lien=None.")
             return None
+
     #Cas ACINANR : PDF avec extraction legislature et num, suffixe _accord-international.pdf
     if uid.startswith('ACINANR'):
         # Exemple uid: ACINANR5L16B2347
@@ -59,6 +62,7 @@ def reconstruire_liens_texte(uid, date_depot=None, num_notice=None, date_publica
         else:
             print(f"Format ACINANR invalide pour {uid}, lien=None.")
             return None
+
     # Cas AVCEANR : PDF avec extraction legislature et num, suffixe _avis-conseil-etat.pdf
     if uid.startswith('AVCEANR'):
         # Exemple uid: AVCEANR5L16B0639
@@ -71,6 +75,7 @@ def reconstruire_liens_texte(uid, date_depot=None, num_notice=None, date_publica
         else:
             print(f"Format AVCEANR invalide pour {uid}, lien=None.")
             return None
+
     # Cas AVISSNR : PDF/html avec calcul session, padding num_notice à 3 digits, suffixe 1.pdf/html si <2006
     if uid.startswith('AVISSNR'):
         if not date_depot or not num_notice:
@@ -86,11 +91,76 @@ def reconstruire_liens_texte(uid, date_depot=None, num_notice=None, date_publica
             month = dt.month
             session_start_year = year if month >= 10 else year - 1
             session_code = f"a{session_start_year % 100:02d}"
-            padded_num = f"{int(num_notice):03d}"  # Padding à 3 digits
+            padded_num = f"{int(num_notice):03d}" # Padding à 3 digits
             suffix = ".html" if year < 2006 else "1.pdf"
             return f"https://www.senat.fr/rap/{session_code}-{padded_num}/{session_code}-{padded_num}{suffix}"
         except Exception as e:
             print(f"Erreur parsing date pour AVISSNR {uid}: {e}, lien=None.")
+            return None
+        
+                # Cas RAPPSNR sans BTA : PDF/html avec calcul session, padding num_notice à 3 digits, suffixe 1.pdf/html si <2006
+    if uid.startswith('RAPPSNR') and 'BTA' not in uid:
+        # Fallback pour num_notice : extraire de l'UID si absent (dernier segment après 'B')
+        if not num_notice:
+            try:
+                parts = uid.split('B')[-1]  # Ex. : 'RAPPSNR5S459B0173' → '0173'
+                num_notice = ''.join([c for c in parts if c.isdigit()])  # Nettoie aux digits
+                if not num_notice:
+                    raise ValueError("Aucun num_notice extractible")
+            except Exception as e:
+                print(f"Erreur fallback num_notice pour {uid}: {e}, lien=None.")
+                return None
+
+        # Fallback pour date : tester toutes les options ; si aucune, lien=None
+        date = date_depot or date_publication or date_creation
+        if not date:
+            print(f"Aucune date disponible pour RAPPSNR {uid}, lien=None.")
+            return None
+
+        try:
+            dt = datetime.fromisoformat(date.replace('Z', '+00:00'))
+            year = dt.year
+            month = dt.month
+            session_start_year = year if month >= 10 else year - 1
+            session_code = f"l{session_start_year % 100:02d}"  # Ex. : 'a25' pour session 2025-2026
+            padded_num = f"{int(num_notice):03d}"  # Padding à 3 digits
+            suffix = ".html" if year < 2006 else "1.pdf"  # Adaptation historique des formats Sénat
+            return f"https://www.senat.fr/rap/{session_code}-{padded_num}/{session_code}-{padded_num}{suffix}"
+        except Exception as e:
+            print(f"Erreur parsing pour RAPPSNR {uid}: {e}, lien=None.")
+            return None
+
+    # Cas RAPPSNR avec BTA : PDF/html avec calcul session, padding num_notice à 3 digits, suffixe .pdf/html si <2006
+    # Adaptation pour textes adoptés : utilise 'tas' au lieu de 'rap' (pattern standard Sénat pour TA).
+    if uid.startswith('RAPPSNR') and 'BTA' in uid:
+        # Fallback pour num_notice : extraire de l'UID si absent (dernier segment après 'BTA')
+        if not num_notice:
+            try:
+                parts = uid.split('BTA')[-1]  # Ex. : 'RAPPSNR5S459BTA0173' → '0173'
+                num_notice = ''.join([c for c in parts if c.isdigit()])  # Nettoie aux digits
+                if not num_notice:
+                    raise ValueError("Aucun num_notice extractible")
+            except Exception as e:
+                print(f"Erreur fallback num_notice pour {uid}: {e}, lien=None.")
+                return None
+
+        # Fallback pour date : tester toutes les options ; si aucune, lien=None
+        date = date_depot or date_publication or date_creation
+        if not date:
+            print(f"Aucune date disponible pour RAPPSNR BTA {uid}, lien=None.")
+            return None
+
+        try:
+            dt = datetime.fromisoformat(date.replace('Z', '+00:00'))
+            year = dt.year
+            month = dt.month
+            session_start_year = year if month >= 10 else year - 1
+            session_code = f"{session_start_year % 100:02d}"  # Sans 'a' pour tas (pattern Sénat)
+            padded_num = f"{int(num_notice):03d}"  # Padding à 3 digits
+            suffix = ".html" if year < 2006 else ".pdf"  # Sans '1' pour tas (basé sur docs Sénat)
+            return f"https://www.senat.fr/leg/tas{session_code}-{padded_num}{suffix}"
+        except Exception as e:
+            print(f"Erreur parsing pour RAPPSNR BTA {uid}: {e}, lien=None.")
             return None
 
     # Cas PIONSNR : PDF/html avec calcul session, padding num_notice à 3 digits, suffixe .pdf/html si <2006
@@ -108,7 +178,7 @@ def reconstruire_liens_texte(uid, date_depot=None, num_notice=None, date_publica
             month = dt.month
             session_start_year = year if month >= 10 else year - 1
             session_code = f"{session_start_year % 100:02d}"
-            padded_num = f"{int(num_notice):03d}"  # Padding à 3 digits
+            padded_num = f"{int(num_notice):03d}" # Padding à 3 digits
             suffix = ".html" if year < 2007 else ".pdf"
             return f"https://www.senat.fr/leg/ppl{session_code}-{padded_num}{suffix}"
         except Exception as e:
@@ -130,12 +200,43 @@ def reconstruire_liens_texte(uid, date_depot=None, num_notice=None, date_publica
             month = dt.month
             session_start_year = year if month >= 10 else year - 1
             session_code = f"{session_start_year % 100:02d}"
-            padded_num = f"{int(num_notice):03d}"  # Padding à 3 digits
+            padded_num = f"{int(num_notice):03d}" # Padding à 3 digits
             suffix = ".html" if year < 2007 else ".pdf"
             return f"https://www.senat.fr/leg/tas{session_code}-{padded_num}{suffix}"
         except Exception as e:
             print(f"Erreur parsing date pour PIONSNR BTA {uid}: {e}, lien=None.")
             return None
+
+    # Cas pour AN avant L15 : Liens ASP basés sur legislature < 15
+    if uid.startswith('PIONANR'):
+        # Priorité : utiliser legislature passée en paramètre si disponible
+        leg_str = legislature if legislature else None
+        if not leg_str:
+            # Fallback : extraire de l'UID (après L et avant B ou suffixe)
+            try:
+                parts = uid.split('L')[-1].split('B')  # Split standard
+                leg_str = parts[0]  # Prend les premiers chars après 'L'
+                # Extraire seulement les digits initiaux (ex. '16TAP' → '16')
+                leg_str = ''.join([c for c in leg_str if c.isdigit()])
+            except Exception as e:
+                print(f"Erreur extraction legislature de UID pour {uid}: {e}, passe au cas standard.")
+                leg_str = None
+
+        if leg_str:
+            try:
+                leg_int = int(leg_str)
+                if leg_int < 15:
+                    padded_num = f"{int(num_notice):04d}"  # Padding à 4 digits
+                    if 'BTA' in uid:
+                        return f"https://www.assemblee-nationale.fr/{leg_str}/ta/ta{padded_num}.asp"
+                    elif 'BTC' in uid:
+                        return f"https://www.assemblee-nationale.fr/{leg_str}/ta-commission/r{padded_num}-a0.asp"
+                    else:
+                        return f"https://www.assemblee-nationale.fr/{leg_str}/propositions/pion{padded_num}.asp"
+            except ValueError:
+                print(f"Legislature invalide pour {uid}, passe au cas standard.")
+        else:
+            print(f"Pas de legislature disponible pour {uid}, passe au cas standard.")
 
     # Cas HTML standards (AN) - étendu comme avant
     if uid.startswith(('PIONANR', 'RIONANR', 'DECLANR','AVISANR', 'PNREANR', 'RINFANR', 'RAPPANR', 'PRJLANR', 'MIONANR')):
