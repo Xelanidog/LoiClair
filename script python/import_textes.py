@@ -5,12 +5,14 @@
 # Liens HTML pour TOUS (AN, avec patterns étendus) ; PDF à None.
 # Exécute avec : python import_textes.py
 # Attention : Adapte le chemin dossier_textes si besoin.
-# A FAIRE - TROUVER LES LIENS POUR DOC SENAT 'AVISSNR''PIONSNR','RAPPSNR''PRJLSNR'
-# # A FAIRE - Trouver les liens pour 'ALCNANR' AVCEANR AVISANR LETTANR
+# A FAIRE - TROUVER LES LIENS POUR DOC SENAT 'RAPPSNR''PRJLSNR' PIONANR avec TAP
+# text du senat avant 1990 environ ont une architecture de lien completement differente
+# A FAIRE - ALCNANR -> non publie dans les texte mais present dans compte rendu de seance
 import json
 import os
 from supabase import create_client, Client
 from dotenv import load_dotenv
+from datetime import datetime # Ajouté pour parsing dates dans AVISSNR
 
 # Charger env vars de .env.local
 load_dotenv(dotenv_path='/Users/algodin/Documents/LoiClair website/loiclair/.env.local')
@@ -20,7 +22,7 @@ if not supabase_url or not supabase_key:
     raise ValueError("SUPABASE_URL ou SUPABASE_KEY manquant dans .env.local")
 supabase: Client = create_client(supabase_url, supabase_key)
 
-def reconstruire_liens_texte(uid):
+def reconstruire_liens_texte(uid, date_depot=None, num_notice=None, date_publication=None, date_creation=None):
     # Cas ETDIANR : PDF avec extraction legislature et num
     if uid.startswith('ETDIANR'):
         # Exemple uid: ETDIANR5L16B2628
@@ -32,6 +34,18 @@ def reconstruire_liens_texte(uid):
             return f"https://www.assemblee-nationale.fr/dyn/{legislature}/textes/l{legislature}b{num}_etude-impact.pdf"
         else:
             print(f"Format ETDIANR invalide pour {uid}, lien=None.")
+            return None
+    # Nouveau : Cas LETTANR : PDF avec extraction legislature et num, suffixe _lettre-rectificative.pdf
+    if uid.startswith('LETTANR'):
+        # Exemple uid: LETTANR5L17B1999
+        # Extraire legislature (après L) et num (après B)
+        parts = uid.split('L')[-1].split('B') # Split pour isoler LXXBYYYY
+        if len(parts) == 2:
+            legislature = parts[0] # '17'
+            num = parts[1] # '1999'
+            return f"https://www.assemblee-nationale.fr/dyn/{legislature}/textes/l{legislature}b{num}_lettre-rectificative.pdf"
+        else:
+            print(f"Format LETTANR invalide pour {uid}, lien=None.")
             return None
     #Cas ACINANR : PDF avec extraction legislature et num, suffixe _accord-international.pdf
     if uid.startswith('ACINANR'):
@@ -45,6 +59,84 @@ def reconstruire_liens_texte(uid):
         else:
             print(f"Format ACINANR invalide pour {uid}, lien=None.")
             return None
+    # Cas AVCEANR : PDF avec extraction legislature et num, suffixe _avis-conseil-etat.pdf
+    if uid.startswith('AVCEANR'):
+        # Exemple uid: AVCEANR5L16B0639
+        # Extraire legislature (après L) et num (après B)
+        parts = uid.split('L')[-1].split('B') # Split pour isoler LXXBYYYY
+        if len(parts) == 2:
+            legislature = parts[0] # '16'
+            num = parts[1] # '0639'
+            return f"https://www.assemblee-nationale.fr/dyn/{legislature}/textes/l{legislature}b{num}_avis-conseil-etat.pdf"
+        else:
+            print(f"Format AVCEANR invalide pour {uid}, lien=None.")
+            return None
+    # Cas AVISSNR : PDF/html avec calcul session, padding num_notice à 3 digits, suffixe 1.pdf/html si <2006
+    if uid.startswith('AVISSNR'):
+        if not date_depot or not num_notice:
+            print(f"Manque date_depot ou num_notice pour AVISSNR {uid}, lien=None.")
+            return None
+        date = date_depot or date_publication or date_creation
+        if not date:
+            print(f"Manque toute date pour AVISSNR {uid}, lien=None.")
+            return None
+        try:
+            dt = datetime.fromisoformat(date.replace('Z', '+00:00'))
+            year = dt.year
+            month = dt.month
+            session_start_year = year if month >= 10 else year - 1
+            session_code = f"a{session_start_year % 100:02d}"
+            padded_num = f"{int(num_notice):03d}"  # Padding à 3 digits
+            suffix = ".html" if year < 2006 else "1.pdf"
+            return f"https://www.senat.fr/rap/{session_code}-{padded_num}/{session_code}-{padded_num}{suffix}"
+        except Exception as e:
+            print(f"Erreur parsing date pour AVISSNR {uid}: {e}, lien=None.")
+            return None
+
+    # Cas PIONSNR : PDF/html avec calcul session, padding num_notice à 3 digits, suffixe .pdf/html si <2006
+    if uid.startswith('PIONSNR') and 'BTA' not in uid:
+        if not num_notice:
+            print(f"Manque num_notice pour PIONSNR {uid}, lien=None.")
+            return None
+        date = date_depot or date_publication or date_creation
+        if not date:
+            print(f"Manque toute date pour PIONSNR {uid}, lien=None.")
+            return None
+        try:
+            dt = datetime.fromisoformat(date.replace('Z', '+00:00'))
+            year = dt.year
+            month = dt.month
+            session_start_year = year if month >= 10 else year - 1
+            session_code = f"{session_start_year % 100:02d}"
+            padded_num = f"{int(num_notice):03d}"  # Padding à 3 digits
+            suffix = ".html" if year < 2007 else ".pdf"
+            return f"https://www.senat.fr/leg/ppl{session_code}-{padded_num}{suffix}"
+        except Exception as e:
+            print(f"Erreur parsing date pour PIONSNR {uid}: {e}, lien=None.")
+            return None
+
+    # Cas PIONSNR avec BTA : PDF/html avec calcul session, padding num_notice à 3 digits, suffixe .pdf/html si <2006
+    if uid.startswith('PIONSNR') and 'BTA' in uid:
+        if not num_notice:
+            print(f"Manque num_notice pour PIONSNR BTA {uid}, lien=None.")
+            return None
+        date = date_depot or date_publication or date_creation
+        if not date:
+            print(f"Manque toute date pour PIONSNR BTA {uid}, lien=None.")
+            return None
+        try:
+            dt = datetime.fromisoformat(date.replace('Z', '+00:00'))
+            year = dt.year
+            month = dt.month
+            session_start_year = year if month >= 10 else year - 1
+            session_code = f"{session_start_year % 100:02d}"
+            padded_num = f"{int(num_notice):03d}"  # Padding à 3 digits
+            suffix = ".html" if year < 2007 else ".pdf"
+            return f"https://www.senat.fr/leg/tas{session_code}-{padded_num}{suffix}"
+        except Exception as e:
+            print(f"Erreur parsing date pour PIONSNR BTA {uid}: {e}, lien=None.")
+            return None
+
     # Cas HTML standards (AN) - étendu comme avant
     if uid.startswith(('PIONANR', 'RIONANR', 'DECLANR','AVISANR', 'PNREANR', 'RINFANR', 'RAPPANR', 'PRJLANR', 'MIONANR')):
         return f"https://www.assemblee-nationale.fr/dyn/opendata/{uid}.html"
@@ -76,27 +168,22 @@ def importer_texte(file_path):
             # Boucle sur chaque tome (division), avec tome 1 comme principal via héritage max
             for idx, division in enumerate(divisions):
                 if not isinstance(division, dict):
-                    continue  # Skip si invalide
-                
+                    continue # Skip si invalide
                 # Créer un texte_tome en copiant le parent et overridant avec les champs du tome
-                texte_tome = texte.copy()  # Héritage des champs parents
-                texte_tome.update(division)  # Override avec champs spécifiques du tome
-                
+                texte_tome = texte.copy() # Héritage des champs parents
+                texte_tome.update(division) # Override avec champs spécifiques du tome
                 # Extraction uid du tome (obligatoire)
                 uid_tome = texte_tome.get('uid')
                 if not uid_tome:
                     print(f"Tome sans uid dans {file_path}, skip.")
                     continue
-                
                 # Lien pour le tome (utilise la même fonction)
-                lien_html_tome = reconstruire_liens_texte(uid_tome)
-                
+                lien_html_tome = reconstruire_liens_texte(uid_tome, date_depot=texte_tome.get('cycleDeVie', {}).get('chrono', {}).get('dateDepot'), num_notice=texte_tome.get('notice', {}).get('numNotice'), date_publication=texte_tome.get('cycleDeVie', {}).get('chrono', {}).get('datePublication'), date_creation=texte_tome.get('cycleDeVie', {}).get('chrono', {}).get('dateCreation'))
                 # Extraction des autres champs (réutilise la logique existante, adaptée au texte_tome)
                 titre_principal_tome = texte_tome.get('titres', {}).get('titrePrincipal') if texte_tome.get('titres') else None
                 if titre_principal_tome:
                     titre_principal_tome = titre_principal_tome.capitalize()
-                
-                classification_tome = texte_tome.get('classification') if texte_tome.get('classification') else {}  # Guard pour None
+                classification_tome = texte_tome.get('classification') if texte_tome.get('classification') else {} # Guard pour None
                 statut_adoption_tome = classification_tome.get('statutAdoption')
                 libelle_statut_tome = {
                     'ADOPTSEANCE': 'Adopté en séance',
@@ -104,16 +191,13 @@ def importer_texte(file_path):
                     'REJETSEANCE': 'Rejeté en séance',
                     # Ajoute d'autres mappings si tu en as
                 }.get(statut_adoption_tome, 'Non défini')
-                
-                famille_tome = classification_tome.get('famille') if classification_tome.get('famille') else {}  # Guard pour None
+                famille_tome = classification_tome.get('famille') if classification_tome.get('famille') else {} # Guard pour None
                 depot_tome = famille_tome.get('depot', {})
                 depot_code_tome = depot_tome.get('code') if depot_tome else None
                 depot_libelle_tome = depot_tome.get('libelle') if depot_tome else None
-                
-                type_data_tome = classification_tome.get('type', {}) 
+                type_data_tome = classification_tome.get('type', {})
                 type_code_tome = type_data_tome.get('code') if type_data_tome else None
                 type_libelle_tome = type_data_tome.get('libelle') if type_data_tome else None
-                
                 # Auteurs pour le tome (réutilise la logique filtrée)
                 auteurs_tome = texte_tome.get('auteurs', {})
                 auteurs_list_tome = []
@@ -125,7 +209,6 @@ def importer_texte(file_path):
                         auteurs_list_tome = [auteur_data_tome]
                 elif isinstance(auteurs_tome, list):
                     auteurs_list_tome = auteurs_tome
-                
                 auteurs_refs_tome = []
                 rapporteurs_refs_tome = []
                 organe_auteur_ref_tome = None
@@ -148,7 +231,6 @@ def importer_texte(file_path):
                         rapporteurs_refs_tome.append(acteur_ref)
                 if not organe_auteur_ref_tome:
                     organe_auteur_ref_tome = auteurs_tome.get('auteur', {}).get('organe', {}).get('organeRef') if isinstance(auteurs_tome.get('auteur', {}), dict) else None
-                
                 # Data pour upsert du tome (similaire au principal)
                 data_tome = {
                     'uid': uid_tome,
@@ -160,7 +242,7 @@ def importer_texte(file_path):
                     'date_publication': texte_tome.get('cycleDeVie', {}).get('chrono', {}).get('datePublication') if texte_tome.get('cycleDeVie') else None,
                     'denomination': texte_tome.get('denominationStructurelle') if texte_tome.get('denominationStructurelle') else None,
                     'provenance': texte_tome.get('provenance', 'AN') if texte_tome.get('provenance') else 'AN',
-                    'dossier_ref': texte_tome.get('dossierRef') if texte_tome.get('dossierRef') else texte.get('dossierRef'),  # Héritage si absent
+                    'dossier_ref': texte_tome.get('dossierRef') if texte_tome.get('dossierRef') else texte.get('dossierRef'), # Héritage si absent
                     'classification': classification_tome if classification_tome else None,
                     'statut_adoption': statut_adoption_tome if statut_adoption_tome else None,
                     'libelle_statut_adoption': libelle_statut_tome if libelle_statut_tome else None,
@@ -176,7 +258,6 @@ def importer_texte(file_path):
                     'type_libelle': type_libelle_tome,
                     'rapporteurs_refs': rapporteurs_refs_tome,
                 }
-                
                 # Upsert du tome en DB
                 response_tome = supabase.table('textes').upsert(data_tome, on_conflict='uid').execute()
                 if response_tome.data:
@@ -185,13 +266,13 @@ def importer_texte(file_path):
                     print(f"Erreur import tome {uid_tome}: {response_tome.error}")
         else:
             # Pas de divisions : importer seulement le principal (code existant suit)
-            lien_html = reconstruire_liens_texte(uid)
+            lien_html = reconstruire_liens_texte(uid, date_depot=texte.get('cycleDeVie', {}).get('chrono', {}).get('dateDepot'), num_notice=texte.get('notice', {}).get('numNotice'), date_publication=texte.get('cycleDeVie', {}).get('chrono', {}).get('datePublication'), date_creation=texte.get('cycleDeVie', {}).get('chrono', {}).get('dateCreation'))
             # Extraction et normalisation majuscule pour titre_principal (première lettre majuscule)
             titre_principal = texte.get('titres', {}).get('titrePrincipal') if texte.get('titres') else None
             if titre_principal:
                 titre_principal = titre_principal.capitalize()
             # Déduction libelle_statut_adoption (mapping simple ; ajuste si besoin)
-            classification = texte.get('classification', {}) if texte.get('classification') else {}  # Guard pour None
+            classification = texte.get('classification', {}) if texte.get('classification') else {} # Guard pour None
             statut_adoption = classification.get('statutAdoption')
             libelle_statut = {
                 'ADOPTSEANCE': 'Adopté en séance',
@@ -200,7 +281,7 @@ def importer_texte(file_path):
                 # Ajoute d'autres mappings si tu en as
             }.get(statut_adoption, 'Non défini')
             # Extraction depot code/libelle (de classification.famille.depot)
-            famille = classification.get('famille', {}) if classification.get('famille') else {}  # Guard pour None
+            famille = classification.get('famille', {}) if classification.get('famille') else {} # Guard pour None
             depot = famille.get('depot', {})
             depot_code = depot.get('code') if depot else None
             depot_libelle = depot.get('libelle') if depot else None
