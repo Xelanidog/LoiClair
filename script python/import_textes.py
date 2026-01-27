@@ -20,10 +20,10 @@ def reconstruire_liens_texte(uid):
     """Reconstruit liens HTML via uid (force AN pour tous patterns). PDF à None."""
     if uid is None:
         return None, None
-    # Patterns étendus pour couvrir tous AN - 
+    # Patterns étendus pour couvrir tous AN -
     # A FAIRE - TROUVER LES LIENS POUR DOC SENAT 'AVISSNR''PIONSNR','RAPPSNR''PRJLSNR'
-    # A FAIRE - Trouver les liens pour 
-    if uid.startswith(('PIONANR', 'RIONANR', 'ACINANR', 'ETDIANR', 'ALCNANR',  'AVISANR', 'LETTANR', 'DECLANR', 'AVCEANR', 'PNREANR', 'RINFANR', 'RAPPANR', 'PRJLANR', 'MIONANR', )):
+    # A FAIRE - Trouver les liens pour ACINANR 'ALCNANR' AVCEANR AVISANR ETDIANR LETTANR
+    if uid.startswith(('PIONANR', 'RIONANR', 'DECLANR', 'PNREANR', 'RINFANR', 'RAPPANR', 'PRJLANR', 'MIONANR', )):
         lien_html = f"https://www.assemblee-nationale.fr/dyn/opendata/{uid}.html"
     else:
         lien_html = None
@@ -67,16 +67,53 @@ def importer_texte(file_path):
         depot = famille.get('depot', {})
         depot_code = depot.get('code') if depot else None
         depot_libelle = depot.get('libelle') if depot else None
+        # Extraction type code/libelle (de classification.type)
+        type_data = classification.get('type', {}) # Safe get, default dict vide
+        type_code = type_data.get('code') if type_data else None
+        type_libelle = type_data.get('libelle') if type_data else None
         # Auteurs et organe (gestion si list ou dict ou None)
         auteurs = texte.get('auteurs', {})
-        if isinstance(auteurs, list):
-            auteurs = auteurs[0] if auteurs else {}
-        elif auteurs is None:
-            auteurs = {}
-        organe_auteur_ref = auteurs.get('auteur', {}).get('organe', {}).get('organeRef') if isinstance(auteurs.get('auteur', {}), dict) else None
-        # Extraction list de tous les auteurs (acteurRef) en jsonb
-        auteurs_list = auteurs.get('auteur', []) if isinstance(auteurs.get('auteur'), list) else [auteurs.get('auteur')] if auteurs.get('auteur') else None
-        auteurs_refs = [auteur.get('acteur', {}).get('acteurRef') for auteur in auteurs_list if isinstance(auteur, dict) and auteur.get('acteur')]
+        auteurs_list = []
+        if isinstance(auteurs, dict):
+            auteur_data = auteurs.get('auteur')
+            if isinstance(auteur_data, list):
+                auteurs_list = auteur_data
+            elif isinstance(auteur_data, dict):
+                auteurs_list = [auteur_data]
+        elif isinstance(auteurs, list):
+            auteurs_list = auteurs
+
+        # Extraction filtrée et sécurisée
+        auteurs_refs = []
+        rapporteurs_refs = []
+        organe_auteur_ref = None
+
+        for auteur in auteurs_list:
+            if not isinstance(auteur, dict):
+                continue
+            # Ignore les entrées organe-only (pas d'acteur)
+            acteur = auteur.get('acteur')
+            if not acteur or not isinstance(acteur, dict):
+                # C'est probablement un organe → on le garde pour organe_auteur_ref si besoin
+                organe = auteur.get('organe', {})
+                if organe and isinstance(organe, dict):
+                    organe_auteur_ref = organe.get('organeRef')
+                continue
+
+            qualite = acteur.get('qualite')
+            acteur_ref = acteur.get('acteurRef')
+            
+            if not qualite or not acteur_ref:
+                continue
+
+            if qualite == 'auteur':
+                auteurs_refs.append(acteur_ref)
+            elif qualite == 'rapporteur':
+                rapporteurs_refs.append(acteur_ref)
+
+        # Si on n'a pas trouvé d'organe via la boucle, fallback sur l'ancienne méthode (rare)
+        if not organe_auteur_ref:
+            organe_auteur_ref = auteurs.get('auteur', {}).get('organe', {}).get('organeRef') if isinstance(auteurs.get('auteur', {}), dict) else None
         data = {
             'uid': uid, # Déjà safe, uid est vérifié avant
             'lien_html': lien_html, # Déjà safe de reconstruire_liens_texte
@@ -99,6 +136,9 @@ def importer_texte(file_path):
             'depot_code': depot_code,
             'depot_libelle': depot_libelle,
             'auteurs_refs': auteurs_refs,
+            'type_code': type_code,
+            'type_libelle': type_libelle,
+            'rapporteurs_refs': rapporteurs_refs,
         }
         response = supabase.table('textes').upsert(data, on_conflict='uid').execute()
         if response.data:
