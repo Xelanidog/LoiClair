@@ -238,6 +238,102 @@ def reconstruire_liens_texte(uid, date_depot=None, num_notice=None, date_publica
         else:
             print(f"Pas de legislature disponible pour {uid}, passe au cas standard.")
 
+                # Cas PRJLSNR sans BTA/BTC : PDF/html avec calcul session, padding num_notice à 3 digits, suffixe .pdf/html si <2007
+    if uid.startswith('PRJLSNR') and 'BTA' not in uid and 'BTC' not in uid:
+        # Fallback pour num_notice : extraire de l'UID si absent (dernier segment après 'B')
+        if not num_notice:
+            try:
+                parts = uid.split('B')[-1]  # Ex. : 'PRJLSNR5S459B0546' → '0546'
+                num_notice = ''.join([c for c in parts if c.isdigit()])  # Nettoie aux digits
+                if not num_notice:
+                    raise ValueError("Aucun num_notice extractible")
+            except Exception as e:
+                print(f"Erreur fallback num_notice pour {uid}: {e}, lien=None.")
+                return None
+
+        # Fallback pour date : tester toutes les options ; si aucune, lien=None
+        date = date_depot or date_publication or date_creation
+        if not date:
+            print(f"Aucune date disponible pour PRJLSNR {uid}, lien=None.")
+            return None
+
+        try:
+            dt = datetime.fromisoformat(date.replace('Z', '+00:00'))
+            year = dt.year
+            month = dt.month
+            session_start_year = year if month >= 10 else year - 1
+            session_code = f"{session_start_year % 100:02d}"  # Ex. : '24' pour session 2024-2025 (sans 'a' pour pjl)
+            padded_num = f"{int(num_notice):03d}"  # Padding à 3 digits (ex. '546' → '546')
+            suffix = ".html" if year < 2007 else ".pdf"  # Adaptation historique Sénat
+            return f"https://www.senat.fr/leg/pjl{session_code}-{padded_num}{suffix}"
+        except Exception as e:
+            print(f"Erreur parsing pour PRJLSNR {uid}: {e}, lien=None.")
+            return None
+
+    # Cas PRJLSNR avec BTC : Similaire à standard, utilise 'pjl' (pattern observé)
+    if uid.startswith('PRJLSNR') and 'BTC' in uid:
+        # Fallback pour num_notice : extraire de l'UID si absent (dernier segment après 'BTC')
+        if not num_notice:
+            try:
+                parts = uid.split('BTC')[-1]  # Ex. : 'PRJLSNR5S459BTC0668' → '0668'
+                num_notice = ''.join([c for c in parts if c.isdigit()])  # Nettoie aux digits
+                if not num_notice:
+                    raise ValueError("Aucun num_notice extractible")
+            except Exception as e:
+                print(f"Erreur fallback num_notice pour {uid}: {e}, lien=None.")
+                return None
+
+        # Fallback pour date : tester toutes les options ; si aucune, lien=None
+        date = date_depot or date_publication or date_creation
+        if not date:
+            print(f"Aucune date disponible pour PRJLSNR BTC {uid}, lien=None.")
+            return None
+
+        try:
+            dt = datetime.fromisoformat(date.replace('Z', '+00:00'))
+            year = dt.year
+            month = dt.month
+            session_start_year = year if month >= 10 else year - 1
+            session_code = f"{session_start_year % 100:02d}"  # Ex. : '24'
+            padded_num = f"{int(num_notice):03d}"  # Padding à 3 digits (ex. '668' → '668', mais exemple lien '618' → possible variante, ajuste si besoin)
+            suffix = ".html" if year < 2007 else ".pdf"
+            return f"https://www.senat.fr/leg/pjl{session_code}-{padded_num}{suffix}"
+        except Exception as e:
+            print(f"Erreur parsing pour PRJLSNR BTC {uid}: {e}, lien=None.")
+            return None
+
+    # Cas PRJLSNR avec BTA : PDF/html avec calcul session, padding num_notice à 3 digits, suffixe .pdf/html si <2007
+    if uid.startswith('PRJLSNR') and 'BTA' in uid:
+        # Fallback pour num_notice : extraire de l'UID si absent (dernier segment après 'BTA')
+        if not num_notice:
+            try:
+                parts = uid.split('BTA')[-1]  # Ex. : 'PRJLSNR5S479BTA0009' → '0009'
+                num_notice = ''.join([c for c in parts if c.isdigit()])  # Nettoie aux digits
+                if not num_notice:
+                    raise ValueError("Aucun num_notice extractible")
+            except Exception as e:
+                print(f"Erreur fallback num_notice pour {uid}: {e}, lien=None.")
+                return None
+
+        # Fallback pour date : tester toutes les options ; si aucune, lien=None
+        date = date_depot or date_publication or date_creation
+        if not date:
+            print(f"Aucune date disponible pour PRJLSNR BTA {uid}, lien=None.")
+            return None
+
+        try:
+            dt = datetime.fromisoformat(date.replace('Z', '+00:00'))
+            year = dt.year
+            month = dt.month
+            session_start_year = year if month >= 10 else year - 1
+            session_code = f"{session_start_year % 100:02d}"  # Ex. : '24'
+            padded_num = f"{int(num_notice):03d}"  # Padding à 3 digits (ex. '009' → '009', mais exemple lien '123' → variante possible)
+            suffix = ".html" if year < 2007 else ".pdf"
+            return f"https://www.senat.fr/leg/tas{session_code}-{padded_num}{suffix}"
+        except Exception as e:
+            print(f"Erreur parsing pour PRJLSNR BTA {uid}: {e}, lien=None.")
+            return None
+
     # Cas HTML standards (AN) - étendu comme avant
     if uid.startswith(('PIONANR', 'RIONANR', 'DECLANR','AVISANR', 'PNREANR', 'RINFANR', 'RAPPANR', 'PRJLANR', 'MIONANR')):
         return f"https://www.assemblee-nationale.fr/dyn/opendata/{uid}.html"
