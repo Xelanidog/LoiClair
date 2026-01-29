@@ -136,6 +136,34 @@ def importer_acteur(file_path):
                         break  # Prend le premier trouvé (généralement un seul par acteur)
         except KeyError as ke:
             print(f"Clé manquante pour mandats dans {file_path}: {ke} - groupe=None.")
+
+        # Extraction organes_refs (liste unique d'organeRef pour TOUS mandats actifs) - safe
+        organes_refs_set = set()
+        try:
+            for mandat in data.get('mandats', {}).get('mandat', []):
+                if mandat.get('dateFin') is None:  # Actif uniquement
+                    organes = mandat.get('organes', {})
+                    if isinstance(organes, dict):
+                        organe_ref = organes.get('organeRef')
+                        if isinstance(organe_ref, str):
+                            organes_refs_set.add(organe_ref)
+                        elif isinstance(organe_ref, list):  # Cas liste directe pour organeRef
+                            for ref in organe_ref:
+                                if isinstance(ref, str):
+                                    organes_refs_set.add(ref)
+                    elif isinstance(organes, list):
+                        for org in organes:
+                            if isinstance(org, str):  # Liste de strings
+                                organes_refs_set.add(org)
+                            elif isinstance(org, dict):  # Liste de dicts
+                                organe_ref = org.get('organeRef')
+                                if organe_ref:
+                                    organes_refs_set.add(organe_ref)
+        except KeyError as ke:
+            print(f"Clé manquante pour mandats dans {file_path}: {ke} - organes_refs=[]")
+        organes_refs = list(organes_refs_set) if organes_refs_set else None  # Convertit set en list, ou None si vide
+
+
         
         # Extraction adresses spécifiques - safe avec wrapper si single dict ou xsi:nil
         email = None
@@ -360,6 +388,7 @@ def importer_acteur(file_path):
             'groupe': groupe_organe_ref,
             'facebook_url': facebook_url,
             'adresse_circonscription': adresse_circonscription,
+            'organes_refs': organes_refs,  # Nouvelle colonne ARRAY<TEXT> avec organeRef uniques actifs
         }
         
         # Upsert (sur uid)
