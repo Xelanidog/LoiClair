@@ -120,5 +120,5 @@ def importer_organes_from_dir(dossier_organes):
 
 # Exécution
 if __name__ == "__main__":
-    dossier_organes = '/Users/algodin/Documents/LoiClair website/Data brute/AN-Jan2026/Députés, sénateurs, ministres, organes/Organes et acteur'
+    dossier_organes = '/Users/algodin/Documents/LoiClair website/Data brute/AN-Jan2026/Organes'
     importer_organes_from_dir(dossier_organes)

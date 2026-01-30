@@ -412,5 +412,5 @@ def importer_acteurs_from_dir(dossier_acteurs):
 
 # Exécution
 if __name__ == "__main__":
-    dossier_acteurs = '/Users/algodin/Documents/LoiClair website/Data brute/AN-Jan2026/Députés, sénateurs, ministres, organes/Organes et acteur'
+    dossier_acteurs = '/Users/algodin/Documents/LoiClair website/Data brute/AN-Jan2026/Acteurs'
     importer_acteurs_from_dir(dossier_acteurs)

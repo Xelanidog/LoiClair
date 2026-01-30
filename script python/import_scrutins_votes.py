@@ -24,6 +24,8 @@ supabase: Client = create_client(supabase_url, supabase_key)
 # Mapping pour cause_position_libelle (étends avec codes connus des docs AN)
 cause_map = {
     'PSE': 'Président de séance',
+    'PAN': 'Président de l\'Assemblée Nationale',
+    'MG': 'Membre du Gouvernement',
     # Ajoute ici d'autres codes (ex. : 'ABS' : 'Absent', etc.)
 }
 
