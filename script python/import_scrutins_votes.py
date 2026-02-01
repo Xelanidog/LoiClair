@@ -6,7 +6,6 @@
 # Nouveau : nombre_membres_groupe/position_majoritaire pour votes groupes (acteur_ref=None).
 # Exécute avec : python import_scrutins_votes.py
 # Attention : Adapte le chemin dossier_scrutins si besoin.
-
 import json
 import os
 from datetime import datetime
@@ -34,7 +33,6 @@ def importer_scrutin(file_path):
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
             data = json.load(f)['scrutin']
-        
         # Champs pour table scrutins (tolérant : None si absent)
         uid = data.get('uid')
         numero = int(data.get('numero')) if data.get('numero') else None
@@ -43,7 +41,7 @@ def importer_scrutin(file_path):
         session_ref = data.get('sessionRef')
         seance_ref = data.get('seanceRef')
         date_scrutin_raw = data.get('dateScrutin')
-        date_scrutin = date_scrutin_raw if date_scrutin_raw else None        
+        date_scrutin = date_scrutin_raw if date_scrutin_raw else None
         quantieme_jour_seance = int(data.get('quantiemeJourSeance')) if data.get('quantiemeJourSeance') else None
         type_vote_code = data['typeVote'].get('codeTypeVote') if 'typeVote' in data else None
         type_vote_libelle = data['typeVote'].get('libelleTypeVote') if 'typeVote' in data else None
@@ -64,7 +62,6 @@ def importer_scrutin(file_path):
         synthese_abstentions = int(decompte.get('abstentions')) if decompte.get('abstentions') else None
         synthese_non_votants = int(decompte.get('nonVotants')) if decompte.get('nonVotants') else None
         lieu_vote = data.get('lieuVote')
-        
         # Dict pour upsert scrutins
         data_scrutin = {
             'uid': uid,
@@ -93,7 +90,6 @@ def importer_scrutin(file_path):
             'synthese_non_votants': synthese_non_votants,
             'lieu_vote': lieu_vote
         }
-        
         # Upsert scrutin (sur uid)
         response_scrutin = supabase.table('scrutins').upsert(data_scrutin, on_conflict='uid').execute()
         if response_scrutin.data:
@@ -101,26 +97,21 @@ def importer_scrutin(file_path):
         else:
             print(f"Erreur upsert scrutin {uid}: {response_scrutin.error}")
             return  # Skip votes si scrutin échoue
-        
         # Parsing votes (groupes + nominatifs)
         votes_list = []
         groupes = data.get('ventilationVotes', {}).get('organe', {}).get('groupes', {}).get('groupe', [])
         if not isinstance(groupes, list):
             groupes = [groupes] if groupes else []  # Wrapper singleton/None
-
         for groupe in groupes:
             organe_ref = groupe.get('organeRef')
             is_valid_organe = organe_ref and organe_ref != 'PO0'  # Ajoute d'autres invalides si besoin
-            
             note_organe = None
             if not is_valid_organe:
                 print(f"Organe invalide {organe_ref} pour scrutin {uid} : set to None avec note.")
                 note_organe = f'Organe non trouvé : {organe_ref or "absent"}'
                 organe_ref = None  # Set to None
-            
             nombre_membres_groupe = int(groupe.get('nombreMembresGroupe')) if groupe.get('nombreMembresGroupe') else None
             position_majoritaire = groupe.get('vote', {}).get('positionMajoritaire')
-            
             # Vote groupe (toujours inséré, avec note si invalide)
             votes_list.append({
                 'scrutin_uid': uid,
@@ -135,7 +126,6 @@ def importer_scrutin(file_path):
                 'position_majoritaire': position_majoritaire,
                 'note_organe': note_organe  # Nouveau : note si invalide
             })
-            
             # Votes nominatifs (insérés avec note si groupe invalide)
             decompte_nominatif = groupe.get('vote', {}).get('decompteNominatif', {})
             if decompte_nominatif and isinstance(decompte_nominatif, dict):
@@ -146,7 +136,6 @@ def importer_scrutin(file_path):
                     votants_raw = pos_data.get('votant', [])
                     if not isinstance(votants_raw, list):
                         votants_raw = [votants_raw] if votants_raw else []
-                    
                     for votant in votants_raw:
                         if isinstance(votant, dict):
                             acteur_ref = votant.get('acteurRef')
@@ -154,9 +143,7 @@ def importer_scrutin(file_path):
                             num_place = votant.get('numPlace')
                             cause_position = votant.get('causePositionVote')
                             cause_position_libelle = cause_map.get(cause_position, 'Inconnu')
-                            
                             position_vote = pos[:-1] if pos.endswith('s') else pos
-                            
                             votes_list.append({
                                 'scrutin_uid': uid,
                                 'acteur_ref': acteur_ref,
@@ -170,7 +157,6 @@ def importer_scrutin(file_path):
                                 'position_majoritaire': None,
                                 'note_organe': note_organe  # Nouveau : hérite la note du groupe
                             })
-                
         # Insert batch votes (si liste non vide)
         if votes_list:
             response_votes = supabase.table('votes').insert(votes_list).execute()
@@ -178,20 +164,37 @@ def importer_scrutin(file_path):
                 print(f"{len(votes_list)} votes importés pour scrutin {uid}.")
             else:
                 print(f"Erreur insert votes pour {uid}: {response_votes.error}")
-    
     except Exception as e:
         print(f"Erreur générale pour {file_path}: {e}")
         import traceback
         traceback.print_exc()
 
-def importer_scrutins_from_dir(dossier_scrutins):
-    """Boucle sur tous les JSON commençant par 'VTANR5L17V' dans le dossier et importe."""
+def importer_scrutins_from_dir(dossier_scrutins, prefix='VTANR5L17V'):
+    """Boucle sur tous les JSON commençant par 'prefix' dans le dossier et importe."""
+    print(f"Debug : Import depuis {dossier_scrutins} avec prefix {prefix}")
     for filename in os.listdir(dossier_scrutins):
-        if filename.startswith('VTANR5L17V') and filename.endswith('.json'):
+        if filename.startswith(prefix) and filename.endswith('.json'):
             file_path = os.path.join(dossier_scrutins, filename)
             importer_scrutin(file_path)
 
-# Exécution
 if __name__ == "__main__":
-    dossier_scrutins = '/Users/algodin/Documents/LoiClair website/Data brute/AN-Jan2026/Votes'  # Adapte ce chemin à ton dossier réel
-    importer_scrutins_from_dir(dossier_scrutins)
+    # Liste des dossiers à importer (ajoute/enlève au besoin)
+    dossiers_paths = [
+        '/Users/algodin/Documents/LoiClair website/Data brute/AN-Jan2026/VotesL17',  # Dossier pour L17
+        '/Users/algodin/Documents/LoiClair website/Data brute/AN-Jan2026/VotesL16'   # Dossier pour L16
+    ]
+    # Boucle sur chaque dossier de la liste
+    for path in dossiers_paths:
+        try:
+            # Détermine le prefix en fonction du dossier (généralisation)
+            if 'L16' in path:
+                prefix = 'VTANR5L16V'
+            else:
+                prefix = 'VTANR5L17V'  # Défaut pour L17 et autres
+            importer_scrutins_from_dir(path, prefix=prefix)
+            print(f"✅ Import terminé pour le dossier : {path}")
+        except FileNotFoundError:
+            print(f"⚠️ Dossier introuvable : {path} → Skip")
+        except Exception as e:
+            print(f"❌ Erreur pour {path} : {e}")
+    print("Import global terminé !")
