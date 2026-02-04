@@ -64,7 +64,7 @@ export default function Sidebar() {
                   Indicateurs clés
                 </Button>
               </Link>
-              <Link href="/KPI">
+              <Link href="/Week">
                 <Button
                   variant="ghost"
                   size="sm"
