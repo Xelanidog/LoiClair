@@ -12,8 +12,7 @@ export default async function DossiersLegislatifsPage() {
   // Gère les erreurs basiquement pour debug.
   const { data: dossiers, error } = await supabase
     .from('dossiers_legislatifs')
-    .select('*, initiateur_acteur_ref(nom, prenom, groupe:organes(libelle))')
-    .order('created_at', { ascending: false }); // Tri par date de création descendante (récent en premier).
+    .select('*, initiateur_acteur_ref(nom, prenom, roles_text, groupe:organes(libelle)), actes_legislatifs!actes_legislatifs_dossier_uid_fkey(date_acte)')
 
   if (error) {
     return <div>Erreur lors du chargement des données : {error.message}</div>; // Affichage d'erreur simple pour test.
@@ -23,22 +22,88 @@ export default async function DossiersLegislatifsPage() {
     return <div>Aucun dossier législatif trouvé.</div>; // Cas vide pour test.
   }
 
+  // Tri des dossiers par date de démarrage descendante (plus récent en premier).
+const sortedDossiers = dossiers.sort((a, b) => {
+  // Calcul date min pour A.
+  const actesA = a.actes_legislatifs || [];
+  const actesAvecDatesA = actesA.filter(acte => acte.date_acte && !isNaN(new Date(acte.date_acte).getTime()));
+  const minDateA = actesAvecDatesA.sort((x, y) => new Date(x.date_acte).getTime() - new Date(y.date_acte).getTime())[0]?.date_acte;
+  const timeA = minDateA ? new Date(minDateA).getTime() : 0; // 0 si inconnue ( ira en fin de liste).
+
+  // Calcul date min pour B.
+  const actesB = b.actes_legislatifs || [];
+  const actesAvecDatesB = actesB.filter(acte => acte.date_acte && !isNaN(new Date(acte.date_acte).getTime()));
+  const minDateB = actesAvecDatesB.sort((x, y) => new Date(x.date_acte).getTime() - new Date(y.date_acte).getTime())[0]?.date_acte;
+  const timeB = minDateB ? new Date(minDateB).getTime() : 0;
+
+  return timeB - timeA; // Descendante : B avant A si plus récente.
+});
+
   return (
     <div className="container mx-auto p-4"> {/* Conteneur centré avec padding */}
       <h1 className="text-2xl font-bold mb-4">Liste des Dossiers Législatifs</h1> {/* Titre de page */}
       <ul className="space-y-2"> {/* Liste en colonne avec espacement vertical */}
-        {dossiers.map((dossier) => (
+        {sortedDossiers.map((dossier) => (
           <li key={dossier.uid}> {/* Clé unique basée sur uid */}
             <div
               className="p-4 bg-white shadow-sm hover:shadow-md transition-shadow duration-200 rounded-lg" // Carte : fond blanc, ombre légère, hover augmente l'ombre, arrondi, sans bordure explicite.
             >
               <h2 className="text-xl font-semibold">{dossier.titre}</h2> {/* Titre du dossier */}
+              <p className="text-red-800 uppercase text-sm mt-1"> {/* Rouge burgundy, majuscules, petit texte, marge top légère */}
+                {dossier.procedure_libelle}
+                </p>
+
+{(() => {
+  // Calcul de la date de démarrage : filtrer actes avec date_acte valide, trier ascending, prendre le premier.
+  const actes = dossier.actes_legislatifs || []; // Array nested des actes (ou vide si null).
+  const actesAvecDates = actes.filter(acte => acte.date_acte && !isNaN(new Date(acte.date_acte).getTime())); // Filtre dates valides (non null et parsables).
+  const sortedActes = actesAvecDates.sort((a, b) => new Date(a.date_acte).getTime() - new Date(b.date_acte).getTime()); // Tri ascending sur valides.
+  const premiereDate = sortedActes[0]?.date_acte; // Date du premier acte valide.
+
+  // Ligne de debug : affiche le nombre d'actes valides + exemple de première date raw (temporaire pour tester).
+  const debugElement = (
+    <p className="text-gray-400 text-xs">
+      Debug : {actesAvecDates.length} actes valides (ex. première raw : {actesAvecDates[0]?.date_acte ?? 'aucune'})
+    </p>
+  );
+
+  if (!premiereDate) {
+    return (
+      <>
+        {debugElement} {/* Inclut la debug même en cas inconnu */}
+        <p className="text-gray-600 text-sm">Date de démarrage : Inconnue</p>
+      </>
+    );
+  }
+
+  // Formatage en français (ex. : "5 février 2026").
+  const formattedDate = new Date(premiereDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+
+  // Calcul du nombre de jours écoulés depuis la date de démarrage (jusqu'à aujourd'hui).
+  const today = new Date(); // Date actuelle (côté serveur, mais proche du réel).
+  const startDate = new Date(premiereDate); // Conversion de la timestamp.
+  const daysElapsed = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)); // Diff en ms, divisé par ms/jour, arrondi bas.
+  const daysText = daysElapsed >= 0 ? `Depuis ${daysElapsed} jour${daysElapsed > 1 ? 's' : ''}` : 'Date future'; // Gère pluriel et cas rare (future).
+
+  return (
+    <>
+      {debugElement} {/* Inclut la debug dans le cas normal */}
+      <p className="text-gray-600 text-sm">Date de démarrage : {formattedDate}</p>
+      <p className="text-gray-600 text-sm">{daysText}</p> {/* Affichage simple, sous la date */}
+    </>
+  );
+})()}
+
+
               <p className="text-gray-600">Législature : {dossier.legislature}</p> {/* Exemple de détail simple */}
               <p className="text-gray-600">
                 Auteur : {dossier.initiateur_acteur_ref ? `${dossier.initiateur_acteur_ref.prenom} ${dossier.initiateur_acteur_ref.nom}` : 'Non spécifié'}
                 </p>
+                <p className="text-gray-600 text-sm">
+                Rôle : {dossier.initiateur_acteur_ref?.roles_text ?? 'Non spécifié'}
+                </p>
                 <p className="text-gray-600">
-                Groupe : {dossier.initiateur_acteur_ref?.groupe?.libelle ?? 'Non spécifié'}
+                Groupe : {dossier.initiateur_acteur_ref?.groupe?.libelle ?? 'Mandat terminé'}
                 </p>
                 {dossier.lien_an && ( // Afficher seulement si lien_an existe.
                 <p className="text-gray-600">
