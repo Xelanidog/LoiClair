@@ -35,6 +35,7 @@ export default function ResumeIAPage() {
   const [actes, setActes] = useState<any[]>([]); // Tableau des actes fetchés (any pour flexibilité ; typage plus strict plus tard).
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set()); // Set des uids d'actes sélectionnés (pour checkboxes).
   const [loading, setLoading] = useState(true); // Booléen pour indiquer le chargement en cours.
+  
 
   // Effet pour fetcher les actes au montage du composant (et si uid change).
   useEffect(() => {

@@ -82,22 +82,36 @@ def parser_acte(acte_data, dossier_uid, parent_uid=None):
                 date_acte = date_acte_raw  # Fallback str si non parsable
         # statut_conclusion : seulement libelle (texte simple)
         statut_conclusion = acte_data.get('statutConclusion', {}).get('libelle')
+
+
         # textes_associes : normalisé en string simple (exclut TAP, extrait refTexteAssocie ou texteAssocie, prend le premier si multiple)
         textes_raw = acte_data.get('textesAssocies') or acte_data.get('texteAssocie')
         refs = []
         if textes_raw:
+            # Gestion nesting : si dict avec 'texteAssocie' ou 'textesAssocies', descend dedans
+            if isinstance(textes_raw, dict):
+                nested = textes_raw.get('texteAssocie') or textes_raw.get('textesAssocies')
+                if nested:
+                    textes_raw = nested  # Remplace par le contenu nested
+            # Normalise en list pour boucler uniformément
             items = [textes_raw] if not isinstance(textes_raw, list) else textes_raw
             for item in items:
                 if isinstance(item, dict):
                     if item.get('typeTexte') == 'TAP':
                         continue  # Exclure TAP
-                    ref = item.get('refTexteAssocie')
+                    ref = item.get('refTexteAssocie') or item.get('texteAssocie')  # Tolérance : ajoute 'texteAssocie' si rare
                     if ref:
-                        refs.append(ref.strip().replace('»', ''))  # Nettoie espaces et guillemets parasites
+                        refs.append(ref.strip().replace('»', ''))  # Nettoie
                 elif isinstance(item, str):
                     refs.append(item.strip().replace('»', ''))
-        # Modification : Si refs vide, set à None (pour NULL) ; sinon, prend le premier ref comme string simple (un seul attendu)
+        # Si refs vide, set à None ; sinon, prend le premier ref comme string simple (un seul attendu)
         textes_associes = refs[0] if refs else None
+
+        # Debug optionnel : pour tracer l'extraction (commente après test)
+        print(f"Debug textes_associes pour acte {uid}: raw={textes_raw}, refs={refs}, final={textes_associes}")
+
+
+
         # rapporteurs : dict ou None -> JSONB
         rapporteurs = acte_data.get('rapporteurs', {}) or None
         # reunion_ref : str ou None
