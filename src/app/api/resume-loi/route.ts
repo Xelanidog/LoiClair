@@ -39,11 +39,14 @@ export async function POST(request: NextRequest) {
         throw new Error('Erreur fetch du lien texte.');
       }
 
-      const pdfParse = (await import('pdf-parse')).default;
+      const { default: pdfParse } = await import('pdf-parse');
 
       if (lienUtilise.endsWith('.pdf') || contentType.includes('application/pdf')) {
         try {
           const buffer = await response.arrayBuffer();
+          if (typeof pdfParse !== 'function') {
+  throw new Error('Erreur interne : pdf-parse non chargé correctement.');
+}
           const pdfData = await pdfParse(Buffer.from(buffer));
           texteComplet = pdfData.text.slice(0, MAX_INPUT_CHARS_RESUME_LOI);
           if (!texteComplet.trim()) {
