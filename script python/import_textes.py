@@ -369,6 +369,11 @@ def importer_texte(file_path):
         titre_principal = texte.get('titres', {}).get('titrePrincipal') if texte.get('titres') else None
         if titre_principal:
             titre_principal = titre_principal.capitalize()
+            # Extraction du titre court (titrePrincipalCourt), avec fallback à None si absent
+        titre_principal_court = texte.get('titres', {}).get('titrePrincipalCourt')
+        # Capitalisation : met la première lettre en majuscule si le titre existe et n'est pas vide
+        if titre_principal_court:
+            titre_principal_court = titre_principal_court.capitalize()
         # Déduction libelle_statut_adoption (mapping simple ; ajuste si besoin)
         classification = texte.get('classification', {}) if texte.get('classification') else {}  # Guard pour None
         statut_adoption = classification.get('statutAdoption')
@@ -430,6 +435,7 @@ def importer_texte(file_path):
             'uid': uid,  # Déjà safe, uid est vérifié avant
             'lien_texte': lien_html,  # Déjà safe de reconstruire_liens_texte
             'titre_principal': titre_principal,
+            
             'legislature': int(texte.get('legislature')) if texte.get('legislature') else None,  # Déjà géré
             'date_creation': texte.get('cycleDeVie', {}).get('chrono', {}).get('dateCreation') if texte.get('cycleDeVie') else None,  # Déjà géré
             'date_depot': texte.get('cycleDeVie', {}).get('chrono', {}).get('dateDepot') if texte.get('cycleDeVie') else None,  # Déjà géré
@@ -451,6 +457,7 @@ def importer_texte(file_path):
             'type_code': type_code,
             'type_libelle': type_libelle,
             'rapporteurs_refs': ','.join(rapporteurs_refs) if rapporteurs_refs else None,
+            'titre_principal_court': titre_principal_court if titre_principal_court else None,
         }
 
         # Modification : Toujours importer le parent (wrapper) en premier, même avec divisions.
@@ -485,6 +492,11 @@ def importer_texte(file_path):
                 titre_principal_tome = texte_tome.get('titres', {}).get('titrePrincipal') if texte_tome.get('titres') else None
                 if titre_principal_tome:
                     titre_principal_tome = titre_principal_tome.capitalize()
+                    # Extraction du titre court pour le tome enfant, avec fallback à None si absent
+                titre_principal_court_tome = texte_tome.get('titres', {}).get('titrePrincipalCourt')
+                # Capitalisation : met la première lettre en majuscule si le titre existe et n'est pas vide
+                if titre_principal_court_tome:
+                    titre_principal_court_tome = titre_principal_court_tome.capitalize()
                 classification_tome = texte_tome.get('classification') if texte_tome.get('classification') else {}  # Guard pour None
                 statut_adoption_tome = classification_tome.get('statutAdoption')
                 libelle_statut_tome = {
@@ -561,6 +573,7 @@ def importer_texte(file_path):
                     'rapporteurs_refs': ','.join(rapporteurs_refs) if rapporteurs_refs else None,
                     # Modification : Ajout du lien de parenté pour les tomes enfants
                     'parent_uid': uid,  # Référence au parent
+                    'titre_principal_court': titre_principal_court_tome if titre_principal_court_tome else None,
                 }
                 # Upsert du tome en DB
                 response_tome = supabase.table('textes').upsert(data_tome, on_conflict='uid').execute()
