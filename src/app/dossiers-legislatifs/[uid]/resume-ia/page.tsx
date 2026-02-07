@@ -1,21 +1,10 @@
 // src/app/dossiers-legislatifs/[uid]/resume-ia/page.tsx
-// Page dynamique pour le résumé IA d'un dossier (basée sur uid).
-// Cette page affiche une table des textes liés au dossier, avec checkboxes pour sélection.
-// Ajout : Sélection auto du dernier texte, appel API pour résumé IA sur son lien, loading dédié, affichage markdown.
-// Limite à un seul texte sélectionné (single-select radio-like).
-// Note : Cette page est "use client" car elle utilise des hooks comme useState et useEffect pour du state interactif.
-// Modifications : 
-// - Colonne "Provenance" adaptée pour afficher libelle_abrege de la table organes via jointure sur organe_auteur_ref.
-// - Ajout colonne "Libellé statut adoption" via champ libelle_statut_adoption.
-// - Fetch ajusté avec select incluant la relation et le nouveau champ.
-// - Colonnes mises à jour en conséquence.
+"use client";
 
-"use client"; // Directive pour rendre cette page un Client Component (nécessaire pour hooks React).
-
-import { useParams } from 'next/navigation'; // Pour récupérer l'uid des params de l'URL.
-import { createClient } from '@supabase/supabase-js'; // Pour créer un client Supabase côté client.
-import { useEffect, useState } from 'react'; // Pour gérer l'état et les effets (fetch async).
-import { Checkbox } from '@/components/ui/checkbox'; // Composant Checkbox de Shadcn/ui.
+import { useParams } from 'next/navigation';
+import { createClient } from '@supabase/supabase-js';
+import { useEffect, useState } from 'react';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table,
   TableBody,
@@ -23,9 +12,19 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'; // Composants Table de Shadcn/ui pour afficher les données.
-import { Loader2 } from "lucide-react"; // Icône de spinner pour le loading (de Lucide, installé via Shadcn).
-import ReactMarkdown from 'react-markdown'; // Pour rendre le markdown du résumé IA.
+} from '@/components/ui/table';
+import { Loader2 } from "lucide-react";
+import ReactMarkdown from 'react-markdown';
+import { Sparkles, ExternalLink } from 'lucide-react'; // Pour les icônes des liens (déjà utilisées sur la page principale)
+
+// === Ajouts pour le bouton Perplexity ===
+import { Button } from '@/components/ui/button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -36,12 +35,18 @@ export default function ResumeIAPage() {
   const uid = params.uid as string;
 
   const [textes, setTextes] = useState<any[]>([]);
-  const [selectedUid, setSelectedUid] = useState<string | null>(null); // Single-select : UID du texte sélectionné (null si aucun)
+  const [selectedUid, setSelectedUid] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [resumeIA, setResumeIA] = useState<string>('');
   const [loadingResume, setLoadingResume] = useState(false);
 
-  // Effet pour fetcher les textes au montage du composant (et si uid change).
+  // === Fonction Perplexity ===
+  const handleDiscussWithAI = (titre: string, lien: string) => {
+    const prompt = `Analyse et explique ce texte législatif français pour en discuter avec moi : "${titre}". Voici le lien officiel : ${lien}. Résume les points clés, les objectifs, les impacts concrets et le contexte politique.`;
+    const perplexityUrl = `https://www.perplexity.ai/search?q=${encodeURIComponent(prompt)}`;
+    window.open(perplexityUrl, '_blank', 'noopener,noreferrer');
+  };
+
   useEffect(() => {
     const fetchTextes = async () => {
       setLoading(true);
@@ -58,7 +63,6 @@ export default function ResumeIAPage() {
       setTextes(data || []);
       setLoading(false);
 
-      // Sélection auto du dernier texte si dispo (single-select)
       if (data && data.length > 0) {
         setSelectedUid(data[data.length - 1].uid);
       }
@@ -66,7 +70,6 @@ export default function ResumeIAPage() {
     fetchTextes();
   }, [uid]);
 
-  // Effet pour générer le résumé quand selectedUid change.
   useEffect(() => {
     const genererResume = async () => {
       if (!selectedUid) return;
@@ -77,11 +80,9 @@ export default function ResumeIAPage() {
         return;
       }
 
-      // Validation du lien (pattern basique HTTP/HTTPS).
       const isValidUrl = /^https?:\/\/[^\s$.?#].[^\s]*$/.test(selectedTexte.lien_texte);
       if (!isValidUrl) {
-        console.error('Lien texte invalide:', selectedTexte.lien_texte);
-        setResumeIA('Lien texte invalide. Vérifiez les données Supabase.');
+        setResumeIA('Lien texte invalide.');
         return;
       }
 
@@ -98,16 +99,13 @@ export default function ResumeIAPage() {
           }),
         });
         if (!response.ok) {
-          const errorData = await response.json();
-          console.error('Erreur API détaillée:', errorData.error || 'Réponse non OK');
-          setResumeIA('Erreur lors de la génération du résumé. Vérifiez le lien ou réessayez.');
+          setResumeIA('Erreur lors de la génération du résumé.');
           return;
         }
         const { resume } = await response.json();
         setResumeIA(resume);
       } catch (error: any) {
-        console.error('Erreur fetch résumé détaillée:', error.message, 'Lien concerné:', selectedTexte.lien_texte);
-        setResumeIA('Erreur réseau ou format inattendu lors de la génération du résumé. Réessayez.');
+        setResumeIA('Erreur réseau ou format inattendu.');
       } finally {
         setLoadingResume(false);
       }
@@ -116,7 +114,6 @@ export default function ResumeIAPage() {
     genererResume();
   }, [selectedUid, textes]);
 
-  // Handler pour checkbox row : Single-select (set seulement si checked, unset si même).
   const handleSelectRow = (id: string, checked: boolean) => {
     if (checked) {
       setSelectedUid(id);
@@ -125,16 +122,18 @@ export default function ResumeIAPage() {
     }
   };
 
-  // Fonction utilitaire pour formater une date en français (ex. : "1 janvier 2023").
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return 'Inconnue';
     return new Date(dateStr).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
   };
 
+  // Texte sélectionné (pour le bouton Perplexity)
+  const selectedTexte = selectedUid ? textes.find((t) => t.uid === selectedUid) : null;
+
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">Résumé IA pour le dossier {uid}</h1>
-      <p className="mb-4">Liste des textes liés (contenu IA à venir).</p>
+      <p className="mb-4">Liste des textes liés.</p>
 
       {loading ? (
         <div className="flex justify-center items-center h-32">
@@ -145,7 +144,7 @@ export default function ResumeIAPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-8"/><TableHead>Date de création</TableHead><TableHead>Dénomination</TableHead><TableHead>Provenance</TableHead><TableHead>Titre court</TableHead><TableHead>Libellé statut adoption</TableHead><TableHead>Lien Texte</TableHead>
+              <TableHead className="w-8"/><TableHead>Date de création</TableHead><TableHead>Dénomination</TableHead><TableHead>Provenance</TableHead><TableHead>Titre</TableHead><TableHead>Statut</TableHead><TableHead>Lien Texte</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -181,6 +180,30 @@ export default function ResumeIAPage() {
       {/* Section résumé IA */}
       <div className="mt-8">
         <h2 className="text-xl font-bold mb-2">Résumé IA du texte sélectionné</h2>
+
+        {/* Bouton Perplexity */}
+        {selectedTexte && selectedTexte.lien_texte && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  onClick={() => handleDiscussWithAI(
+                    selectedTexte.titre_principal_court || selectedTexte.denomination || 'Texte inconnu',
+                    selectedTexte.lien_texte
+                  )}
+                  className="mb-4"
+                >
+                  Discuter de ce texte avec l'IA (Perplexity)
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Ouvre Perplexity avec le texte pré-chargé (compte gratuit recommandé pour discussions étendues)</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+
         {loadingResume ? (
           <div className="flex justify-center items-center h-32">
             <Loader2 className="h-6 w-6 animate-spin text-gray-500" />
