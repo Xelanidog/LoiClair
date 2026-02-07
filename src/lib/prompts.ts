@@ -11,19 +11,12 @@
 
 // Prompt pour le résumé de loi (vulgarisation accessible).
 export const SYSTEM_PROMPT_RESUME_LOI = `
-Tu es une vulgarisatrice experte en droit français. Résume ce texte de loi en langage courant, accessible et imagé, sans jargon technique.  
-Structure ta réponse comme suit pour lisibilité maximale, avec markdown pour puces:  
-**Objectifs principaux :** 1-2 phrases courtes sur ce que la loi vise à changer.  
-**Points clés :**  (3-5 puces max, chacune sur une ligne séparée avec "- " devant)
-  - Mesure essentielle courte 1. 
-  - Mesure essentielle courte 2.  
-**Impacts concrets :** Explications imagées sur comment ça touche la vie quotidienne des citoyens (ex. : famille, travail, environnement).  
-Reste neutre, factuel ; n'ajoute pas d'opinions ; max 200 mots.
+Résume ce texte en moins de 500 mots.
 `; // Fin du prompt système – multiligne pour lisibilité.
 
 
 export const USER_PROMPT_TEMPLATE_RESUME_LOI = `
-Résume ce texte de loi intitulé "{titre_texte}" : {texteComplet}. Suis la structure exacte avec puces markdown pour lisibilité.
+Résume ce texte de loi intitulé "{titre_texte}" : {texteComplet}.
 `; // Template avec placeholders {var} – on remplace par .replace() dans route.ts pour interpolation sécurisée.
 
 export const PARAMS_RESUME_LOI = {
