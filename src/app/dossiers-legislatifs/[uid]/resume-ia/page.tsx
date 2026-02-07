@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/table';
 import { Loader2 } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
-import { Sparkles, ExternalLink } from 'lucide-react'; // Pour les icônes des liens (déjà utilisées sur la page principale)
+import { Sparkles, ExternalLink } from 'lucide-react';
 
 // === Ajouts pour le bouton Perplexity ===
 import { Button } from '@/components/ui/button';
@@ -25,6 +25,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+
+// Ajout pour le Badge (vérification des liens)
+import { Badge } from '@/components/ui/badge';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -40,7 +43,8 @@ export default function ResumeIAPage() {
   const [resumeIA, setResumeIA] = useState<string>('');
   const [loadingResume, setLoadingResume] = useState(false);
 
-  // === Fonction Perplexity ===
+  const [liensStatus, setLiensStatus] = useState<Record<string, 'valide' | 'invalide' | 'en_cours' | null>>({});
+
   const handleDiscussWithAI = (titre: string, lien: string) => {
     const prompt = `Analyse et explique ce texte législatif français pour en discuter avec moi : "${titre}". Voici le lien officiel : ${lien}. Résume les points clés, les objectifs, les impacts concrets et le contexte politique.`;
     const perplexityUrl = `https://www.perplexity.ai/search?q=${encodeURIComponent(prompt)}`;
@@ -52,7 +56,7 @@ export default function ResumeIAPage() {
       setLoading(true);
       const { data, error } = await supabase
         .from('textes')
-        .select('uid, date_creation, denomination, titre_principal_court, lien_texte, libelle_statut_adoption, organe_auteur:organe_auteur_ref(libelle_abrege)')
+        .select('uid, date_creation, denomination, titre_principal_court, lien_texte, libelle_statut_adoption, organe_auteur:organe_auteur_ref(libelle)')
         .eq('dossier_ref', uid)
         .order('date_creation', { ascending: true });
 
@@ -66,9 +70,41 @@ export default function ResumeIAPage() {
       if (data && data.length > 0) {
         setSelectedUid(data[data.length - 1].uid);
       }
+
+      if (data) {
+        setLiensStatus(data.reduce((acc, t) => ({ ...acc, [t.uid]: 'en_cours' }), {}));
+      }
     };
     fetchTextes();
   }, [uid]);
+
+  useEffect(() => {
+    const verifierLiens = async () => {
+      for (const texte of textes) {
+        if (!texte.lien_texte) {
+          setLiensStatus(prev => ({ ...prev, [texte.uid]: 'invalide' }));
+          continue;
+        }
+
+        const isValidFormat = /^https?:\/\/[^\s$.?#].[^\s]*$/.test(texte.lien_texte);
+        if (!isValidFormat) {
+          setLiensStatus(prev => ({ ...prev, [texte.uid]: 'invalide' }));
+          continue;
+        }
+
+        try {
+          const response = await fetch(texte.lien_texte, { method: 'HEAD' });
+          setLiensStatus(prev => ({ ...prev, [texte.uid]: response.ok ? 'valide' : 'invalide' }));
+        } catch {
+          setLiensStatus(prev => ({ ...prev, [texte.uid]: 'invalide' }));
+        }
+      }
+    };
+
+    if (textes.length > 0) {
+      verifierLiens();
+    }
+  }, [textes]);
 
   useEffect(() => {
     const genererResume = async () => {
@@ -127,7 +163,6 @@ export default function ResumeIAPage() {
     return new Date(dateStr).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
   };
 
-  // Texte sélectionné (pour le bouton Perplexity)
   const selectedTexte = selectedUid ? textes.find((t) => t.uid === selectedUid) : null;
 
   return (
@@ -141,47 +176,77 @@ export default function ResumeIAPage() {
           <p className="ml-2 text-gray-500">Chargement des textes...</p>
         </div>
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-8"/><TableHead>Date de création</TableHead><TableHead>Dénomination</TableHead><TableHead>Provenance</TableHead><TableHead>Titre</TableHead><TableHead>Statut</TableHead><TableHead>Lien Texte</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {textes.map((texte) => (
-              <TableRow key={texte.uid} data-state={selectedUid === texte.uid ? "selected" : undefined}>
-                <TableCell>
-                  <Checkbox
-                    id={`row-${texte.uid}-checkbox`}
-                    checked={selectedUid === texte.uid}
-                    onCheckedChange={(checked) => handleSelectRow(texte.uid, checked === true)}
-                  />
-                </TableCell>
-                <TableCell>{formatDate(texte.date_creation)}</TableCell>
-                <TableCell className="font-medium">{texte.denomination || 'Inconnue'}</TableCell>
-                <TableCell>{texte.organe_auteur?.libelle_abrege || 'Inconnue'}</TableCell>
-                <TableCell className="max-w-[250px] truncate">{texte.titre_principal_court || 'Inconnu'}</TableCell>
-                <TableCell>{texte.libelle_statut_adoption || 'Inconnu'}</TableCell>
-                <TableCell>
-                  {texte.lien_texte ? (
-                    <a href={texte.lien_texte} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
-                      Voir le texte
-                    </a>
-                  ) : (
-                    'Aucun lien disponible'
-                  )}
-                </TableCell>
+        <div className="overflow-x-auto max-w-full">
+          <Table className="table-fixed">
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-8" />
+                <TableHead className="w-32">Date de création</TableHead>
+                <TableHead className="w-40">Dénomination</TableHead>
+                <TableHead className="w-[200px] min-w-[200px]">Provenance</TableHead>
+                <TableHead className="w-[200px] min-w-[200px]">Titre</TableHead>
+                <TableHead className="w-32">Statut</TableHead>
+                <TableHead className="w-40">Lien Texte</TableHead>
+                <TableHead className="w-32">Statut Lien</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {textes.map((texte) => (
+                <TableRow key={texte.uid} data-state={selectedUid === texte.uid ? "selected" : undefined}>
+                  <TableCell>
+                    <Checkbox
+                      id={`row-${texte.uid}-checkbox`}
+                      checked={selectedUid === texte.uid}
+                      onCheckedChange={(checked) => handleSelectRow(texte.uid, checked === true)}
+                    />
+                  </TableCell>
+
+                  <TableCell>{formatDate(texte.date_creation)}</TableCell>
+
+                  <TableCell className="font-medium truncate max-w-[160px]">
+                    {texte.denomination || 'Inconnue'}
+                  </TableCell>
+
+                  {/* Mise à jour : largeur max 200px, wrap texte avec whitespace-normal et break-words, tooltip au hover */}
+                  <TableCell className="max-w-[200px] whitespace-normal break-words" title={texte.organe_auteur?.libelle || 'Inconnue'}>
+                    {texte.organe_auteur?.libelle || 'Inconnue'}
+                  </TableCell>
+
+                  {/* Mise à jour : largeur max 200px, wrap texte avec whitespace-normal et break-words, tooltip au hover */}
+                  <TableCell className="max-w-[200px] whitespace-normal break-words" title={texte.titre_principal_court || 'Inconnu'}>
+                    {texte.titre_principal_court || 'Inconnu'}
+                  </TableCell>
+
+                  <TableCell className="truncate max-w-[120px]">
+                    {texte.libelle_statut_adoption || 'Inconnu'}
+                  </TableCell>
+
+                  <TableCell>
+                    {texte.lien_texte ? (
+                      <a href={texte.lien_texte} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline truncate max-w-[140px] block">
+                        Voir le texte
+                      </a>
+                    ) : (
+                      'Aucun lien disponible'
+                    )}
+                  </TableCell>
+
+                  <TableCell>
+                    {liensStatus[texte.uid] === 'valide' && <Badge variant="success">Valide</Badge>}
+                    {liensStatus[texte.uid] === 'invalide' && <Badge variant="destructive">Invalide</Badge>}
+                    {liensStatus[texte.uid] === 'en_cours' && <Badge variant="secondary">Vérification...</Badge>}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       )}
 
       {/* Section résumé IA */}
       <div className="mt-8">
         <h2 className="text-xl font-bold mb-2">Résumé IA du texte sélectionné</h2>
 
-        {/* Bouton Perplexity */}
         {selectedTexte && selectedTexte.lien_texte && (
           <TooltipProvider>
             <Tooltip>
