@@ -42,8 +42,8 @@ export default function ResumeIAPage() {
   const [loading, setLoading] = useState(true);
   const [resumeIA, setResumeIA] = useState<string>('');
   const [loadingResume, setLoadingResume] = useState(false);
-
   const [liensStatus, setLiensStatus] = useState<Record<string, 'valide' | 'invalide' | 'en_cours' | null>>({});
+  const [titreDossier, setTitreDossier] = useState<string>('');
 
   const handleDiscussWithAI = (titre: string, lien: string) => {
     const prompt = `Analyse et explique ce texte législatif français pour en discuter avec moi : "${titre}". Voici le lien officiel : ${lien}. Résume les points clés, les objectifs, les impacts concrets et le contexte politique.`;
@@ -76,6 +76,31 @@ export default function ResumeIAPage() {
       }
     };
     fetchTextes();
+  }, [uid]);
+
+  useEffect(() => {
+    const fetchTitreDossier = async () => {
+      const { data, error } = await supabase
+        .from('dossiers_legislatifs')
+        .select('titre')
+        .eq('uid', uid)
+        .limit(1);  // Remplace .single() par .limit(1) pour éviter le bug de coercion, retourne un array (vide ou avec 1 item)
+
+      if (error) {
+        console.error('Erreur fetch titre dossier:', error?.message || error?.details || error || 'Erreur inconnue');
+        setTitreDossier('Titre indisponible');
+        return;
+      }
+
+      // Gère si aucun résultat (array vide) ou résultat valide
+      if (!data || data.length === 0) {
+        setTitreDossier('Titre indisponible');
+        return;
+      }
+
+      setTitreDossier(data[0]?.titre || 'Titre indisponible');
+    };
+    fetchTitreDossier();
   }, [uid]);
 
   useEffect(() => {
@@ -167,7 +192,9 @@ export default function ResumeIAPage() {
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Résumé IA pour le dossier {uid}</h1>
+      <h1 className="text-2xl font-bold mb-4">
+        Résumé IA pour {titreDossier ? titreDossier : `le dossier ${uid}`} {/* Affiche le titre si disponible, sinon fallback à UID pour éviter vide */}
+      </h1>
       <p className="mb-4">Liste des textes liés.</p>
 
       {loading ? (
@@ -200,27 +227,21 @@ export default function ResumeIAPage() {
                       onCheckedChange={(checked) => handleSelectRow(texte.uid, checked === true)}
                     />
                   </TableCell>
-
                   <TableCell>{formatDate(texte.date_creation)}</TableCell>
-
                   <TableCell className="font-medium truncate max-w-[160px]">
                     {texte.denomination || 'Inconnue'}
                   </TableCell>
-
                   {/* Mise à jour : largeur max 200px, wrap texte avec whitespace-normal et break-words, tooltip au hover */}
                   <TableCell className="max-w-[200px] whitespace-normal break-words" title={texte.organe_auteur?.libelle || 'Inconnue'}>
                     {texte.organe_auteur?.libelle || 'Inconnue'}
                   </TableCell>
-
                   {/* Mise à jour : largeur max 200px, wrap texte avec whitespace-normal et break-words, tooltip au hover */}
                   <TableCell className="max-w-[200px] whitespace-normal break-words" title={texte.titre_principal_court || 'Inconnu'}>
                     {texte.titre_principal_court || 'Inconnu'}
                   </TableCell>
-
                   <TableCell className="truncate max-w-[120px]">
                     {texte.libelle_statut_adoption || 'Inconnu'}
                   </TableCell>
-
                   <TableCell>
                     {texte.lien_texte ? (
                       <a href={texte.lien_texte} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline truncate max-w-[140px] block">
@@ -230,7 +251,6 @@ export default function ResumeIAPage() {
                       'Aucun lien disponible'
                     )}
                   </TableCell>
-
                   <TableCell>
                     {liensStatus[texte.uid] === 'valide' && <Badge variant="success">Valide</Badge>}
                     {liensStatus[texte.uid] === 'invalide' && <Badge variant="destructive">Invalide</Badge>}
