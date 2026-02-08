@@ -12,8 +12,8 @@ export default async function DossiersLegislatifsPage() {
   // Sélection ajustée pour inclure UID de l'acteur et du groupe (mais sans liens désormais).
   // Gère les erreurs basiquement pour debug.
   const { data: dossiers, error } = await supabase
-    .from('dossiers_legislatifs')
-    .select('*, initiateur_acteur_ref(uid, nom, prenom, roles_text, groupe:organes(uid, libelle)), actes_legislatifs!actes_legislatifs_dossier_uid_fkey(date_acte)');
+  .from('dossiers_legislatifs')
+  .select('*, initiateur_acteur_ref(uid, nom, prenom, roles_text, groupe:organes(uid, libelle)), actes_legislatifs!actes_legislatifs_dossier_uid_fkey(date_acte), textes_count: textes!dossier_ref(count)');
 
   if (error) {
     return <div>Erreur lors du chargement des données : {error.message}</div>; // Affichage d'erreur simple pour test.
@@ -130,6 +130,11 @@ export default async function DossiersLegislatifsPage() {
                   </div>
                 );
               })()}
+
+<p className="text-xs text-gray-400 text-right mt-2">
+  Debug: Textes disponibles : {dossier.textes_count?.[0]?.count ?? 0}
+</p>
+
             </div>
           </li>
         ))}
