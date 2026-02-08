@@ -341,19 +341,110 @@ def reconstruire_liens_texte(uid, date_depot=None, num_notice=None, date_publica
         return lien
 
 def importer_texte(file_path):
-    """Parser un JSON texte et insérer dans table 'textes' (tolérant aux erreurs)."""
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
-            raw_data = json.load(f)
-        # Gestion si raw_data est list
-        if isinstance(raw_data, list):
-            if raw_data:
-                raw_data = raw_data[0]  # Prend le premier élément
-            else:
-                print(f"Fichier {file_path} est une list vide, skip.")
-                return
+            data = json.load(f)
+        
+        # Check préliminaire : s'assurer que data est un dict valide
+        if not isinstance(data, dict):
+            print(f"Data non valide (pas un dict) pour {file_path}, skip.")
+            return
+        
+        # Nouvelle branche pour gérer les dossiers législatifs et extraire les textes promulgués
+        if 'dossierParlementaire' in data:
+            try:
+                dossier = data['dossierParlementaire']
+                uid_dossier = dossier.get('uid')
+                legislature = int(dossier.get('legislature')) if dossier.get('legislature') else None
+                actes = dossier.get('actesLegislatifs', {}).get('acteLegislatif', [])
+                
+                # Normaliser en liste si ce n'est pas déjà le cas (robustesse)
+                if not isinstance(actes, list):
+                    actes = [actes]
+                
+                for acte in actes:
+                    if acte.get('codeActe') == 'PROM':
+                        prom_acte = acte.get('actesLegislatifs', {}).get('acteLegislatif')
+                        
+                        # Normaliser en dict si liste (assume un seul PROM-PUB)
+                        if isinstance(prom_acte, list):
+                            prom_acte = prom_acte[0] if prom_acte else {}
+                        
+                        if prom_acte.get('codeActe') == 'PROM-PUB':
+                            code_loi = prom_acte.get('codeLoi')
+                            titre_loi = prom_acte.get('titreLoi')
+                            info_jo = prom_acte.get('infoJO', {})
+                            url_legifrance = info_jo.get('urlLegifrance')
+                            date_jo_str = info_jo.get('dateJO')
+                            reference_nor = info_jo.get('referenceNOR')
 
-        texte = raw_data.get('document', {})
+
+                            
+                            # Parsing de la date JO (ex. : "2025-12-27+01:00" -> ignorer timezone et parser YYYY-MM-DD)
+                            date_publication = None
+                            if date_jo_str:
+                                date_jo_str = date_jo_str.split('+')[0]  # Retirer +01:00 si présent
+                                try:
+                                    date_publication = datetime.strptime(date_jo_str, '%Y-%m-%d').isoformat()
+                                except ValueError:
+                                    print(f"Erreur parsing date JO pour dossier {uid_dossier}: {date_jo_str}")
+                            
+                            # Générer UID unique pour le texte promulgué (ex. : LOI2025-1316)
+                            uid_texte = f"LOI{code_loi.replace('-', '')}" if code_loi else None
+                            
+                            if not uid_texte or not url_legifrance:
+                                print(f"Manque codeLoi ou urlLegifrance pour PROM dans {uid_dossier}, skip.")
+                                continue
+                            
+                            # Data pour upsert du texte promulgué
+                            data_texte = {
+                                'uid': uid_texte,
+                                'lien_texte': url_legifrance,
+                                'titre_principal': titre_loi,
+                                'legislature': legislature,
+                                'date_publication': date_publication,
+                                'provenance': 'LEGIFRANCE',  # Ou 'JO' si préféré
+                                'dossier_ref': uid_dossier,
+                                'classification': json.dumps({"code": "LOI", "libelle": "Loi promulguée"}),  # JSONB
+                                'statut_adoption': 'PROMULGUE',
+                                'libelle_statut_adoption': 'Promulguée',
+                                'type_code': 'LOI',
+                                'type_libelle': 'Loi',
+                                # Champs optionnels à None (pas applicables pour lois promulguées)
+                                'date_creation': None,
+                                'date_depot': None,
+                                'denomination': f"Loi n° {code_loi}" if code_loi else None,
+                                'num_notice': reference_nor,  # Utiliser NOR si présent
+                                'organe_auteur_ref': None,
+                                'organe_referent_ref': None,
+                                'depot_amendements': None,
+                                'refs_brutes': json.dumps(info_jo),  # Stocker brut pour référence
+                                'depot_code': None,
+                                'depot_libelle': None,
+                                'auteurs_refs': None,
+                                'rapporteurs_refs': None,
+                                'parent_uid': None,
+                                'titre_principal_court': titre_loi[:100] if titre_loi else None,  # Court-circuit si long
+                            }
+                            
+                            # Upsert dans Supabase
+                            response = supabase.table('textes').upsert(data_texte, on_conflict='uid').execute()
+                            if response.data:
+                                print(f"Texte promulgué {uid_texte} importé avec succès pour dossier {uid_dossier} depuis {file_path}.")
+                            else:
+                                print(f"Erreur import texte promulgué {uid_texte}: {response.error}")
+                            
+                            # Sortir après traitement du PROM (assume un seul par dossier)
+                            break
+                
+                # Si c'est un dossier, on ne continue pas vers le traitement texte standard
+                return  # Skip le reste pour les dossiers
+            
+            except Exception as e:
+                print(f"Erreur traitement dossier {file_path}: {e}")
+                return  # Skip le fichier en cas d'erreur
+
+        texte = data.get('document', {})
         if not texte or not isinstance(texte, dict):
             print(f"Fichier {file_path} invalide (pas de 'document' dict), skip.")
             return
@@ -585,14 +676,22 @@ def importer_texte(file_path):
     except Exception as e:
         print(f"Erreur générale pour {file_path}: {e}")
 
-def importer_textes_from_dir(dossier_textes):
-    """Boucle sur tous les JSON dans le dossier et importe."""
-    for filename in os.listdir(dossier_textes):
-        if filename.endswith('.json'):
-            file_path = os.path.join(dossier_textes, filename)
-            importer_texte(file_path)
+
+def importer_textes_from_dir(dossiers_list):  # Changement : accepte une liste de dossiers
+    """Boucle sur tous les JSON dans les dossiers fournis et importe."""
+    for dossier in dossiers_list:
+        if not os.path.exists(dossier):
+            print(f"Dossier introuvable : {dossier}, skip.")
+            continue
+        for filename in os.listdir(dossier):
+            if filename.endswith('.json'):
+                file_path = os.path.join(dossier, filename)
+                importer_texte(file_path)  # Appel inchangé
 
 # Exécution
 if __name__ == "__main__":
-    dossier_textes = '/Users/algodin/Documents/LoiClair website/Data brute/AN-Jan2026/Dossiers législatifs/document'
-    importer_textes_from_dir(dossier_textes)
+    dossiers_a_importer = [
+        '/Users/algodin/Documents/LoiClair website/Data brute/AN-Jan2026/Dossiers législatifs/document',  # Textes individuels
+        '/Users/algodin/Documents/LoiClair website/Data brute/AN-Jan2026/Dossiers législatifs/dossierParlementaire'  # Dossiers législatifs (pour PROM)
+    ]
+    importer_textes_from_dir(dossiers_a_importer)
