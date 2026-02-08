@@ -2,94 +2,132 @@
 // Page principale pour lister les dossiers législatifs.
 // C'est un Server Component : fetch des données côté serveur pour sécurité et perf.
 // On utilise Tailwind pour un style basique : liste en colonne, cartes sans bordure avec hover.
-// Ajout : filtre par statut_final via searchParams URL (ex. ?statut=adopte).
 
-import { supabase } from '@/lib/supabase'; // Import du client Supabase (créé précédemment).
-import Link from 'next/link'; // Pour les liens internes Next.js (navigation optimisée).
-import { Sparkles, ExternalLink } from 'lucide-react'; // Icônes pour liens (IA et externes).
-import StatutFilter from '@/components/StatutFilter'; // Import du composant filtre (client-side).
+import { supabase } from '@/lib/supabase'; // Import du client Supabase.
+import Link from 'next/link'; // Liens internes Next.js.
+import { Sparkles, ExternalLink } from 'lucide-react'; // Icônes.
+import StatutFilter from '@/components/StatutFilter'; // Filtre statut (client-side).
+import AgeFilter from '@/components/AgeFilter'; // Filtre âge (client-side).
 
-// Signature : garde async, mais await searchParams.
+// Signature avec await pour searchParams (Server Component).
 export default async function DossiersLegislatifsPage({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
-  const resolvedParams = await searchParams; // Await pour unwrap la Promise.
-  
-  // Récupère le param 'statut' (remplace 'searchParams' par 'resolvedParams').
+  const resolvedParams = await searchParams; // Unwrap la Promise.
+
+  // Récupération et validation des params URL.
   const statutFilter = typeof resolvedParams.statut === 'string' ? resolvedParams.statut.toLowerCase() : undefined;
-  
-  // Validation : seulement les valeurs autorisées pour éviter problèmes.
   const validStatuts = ['en_cours', 'promulguee'];
   const statut = validStatuts.includes(statutFilter ?? '') ? statutFilter : undefined;
-  
-  // Fetch des données depuis la table 'dossiers_legislatifs'.
-  // Sélection ajustée pour inclure UID de l'acteur et du groupe.
-  // Ajout : filtre .eq sur statut_final si param présent.
+
+  const ageFilter = typeof resolvedParams.age === 'string' ? resolvedParams.age.toLowerCase() : undefined;
+  const validAges = ['moins_6m', '6m_1a', 'plus_1a'];
+  const age = validAges.includes(ageFilter ?? '') ? ageFilter : undefined;
+
+  // Fetch Supabase avec filtre statut (si présent).
   let query = supabase
     .from('dossiers_legislatifs')
     .select('*, initiateur_acteur_ref(uid, nom, prenom, roles_text, groupe:organes(uid, libelle)), actes_legislatifs!actes_legislatifs_dossier_uid_fkey(date_acte)');
-  
+
   if (statut) {
-    query = query.eq('statut_final', statut); // Filtre exact.
+    query = query.eq('statut_final', statut);
   }
-  
+
   const { data: dossiers, error } = await query;
 
   if (error) {
-    return <div>Erreur lors du chargement des données : {error.message}</div>; // Affichage d'erreur simple pour test.
+    return <div>Erreur lors du chargement des données : {error.message}</div>;
   }
 
   if (!dossiers || dossiers.length === 0) {
-    return <div>Aucun dossier législatif trouvé.</div>; // Cas vide pour test.
+    return <div>Aucun dossier législatif trouvé.</div>;
   }
 
-  // Tri des dossiers par date de démarrage descendante (plus récent en premier).
-  const sortedDossiers = dossiers.sort((a, b) => {
-    // Calcul date min pour A.
+  // Filtrage par âge (post-fetch en JS si param présent).
+  let filteredDossiers = dossiers;
+
+  if (age) {
+    const today = new Date(); // Date actuelle pour calcul jours écoulés.
+
+    filteredDossiers = dossiers.filter((dossier) => {
+      const actes = dossier.actes_legislatifs || [];
+      const actesAvecDates = actes.filter(acte => acte.date_acte && !isNaN(new Date(acte.date_acte).getTime()));
+      const minDate = actesAvecDates.sort((x, y) => new Date(x.date_acte).getTime() - new Date(y.date_acte).getTime())[0]?.date_acte;
+
+      if (!minDate) return false; // Ignore si pas de date valide.
+
+      const startDate = new Date(minDate);
+      const daysElapsed = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+
+      if (age === 'moins_6m') return daysElapsed < 180;
+      if (age === '6m_1a') return daysElapsed >= 180 && daysElapsed <= 365;
+      if (age === 'plus_1a') return daysElapsed > 365;
+      return false; // Fallback.
+    });
+  }
+
+  // Tri par date de démarrage descendante (plus récent en premier).
+  const sortedDossiers = filteredDossiers.sort((a, b) => {
     const actesA = a.actes_legislatifs || [];
     const actesAvecDatesA = actesA.filter(acte => acte.date_acte && !isNaN(new Date(acte.date_acte).getTime()));
     const minDateA = actesAvecDatesA.sort((x, y) => new Date(x.date_acte).getTime() - new Date(y.date_acte).getTime())[0]?.date_acte;
-    const timeA = minDateA ? new Date(minDateA).getTime() : 0; // 0 si inconnue (ira en fin de liste).
+    const timeA = minDateA ? new Date(minDateA).getTime() : 0;
 
-    // Calcul date min pour B.
     const actesB = b.actes_legislatifs || [];
     const actesAvecDatesB = actesB.filter(acte => acte.date_acte && !isNaN(new Date(acte.date_acte).getTime()));
     const minDateB = actesAvecDatesB.sort((x, y) => new Date(x.date_acte).getTime() - new Date(y.date_acte).getTime())[0]?.date_acte;
     const timeB = minDateB ? new Date(minDateB).getTime() : 0;
 
-    return timeB - timeA; // Descendante : B avant A si plus récente.
+    return timeB - timeA;
   });
 
   return (
-    <div className="container mx-auto p-4"> {/* Conteneur centré avec padding */}
-      <h1 className="text-2xl font-bold mb-4">Liste des Dossiers Législatifs</h1> {/* Titre de page */}
-      
-      {/* Ajout du filtre : label + dropdown (composant client) */}
-      <div className="mb-4 flex items-center">
-        <StatutFilter />
-      </div>
-      
-      <ul className="space-y-2"> {/* Liste en colonne avec espacement vertical */}
-        {sortedDossiers.map((dossier) => (
-          <li key={dossier.uid}> {/* Clé unique basée sur uid */}
-            <div
-              className="p-4 bg-white rounded-lg hover:bg-blue-50 transition-colors duration-200" // Carte : fond blanc, ombre légère, hover augmente l'ombre, arrondi, sans bordure explicite.
-            >
-              <h2 className="text-l font-semibold mb-3">{dossier.titre}</h2> {/* Titre du dossier */}
+    <div className="container mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-4">Liste des Dossiers Législatifs</h1>
 
-              {/* Ligne sous le titre : procédure, initiateur, rôle, organe, badge statut */}
-              <div className="flex items-center space-x-4 text-sm text-gray-600 mt-1"> {/* Espacement accru */}
-                <span className="text-red-800 uppercase px-2">{dossier.procedure_libelle}</span> {/* Padding L/R */}
+      <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+        Un dossier législatif, c’est le parcours complet d’une proposition ou d’un projet de loi, depuis son dépôt jusqu’à sa promulgation (ou son abandon). On y trouve tous les textes, débats, votes et étapes réelles, pas seulement la théorie.
+      </p>
+
+      <p className="text-xs text-muted-foreground mb-8">
+        Données de la 17ième legislature provenant de{' '}
+        <a href="https://data.assemblee-nationale.fr/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+          data.assemblee-nationale.fr
+        </a>
+      </p>
+
+      {/* Filtres (avec labels et gap pour espacement) */}
+      <div className="mb-4 flex items-center gap-4">
+        <div className="flex items-center">
+          <StatutFilter />
+        </div>
+        <div className="flex items-center">
+          <AgeFilter />
+        </div>
+      </div>
+
+      <div className="mb-4 text-sm text-gray-600">
+        {sortedDossiers.length} dossier{sortedDossiers.length > 1 ? 's' : ''} trouvé{sortedDossiers.length > 1 ? 's' : ''}.
+      </div>
+
+      <ul className="space-y-2">
+        {sortedDossiers.map((dossier) => (
+          <li key={dossier.uid}>
+            <div className="p-4 bg-white rounded-lg hover:bg-blue-50 transition-colors duration-200">
+              <h2 className="text-l font-semibold mb-3">{dossier.titre}</h2>
+
+              <div className="flex items-center space-x-4 text-sm text-gray-600 mt-1">
+                <span className="text-red-800 uppercase px-2">{dossier.procedure_libelle}</span>
                 {dossier.initiateur_acteur_ref && (
                   <>
                     <span>•</span>
-                    <span className="px-2">{`${dossier.initiateur_acteur_ref.prenom} ${dossier.initiateur_acteur_ref.nom}`}</span> {/* Padding L/R */}
+                    <span className="px-2">{`${dossier.initiateur_acteur_ref.prenom} ${dossier.initiateur_acteur_ref.nom}`}</span>
                     <span>•</span>
                     <span className="px-2">{dossier.initiateur_acteur_ref.roles_text ?? 'Non spécifié'}</span>
                   </>
                 )}
                 {dossier.initiateur_acteur_ref?.groupe && (
                   <>
-                  <span>•</span>
-                    <span className="px-2">{dossier.initiateur_acteur_ref.groupe.libelle ?? 'Mandat terminé'}</span> {/* Padding L/R */}
+                    <span>•</span>
+                    <span className="px-2">{dossier.initiateur_acteur_ref.groupe.libelle ?? 'Mandat terminé'}</span>
                   </>
                 )}
                 <span
@@ -103,7 +141,6 @@ export default async function DossiersLegislatifsPage({ searchParams }: { search
                 </span>
               </div>
 
-              {/* Ligne des liens : Résumé et discussion IA, AN, Sénat, Légifrance avec icônes */}
               <div className="flex items-center space-x-4 text-sm mt-2">
                 <Link href={`/dossiers-legislatifs/${dossier.uid}/resume-ia`} className="flex items-center text-blue-500 hover:underline px-2">
                   <Sparkles className="w-4 h-3 mr-2" /> Résumé et discussion IA
@@ -125,31 +162,27 @@ export default async function DossiersLegislatifsPage({ searchParams }: { search
                 )}
               </div>
 
-              {/* Ligne date de dépôt et jours écoulés */}
               {(() => {
-                // Calcul de la date de démarrage : filtrer actes avec date_acte valide, trier ascending, prendre le premier.
-                const actes = dossier.actes_legislatifs || []; // Array nested des actes (ou vide si null).
-                const actesAvecDates = actes.filter(acte => acte.date_acte && !isNaN(new Date(acte.date_acte).getTime())); // Filtre dates valides (non null et parsables).
-                const sortedActes = actesAvecDates.sort((a, b) => new Date(a.date_acte).getTime() - new Date(b.date_acte).getTime()); // Tri ascending sur valides.
-                const premiereDate = sortedActes[0]?.date_acte; // Date du premier acte valide.
+                const actes = dossier.actes_legislatifs || [];
+                const actesAvecDates = actes.filter(acte => acte.date_acte && !isNaN(new Date(acte.date_acte).getTime()));
+                const sortedActes = actesAvecDates.sort((a, b) => new Date(a.date_acte).getTime() - new Date(b.date_acte).getTime());
+                const premiereDate = sortedActes[0]?.date_acte;
 
                 if (!premiereDate) {
                   return <p className="text-gray-600 text-sm mt-2">Date de dépôt : Inconnue</p>;
                 }
 
-                // Formatage en français (ex. : "5 février 2026").
                 const formattedDate = new Date(premiereDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 
-                // Calcul du nombre de jours écoulés depuis la date de démarrage (jusqu'à aujourd'hui).
-                const today = new Date(); // Date actuelle (côté serveur, mais proche du réel).
-                const startDate = new Date(premiereDate); // Conversion de la timestamp.
-                const daysElapsed = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)); // Diff en ms, divisé par ms/jour, arrondi bas.
-                const daysText = daysElapsed >= 0 ? `Depuis ${daysElapsed} jour${daysElapsed > 1 ? 's' : ''}` : 'Date future'; // Gère pluriel et cas rare (future).
+                const today = new Date();
+                const startDate = new Date(premiereDate);
+                const daysElapsed = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+                const daysText = daysElapsed >= 0 ? `Depuis ${daysElapsed} jour${daysElapsed > 1 ? 's' : ''}` : 'Date future';
 
                 return (
-                  <div className="flex items-center space-x-4 text-sm text-gray-600 mt-2"> {/* Espacement accru */}
-                    <p className="px-2">Date de dépôt : {formattedDate}</p> {/* Padding L/R */}
-                    <p className="px-2">{daysText}</p> {/* Padding L/R */}
+                  <div className="flex items-center space-x-4 text-sm text-gray-600 mt-2">
+                    <p className="px-2">Date de dépôt : {formattedDate}</p>
+                    <p className="px-2">{daysText}</p>
                   </div>
                 );
               })()}
