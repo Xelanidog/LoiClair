@@ -23,10 +23,10 @@ export default async function DossiersLegislatifsPage({ searchParams }: { search
   const age = validAges.includes(ageFilter ?? '') ? ageFilter : undefined;
 
   // Fetch Supabase avec filtre statut (si présent).
-  let query = supabase
-    .from('dossiers_legislatifs')
-    .select('*, initiateur_acteur_ref(uid, nom, prenom, roles_text, groupe:organes(uid, libelle)), actes_legislatifs!actes_legislatifs_dossier_uid_fkey(date_acte), textes_count: textes!dossier_ref(count)');
-
+let query = supabase
+  .from('dossiers_legislatifs')
+  .select('*, initiateur_acteur_ref(uid, nom, prenom, roles_text, groupe:organes(uid, libelle)), actes_legislatifs!actes_legislatifs_dossier_uid_fkey(date_acte), textes_count: textes!dossier_ref(count), date_promulgation');  // Ajout de date_promulgation
+  
   if (statut) {
     query = query.eq('statut_final', statut);
   }
@@ -162,30 +162,48 @@ export default async function DossiersLegislatifsPage({ searchParams }: { search
                 )}
               </div>
 
-              {(() => {
-                const actes = dossier.actes_legislatifs || [];
-                const actesAvecDates = actes.filter(acte => acte.date_acte && !isNaN(new Date(acte.date_acte).getTime()));
-                const sortedActes = actesAvecDates.sort((a, b) => new Date(a.date_acte).getTime() - new Date(b.date_acte).getTime());
-                const premiereDate = sortedActes[0]?.date_acte;
+{(() => {
+  // Extraction commune de la date de dépôt (première acte valide)
+  const actes = dossier.actes_legislatifs || [];
+  const actesAvecDates = actes.filter(acte => acte.date_acte && !isNaN(new Date(acte.date_acte).getTime()));
+  const sortedActes = actesAvecDates.sort((a, b) => new Date(a.date_acte).getTime() - new Date(b.date_acte).getTime());
+  const premiereDate = sortedActes[0]?.date_acte;
 
-                if (!premiereDate) {
-                  return <p className="text-gray-600 text-sm mt-2">Date de dépôt : Inconnue</p>;
-                }
+  if (!premiereDate) {
+    return <p className="text-gray-600 text-sm mt-2">Date de dépôt : Inconnue</p>;
+  }
 
-                const formattedDate = new Date(premiereDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  const formattedDepotDate = new Date(premiereDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 
-                const today = new Date();
-                const startDate = new Date(premiereDate);
-                const daysElapsed = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-                const daysText = daysElapsed >= 0 ? `Depuis ${daysElapsed} jour${daysElapsed > 1 ? 's' : ''}` : 'Date future';
+  if (dossier.statut_final === 'promulguee' && dossier.date_promulgation) {
+    // Cas promulgué : jours entre dépôt et promulgation
+    const startDate = new Date(premiereDate);
+    const promulDate = new Date(dossier.date_promulgation);
+    const daysElapsed = Math.floor((promulDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    const formattedPromulDate = promulDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+    const daysText = daysElapsed >= 0 ? `après ${daysElapsed} jour${daysElapsed > 1 ? 's' : ''}` : 'Date invalide';
 
-                return (
-                  <div className="flex items-center space-x-4 text-sm text-gray-600 mt-2">
-                    <p className="px-2">Date de dépôt : {formattedDate}</p>
-                    <p className="px-2">{daysText}</p>
-                  </div>
-                );
-              })()}
+    return (
+      <div className="flex items-center space-x-4 text-sm text-gray-600 mt-2">
+        <p className="px-2">Date de dépôt : {formattedDepotDate}</p>
+        <p className="px-2">Promulguée le {formattedPromulDate} {daysText}</p>
+      </div>
+    );
+  } else {
+    // Cas par défaut (en cours) : jours depuis dépôt jusqu'à aujourd'hui
+    const today = new Date();
+    const startDate = new Date(premiereDate);
+    const daysElapsed = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    const daysText = daysElapsed >= 0 ? `Depuis ${daysElapsed} jour${daysElapsed > 1 ? 's' : ''}` : 'Date future';
+
+    return (
+      <div className="flex items-center space-x-4 text-sm text-gray-600 mt-2">
+        <p className="px-2">Date de dépôt : {formattedDepotDate}</p>
+        <p className="px-2">{daysText}</p>
+      </div>
+    );
+  }
+})()}
 
               <p className="text-xs text-gray-400 text-right mt-2">
   Debug: Textes disponibles : {dossier.textes_count?.[0]?.count ?? 0}
