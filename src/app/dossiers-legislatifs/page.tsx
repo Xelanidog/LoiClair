@@ -2,18 +2,36 @@
 // Page principale pour lister les dossiers législatifs.
 // C'est un Server Component : fetch des données côté serveur pour sécurité et perf.
 // On utilise Tailwind pour un style basique : liste en colonne, cartes sans bordure avec hover.
+// Ajout : filtre par statut_final via searchParams URL (ex. ?statut=adopte).
 
 import { supabase } from '@/lib/supabase'; // Import du client Supabase (créé précédemment).
 import Link from 'next/link'; // Pour les liens internes Next.js (navigation optimisée).
 import { Sparkles, ExternalLink } from 'lucide-react'; // Icônes pour liens (IA et externes).
+import StatutFilter from '@/components/StatutFilter'; // Import du composant filtre (client-side).
 
-export default async function DossiersLegislatifsPage() {
+// Signature : garde async, mais await searchParams.
+export default async function DossiersLegislatifsPage({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
+  const resolvedParams = await searchParams; // Await pour unwrap la Promise.
+  
+  // Récupère le param 'statut' (remplace 'searchParams' par 'resolvedParams').
+  const statutFilter = typeof resolvedParams.statut === 'string' ? resolvedParams.statut.toLowerCase() : undefined;
+  
+  // Validation : seulement les valeurs autorisées pour éviter problèmes.
+  const validStatuts = ['en_cours', 'promulguee'];
+  const statut = validStatuts.includes(statutFilter ?? '') ? statutFilter : undefined;
+  
   // Fetch des données depuis la table 'dossiers_legislatifs'.
-  // Sélection ajustée pour inclure UID de l'acteur et du groupe (mais sans liens désormais).
-  // Gère les erreurs basiquement pour debug.
-  const { data: dossiers, error } = await supabase
-  .from('dossiers_legislatifs')
-  .select('*, initiateur_acteur_ref(uid, nom, prenom, roles_text, groupe:organes(uid, libelle)), actes_legislatifs!actes_legislatifs_dossier_uid_fkey(date_acte), textes_count: textes!dossier_ref(count)');
+  // Sélection ajustée pour inclure UID de l'acteur et du groupe.
+  // Ajout : filtre .eq sur statut_final si param présent.
+  let query = supabase
+    .from('dossiers_legislatifs')
+    .select('*, initiateur_acteur_ref(uid, nom, prenom, roles_text, groupe:organes(uid, libelle)), actes_legislatifs!actes_legislatifs_dossier_uid_fkey(date_acte)');
+  
+  if (statut) {
+    query = query.eq('statut_final', statut); // Filtre exact.
+  }
+  
+  const { data: dossiers, error } = await query;
 
   if (error) {
     return <div>Erreur lors du chargement des données : {error.message}</div>; // Affichage d'erreur simple pour test.
@@ -43,6 +61,12 @@ export default async function DossiersLegislatifsPage() {
   return (
     <div className="container mx-auto p-4"> {/* Conteneur centré avec padding */}
       <h1 className="text-2xl font-bold mb-4">Liste des Dossiers Législatifs</h1> {/* Titre de page */}
+      
+      {/* Ajout du filtre : label + dropdown (composant client) */}
+      <div className="mb-4 flex items-center">
+        <StatutFilter />
+      </div>
+      
       <ul className="space-y-2"> {/* Liste en colonne avec espacement vertical */}
         {sortedDossiers.map((dossier) => (
           <li key={dossier.uid}> {/* Clé unique basée sur uid */}
@@ -70,9 +94,8 @@ export default async function DossiersLegislatifsPage() {
                 )}
                 <span
                   className={`ml-2 px-2 py-1 rounded-full text-xs font-semibold ${
-                    dossier.statut_final === 'adopte' ? 'bg-green-100 text-green-800' :
+                    dossier.statut_final === 'promulguee' ? 'bg-green-100 text-green-800' :
                     dossier.statut_final === 'en_cours' ? 'bg-yellow-100 text-yellow-800' :
-                    dossier.statut_final === 'rejete' ? 'bg-red-100 text-red-800' :
                     'bg-gray-100 text-gray-800'
                   }`}
                 >
@@ -130,11 +153,6 @@ export default async function DossiersLegislatifsPage() {
                   </div>
                 );
               })()}
-
-<p className="text-xs text-gray-400 text-right mt-2">
-  Debug: Textes disponibles : {dossier.textes_count?.[0]?.count ?? 0}
-</p>
-
             </div>
           </li>
         ))}
