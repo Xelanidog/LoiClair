@@ -25,7 +25,7 @@ export default async function DossiersLegislatifsPage({ searchParams }: { search
   // Fetch Supabase avec filtre statut (si présent).
   let query = supabase
     .from('dossiers_legislatifs')
-    .select('*, initiateur_acteur_ref(uid, nom, prenom, roles_text, groupe:organes(uid, libelle)), actes_legislatifs!actes_legislatifs_dossier_uid_fkey(date_acte)');
+    .select('*, initiateur_acteur_ref(uid, nom, prenom, roles_text, groupe:organes(uid, libelle)), actes_legislatifs!actes_legislatifs_dossier_uid_fkey(date_acte), textes_count: textes!dossier_ref(count)');
 
   if (statut) {
     query = query.eq('statut_final', statut);
@@ -186,6 +186,14 @@ export default async function DossiersLegislatifsPage({ searchParams }: { search
                   </div>
                 );
               })()}
+
+              <p className="text-xs text-gray-400 text-right mt-2">
+  Debug: Textes disponibles : {dossier.textes_count?.[0]?.count ?? 0}
+</p>
+<p className="text-xs text-gray-400 text-right mt-1"> {/* mt-1 pour un petit espacement */}
+  Debug: UID du dossier : {dossier.uid}
+</p>
+
             </div>
           </li>
         ))}
