@@ -56,7 +56,7 @@ export default function ResumeIAPage() {
       setLoading(true);
       const { data, error } = await supabase
         .from('textes')
-        .select('uid, date_creation, denomination, titre_principal_court, lien_texte, libelle_statut_adoption, organe_auteur:organe_auteur_ref(libelle)')
+        .select('uid, date_creation, date_publication, denomination, titre_principal_court, lien_texte, libelle_statut_adoption, organe_auteur:organe_auteur_ref(libelle)')
         .eq('dossier_ref', uid)
         .order('date_creation', { ascending: true });
 
@@ -183,10 +183,11 @@ export default function ResumeIAPage() {
     }
   };
 
-  const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return 'Inconnue';
-    return new Date(dateStr).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-  };
+  const formatDate = (dateCreation: string | null, datePublication: string | null) => {
+  const dateToUse = dateCreation || datePublication;
+  if (!dateToUse) return 'Inconnue';
+  return new Date(dateToUse).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+};
 
   const selectedTexte = selectedUid ? textes.find((t) => t.uid === selectedUid) : null;
 
@@ -227,7 +228,7 @@ export default function ResumeIAPage() {
                       onCheckedChange={(checked) => handleSelectRow(texte.uid, checked === true)}
                     />
                   </TableCell>
-                  <TableCell>{formatDate(texte.date_creation)}</TableCell>
+                  <TableCell>{formatDate(texte.date_creation, texte.date_publication)}</TableCell>
                   <TableCell className="font-medium truncate max-w-[160px]">
                     {texte.denomination || 'Inconnue'}
                   </TableCell>
