@@ -166,7 +166,7 @@ let query = supabase
               </div>
 
               <div className="flex items-center space-x-4 text-sm mt-2">
-                <Link href={`/dossiers-legislatifs/${dossier.uid}/resume-ia`} className="flex items-center text-blue-500 hover:underline px-2">
+                <Link href={`/dossiers-legislatifs/${dossier.uid}/resume-ia`} target="_blank" className="flex items-center text-blue-500 hover:underline px-2">
                   <Sparkles className="w-4 h-3 mr-2" /> Résumé et discussion IA
                 </Link>
                 {dossier.lien_an && (
