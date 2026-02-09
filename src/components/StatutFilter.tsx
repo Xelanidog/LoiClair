@@ -14,11 +14,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"; // Import Shadcn Select (chemin standard si installé via Shadcn CLI).
+import { useEffect } from 'react'; // Pour écouter les changements d'URL.
 
 export default function StatutFilter() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [selectedStatut, setSelectedStatut] = useState(searchParams.get('statut') || 'tous');
+
+  useEffect(() => {
+  // Sync l'état local avec l'URL actuelle (reset à 'tous' si param absent).
+  const currentValue = searchParams.get('statut') || 'tous'; // Remplace 'statut' par 'age' ou 'type' selon le filtre.
+  setSelectedStatut(currentValue); // Met à jour l'état si URL changée (ex. : après reset).
+}, [searchParams]); // Dépend de searchParams pour re-run sur changements.
 
   const handleChange = (value: string) => {
     const newStatut = value === 'tous' ? '' : value.toLowerCase();

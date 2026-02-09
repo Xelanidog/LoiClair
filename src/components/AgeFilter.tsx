@@ -14,11 +14,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useEffect } from 'react'; // Pour écouter les changements d'URL.
 
 export default function AgeFilter() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [selectedAge, setSelectedAge] = useState(searchParams.get('age') || 'tous');
+
+  useEffect(() => {
+  // Sync l'état local avec l'URL actuelle (reset à 'tous' si param absent).
+  const currentValue = searchParams.get('age') || 'tous'; // Remplace 'statut' par 'age' ou 'type' selon le filtre.
+  setSelectedAge(currentValue); // Met à jour l'état si URL changée (ex. : après reset).
+}, [searchParams]); // Dépend de searchParams pour re-run sur changements.
 
   const handleChange = (value: string) => {
     const newAge = value === 'tous' ? '' : value.toLowerCase();

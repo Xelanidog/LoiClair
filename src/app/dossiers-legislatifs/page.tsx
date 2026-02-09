@@ -9,6 +9,7 @@ import { Sparkles, ExternalLink } from 'lucide-react'; // Icônes.
 import StatutFilter from '@/components/StatutFilter'; // Filtre statut (client-side).
 import AgeFilter from '@/components/AgeFilter'; // Filtre âge (client-side).
 import TypeFilter from '@/components/TypeFilter';
+import ResetButton from '@/components/ResetButton';
 
 // Signature avec await pour searchParams (Server Component).
 export default async function DossiersLegislatifsPage({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
@@ -120,6 +121,7 @@ let query = supabase
           <StatutFilter />
           <AgeFilter />
           <TypeFilter uniqueTypes={uniqueTypes} procedureMap={procedureMap} />
+          <ResetButton />
                 </div>
 
       <div className="mb-4 text-sm text-gray-600">
