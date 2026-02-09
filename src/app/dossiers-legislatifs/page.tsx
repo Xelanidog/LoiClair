@@ -8,6 +8,7 @@ import Link from 'next/link'; // Liens internes Next.js.
 import { Sparkles, ExternalLink } from 'lucide-react'; // Icônes.
 import StatutFilter from '@/components/StatutFilter'; // Filtre statut (client-side).
 import AgeFilter from '@/components/AgeFilter'; // Filtre âge (client-side).
+import TypeFilter from '@/components/TypeFilter';
 
 // Signature avec await pour searchParams (Server Component).
 export default async function DossiersLegislatifsPage({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
@@ -22,6 +23,30 @@ export default async function DossiersLegislatifsPage({ searchParams }: { search
   const validAges = ['moins_6m', '6m_1a', 'plus_1a'];
   const age = validAges.includes(ageFilter ?? '') ? ageFilter : undefined;
 
+  const typeFilter = typeof resolvedParams.type === 'string' ? resolvedParams.type.toLowerCase() : undefined;
+
+
+  // Fetch des types uniques pour le filtre (distinct sur procedure_libelle, ignore null).
+  const { data: uniqueProcedures } = await supabase
+  .from('dossiers_legislatifs')
+  .select('procedure_libelle')
+  .not('procedure_libelle', 'is', null); // Ignore les null.
+
+// Extraction des valeurs uniques et tri alphabétique.
+const uniqueTypes = [...new Set(uniqueProcedures?.map(item => item.procedure_libelle) || [])].sort();
+
+// Génère le mapping slug -> valeur DB dynamiquement.
+const procedureMap: { [key: string]: string } = {};
+uniqueTypes.forEach(type => {
+  const slug = type.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // Retire accents.
+    .replace(/[^a-z0-9]+/g, '_') // Remplace espaces/punctuation par '_'.
+    .replace(/_+$/, ''); // Nettoie fin.
+  procedureMap[slug] = type;
+});
+
+const procedure = typeFilter ? procedureMap[typeFilter] : undefined;
+
   // Fetch Supabase avec filtre statut (si présent).
 let query = supabase
   .from('dossiers_legislatifs')
@@ -31,15 +56,11 @@ let query = supabase
     query = query.eq('statut_final', statut);
   }
 
+  if (procedure) {
+  query = query.eq('procedure_libelle', procedure);
+}
+
   const { data: dossiers, error } = await query;
-
-  if (error) {
-    return <div>Erreur lors du chargement des données : {error.message}</div>;
-  }
-
-  if (!dossiers || dossiers.length === 0) {
-    return <div>Aucun dossier législatif trouvé.</div>;
-  }
 
   // Filtrage par âge (post-fetch en JS si param présent).
   let filteredDossiers = dossiers;
@@ -96,17 +117,18 @@ let query = supabase
 
       {/* Filtres (avec labels et gap pour espacement) */}
       <div className="mb-4 flex items-center gap-4">
-        <div className="flex items-center">
           <StatutFilter />
-        </div>
-        <div className="flex items-center">
           <AgeFilter />
-        </div>
-      </div>
+          <TypeFilter uniqueTypes={uniqueTypes} procedureMap={procedureMap} />
+                </div>
 
       <div className="mb-4 text-sm text-gray-600">
         {sortedDossiers.length} dossier{sortedDossiers.length > 1 ? 's' : ''} trouvé{sortedDossiers.length > 1 ? 's' : ''}.
       </div>
+
+{sortedDossiers.length === 0 ? (
+  <div className="text-center text-gray-600 mb-4">Aucun dossier législatif trouvé avec ces filtres.</div>
+) : (
 
       <ul className="space-y-2">
         {sortedDossiers.map((dossier) => (
@@ -216,6 +238,7 @@ let query = supabase
           </li>
         ))}
       </ul>
+      )}
     </div>
   );
 }
