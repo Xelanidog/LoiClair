@@ -52,8 +52,6 @@ uniqueGroups.forEach(group => {
 
   const groupeFilter = typeof resolvedParams.groupe === 'string' ? resolvedParams.groupe.toLowerCase() : undefined;
   const groupe = groupeFilter ? groupMap[groupeFilter] : undefined; // Utilise le map pour matcher la valeur DB exacte. 
-  console.log('Groupe filter from URL:', groupeFilter);
-console.log('Mapped groupe value:', groupe);
 
 
   // Fetch des types uniques pour le filtre (distinct sur procedure_libelle, ignore null).
