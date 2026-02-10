@@ -9,6 +9,7 @@ import { Sparkles, ExternalLink } from 'lucide-react'; // Icônes.
 import StatutFilter from '@/components/StatutFilter'; // Filtre statut (client-side).
 import AgeFilter from '@/components/AgeFilter'; // Filtre âge (client-side).
 import TypeFilter from '@/components/TypeFilter';
+import GroupeFilter from '@/components/GroupeFilter';
 import ResetButton from '@/components/ResetButton';
 
 // Signature avec await pour searchParams (Server Component).
@@ -25,6 +26,34 @@ export default async function DossiersLegislatifsPage({ searchParams }: { search
   const age = validAges.includes(ageFilter ?? '') ? ageFilter : undefined;
 
   const typeFilter = typeof resolvedParams.type === 'string' ? resolvedParams.type.toLowerCase() : undefined;
+
+
+
+  // Fetch des groupes uniques pour le filtre (distinct sur organes.libelle, via joins sur initiateur_acteur_ref et acteurs.groupe).
+const { data: uniqueGroupsData } = await supabase
+  .from('dossiers_legislatifs')
+  .select('initiateur_acteur_ref!inner(groupe:organes(libelle))') // Join interne pour filtrer seulement les initiateurs avec groupe valide.
+  .not('initiateur_acteur_ref', 'is', null); // Ignore les dossiers sans initiateur.
+
+// Extraction des libellés uniques (ignore null/undefined) et tri alphabétique.
+const uniqueGroups = [...new Set(
+  uniqueGroupsData?.map(item => item.initiateur_acteur_ref?.groupe?.libelle).filter(Boolean) || []
+)].sort();
+
+// Génère le mapping slug -> libelle groupe dynamiquement.
+const groupMap: { [key: string]: string } = {};
+uniqueGroups.forEach(group => {
+  const slug = group.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // Retire accents.
+    .replace(/[^a-z0-9]+/g, '_') // Remplace espaces/punctuation par '_'.
+    .replace(/_+$/, ''); // Nettoie fin.
+  groupMap[slug] = group;
+});
+
+  const groupeFilter = typeof resolvedParams.groupe === 'string' ? resolvedParams.groupe.toLowerCase() : undefined;
+  const groupe = groupeFilter ? groupMap[groupeFilter] : undefined; // Utilise le map pour matcher la valeur DB exacte. 
+  console.log('Groupe filter from URL:', groupeFilter);
+console.log('Mapped groupe value:', groupe);
 
 
   // Fetch des types uniques pour le filtre (distinct sur procedure_libelle, ignore null).
@@ -61,10 +90,20 @@ let query = supabase
   query = query.eq('procedure_libelle', procedure);
 }
 
+
+
   const { data: dossiers, error } = await query;
 
+
+    let filteredByGroupe = dossiers || []; // Start with all fetched.
+if (groupe) {
+  filteredByGroupe = filteredByGroupe.filter(dossier => 
+    dossier.initiateur_acteur_ref?.groupe?.libelle === groupe // Match exact sur libelle (case-sensitive, ajuste si besoin avec .toLowerCase()).
+  );
+}
+
   // Filtrage par âge (post-fetch en JS si param présent).
-  let filteredDossiers = dossiers;
+  let filteredDossiers = filteredByGroupe;
 
   if (age) {
     const today = new Date(); // Date actuelle pour calcul jours écoulés.
@@ -85,6 +124,8 @@ let query = supabase
       return false; // Fallback.
     });
   }
+
+
 
   // Tri par date de démarrage descendante (plus récent en premier).
   const sortedDossiers = filteredDossiers.sort((a, b) => {
@@ -121,6 +162,7 @@ let query = supabase
           <StatutFilter />
           <AgeFilter />
           <TypeFilter uniqueTypes={uniqueTypes} procedureMap={procedureMap} />
+          <GroupeFilter uniqueGroups={uniqueGroups} groupMap={groupMap} />
           <ResetButton />
                 </div>
 
