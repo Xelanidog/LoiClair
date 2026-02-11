@@ -8,7 +8,6 @@ import { generateText } from 'ai'; // Core AI SDK (Vercel) pour appels IA unifi�
 import { createXai } from '@ai-sdk/xai'; // Provider xAI/Grok spécifique
 import * as cheerio from 'cheerio'; // Parser HTML ESM
 import { SYSTEM_PROMPT_RESUME_LOI, USER_PROMPT_TEMPLATE_RESUME_LOI, PARAMS_RESUME_LOI, MODEL_RESUME_LOI, MAX_INPUT_CHARS_RESUME_LOI } from '@/lib/prompts'; // Centralisés.
-import { SYSTEM_PROMPT_RESUME_CHRONO, USER_PROMPT_TEMPLATE_RESUME_CHRONO, PARAMS_RESUME_CHRONO, MODEL_RESUME_CHRONO, MAX_INPUT_CHARS_RESUME_CHRONO } from '@/lib/prompts';
 
 // Crée le provider xAI avec ta clé (de .env.local).
 const xai = createXai({ apiKey: process.env.XAI_API_KEY });
@@ -52,29 +51,10 @@ async function fetchAndExtractText(lien: string): Promise<string> {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { chronologie_complete, titre_texte, lien } = body;
+    const { titre_texte, lien } = body;
 
     let lienUtilise = lien; // Priorité au lien direct.
     let texteComplet = '';
-
-    // Mode legacy si pas de lien direct : extraire lien de chrono.
-    if (!lienUtilise && chronologie_complete) {
-      const chronologie = JSON.parse(chronologie_complete);
-      const etapesAvecTextes = chronologie
-        .filter((etape: any) => etape.infos_brutes?.liens_textes && Object.keys(etape.infos_brutes.liens_textes).length > 0)
-        .sort((a: any, b: any) => new Date(b.infos_brutes.date).getTime() - new Date(a.infos_brutes.date).getTime());
-
-      if (etapesAvecTextes.length === 0) {
-        return NextResponse.json({ error: 'Aucun texte récent trouvé pour cette loi.' }, { status: 404 });
-      }
-
-      const dernierTexte = etapesAvecTextes[0].infos_brutes.liens_textes[Object.keys(etapesAvecTextes[0].infos_brutes.liens_textes)[0]];
-      lienUtilise = dernierTexte.html || dernierTexte.pdf;
-
-      if (!lienUtilise || !lienUtilise.startsWith('http')) {
-        throw new Error('Lien texte invalide ou manquant.');
-      }
-    }
 
     // Fetch et extract si lien disponible.
     if (lienUtilise) {
@@ -96,26 +76,8 @@ export async function POST(request: NextRequest) {
       ...PARAMS_RESUME_LOI,
     });
 
-    // Résumé chrono optionnel.
-    let resumeChrono = '';
-    if (chronologie_complete) {
-      let chronoTronquee = chronologie_complete.slice(0, MAX_INPUT_CHARS_RESUME_CHRONO);
-      if (chronoTronquee.length >= 50) {
-        const { text } = await generateText({
-          model: xai(MODEL_RESUME_CHRONO),
-          system: SYSTEM_PROMPT_RESUME_CHRONO,
-          prompt: USER_PROMPT_TEMPLATE_RESUME_CHRONO
-            .replace('{titre_texte}', titre_texte || 'Titre inconnu')
-            .replace('{chronologie_complete}', chronoTronquee || 'Chronologie non disponible'),
-          ...PARAMS_RESUME_CHRONO,
-        });
-        resumeChrono = text;
-      } else {
-        console.warn(`Chrono incomplète pour titre "${titre_texte}" – résumé chrono skipped.`);
-      }
-    }
 
-    return NextResponse.json({ resume, resumeChrono, lien: lienUtilise });
+    return NextResponse.json({ resume, lien: lienUtilise });
   } catch (error: any) {
     console.error(`Erreur génération résumé:`, error.message);
     return NextResponse.json({ error: 'Désolé, une erreur est survenue lors de la génération du résumé IA. Réessayez plus tard.' }, { status: 500 });
