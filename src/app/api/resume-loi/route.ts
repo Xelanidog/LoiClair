@@ -4,7 +4,7 @@
 // Optimisations : Factorisation du fetch/extract ; imports ESM ; tout server-side pour sécurité.
 // ──────────────────────────────────────────────────────────────────────────────
 import { NextRequest, NextResponse } from 'next/server';
-import { generateText } from 'ai'; // Core AI SDK (Vercel) pour appels IA unifiés
+import { streamText } from 'ai'; // Core AI SDK (Vercel) pour appels IA unifiés (seul import nécessaire pour streaming)
 import { createXai } from '@ai-sdk/xai'; // Provider xAI/Grok spécifique
 import * as cheerio from 'cheerio'; // Parser HTML ESM
 import { SYSTEM_PROMPT_RESUME_LOI, USER_PROMPT_TEMPLATE_RESUME_LOI, PARAMS_RESUME_LOI, MODEL_RESUME_LOI, MAX_INPUT_CHARS_RESUME_LOI } from '@/lib/prompts'; // Centralisés.
@@ -50,24 +50,41 @@ async function fetchAndExtractText(lien: string): Promise<string> {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { titre_texte, lien } = body;
+    const raw = await request.json(); // Renomme 'body' en 'raw' pour clarté.
 
-    let lienUtilise = lien; // Priorité au lien direct.
-    let texteComplet = '';
+    let lien: string | undefined = raw.lien; // Typé pour sécurité.
+    let titre_texte: string | undefined = raw.titre_texte;
 
-    // Fetch et extract si lien disponible.
-    if (lienUtilise) {
-      texteComplet = await fetchAndExtractText(lienUtilise);
-      if (!texteComplet) {
-        return NextResponse.json({ error: 'Lien erroné ou contenu non encore disponible.' }, { status: 500 });
+    // Support pour useCompletion : parse si 'prompt' est un JSON stringifié.
+    if (typeof raw.prompt === 'string') {
+      try {
+        const parsed = JSON.parse(raw.prompt);
+        lien = parsed.lien || lien;
+        titre_texte = parsed.titre_texte || titre_texte;
+      } catch (parseError) {
+        console.error('Erreur parse prompt:', parseError);
+        return NextResponse.json({ error: 'Payload invalide.' }, { status: 400 });
       }
-    } else {
+    }
+
+
+    // Guard précoce : si pas de lien après parsing, erreur immédiate.
+    if (!lien) {
       return NextResponse.json({ error: 'Aucun lien fourni ou extrait.' }, { status: 400 });
     }
 
-    // Génération résumé loi.
-    const { text: resume } = await generateText({
+    // Priorité au lien direct.
+    let lienUtilise = lien; // Déclaration manquante dans ton code !
+    let texteComplet = ''; // Déclaration manquante dans ton code !
+
+    // Fetch et extract si lien disponible.
+    texteComplet = await fetchAndExtractText(lienUtilise);
+    if (!texteComplet) {
+      return NextResponse.json({ error: 'Lien erroné ou contenu non encore disponible.' }, { status: 500 });
+    }
+
+    // Génération résumé loi en streaming.
+    const result = await streamText({
       model: xai(MODEL_RESUME_LOI),
       system: SYSTEM_PROMPT_RESUME_LOI,
       prompt: USER_PROMPT_TEMPLATE_RESUME_LOI
@@ -76,10 +93,9 @@ export async function POST(request: NextRequest) {
       ...PARAMS_RESUME_LOI,
     });
 
-
-    return NextResponse.json({ resume, lien: lienUtilise });
+    return result.toTextStreamResponse(); // Retourne le stream pour le frontend.
   } catch (error: any) {
-    console.error(`Erreur génération résumé:`, error.message);
+    console.error('Erreur génération résumé:', error?.message || error || 'Erreur inconnue'); // Fixé pour éviter "error is not defined" (plus robuste).
     return NextResponse.json({ error: 'Désolé, une erreur est survenue lors de la génération du résumé IA. Réessayez plus tard.' }, { status: 500 });
   }
 }

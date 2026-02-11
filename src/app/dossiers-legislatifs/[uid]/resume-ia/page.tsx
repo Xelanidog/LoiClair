@@ -16,6 +16,7 @@ import {
 import { Loader2 } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
 import { Sparkles, ExternalLink } from 'lucide-react';
+import { useCompletion } from '@ai-sdk/react'; // Hook pour streaming IA (Vercel AI SDK)
 
 // === Ajouts pour le bouton Perplexity ===
 import { Button } from '@/components/ui/button';
@@ -40,10 +41,21 @@ export default function ResumeIAPage() {
   const [textes, setTextes] = useState<any[]>([]);
   const [selectedUid, setSelectedUid] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [resumeIA, setResumeIA] = useState<string>('');
-  const [loadingResume, setLoadingResume] = useState(false);
+ 
   const [liensStatus, setLiensStatus] = useState<Record<string, 'valide' | 'invalide' | 'en_cours' | null>>({});
   const [titreDossier, setTitreDossier] = useState<string>('');
+
+  const {
+  completion, // ← le texte qui stream (string)
+  complete, // ← fonction pour déclencher
+  isLoading: isLoadingResume, // ← meilleur nom
+  error,
+  setCompletion  // ← Ajout ici pour le reset.
+} = useCompletion({
+  api: '/api/resume-loi',
+  streamProtocol: 'text'
+});
+
 
   const handleDiscussWithAI = (titre: string, lien: string) => {
     const prompt = `Analyse et explique ce texte législatif français pour en discuter avec moi : "${titre}". Voici le lien officiel : ${lien}. Résume les points clés, les objectifs, les impacts concrets et le contexte politique.`;
@@ -70,6 +82,8 @@ export default function ResumeIAPage() {
       if (data && data.length > 0) {
         setSelectedUid(data[data.length - 1].uid);
       }
+
+
 
       if (data) {
         setLiensStatus(data.reduce((acc, t) => ({ ...acc, [t.uid]: 'en_cours' }), {}));
@@ -131,49 +145,28 @@ export default function ResumeIAPage() {
     }
   }, [textes]);
 
-  useEffect(() => {
-    const genererResume = async () => {
-      if (!selectedUid) return;
+useEffect(() => {
+  if (!selectedUid) return;
 
-      const selectedTexte = textes.find((t) => t.uid === selectedUid);
-      if (!selectedTexte || !selectedTexte.lien_texte) {
-        setResumeIA('Aucun lien texte valide disponible pour ce texte.');
-        return;
-      }
+  const selectedTexte = textes.find(t => t.uid === selectedUid);
+  if (!selectedTexte?.lien_texte) {
+    // reset si besoin
+    return;
+  }
 
-      const isValidUrl = /^https?:\/\/[^\s$.?#].[^\s]*$/.test(selectedTexte.lien_texte);
-      if (!isValidUrl) {
-        setResumeIA('Lien texte invalide.');
-        return;
-      }
+  const payload = {
+    lien: selectedTexte.lien_texte,
+    titre_texte: selectedTexte.titre_principal_court || selectedTexte.denomination || 'Texte inconnu',
+  };
 
-      setLoadingResume(true);
-      setResumeIA('');
 
-      try {
-        const response = await fetch('/api/resume-loi', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            lien: selectedTexte.lien_texte,
-            titre_texte: selectedTexte.titre_principal_court || selectedTexte.denomination || 'Texte inconnu',
-          }),
-        });
-        if (!response.ok) {
-          setResumeIA('Erreur lors de la génération du résumé.');
-          return;
-        }
-        const { resume } = await response.json();
-        setResumeIA(resume);
-      } catch (error: any) {
-        setResumeIA('Erreur réseau ou format inattendu.');
-      } finally {
-        setLoadingResume(false);
-      }
-    };
 
-    genererResume();
-  }, [selectedUid, textes]);
+setCompletion('');  // Reset pour forcer rerender (nécessite d'ajouter setCompletion au hook : const { ..., setCompletion } = useCompletion(...))
+
+  // Solution la plus propre (JSON.stringify dans le prompt)
+  complete(JSON.stringify(payload));
+
+}, [selectedUid, textes, complete]);
 
   const handleSelectRow = (id: string, checked: boolean) => {
     if (checked) {
@@ -288,20 +281,23 @@ export default function ResumeIAPage() {
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
+          
         )}
 
-        {loadingResume ? (
-          <div className="flex justify-center items-center h-32">
-            <Loader2 className="h-6 w-6 animate-spin text-gray-500" />
-            <p className="ml-2 text-gray-500">Génération du résumé en cours...</p>
-          </div>
-        ) : resumeIA ? (
-          <div className="prose">
-            <ReactMarkdown>{resumeIA}</ReactMarkdown>
-          </div>
-        ) : (
-          <p>Aucun texte sélectionné ou résumé disponible.</p>
-        )}
+       {error ? (
+  <p className="text-red-500">Erreur : {error.message}</p>
+) : completion ? (
+  <div className="prose max-w-none" key={completion.length}>
+    <ReactMarkdown>{completion}</ReactMarkdown>
+  </div>
+) : isLoadingResume ? (
+  <div className="flex justify-center items-center h-32">
+    <Loader2 className="h-6 w-6 animate-spin" />
+    <p className="ml-2">Génération du résumé...</p>
+  </div>
+) : (
+  <p>Sélectionnez un texte pour générer le résumé IA...</p>
+)}
       </div>
     </div>
   );
