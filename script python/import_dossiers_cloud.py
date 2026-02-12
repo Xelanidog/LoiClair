@@ -135,7 +135,20 @@ def ajouter_acteur_si_manquant(uid_acteur):
         supabase.table('acteurs').insert(payload_acteur).execute()
         print(f"Acteur {uid_acteur} ajouté avec placeholders.")
 
-        
+def ajouter_organe_si_manquant(uid_organe):
+    """Ajoute un organe manquant avec placeholders si absent (pour éviter FK violations)."""
+    if not uid_organe:
+        return
+    response = supabase.table('organes').select('uid').eq('uid', uid_organe).execute()
+    if not response.data:
+        payload_organe = {
+            'uid': uid_organe,
+            'libelle': 'Inconnu',  # Placeholder
+            # Ajoute d'autres colonnes obligatoires avec defaults/None (basé sur ton schéma : code_type, etc.)
+        }
+        supabase.table('organes').insert(payload_organe).execute()
+        print(f"Organe {uid_organe} ajouté avec placeholders.")
+
 # ===================================================================
 # Téléchargement du ZIP
 # ===================================================================
@@ -178,9 +191,9 @@ def importer_dossiers_from_zip(zip_ref: zipfile.ZipFile, dossier_prefix: str = '
                 if batch:  # Seulement si non vide
                     response = supabase.table('dossiers_legislatifs').upsert(batch, on_conflict='uid').execute()
                     if response.data:
-                        print(f"✅ Batch de {len(batch)} dossiers importé")
+                        tqdm.write(f"✅ Batch de {len(batch)} dossiers importé")
                     else:
-                        print(f"❌ Erreur Supabase sur batch : {response.error}")
+                        tqdm.write(f"❌ Erreur Supabase sur batch : {response.error}")
                     batch = []  # Vide pour le prochain
     
                     print(f"\n{'='*50}")
@@ -253,6 +266,8 @@ def importer_dossier(data: dict, file_path: str = "unknown.json"):
         ajouter_acteur_si_manquant(initiateur_acteur_ref)
         for co in co_auteurs:
             ajouter_acteur_si_manquant(co['acteurRef'])
+            # Ajoute organe manquant
+        ajouter_organe_si_manquant(initiateur_organe_ref)
         actes_raw = dossier.get('actesLegislatifs') or {}
         actes_legislatifs = actes_raw.get('acteLegislatif') if actes_raw else None  # Aligné sur version fonctionnelle
         if actes_legislatifs is None:
