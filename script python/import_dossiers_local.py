@@ -129,6 +129,7 @@ def ajouter_acteur_si_manquant(uid_acteur):
         supabase.table('acteurs').insert(payload_acteur).execute()
         print(f"Acteur {uid_acteur} ajouté avec placeholders.")
 
+
 # ===================================================================
 # Import d'un seul dossier
 # ===================================================================
