@@ -10,6 +10,7 @@ import requests
 import io
 import zipfile
 from tqdm import tqdm
+from datetime import datetime
 
 
 
@@ -147,7 +148,7 @@ def ajouter_organe_si_manquant(uid_organe):
             # Ajoute d'autres colonnes obligatoires avec defaults/None (basé sur ton schéma : code_type, etc.)
         }
         supabase.table('organes').insert(payload_organe).execute()
-        print(f"Organe {uid_organe} ajouté avec placeholders.")
+        tqdm.write(f"Organe {uid_organe} ajouté avec placeholders.")
 
 # ===================================================================
 # Téléchargement du ZIP
@@ -161,47 +162,57 @@ def download_zip(url: str) -> zipfile.ZipFile:
     return zipfile.ZipFile(io.BytesIO(response.content))  # Tout en RAM pour éviter I/O disque
 
 # ===================================================================
-# Boucle sur les JSON du ZIP
+# Boucle sur les JSON du ZIP  → VERSION CORRIGÉE
 # ===================================================================
 def importer_dossiers_from_zip(zip_ref: zipfile.ZipFile, dossier_prefix: str = 'json/dossierParlementaire/'):
-    """Boucle sur tous les .json dans le dossier spécifique du ZIP, filtre et traite par lots pour RAM/perf.
-    dossier_prefix : pour cibler 'json/dossierParlementaire/' basé sur ton namelist().
-    """
+    """Boucle sur tous les .json avec batch upsert + résumé final à la fin seulement"""
 
     success = 0
     failed = 0
 
     json_files = [f for f in zip_ref.namelist() if f.startswith(dossier_prefix) and f.endswith('.json')]
-    print(f"Nombre total de JSON à traiter : {len(json_files)}")
+    print(f"Nombre total de JSON à traiter : {len(json_files)}\n")
     
-    batch_size = 500  # Upsert par lots pour éviter timeouts Supabase ; ajuste si besoin
+    batch_size = 500
     batch = []
+
+    # Boucle principale
     for idx, file_path in enumerate(tqdm(json_files, desc="Import dossiers législatifs", unit="dossier")):
-        with zip_ref.open(file_path) as json_stream:  # Ouverture en mémoire
-            dossier_data = json.load(json_stream)  # Charge le JSON
+        with zip_ref.open(file_path) as json_stream:
+            dossier_data = json.load(json_stream)
+            
             payload = importer_dossier(dossier_data, file_path)
+
             if payload is not None:
                 batch.append(payload)
                 success += 1
             else:
                 failed += 1
-            if idx % 100 == 0: tqdm.write(f"Traité {idx}/{len(json_files)}")
 
+            # Log toutes les 100 dossiers
+            if idx % 100 == 0 and idx > 0:
+                tqdm.write(f"Traité {idx}/{len(json_files)}")
+
+            # Upsert par batch
             if len(batch) >= batch_size or idx == len(json_files) - 1:
-                if batch:  # Seulement si non vide
+                if batch:
                     response = supabase.table('dossiers_legislatifs').upsert(batch, on_conflict='uid').execute()
                     if response.data:
                         tqdm.write(f"✅ Batch de {len(batch)} dossiers importé")
                     else:
                         tqdm.write(f"❌ Erreur Supabase sur batch : {response.error}")
-                    batch = []  # Vide pour le prochain
-    
-                    print(f"\n{'='*50}")
-                    print(f"IMPORT TERMINÉ")
-                    print(f"   Succès : {success}")
-                    print(f"   Échecs  : {failed}")
-                    print(f"   Total   : {success + failed}")
-                    print(f"{'='*50}")
+                    batch = []   # Reset batch
+
+    # ←══════════════════════════════════════════════════════════════
+    #                  RAPPORT FINAL (Une seule fois !)
+    # ←══════════════════════════════════════════════════════════════
+    print(f"\n{'='*60}")
+    print(f"                  IMPORT TERMINÉ")
+    print(f"{'='*60}")
+    print(f"   Succès  : {success}")
+    print(f"   Échecs  : {failed}")
+    print(f"   Total   : {success + failed} / {len(json_files)}")
+    print(f"{'='*60}")
 
 # ===================================================================
 # Import d'un seul dossier
@@ -219,10 +230,6 @@ def importer_dossier(data: dict, file_path: str = "unknown.json"):
             print(f"⚠️  UID manquant → {file_path}")
             return None
         
-        dossier = data.get('dossierParlementaire', {})
-        if not dossier:
-            print(f"Format invalide (pas de dossierParlementaire) → skip {uid if 'uid' in dossier else 'inconnu'}")
-            return
         uid = dossier.get('uid')
         legislature = int(dossier.get('legislature')) if dossier.get('legislature') else None
         titre_dossier = dossier.get('titreDossier') or {}
@@ -268,10 +275,7 @@ def importer_dossier(data: dict, file_path: str = "unknown.json"):
             ajouter_acteur_si_manquant(co['acteurRef'])
             # Ajoute organe manquant
         ajouter_organe_si_manquant(initiateur_organe_ref)
-        actes_raw = dossier.get('actesLegislatifs') or {}
-        actes_legislatifs = actes_raw.get('acteLegislatif') if actes_raw else None  # Aligné sur version fonctionnelle
-        if actes_legislatifs is None:
-            actes_legislatifs = []
+        actes_legislatifs = dossier.get('actesLegislatifs', {}).get('acteLegislatif', []) or []
         fusion_dossier = dossier.get('fusionDossier')
         # Extraction textes et votes
         textes_set = set()
