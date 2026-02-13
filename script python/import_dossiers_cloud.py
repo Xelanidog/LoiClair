@@ -134,7 +134,7 @@ def ajouter_acteur_si_manquant(uid_acteur):
             # Ajoute d'autres colonnes obligatoires avec defaults/None
         }
         supabase.table('acteurs').insert(payload_acteur).execute()
-        print(f"Acteur {uid_acteur} ajouté avec placeholders.")
+        tqdm.write(f"Acteur {uid_acteur} ajouté avec placeholders.")
 
 def ajouter_organe_si_manquant(uid_organe):
     """Ajoute un organe manquant avec placeholders si absent (pour éviter FK violations)."""
