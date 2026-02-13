@@ -119,7 +119,10 @@ def importer_acteur(acteur_data, file_name):
         
         # Extraction roles → TEXT propre et lisible (priorité Ministre > Sénateur > Député ; virgule si plusieurs)
         roles_set = set()
-        for mandat in data.get('mandats', {}).get('mandat', []):
+        mandats_raw = data.get('mandats', {}).get('mandat', [])
+        if isinstance(mandats_raw, dict):  # Wrapper si single mandat (cas comme ce JSON)
+            mandats_raw = [mandats_raw]
+        for mandat in mandats_raw if isinstance(mandats_raw, list) else []:  # Safe fallback si ni list ni dict
             if mandat.get('dateFin') is None:  # Actif
                 type_organe = mandat.get('typeOrgane')
                 if type_organe == 'ASSEMBLEE':
@@ -144,7 +147,10 @@ def importer_acteur(acteur_data, file_name):
         # Extraction groupe_organe_ref (organeRef du groupe actif : GP/GROUPESENAT prioritaire, fallback GOUVERNEMENT/MINISTERE si ministre sans groupe parlementaire) - safe
         groupe_organe_ref = None
         try:
-            for mandat in data.get('mandats', {}).get('mandat', []):
+            mandats_raw = data.get('mandats', {}).get('mandat', [])
+            if isinstance(mandats_raw, dict):  # Wrapper si single mandat
+                mandats_raw = [mandats_raw]
+            for mandat in mandats_raw if isinstance(mandats_raw, list) else []:
                 if mandat.get('dateFin') is None:  # Actif uniquement
                     type_organe = mandat.get('typeOrgane')
                     if type_organe in ['GP', 'GROUPESENAT', 'GOUVERNEMENT']:  # Priorise GP/GROUPESENAT, puis GOUVERNEMENT
@@ -156,7 +162,10 @@ def importer_acteur(acteur_data, file_name):
         # Extraction organes_refs (liste unique d'organeRef pour TOUS mandats actifs) - safe
         organes_refs_set = set()
         try:
-            for mandat in data.get('mandats', {}).get('mandat', []):
+            mandats_raw = data.get('mandats', {}).get('mandat', [])
+            if isinstance(mandats_raw, dict):  # Wrapper si single mandat
+                mandats_raw = [mandats_raw]
+            for mandat in mandats_raw if isinstance(mandats_raw, list) else []:
                 if mandat.get('dateFin') is None:  # Actif uniquement
                     organes = mandat.get('organes', {})
                     if isinstance(organes, dict):
@@ -359,7 +368,10 @@ def importer_acteur(acteur_data, file_name):
         # Département d'élection (mandat principal actif : ASSEMBLEE ou SENAT) - safe avec fallback numDepartement -> nom
         departement_election = None
         cause_mandat = None
-        for mandat in data.get('mandats', {}).get('mandat', []):
+        mandats_raw = data.get('mandats', {}).get('mandat', [])
+        if isinstance(mandats_raw, dict):  # Wrapper si single mandat
+            mandats_raw = [mandats_raw]
+        for mandat in mandats_raw if isinstance(mandats_raw, list) else []:
             if mandat.get('dateFin') is None and mandat.get('typeOrgane') in ['ASSEMBLEE', 'SENAT']:
                 lieu = mandat.get('election', {}).get('lieu', {})
                 departement_nom = lieu.get('departement')
@@ -407,17 +419,13 @@ def importer_acteur(acteur_data, file_name):
             'organes_refs': organes_refs,  # Nouvelle colonne ARRAY<TEXT> avec organeRef uniques actifs
         }
         
-        # Upsert (sur uid)
-        response = supabase.table('acteurs').upsert(data_insert, on_conflict='uid').execute()
-        if response.data:
-            print(f"Acteur {uid} importé avec succès depuis {file_name}.")
-        else:
-            print(f"Erreur import acteur {uid}: {response.error}")
+        return data_insert
     
     except Exception as e:
         print(f"Erreur générale pour {file_name}: {e}")
         import traceback
         traceback.print_exc()
+        return None
 
 def importer_organe(organe_data, file_name):
     """Parse un JSON organe et retourne dict pour upsert (basé sur import_organes.py)."""
@@ -496,18 +504,14 @@ def importer_organe(organe_data, file_name):
             'organe_precedent_ref': organe_precedent_ref,
             'liste_pays': liste_pays,  # Dict pour JSONB
         }
-        
-        # Upsert (sur uid)
-        response = supabase.table('organes').upsert(data_insert, on_conflict='uid').execute()
-        if response.data:
-            print(f"Organe {uid} importé avec succès depuis {file_name}.")
-        else:
-            print(f"Erreur import organe {uid}: {response.error}")
+        return data_insert
+
     
     except Exception as e:
         print(f"Erreur générale pour {file_name}: {e}")
         import traceback
         traceback.print_exc()
+        return None
 
 # ===================================================================
 # Import principal depuis ZIP
@@ -597,9 +601,24 @@ def importer_acteurs_organes_from_zip(zip_ref: zipfile.ZipFile):
     print(f"   Organes échecs : {failed_organes}")
     print(f"{'='*60}")
 
+
+# Liste des URLs ZIP à importer (ajoute ici tes nouvelles URLs)
+URLS = [
+    #deputé en exercise
+    "https://data.assemblee-nationale.fr/static/openData/repository/17/amo/acteurs_mandats_organes_divises/AMO50_acteurs_mandats_organes_divises.json.zip",  # URL actuelle
+    #historique des député
+    "https://data.assemblee-nationale.fr/static/openData/repository/17/amo/tous_acteurs_mandats_organes_xi_legislature/AMO30_tous_acteurs_tous_mandats_tous_organes_historique.json.zip",
+    #depute, senateur, ministre de la legislature
+    "https://data.assemblee-nationale.fr/static/openData/repository/17/amo/deputes_senateurs_ministres_legislature/AMO20_dep_sen_min_tous_mandats_et_organes.json.zip"
+]
+
+
 # Exécution
 if __name__ == "__main__":
-    URL = "https://data.assemblee-nationale.fr/static/openData/repository/17/amo/acteurs_mandats_organes_divises/AMO50_acteurs_mandats_organes_divises.json.zip"
-    zip_ref = download_zip(URL)
-    importer_acteurs_organes_from_zip(zip_ref)
+    for url in URLS:
+        try:
+            zip_ref = download_zip(url)
+            importer_acteurs_organes_from_zip(zip_ref)
+        except Exception as e:
+            print(f"Erreur pour URL {url}: {e} - Skip et passage à la suivante.")
     print("\nTout est terminé !")
