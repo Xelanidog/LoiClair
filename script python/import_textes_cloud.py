@@ -368,7 +368,7 @@ def importer_texte(texte_data: dict, file_name: str = "unknown.json") -> list:
                 dossier = data['dossierParlementaire']
                 uid_dossier = dossier.get('uid')
                 legislature = int(dossier.get('legislature')) if dossier.get('legislature') else None
-
+                payloads = []
 
 
                 # Extraction robuste des actes : gère si actesLegislatifs est None ou non-dict (ex. : list inattendue ou autre type)
@@ -435,6 +435,7 @@ def importer_texte(texte_data: dict, file_name: str = "unknown.json") -> list:
                             if not uid_texte or not url_legifrance:
                                 print(f"Manque codeLoi ou urlLegifrance pour PROM dans {uid_dossier}, skip.")
                                 continue
+
                             
                             # Data pour upsert du texte promulgué
                             data_texte = {
@@ -467,18 +468,13 @@ def importer_texte(texte_data: dict, file_name: str = "unknown.json") -> list:
                                 'titre_principal_court': titre_loi[:100] if titre_loi else None,  # Court-circuit si long
                             }
                             
-                            # Upsert dans Supabase
-                            response = supabase.table('textes').upsert(data_texte, on_conflict='uid').execute()
-                            if response.data:
-                                print(f"Texte promulgué {uid_texte} importé avec succès pour dossier {uid_dossier} depuis {file_name}.")
-                            else:
-                                print(f"Erreur import texte promulgué {uid_texte}: {response.error}")
+                            payloads.append(data_texte)
                             
                             # Sortir après traitement du PROM (assume un seul par dossier)
                             break
                 
                 # Si c'est un dossier, on ne continue pas vers le traitement texte standard
-                return [] # Skip le reste pour les dossiers
+                return payloads
             
             except Exception as e:
                 print(f"Erreur traitement dossier {file_name}: {e}")
