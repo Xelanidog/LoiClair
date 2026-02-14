@@ -30,6 +30,7 @@ jobs:
       # Étape 3 : Installer les dépendances Python (via pip, en utilisant un fichier requirements.txt)
       - name: Installer les dépendances
         run: |
+          cd "script python"
           pip install -r requirements.txt
 
       # Étape 4 : Exécuter le script Python (cd dans le dossier des scripts, puis run)
