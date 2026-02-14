@@ -13,15 +13,14 @@ import zipfile
 from tqdm import tqdm
 from datetime import datetime
 
-
-
 # Charger .env.local
-load_dotenv(dotenv_path='/Users/algodin/Documents/LoiClair website/loiclair/.env.local')
-supabase_url = os.getenv('SUPABASE_URL')
-supabase_key = os.getenv('SUPABASE_KEY')
+load_dotenv(dotenv_path="/Users/algodin/Documents/LoiClair website/loiclair/.env.local")
+supabase_url = os.getenv("SUPABASE_URL")
+supabase_key = os.getenv("SUPABASE_KEY")
 if not supabase_url or not supabase_key:
     raise ValueError("SUPABASE_URL ou SUPABASE_KEY manquant dans .env.local")
 supabase: Client = create_client(supabase_url, supabase_key)
+
 
 # ===================================================================
 # Fonctions utilitaires
@@ -31,6 +30,7 @@ def reconstruire_lien_an(legislature, titre_chemin):
     if legislature and titre_chemin:
         return f"https://www.assemblee-nationale.fr/dyn/{legislature}/dossiers/{titre_chemin}"
     return None
+
 
 def extraire_refs_recursif(actes, key, result_set, sub_key=None):
     """Extrait récursivement les références texteAssocie / texteAdopte / voteRefs.
@@ -54,21 +54,24 @@ def extraire_refs_recursif(actes, key, result_set, sub_key=None):
                         result_set.add(v[sub_key])
             elif isinstance(value, dict) and sub_key and sub_key in value:
                 result_set.add(value[sub_key])
-        
+
         # Ajout : plonge dans 'textesAssocies' si key est texte-related (avec sub_key adapté pour refs imbriquées)
-        if key in ['texteAssocie', 'texteAdopte']:
-            textes_associes = actes.get('textesAssocies')
+        if key in ["texteAssocie", "texteAdopte"]:
+            textes_associes = actes.get("textesAssocies")
             if textes_associes:
-                extraire_refs_recursif(textes_associes, key, result_set, 'refTexteAssocie')
-        
+                extraire_refs_recursif(
+                    textes_associes, key, result_set, "refTexteAssocie"
+                )
+
         # Récursion sur sous-actes (normalisé comme dans version fonctionnelle)
-        sous = actes.get('actesLegislatifs')
+        sous = actes.get("actesLegislatifs")
         if sous is not None:
-            extraire_refs_recursif(sous.get('acteLegislatif'), key, result_set, sub_key)
+            extraire_refs_recursif(sous.get("acteLegislatif"), key, result_set, sub_key)
+
 
 def extraire_statut_final_et_prom(actes):
     """Extrait statut_final, date_promulgation, code_loi, titre_loi, url_legifrance de façon ultra-robuste."""
-    statut_final = 'en_cours'
+    statut_final = "en_cours"
     date_promulgation = None
     code_loi = None
     titre_loi = None
@@ -77,44 +80,46 @@ def extraire_statut_final_et_prom(actes):
         return statut_final, date_promulgation, code_loi, titre_loi, url_legifrance
     # Normalisation : on veut toujours une liste d'actes
     if isinstance(actes, dict):
-        actes = actes.get('acteLegislatif') or []
+        actes = actes.get("acteLegislatif") or []
     if not isinstance(actes, list):
         actes = [actes] if actes else []
     for acte in actes:
         if not isinstance(acte, dict):
             continue
-        code_acte = acte.get('codeActe')
+        code_acte = acte.get("codeActe")
         # === Cas PROM (promulgation) ===
-        if code_acte == 'PROM':
-            statut_final = 'promulguee'
-            sub = acte.get('actesLegislatifs')
+        if code_acte == "PROM":
+            statut_final = "promulguee"
+            sub = acte.get("actesLegislatifs")
             # Gestion ultra-robuste du sous-acte PROM (peut être dict, list, ou dict dans dict)
             prom = {}
             if sub is not None:
                 if isinstance(sub, dict):
-                    prom = sub.get('acteLegislatif', {})
+                    prom = sub.get("acteLegislatif", {})
                 elif isinstance(sub, list) and sub:
                     prom = sub[0] if isinstance(sub[0], dict) else {}
             if not isinstance(prom, dict):
                 prom = {}
-            date_promulgation = prom.get('dateActe')
-            code_loi = prom.get('codeLoi')
-            titre_loi = prom.get('titreLoi')
-            url_legifrance = prom.get('infoJO', {}).get('urlLegifrance')
+            date_promulgation = prom.get("dateActe")
+            code_loi = prom.get("codeLoi")
+            titre_loi = prom.get("titreLoi")
+            url_legifrance = prom.get("infoJO", {}).get("urlLegifrance")
         # === Cas DEC adoptée ou rejetée ===
-        elif code_acte == 'DEC':
-            conclusion = acte.get('statutConclusion', {})
-            libelle = conclusion.get('libelle', '').lower()
-            fam_code = conclusion.get('fam_code', '')
-            if fam_code in ['TSORTF01', 'TSORTF18'] or 'adopté' in libelle:
-                statut_final = 'adoptee'
-            elif 'rejet' in libelle:
-                statut_final = 'rejetee'
+        elif code_acte == "DEC":
+            conclusion = acte.get("statutConclusion", {})
+            libelle = conclusion.get("libelle", "").lower()
+            fam_code = conclusion.get("fam_code", "")
+            if fam_code in ["TSORTF01", "TSORTF18"] or "adopté" in libelle:
+                statut_final = "adoptee"
+            elif "rejet" in libelle:
+                statut_final = "rejetee"
         # Récursion sur sous-actes (normalisé comme dans version fonctionnelle)
-        sous_actes = acte.get('actesLegislatifs')
+        sous_actes = acte.get("actesLegislatifs")
         if sous_actes is not None:
-            sub_statut, sub_date, sub_code, sub_titre, sub_url = extraire_statut_final_et_prom(sous_actes.get('acteLegislatif'))
-            if sub_statut != 'en_cours':
+            sub_statut, sub_date, sub_code, sub_titre, sub_url = (
+                extraire_statut_final_et_prom(sous_actes.get("acteLegislatif"))
+            )
+            if sub_statut != "en_cours":
                 statut_final = sub_statut
                 date_promulgation = sub_date or date_promulgation
                 code_loi = sub_code or code_loi
@@ -122,34 +127,36 @@ def extraire_statut_final_et_prom(actes):
                 url_legifrance = sub_url or url_legifrance
     return statut_final, date_promulgation, code_loi, titre_loi, url_legifrance
 
-def ajouter_acteur_si_manquant(uid_acteur):
-    """Ajoute un acteur manquant avec placeholders si absent (pour éviter FK violations)."""
-    if not uid_acteur:
-        return
-    response = supabase.table('acteurs').select('uid').eq('uid', uid_acteur).execute()
-    if not response.data:
-        payload_acteur = {
-            'uid': uid_acteur,
-            'nom': 'Inconnu',  # Placeholder
-            'prenom': 'Inconnu',  # Placeholder
-            # Ajoute d'autres colonnes obligatoires avec defaults/None
-        }
-        supabase.table('acteurs').insert(payload_acteur).execute()
-        tqdm.write(f"Acteur {uid_acteur} ajouté avec placeholders.")
 
-def ajouter_organe_si_manquant(uid_organe):
-    """Ajoute un organe manquant avec placeholders si absent (pour éviter FK violations)."""
-    if not uid_organe:
-        return
-    response = supabase.table('organes').select('uid').eq('uid', uid_organe).execute()
-    if not response.data:
-        payload_organe = {
-            'uid': uid_organe,
-            'libelle': 'Inconnu',  # Placeholder
-            # Ajoute d'autres colonnes obligatoires avec defaults/None (basé sur ton schéma : code_type, etc.)
-        }
-        supabase.table('organes').insert(payload_organe).execute()
-        tqdm.write(f"Organe {uid_organe} ajouté avec placeholders.")
+# def ajouter_acteur_si_manquant(uid_acteur):
+#    """Ajoute un acteur manquant avec placeholders si absent (pour éviter FK violations)."""
+#   if not uid_acteur:
+#      return
+#  response = supabase.table('acteurs').select('uid').eq('uid', uid_acteur).execute()
+#  if not response.data:
+#      payload_acteur = {
+#          'uid': uid_acteur,
+#          'nom': 'Inconnu',  # Placeholder
+#         'prenom': 'Inconnu',  # Placeholder
+#        # Ajoute d'autres colonnes obligatoires avec defaults/None
+#   }
+#  supabase.table('acteurs').insert(payload_acteur).execute()
+# tqdm.write(f"Acteur {uid_acteur} ajouté avec placeholders.")
+
+# def ajouter_organe_si_manquant(uid_organe):
+#    """Ajoute un organe manquant avec placeholders si absent (pour éviter FK violations)."""
+#   if not uid_organe:
+#      return
+# response = supabase.table('organes').select('uid').eq('uid', uid_organe).execute()
+# if not response.data:
+#    payload_organe = {
+#       'uid': uid_organe,
+#      'libelle': 'Inconnu',  # Placeholder
+#     # Ajoute d'autres colonnes obligatoires avec defaults/None (basé sur ton schéma : code_type, etc.)
+# }
+# supabase.table('organes').insert(payload_organe).execute()
+# tqdm.write(f"Organe {uid_organe} ajouté avec placeholders.")
+
 
 # ===================================================================
 # Téléchargement du ZIP
@@ -160,28 +167,39 @@ def download_zip(url: str) -> zipfile.ZipFile:
     """
     response = requests.get(url)
     response.raise_for_status()  # Lève une exception si code HTTP != 200 (ex. : lien mort)
-    return zipfile.ZipFile(io.BytesIO(response.content))  # Tout en RAM pour éviter I/O disque
+    return zipfile.ZipFile(
+        io.BytesIO(response.content)
+    )  # Tout en RAM pour éviter I/O disque
+
 
 # ===================================================================
 # Boucle sur les JSON du ZIP  → VERSION CORRIGÉE
 # ===================================================================
-def importer_dossiers_from_zip(zip_ref: zipfile.ZipFile, dossier_prefix: str = 'json/dossierParlementaire/'):
+def importer_dossiers_from_zip(
+    zip_ref: zipfile.ZipFile, dossier_prefix: str = "json/dossierParlementaire/"
+):
     """Boucle sur tous les .json avec batch upsert + résumé final à la fin seulement"""
 
     success = 0
     failed = 0
 
-    json_files = [f for f in zip_ref.namelist() if f.startswith(dossier_prefix) and f.endswith('.json')]
+    json_files = [
+        f
+        for f in zip_ref.namelist()
+        if f.startswith(dossier_prefix) and f.endswith(".json")
+    ]
     print(f"Nombre total de JSON à traiter : {len(json_files)}\n")
-    
+
     batch_size = 500
     batch = []
 
     # Boucle principale
-    for idx, file_path in enumerate(tqdm(json_files, desc="Import dossiers législatifs", unit="dossier")):
+    for idx, file_path in enumerate(
+        tqdm(json_files, desc="Import dossiers législatifs", unit="dossier")
+    ):
         with zip_ref.open(file_path) as json_stream:
             dossier_data = json.load(json_stream)
-            
+
             payload = importer_dossier(dossier_data, file_path)
 
             if payload is not None:
@@ -190,19 +208,27 @@ def importer_dossiers_from_zip(zip_ref: zipfile.ZipFile, dossier_prefix: str = '
             else:
                 failed += 1
 
-            # Log toutes les 100 dossiers
-            if idx % 100 == 0 and idx > 0:
-                tqdm.write(f"Traité {idx}/{len(json_files)}")
+            #            # Log toutes les 100 dossiers
+            #            if idx % 100 == 0 and idx > 0:
+            #                tqdm.write(f"Traité {idx}/{len(json_files)}")
 
             # Upsert par batch
-            if len(batch) >= batch_size or idx == len(json_files) - 1:
-                if batch:
-                    response = supabase.table('dossiers_legislatifs').upsert(batch, on_conflict='uid').execute()
-                    if response.data:
-                        tqdm.write(f"✅ Batch de {len(batch)} dossiers importé")
-                    else:
-                        tqdm.write(f"❌ Erreur Supabase sur batch : {response.error}")
-                    batch = []   # Reset batch
+            if len(batch) >= batch_size:
+                response = (
+                    supabase.table("dossiers_legislatifs")
+                    .upsert(batch, on_conflict="uid")
+                    .execute()
+                )
+                batch = []  # Reset batch
+
+    if batch:  # Envoi final du batch restant
+        response = (
+            supabase.table("dossiers_legislatifs")
+            .upsert(batch, on_conflict="uid")
+            .execute()
+        )
+        if not response.data:  # Optionnel : pour debug silencieux
+            print(f"❌ Erreur sur batch final : {response.error}")
 
     # ←══════════════════════════════════════════════════════════════
     #                  RAPPORT FINAL (Une seule fois !)
@@ -215,35 +241,37 @@ def importer_dossiers_from_zip(zip_ref: zipfile.ZipFile, dossier_prefix: str = '
     print(f"   Total   : {success + failed} / {len(json_files)}")
     print(f"{'='*60}")
 
+
 # ===================================================================
 # Import d'un seul dossier
 # ===================================================================
 def importer_dossier(data: dict, file_path: str = "unknown.json"):
 
     try:
-        dossier = data.get('dossierParlementaire', {})
+        dossier = data.get("dossierParlementaire", {})
         if not dossier:
             print(f"⚠️  Format invalide → {file_path}")
             return None
 
-        uid = dossier.get('uid')
+        uid = dossier.get("uid")
         if not uid:
             print(f"⚠️  UID manquant → {file_path}")
             return None
-        
-        uid = dossier.get('uid')
-        legislature = int(dossier.get('legislature')) if dossier.get('legislature') else None
-        titre_dossier = dossier.get('titreDossier') or {}
-        titre = titre_dossier.get('titre')
-        titre_chemin = titre_dossier.get('titreChemin')
-        senat_chemin = titre_dossier.get('senatChemin')
-        procedure = dossier.get('procedureParlementaire') or {}
-        procedure_code = procedure.get('code')
-        procedure_libelle = procedure.get('libelle')
-        initiateur = dossier.get('initiateur') or {}
+
+        legislature = (
+            int(dossier.get("legislature")) if dossier.get("legislature") else None
+        )
+        titre_dossier = dossier.get("titreDossier") or {}
+        titre = titre_dossier.get("titre")
+        titre_chemin = titre_dossier.get("titreChemin")
+        senat_chemin = titre_dossier.get("senatChemin")
+        procedure = dossier.get("procedureParlementaire") or {}
+        procedure_code = procedure.get("code")
+        procedure_libelle = procedure.get("libelle")
+        initiateur = dossier.get("initiateur") or {}
         # Acteurs (gère liste multiple)
-        acteurs_data = initiateur.get('acteurs') or {}
-        acteurs_list = acteurs_data.get('acteur') or []
+        acteurs_data = initiateur.get("acteurs") or {}
+        acteurs_list = acteurs_data.get("acteur") or []
         if not isinstance(acteurs_list, list):
             acteurs_list = [acteurs_list] if acteurs_list else []
         # Premier comme initiateur principal
@@ -251,43 +279,51 @@ def importer_dossier(data: dict, file_path: str = "unknown.json"):
         initiateur_mandat_ref = None
         if acteurs_list:
             premier = acteurs_list[0] if isinstance(acteurs_list[0], dict) else {}
-            initiateur_acteur_ref = premier.get('acteurRef')
-            initiateur_mandat_ref = premier.get('mandatRef')
+            initiateur_acteur_ref = premier.get("acteurRef")
+            initiateur_mandat_ref = premier.get("mandatRef")
         # Reste comme co-auteurs (liste de dicts pour refs)
         co_auteurs = []
         for acteur in acteurs_list[1:]:  # Skip le premier
             if isinstance(acteur, dict):
-                co_auteurs.append({
-                    'acteurRef': acteur.get('acteurRef'),
-                    'mandatRef': acteur.get('mandatRef')
-                })
+                co_auteurs.append(
+                    {
+                        "acteurRef": acteur.get("acteurRef"),
+                        "mandatRef": acteur.get("mandatRef"),
+                    }
+                )
         # Organes (inchangé, par sécurité)
-        organes_data = initiateur.get('organes') or {}
-        organe = organes_data.get('organe') or {}
+        organes_data = initiateur.get("organes") or {}
+        organe = organes_data.get("organe") or {}
         if isinstance(organe, list) and organe:
             organe = organe[0] if isinstance(organe[0], dict) else {}
         if not isinstance(organe, dict):
             organe = {}
-        organe_ref = organe.get('organeRef') or {}
-        initiateur_organe_ref = organe_ref.get('uid') if isinstance(organe_ref, dict) else organe_ref
+        organe_ref = organe.get("organeRef") or {}
+        initiateur_organe_ref = (
+            organe_ref.get("uid") if isinstance(organe_ref, dict) else organe_ref
+        )
         # Ajoute acteurs manquants (principal + co-auteurs)
-        ajouter_acteur_si_manquant(initiateur_acteur_ref)
-        for co in co_auteurs:
-            ajouter_acteur_si_manquant(co['acteurRef'])
-            # Ajoute organe manquant
-        ajouter_organe_si_manquant(initiateur_organe_ref)
-        actes_legislatifs = dossier.get('actesLegislatifs', {}).get('acteLegislatif', []) or []
-        fusion_dossier = dossier.get('fusionDossier')
+        # ajouter_acteur_si_manquant(initiateur_acteur_ref)
+        # for co in co_auteurs:
+        # ajouter_acteur_si_manquant(co['acteurRef'])
+        # Ajoute organe manquant
+        # ajouter_organe_si_manquant(initiateur_organe_ref)
+        actes_legislatifs = (
+            dossier.get("actesLegislatifs", {}).get("acteLegislatif", []) or []
+        )
+        fusion_dossier = dossier.get("fusionDossier")
         # Extraction textes et votes
         textes_set = set()
         votes_set = set()
-        extraire_refs_recursif(actes_legislatifs, 'texteAssocie', textes_set)
-        extraire_refs_recursif(actes_legislatifs, 'texteAdopte', textes_set)
-        extraire_refs_recursif(actes_legislatifs, 'voteRefs', votes_set, 'voteRef')
+        extraire_refs_recursif(actes_legislatifs, "texteAssocie", textes_set)
+        extraire_refs_recursif(actes_legislatifs, "texteAdopte", textes_set)
+        extraire_refs_recursif(actes_legislatifs, "voteRefs", votes_set, "voteRef")
         textes_associes_refs = list(textes_set)
         votes_refs = list(votes_set)
         # Statut final & promulgation
-        statut_final, date_promulgation, code_loi, titre_loi, url_legifrance = extraire_statut_final_et_prom(actes_legislatifs)
+        statut_final, date_promulgation, code_loi, titre_loi, url_legifrance = (
+            extraire_statut_final_et_prom(actes_legislatifs)
+        )
         # Lien AN
         lien_an = reconstruire_lien_an(legislature, titre_chemin)
         # Préparation payload Supabase
@@ -302,8 +338,14 @@ def importer_dossier(data: dict, file_path: str = "unknown.json"):
             "initiateur_acteur_ref": initiateur_acteur_ref,
             "initiateur_mandat_ref": initiateur_mandat_ref,
             "initiateur_organe_ref": initiateur_organe_ref,
-            "co_auteurs": json.dumps(co_auteurs) if co_auteurs else None,  # JSONB pour co-auteurs
-            "actes_legislatifs": json.dumps(actes_legislatifs, ensure_ascii=False) if actes_legislatifs else '[]',
+            "co_auteurs": (
+                json.dumps(co_auteurs) if co_auteurs else None
+            ),  # JSONB pour co-auteurs
+            "actes_legislatifs": (
+                json.dumps(actes_legislatifs, ensure_ascii=False)
+                if actes_legislatifs
+                else "[]"
+            ),
             "fusion_dossier": json.dumps(fusion_dossier) if fusion_dossier else None,
             "statut_final": statut_final,
             "date_promulgation": date_promulgation,
@@ -329,6 +371,7 @@ def importer_dossier(data: dict, file_path: str = "unknown.json"):
 
 if __name__ == "__main__":
     URL_DOSSIERS = "https://data.assemblee-nationale.fr/static/openData/repository/17/loi/dossiers_legislatifs/Dossiers_Legislatifs.json.zip"
-    zip_ref = download_zip(URL_DOSSIERS); print(zip_ref.namelist()[:5])
+    zip_ref = download_zip(URL_DOSSIERS)
+    print(zip_ref.namelist()[:5])
     importer_dossiers_from_zip(zip_ref)
     print("Import terminé !")
