@@ -106,7 +106,7 @@ if (groupe) {
   if (age) {
     const today = new Date(); // Date actuelle pour calcul jours écoulés.
 
-    filteredDossiers = dossiers.filter((dossier) => {
+    filteredDossiers = filteredDossiers.filter((dossier) => {
       const actes = dossier.actes_legislatifs || [];
       const actesAvecDates = actes.filter(acte => acte.date_acte && !isNaN(new Date(acte.date_acte).getTime()));
       const minDate = actesAvecDates.sort((x, y) => new Date(x.date_acte).getTime() - new Date(y.date_acte).getTime())[0]?.date_acte;
