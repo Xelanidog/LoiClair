@@ -1,13 +1,10 @@
 # import_textes_cloud.py
-# Script pour importer tous les JSON textes d'un dossier dans Supabase table 'textes'.
-# Optimisé : Tolérant aux erreurs (skip invalides, defaults None), gère lists/None.
-# Importe TOUS les JSON, même si champs manquent (ex. dossier_ref).
-# Liens HTML pour TOUS (AN, avec patterns étendus) ; PDF à None.
+# Script pour importer tous les JSON textes d'un dossier dans Supabase table 'textes' depuis url AN
 # Exécute avec : python import_textes.py
-# Attention : Adapte le chemin dossier_textes si besoin.
-# A FAIRE - TROUVER LES LIENS POUR DOC SENAT 'RAPPSNR''PRJLSNR' PIONANR avec TAP
-# text du senat avant 1990 environ ont une architecture de lien completement differente
-# A FAIRE - ALCNANR -> non publie dans les texte mais present dans compte rendu de seance
+
+# Notes:
+## Texte du senat avant 1990 environ ont une architecture de lien completement differente
+## A FAIRE - ALCNANR -> non publie dans les texte mais present dans compte rendu de seance
 
 
 

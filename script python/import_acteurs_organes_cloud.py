@@ -1,10 +1,6 @@
 # import_acteurs_organes_cloud.py
-# Script combiné pour importer acteurs (PA*) et organes (PO*) depuis un ZIP distant vers Supabase.
-# Modèle inspiré de import_textes_cloud.py : URL ZIP, extraction en mémoire, batch upsert, tolérance erreurs.
-# Optimisé : Tolérant aux erreurs (skip invalides, defaults None), gère lists/None/dicts.
-# Importe TOUS les JSON filtrés, même si champs manquent.
+# Script combiné pour importer acteurs (PA*) et organes (PO*) depuis un ZIP distant (url AN) vers Supabase.
 # Exécute avec : python import_acteurs_organes_cloud.py
-# Attention : Vérifie l'URL si elle change (mises à jour AN).
 
 import json
 import os

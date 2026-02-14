@@ -1,7 +1,8 @@
-# import_dossiers.py
-# Script pour importer TOUS les JSON dossiers législatifs (AN Jan 2026) dans Supabase table 'dossiers_legislatifs'
-# Version consolidée et corrigée : ultra-robuste, gère tous les cas tordus (list/dict/None), initiateurs multiples, extraction refs textes/votes et statut/prom.
+# import_dossiers_cloud.py
+# Script pour importer TOUS les JSON dossiers législatifs (AN Jan 2026) dans Supabase table 'dossiers_legislatifs' depuis URL AN
 # Exécute avec : python import_dossiers.py
+
+
 import json
 import os
 from supabase import create_client, Client
