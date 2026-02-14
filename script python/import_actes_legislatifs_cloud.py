@@ -267,98 +267,127 @@ def importer_dossier(texte_data, file_name):
         print(f"Erreur générale pour {file_name}: {e}")
         return []
 
+import time  # Pour backoff
+import re    # Pour regex dans retries
 
 def importer_actes_from_zip(zip_ref: zipfile.ZipFile):
-    """Importe TOUS les actes des dossiers du ZIP, un acte à la fois (séquentiel) + barre de progression."""
+    """Importe TOUS les actes des dossiers du ZIP, un acte à la fois (séquentiel) + barre de progression.
+    
+    Changements clés :
+    - Simulation d'upsert manuel (check + update/insert) pour éviter erreur 42P10 sans fallback direct.
+    - Déduplication des actes par uid dans un même dossier.
+    - Retries avec backoff pour FK manquantes.
+    - Logs détaillés par acte/dossier.
+    """
     json_files = [
-        f
-        for f in zip_ref.namelist()
+        f for f in zip_ref.namelist()
         if f.startswith("json/dossierParlementaire/") and f.endswith(".json")
     ]
     print(f"\n{len(json_files)} fichiers dossiers trouvés dans le ZIP\n")
+    
     success = 0
     failed = 0
+    
     for file_name in tqdm(json_files, desc="Import actes", unit="fichier"):
         try:
             with zip_ref.open(file_name) as f:
                 dossier_data = json.load(f)
+            
             # Filtre : skip si pas 'DLR'
-            if not file_name.split("/")[-1].startswith("DLR"):
+            dossier_filename = file_name.split("/")[-1]
+            if not dossier_filename.startswith("DLR"):
+                print(f"Skip non-DLR : {dossier_filename}")
                 continue
+            
             payloads = importer_dossier(dossier_data, file_name)
             if not payloads:
+                print(f"Aucun acte extrait pour {dossier_filename}")
                 continue
+            
+            # Déduplication : un acte par uid dans ce dossier
+            unique_payloads = {}
+            for p in payloads:
+                uid = p.get('uid')
+                if uid:
+                    unique_payloads[uid] = p
+            payloads = list(unique_payloads.values())
+            print(f"{len(payloads)} actes uniques extraits pour {dossier_filename}")
+            
+            # Debug spécifique pour le dossier incriminé
             if any(p['dossier_uid'] == 'DLR5L17N50975' for p in payloads):
                 print(f"DEBUG: Tentative upsert pour DLR5L17N50975 avec {len(payloads)} actes : {[p['uid'] for p in payloads]}")
-                # Optionnel : dump payloads pour inspecter
-                # Pas d'import json ici : utilise le global du script
-                print(json.dumps(payloads, indent=2))
+                print(json.dumps(payloads, indent=2, ensure_ascii=False))
             
             # Boucle séquentielle sur chaque payload (acte)
             for payload in payloads:
-                uid = payload.get('uid', 'inconnu')  # Pour logs
-                max_retry = 3
+                uid = payload.get('uid', 'inconnu')
+                dossier_uid = payload['dossier_uid']
+                print(f"Upsert acte {uid} pour dossier {dossier_uid}...")
+                
+                max_retry = 5
                 attempt = 0
-                while attempt <= max_retry:
+                while attempt < max_retry:
                     try:
-                        response = supabase.table("actes_legislatifs").upsert(payload, on_conflict="uid").execute()
-                        if response.data:
-                            success += 1
-                            (f"Acte {uid} upsert OK pour {file_name}.")  # Debug optionnel
-                            break  # Succès
+                        # Simulation upsert manuel : check existence
+                        check_response = supabase.table("actes_legislatifs").select("uid").eq("uid", uid).eq("dossier_uid", dossier_uid).execute()
+                        
+                        if check_response.data:
+                            # Existe : update
+                            update_response = supabase.table("actes_legislatifs").update(payload).eq("uid", uid).eq("dossier_uid", dossier_uid).execute()
+                            if update_response.data:
+                                success += 1
+                                print(f"Acte {uid} update OK pour {dossier_filename}")
+                                break
+                            else:
+                                error = getattr(update_response, 'error', {})
+                                print(f"Erreur update pour {uid} : {error}")
+                                failed += 1
+                                break
                         else:
-                            error = getattr(response, 'error', {})
-                            if error.get('code') == '23503':
-                                details = error.get('details', '')
-                                import re
-                                if 'texte_adopte' in details:
-                                    match = re.search(r'$$ texte_adopte $$=$$ (.*?) $$', details)
-                                    if match:
-                                        texte_uid = match.group(1)
-                                        dossier_uid = payload['dossier_uid']
-                                        if check_and_insert_texte(texte_uid, dossier_uid):
-                                            print(f"Retry upsert pour acte {uid} après insertion de texte {texte_uid}.")
-                                            attempt += 1
-                                            continue
-                                elif 'organe_ref' in details:
-                                    match = re.search(r'$$ organe_ref $$=$$ (.*?) $$', details)
-                                    if match:
-                                        organe_uid = match.group(1)
-                                        if check_and_insert_organe(organe_uid):
-                                            print(f"Retry upsert pour acte {uid} après insertion d'organe {organe_uid}.")
-                                            attempt += 1
-                                            continue
-                            print(f"Erreur non-retryable pour acte {uid} dans {file_name}: {error}")
-                            failed += 1
-                            break
-                    except Exception as upsert_error:
-                        error_msg = str(upsert_error)
-                        print(f"Debug: Erreur brute pour acte {uid}: {error_msg}")
-                        import re
-                        if '23503' in error_msg:
-                            if 'texte_adopte' in error_msg:
-                                match = re.search(r'Key \(texte_adopte\)=\((.*?)\)', error_msg)
-                                if match:
-                                    texte_uid = match.group(1)
-                                    dossier_uid = payload['dossier_uid']
-                                    if check_and_insert_texte(texte_uid, dossier_uid):
-                                        print(f"Retry upsert pour acte {uid} après insertion de texte {texte_uid}.")
-                                        attempt += 1
-                                        continue
-                            elif 'organe_ref' in error_msg:
-                                match = re.search(r'Key \(organe_ref\)=\((.*?)\)', error_msg)
-                                if match:
-                                    organe_uid = match.group(1)
-                                    if check_and_insert_organe(organe_uid):
-                                        print(f"Retry upsert pour acte {uid} après insertion d'organe {organe_uid}.")
-                                        attempt += 1
-                                        continue
-                        print(f"Erreur upsert exception pour acte {uid} dans {file_name}: {upsert_error}")
+                            # N'existe pas : insert
+                            insert_response = supabase.table("actes_legislatifs").insert(payload).execute()
+                            if insert_response.data:
+                                success += 1
+                                print(f"Acte {uid} insert OK pour {dossier_filename}")
+                                break
+                            else:
+                                error = getattr(insert_response, 'error', {})
+                                print(f"Erreur insert pour {uid} : {error}")
+                                if error.get('code') == '23503':
+                                    details = error.get('details', '')
+                                    if 'texte_adopte' in details:
+                                        match = re.search(r'$$ texte_adopte $$=$$ (.*?) $$', details)
+                                        if match:
+                                            texte_uid = match.group(1)
+                                            if check_and_insert_texte(texte_uid, dossier_uid):
+                                                print(f"Retry après insert texte {texte_uid}")
+                                                attempt += 1
+                                                time.sleep(attempt)
+                                                continue
+                                    elif 'organe_ref' in details:
+                                        match = re.search(r'$$ organe_ref $$=$$ (.*?) $$', details)
+                                        if match:
+                                            organe_uid = match.group(1)
+                                            if check_and_insert_organe(organe_uid):
+                                                print(f"Retry après insert organe {organe_uid}")
+                                                attempt += 1
+                                                time.sleep(attempt)
+                                                continue
+                                failed += 1
+                                break
+                    except Exception as op_error:
+                        error_msg = str(op_error)
+                        print(f"Debug: Erreur brute pour acte {uid} : {error_msg}")
                         failed += 1
                         break
+                else:
+                    print(f"Max retries atteint pour acte {uid}")
+                    failed += 1
+        
         except Exception as e:
-            failed += 1  # Compte fichier comme échec si erreur globale
-            print(f"Erreur générale pour {file_name}: {e}")
+            failed += 1
+            print(f"Erreur générale pour {file_name} : {e}")
+    
     print(f"\n{'='*60}")
     print(f"IMPORT ACTES TERMINÉ")
     print(f" Succès : {success} actes")
