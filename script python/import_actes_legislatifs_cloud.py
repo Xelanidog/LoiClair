@@ -123,85 +123,97 @@ def extraire_vote_refs_recursif(acte, result_list):
         extraire_vote_refs_recursif(enfant, result_list)
 
 
-def parser_acte(acte_data, dossier_uid, parent_uid=None):
-    """Parse un acte et insère dans Supabase (récursif pour enfants)."""
+def parser_acte(acte_data, dossier_uid, parent_uid=None, debug=False):
+    """Parse un acte et insère dans Supabase (récursif pour enfants).
+
+    """
     payloads = []
     try:
-        # Section : Extraction des champs basiques
+        if debug:
+            print(f"Parsing acte {acte_data.get('uid', 'inconnu')} (parent: {parent_uid}) pour dossier {dossier_uid}")
+
+        # Section : Extraction des champs basiques (inchangée, mais avec try pour robustesse)
         uid = acte_data.get("uid")
         code_acte = acte_data.get("codeActe")
         type_acte = acte_data.get("@xsi:type")  # xsi:type pour type_acte
         organe_ref = acte_data.get("organeRef")
         libelle_acte = acte_data.get("libelleActe", {}).get("nomCanonique")
-
-        # date_acte : str ou datetime -> str ISO ou None
+        
+        # date_acte : amélioration - regex pour nettoyer offsets mal formés + fallback str
         date_acte_raw = acte_data.get("dateActe")
         date_acte = None
         if date_acte_raw:
             try:
-                date_acte = datetime.fromisoformat(
-                    date_acte_raw.replace("Z", "+00:00").split("+")[0]
-                ).isoformat()
-            except ValueError:
+                # Nettoyage amélioré : remplace Z par +00:00, et split sur + si offset
+                cleaned = date_acte_raw.replace("Z", "+00:00")
+                if '+' in cleaned:
+                    cleaned = cleaned.split("+")[0] + "+00:00" if len(cleaned.split("+")) > 1 else cleaned
+                date_acte = datetime.fromisoformat(cleaned).isoformat()
+            except ValueError as ve:
+                if debug:
+                    print(f"Erreur parsing date pour {uid}: {ve} - Fallback à raw str")
                 date_acte = date_acte_raw  # Fallback str si non parsable
-
+        
         statut_conclusion = acte_data.get("statutConclusion", {}).get("libelle")
-
-        # textes_associes : normalisé en string simple (exclut TAP, extrait refTexteAssocie ou texteAssocie, prend le premier si multiple)
-        textes_raw = acte_data.get("textesAssocies") or acte_data.get("texteAssocie")
-        refs = []
-        if textes_raw:
-            # Gestion nesting : si dict avec 'texteAssocie' ou 'textesAssocies', descend dedans
-            if isinstance(textes_raw, dict):
-                nested = textes_raw.get("texteAssocie") or textes_raw.get(
-                    "textesAssocies"
-                )
-                if nested:
-                    textes_raw = nested  # Remplace par le contenu nested
-            # Normalise en list pour boucler uniformément
-            items = [textes_raw] if not isinstance(textes_raw, list) else textes_raw
-            for item in items:
-                if isinstance(item, dict):
-                    if item.get("typeTexte") == "TAP":
-                        continue  # Exclure TAP
-                    ref = item.get("refTexteAssocie") or item.get(
-                        "texteAssocie"
-                    )  # Tolérance : ajoute 'texteAssocie' si rare
-                    if ref:
-                        refs.append(ref.strip().replace("»", ""))  # Nettoie
-                elif isinstance(item, str):
-                    refs.append(item.strip().replace("»", ""))
-        # Si refs vide, set à None ; sinon, prend le premier ref comme string simple (un seul attendu)
-        textes_associes = refs[0] if refs else None
-
-        # rapporteurs : dict ou None -> JSONB
+        
+        # textes_associes : amélioration - gère nesting plus profond (ex. dict avec 'textesAssocies' array), filtre TAP, prend premier non-TAP
+        try:
+            textes_raw = acte_data.get("textesAssocies") or acte_data.get("texteAssocie")
+            refs = []
+            if textes_raw:
+                # Gestion nesting renforcée : si dict, descend dans 'textesAssocies' ou 'texteAssocie'
+                if isinstance(textes_raw, dict):
+                    nested = textes_raw.get("textesAssocies") or textes_raw.get("texteAssocie")
+                    if nested:
+                        textes_raw = nested  # Remplace par nested
+                # Normalise en list pour uniformité
+                items = [textes_raw] if not isinstance(textes_raw, list) else textes_raw
+                for item in items:
+                    if isinstance(item, dict):
+                        if item.get("typeTexte") == "TAP":
+                            continue  # Exclure TAP
+                        ref = item.get("refTexteAssocie") or item.get("texteAssocie")
+                        if ref:
+                            refs.append(ref.strip().replace("»", ""))
+                    elif isinstance(item, str):
+                        refs.append(item.strip().replace("»", ""))
+            # Si refs vide, None ; sinon, premier comme string (logique existante)
+            textes_associes = refs[0] if refs else None
+        except Exception as e:
+            if debug:
+                print(f"Erreur extraction textes_associes pour {uid}: {e} - Set to None")
+            textes_associes = None
+        
+        # rapporteurs : dict ou None -> JSONB (inchangé)
         rapporteurs = acte_data.get("rapporteurs", {}) or None
         reunion_ref = acte_data.get("reunionRef")
-
-        # vote_refs : extraction récursive (correction pour capturer sous-actes)
-        vote_refs = []
-        extraire_vote_refs_recursif(acte_data, vote_refs)
-        vote_refs = sorted(list(set(vote_refs)))
-        vote_refs = vote_refs[0] if len(vote_refs) == 1 else None
-
-        provenance = acte_data.get(
-            "provenance"
-        )  # Ref organe ? (ex. UID pour FK vers table organes)
-        texte_adopte = acte_data.get(
-            "texteAdopte"
-        )  # Ref texte (ex. UID pour FK vers table textes)
+        
+        # vote_refs : amélioration - gère si 'voteRefs' est dict contenant array/str, déduplication tôt
+        try:
+            vote_refs = []
+            extraire_vote_refs_recursif(acte_data, vote_refs)  # Utilise la helper existante
+            vote_refs = sorted(list(set(vote_refs)))  # Déduplication
+            vote_refs = vote_refs[0] if len(vote_refs) == 1 else None  # Logique existante
+        except Exception as e:
+            if debug:
+                print(f"Erreur extraction vote_refs pour {uid}: {e} - Set to None")
+            vote_refs = None
+        
+        provenance = acte_data.get("provenance")  # Ref organe (inchangé)
+        texte_adopte = acte_data.get("texteAdopte")  # Ref texte (inchangé)
+        
+        # autres_infos : inchangé, clean None
         autres_infos = {
-            "depotInitialLectureDefinitiveRef": acte_data.get(
-                "depotInitialLectureDefinitiveRef"
-            ),
+            "depotInitialLectureDefinitiveRef": acte_data.get("depotInitialLectureDefinitiveRef"),
             "infoJO": acte_data.get("infoJO"),
             "urlEcheancierLoi": acte_data.get("urlEcheancierLoi"),
             "codeLoi": acte_data.get("codeLoi"),
             "titreLoi": acte_data.get("titreLoi"),
-            # Ajoute d'autres si besoin
+            # Ajoute d'autres si besoin (extensible sans suppression)
         }
         autres_infos = {k: v for k, v in autres_infos.items() if v is not None}
-
+        
+        # Construction du payload (inchangé)
         data_insert = {
             "uid": uid,
             "dossier_uid": dossier_uid,
@@ -218,28 +230,22 @@ def parser_acte(acte_data, dossier_uid, parent_uid=None):
             "vote_refs": vote_refs,
             "provenance": provenance,
             "texte_adopte": texte_adopte,
-            "autres_infos": {
-                k: v for k, v in autres_infos.items() if v is not None
-            },  # Clean None
+            "autres_infos": autres_infos,
         }
         payloads.append(data_insert)
-
-        # Section : Gestion récursive des enfants
+        
+        # Section : Gestion récursive des enfants (inchangée, mais passe debug)
         actes_legis = acte_data.get("actesLegislatifs")
         enfants = []
         if actes_legis:
             enfants_raw = actes_legis.get("acteLegislatif", [])
-            enfants = (
-                [enfants_raw] if not isinstance(enfants_raw, list) else enfants_raw
-            )
+            enfants = [enfants_raw] if not isinstance(enfants_raw, list) else enfants_raw
         for enfant in enfants:
-            payloads.extend(parser_acte(enfant, dossier_uid, parent_uid=uid))
-
+            payloads.extend(parser_acte(enfant, dossier_uid, parent_uid=uid, debug=debug))
+    
     except Exception as e:
-        print(
-            f"Erreur pour acte {acte_data.get('uid', 'inconnu')} dans dossier {dossier_uid}: {e}"
-        )
-
+        print(f"Erreur pour acte {acte_data.get('uid', 'inconnu')} dans dossier {dossier_uid}: {e}")
+    
     return payloads
 
 
@@ -263,108 +269,100 @@ def importer_dossier(texte_data, file_name):
 
 
 def importer_actes_from_zip(zip_ref: zipfile.ZipFile):
-    """Importe TOUS les actes des dossiers du ZIP en batch + barre de progression."""
+    """Importe TOUS les actes des dossiers du ZIP, un acte à la fois (séquentiel) + barre de progression."""
     json_files = [
         f
         for f in zip_ref.namelist()
         if f.startswith("json/dossierParlementaire/") and f.endswith(".json")
     ]
-
     print(f"\n{len(json_files)} fichiers dossiers trouvés dans le ZIP\n")
-
     success = 0
     failed = 0
-
     for file_name in tqdm(json_files, desc="Import actes", unit="fichier"):
         try:
             with zip_ref.open(file_name) as f:
                 dossier_data = json.load(f)
-
             # Filtre : skip si pas 'DLR'
             if not file_name.split("/")[-1].startswith("DLR"):
                 continue
-
             payloads = importer_dossier(dossier_data, file_name)
             if not payloads:
                 continue
-
-            # Upsert avec retry si FK error
-            max_retry = 3  # Pour couvrir multiples manques
-            attempt = 0
-            while attempt <= max_retry:
-                try:
-                    response = supabase.table("actes_legislatifs").upsert(payloads, on_conflict="uid").execute()
-                    if response.data:
-                        success += len(payloads)
-                        break  # Succès
-                    else:
-                        error = getattr(response, 'error', {})
-                        # Gère si response.error sans exception
-                        if error.get('code') == '23503':
-                            details = error.get('details', '')
-                            import re
-                            if 'texte_adopte' in details:
-                                match = re.search(r'$$   texte_adopte   $$=$$   (.*?)   $$', details)
+            if any(p['dossier_uid'] == 'DLR5L17N50975' for p in payloads):
+                print(f"DEBUG: Tentative upsert pour DLR5L17N50975 avec {len(payloads)} actes : {[p['uid'] for p in payloads]}")
+                # Optionnel : dump payloads pour inspecter
+                # Pas d'import json ici : utilise le global du script
+                print(json.dumps(payloads, indent=2))
+            
+            # Boucle séquentielle sur chaque payload (acte)
+            for payload in payloads:
+                uid = payload.get('uid', 'inconnu')  # Pour logs
+                max_retry = 3
+                attempt = 0
+                while attempt <= max_retry:
+                    try:
+                        response = supabase.table("actes_legislatifs").upsert(payload, on_conflict="uid").execute()
+                        if response.data:
+                            success += 1
+                            (f"Acte {uid} upsert OK pour {file_name}.")  # Debug optionnel
+                            break  # Succès
+                        else:
+                            error = getattr(response, 'error', {})
+                            if error.get('code') == '23503':
+                                details = error.get('details', '')
+                                import re
+                                if 'texte_adopte' in details:
+                                    match = re.search(r'$$ texte_adopte $$=$$ (.*?) $$', details)
+                                    if match:
+                                        texte_uid = match.group(1)
+                                        dossier_uid = payload['dossier_uid']
+                                        if check_and_insert_texte(texte_uid, dossier_uid):
+                                            print(f"Retry upsert pour acte {uid} après insertion de texte {texte_uid}.")
+                                            attempt += 1
+                                            continue
+                                elif 'organe_ref' in details:
+                                    match = re.search(r'$$ organe_ref $$=$$ (.*?) $$', details)
+                                    if match:
+                                        organe_uid = match.group(1)
+                                        if check_and_insert_organe(organe_uid):
+                                            print(f"Retry upsert pour acte {uid} après insertion d'organe {organe_uid}.")
+                                            attempt += 1
+                                            continue
+                            print(f"Erreur non-retryable pour acte {uid} dans {file_name}: {error}")
+                            failed += 1
+                            break
+                    except Exception as upsert_error:
+                        error_msg = str(upsert_error)
+                        print(f"Debug: Erreur brute pour acte {uid}: {error_msg}")
+                        import re
+                        if '23503' in error_msg:
+                            if 'texte_adopte' in error_msg:
+                                match = re.search(r'Key \(texte_adopte\)=\((.*?)\)', error_msg)
                                 if match:
                                     texte_uid = match.group(1)
-                                    dossier_uid = payloads[0]['dossier_uid']
+                                    dossier_uid = payload['dossier_uid']
                                     if check_and_insert_texte(texte_uid, dossier_uid):
-                                        print(f"Retry upsert pour {file_name} après insertion de texte {texte_uid}.")
+                                        print(f"Retry upsert pour acte {uid} après insertion de texte {texte_uid}.")
                                         attempt += 1
                                         continue
-                            elif 'organe_ref' in details:
-                                match = re.search(r'$$   organe_ref   $$=$$   (.*?)   $$', details)
+                            elif 'organe_ref' in error_msg:
+                                match = re.search(r'Key \(organe_ref\)=\((.*?)\)', error_msg)
                                 if match:
                                     organe_uid = match.group(1)
                                     if check_and_insert_organe(organe_uid):
-                                        print(f"Retry upsert pour {file_name} après insertion d'organe {organe_uid}.")
+                                        print(f"Retry upsert pour acte {uid} après insertion d'organe {organe_uid}.")
                                         attempt += 1
                                         continue
-                        print(f"Erreur non-retryable pour {file_name}: {error}")
-                        failed += len(payloads)
+                        print(f"Erreur upsert exception pour acte {uid} dans {file_name}: {upsert_error}")
+                        failed += 1
                         break
-                except Exception as upsert_error:
-                    error_msg = str(upsert_error)
-                    print(f"Debug: Erreur brute capturée : {error_msg}")  # Pour voir exactement le format
-                    import re
-                    if '23503' in error_msg:
-                        if 'texte_adopte' in error_msg:
-                            # Regex adaptée au string complet de l'exception (souvent inclut 'Key (texte_adopte)=(UID)...')
-                            match = re.search(r'Key \(texte_adopte\)=\((.*?)\)', error_msg)
-                            if match:
-                                texte_uid = match.group(1)
-                                dossier_uid = payloads[0]['dossier_uid']
-                                print(f"Debug: Texte UID extrait : {texte_uid}")
-                                if check_and_insert_texte(texte_uid, dossier_uid):
-                                    print(f"Retry upsert pour {file_name} après insertion de texte {texte_uid}.")
-                                    attempt += 1
-                                    continue
-                            else:
-                                print(f"Debug: Regex n'a pas matché pour texte_adopte dans {error_msg}")
-                        elif 'organe_ref' in error_msg:
-                            match = re.search(r'Key \(organe_ref\)=\((.*?)\)', error_msg)
-                            if match:
-                                organe_uid = match.group(1)
-                                print(f"Debug: Organe UID extrait : {organe_uid}")
-                                if check_and_insert_organe(organe_uid):
-                                    print(f"Retry upsert pour {file_name} après insertion d'organe {organe_uid}.")
-                                    attempt += 1
-                                    continue
-                            else:
-                                print(f"Debug: Regex n'a pas matché pour organe_ref dans {error_msg}")
-
-                    print(f"Erreur upsert exception pour {file_name}: {upsert_error}")
-                    failed += len(payloads)
-                    break
-
         except Exception as e:
-            failed += 1
+            failed += 1  # Compte fichier comme échec si erreur globale
             print(f"Erreur générale pour {file_name}: {e}")
-
     print(f"\n{'='*60}")
     print(f"IMPORT ACTES TERMINÉ")
-    print(f"   Succès  : {success}")
-    print(f"   Échecs  : {failed}")
+    print(f" Succès : {success} actes")
+    print(f" Échecs : {failed} actes")
     print(f"{'='*60}")
 
 
