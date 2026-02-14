@@ -41,7 +41,7 @@ export default function StatutFilter() {
 
   return (
     <Select onValueChange={handleChange} value={selectedStatut}>
-      <SelectTrigger className="w-48"> {/* Largeur max comme dans l'exemple pour compacité. */}
+      <SelectTrigger className="w-48 hover:bg-gray-100 hover:border-blue-300 transition-colors duration-200"> {/* Largeur max comme dans l'exemple pour compacité. */}
         <SelectValue placeholder="Sélectionner un statut" />
       </SelectTrigger>
       <SelectContent>

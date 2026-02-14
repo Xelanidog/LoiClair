@@ -37,7 +37,7 @@ const hasFilters = searchParams.has('statut') || searchParams.has('age') || sear
             size="icon" // Taille icône seule.
             onClick={handleReset}
             disabled={!hasFilters} // Gris si pas de filtres.
-            className="h-10 w-10" // Match la hauteur des Select pour alignement.
+            className="h-10 w-10 " // Match la hauteur des Select pour alignement.
           >
             <RotateCcw className="h-4 w-4" /> {/* Icône simple, taille standard. */}
           </Button>

@@ -44,7 +44,7 @@ export default function TypeFilter({ uniqueTypes, procedureMap }: { uniqueTypes:
 
   return (
     <Select onValueChange={handleChange} value={selectedType}>
-      <SelectTrigger className="w-full max-w-48">
+      <SelectTrigger className="w-full max-w-48 hover:bg-gray-100 hover:border-blue-300 transition-colors duration-200">
         <SelectValue placeholder="Sélectionner un type" />
       </SelectTrigger>
       <SelectContent>

@@ -42,7 +42,7 @@ export default function GroupeFilter({ uniqueGroups, groupMap }: { uniqueGroups:
 
   return (
     <Select onValueChange={handleChange} value={selectedGroupe}>
-      <SelectTrigger className="w-full max-w-48">
+      <SelectTrigger className="w-full max-w-48 hover:bg-gray-100 hover:border-blue-300 transition-colors duration-200">
         <SelectValue placeholder="Sélectionner un groupe" />
       </SelectTrigger>
       <SelectContent>
