@@ -14,6 +14,61 @@ import zipfile
 from tqdm import tqdm
 
 
+
+def check_and_insert_texte(texte_uid: str, dossier_uid: str) -> bool:
+    """Vérifie si un texte existe dans la table 'textes' ; si non, l'insère minimalement avec uid et dossier_ref. Retourne True si OK."""
+    if not texte_uid:
+        return True  # Rien à faire
+
+    # Vérifie existence
+    response = supabase.table("textes").select("uid").eq("uid", texte_uid).execute()
+    if response.data:
+        print(f"Texte {texte_uid} déjà existant pour dossier {dossier_uid}.")
+        return True
+
+    # Insertion minimale
+    insert_data = {
+        "uid": texte_uid,
+        "dossier_ref": dossier_uid,
+    }
+    
+    insert_response = supabase.table("textes").insert(insert_data).execute()
+    if insert_response.data:
+        print(f"Texte {texte_uid} inséré pour dossier {dossier_uid}.")
+        return True
+    else:
+        error = getattr(insert_response, 'error', 'Erreur inconnue')
+        print(f"Erreur insertion texte {texte_uid}: {error}")
+        return False
+
+
+
+def check_and_insert_organe(organe_uid: str) -> bool:
+    """Vérifie si un organe existe dans 'organes' ; si non, l'insère minimalement avec uid."""
+    if not organe_uid:
+        return True
+
+    # Vérifie existence
+    response = supabase.table("organes").select("uid").eq("uid", organe_uid).execute()
+    if response.data:
+        print(f"Organe {organe_uid} déjà existant.")
+        return True
+
+    # Insertion minimale
+    insert_data = {
+        "uid": organe_uid,
+        # Autres champs null par défaut
+    }
+    insert_response = supabase.table("organes").insert(insert_data).execute()
+    if insert_response.data:
+        print(f"Organe {organe_uid} inséré.")
+        return True
+    else:
+        error = getattr(insert_response, 'error', 'Erreur inconnue')
+        print(f"Erreur insertion organe {organe_uid}: {error}")
+        return False
+    
+
 def download_zip(url: str) -> zipfile.ZipFile:
     """Télécharge le ZIP en mémoire depuis l'URL."""
     print(f"Téléchargement du ZIP depuis : {url}")
@@ -198,9 +253,9 @@ def importer_dossier(texte_data, file_name):
         payloads = []
         for acte in actes_root:
             payloads.extend(parser_acte(acte, dossier_uid))  # Racines sans parent
-        print(
-            f"{len(payloads)} actes extraits pour dossier {dossier_uid} depuis {file_name}."
-        )
+        #print(
+        #    f"{len(payloads)} actes extraits pour dossier {dossier_uid} depuis {file_name}."
+        #)
         return payloads
     except Exception as e:
         print(f"Erreur générale pour {file_name}: {e}")
@@ -217,8 +272,6 @@ def importer_actes_from_zip(zip_ref: zipfile.ZipFile):
 
     print(f"\n{len(json_files)} fichiers dossiers trouvés dans le ZIP\n")
 
-    batch_size = 100
-    batch = []
     success = 0
     failed = 0
 
@@ -227,46 +280,86 @@ def importer_actes_from_zip(zip_ref: zipfile.ZipFile):
             with zip_ref.open(file_name) as f:
                 dossier_data = json.load(f)
 
-            # Filtre optionnel : skip si pas 'DLR' (comme dans ton script original)
+            # Filtre : skip si pas 'DLR'
             if not file_name.split("/")[-1].startswith("DLR"):
                 continue
 
             payloads = importer_dossier(dossier_data, file_name)
-            batch.extend(payloads)
+            if not payloads:
+                continue
 
-            if len(batch) >= batch_size:
-                response = (
-                    supabase.table("actes_legislatifs")
-                    .upsert(batch, on_conflict="uid")
-                    .execute()
-                )
-                if not response.data:
-                    print(
-                        f"Erreur batch : {getattr(response, 'error', 'Erreur inconnue')}"
-                    )
-                    failed += len(batch)
-                else:
-                    success += len(batch)
-                batch = []
+            # Upsert avec retry si FK error
+            max_retry = 3  # Pour couvrir multiples manques
+            attempt = 0
+            while attempt <= max_retry:
+                try:
+                    response = supabase.table("actes_legislatifs").upsert(payloads, on_conflict="uid").execute()
+                    if response.data:
+                        success += len(payloads)
+                        break  # Succès
+                    else:
+                        error = getattr(response, 'error', {})
+                        # Gère si response.error sans exception
+                        if error.get('code') == '23503':
+                            details = error.get('details', '')
+                            import re
+                            if 'texte_adopte' in details:
+                                match = re.search(r'$$   texte_adopte   $$=$$   (.*?)   $$', details)
+                                if match:
+                                    texte_uid = match.group(1)
+                                    dossier_uid = payloads[0]['dossier_uid']
+                                    if check_and_insert_texte(texte_uid, dossier_uid):
+                                        print(f"Retry upsert pour {file_name} après insertion de texte {texte_uid}.")
+                                        attempt += 1
+                                        continue
+                            elif 'organe_ref' in details:
+                                match = re.search(r'$$   organe_ref   $$=$$   (.*?)   $$', details)
+                                if match:
+                                    organe_uid = match.group(1)
+                                    if check_and_insert_organe(organe_uid):
+                                        print(f"Retry upsert pour {file_name} après insertion d'organe {organe_uid}.")
+                                        attempt += 1
+                                        continue
+                        print(f"Erreur non-retryable pour {file_name}: {error}")
+                        failed += len(payloads)
+                        break
+                except Exception as upsert_error:
+                    error_msg = str(upsert_error)
+                    print(f"Debug: Erreur brute capturée : {error_msg}")  # Pour voir exactement le format
+                    import re
+                    if '23503' in error_msg:
+                        if 'texte_adopte' in error_msg:
+                            # Regex adaptée au string complet de l'exception (souvent inclut 'Key (texte_adopte)=(UID)...')
+                            match = re.search(r'Key \(texte_adopte\)=\((.*?)\)', error_msg)
+                            if match:
+                                texte_uid = match.group(1)
+                                dossier_uid = payloads[0]['dossier_uid']
+                                print(f"Debug: Texte UID extrait : {texte_uid}")
+                                if check_and_insert_texte(texte_uid, dossier_uid):
+                                    print(f"Retry upsert pour {file_name} après insertion de texte {texte_uid}.")
+                                    attempt += 1
+                                    continue
+                            else:
+                                print(f"Debug: Regex n'a pas matché pour texte_adopte dans {error_msg}")
+                        elif 'organe_ref' in error_msg:
+                            match = re.search(r'Key \(organe_ref\)=\((.*?)\)', error_msg)
+                            if match:
+                                organe_uid = match.group(1)
+                                print(f"Debug: Organe UID extrait : {organe_uid}")
+                                if check_and_insert_organe(organe_uid):
+                                    print(f"Retry upsert pour {file_name} après insertion d'organe {organe_uid}.")
+                                    attempt += 1
+                                    continue
+                            else:
+                                print(f"Debug: Regex n'a pas matché pour organe_ref dans {error_msg}")
+
+                    print(f"Erreur upsert exception pour {file_name}: {upsert_error}")
+                    failed += len(payloads)
+                    break
 
         except Exception as e:
             failed += 1
-            print(f"Erreur fichier {file_name}: {e}")
-
-    # Dernier batch
-    if batch:
-        response = (
-            supabase.table("actes_legislatifs")
-            .upsert(batch, on_conflict="uid")
-            .execute()
-        )
-        if not response.data:
-            print(
-                f"Erreur batch final : {getattr(response, 'error', 'Erreur inconnue')}"
-            )
-            failed += len(batch)
-        else:
-            success += len(batch)
+            print(f"Erreur générale pour {file_name}: {e}")
 
     print(f"\n{'='*60}")
     print(f"IMPORT ACTES TERMINÉ")
