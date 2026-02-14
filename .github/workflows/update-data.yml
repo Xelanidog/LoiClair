@@ -1,0 +1,52 @@
+# Nom du workflow (visible dans l'interface GitHub Actions)
+name: Mise à jour quotidienne des données LoiClair
+
+# Quand déclencher le workflow ?
+on:
+  # Automatique : tous les jours à minuit UTC (cron est un format pour les horaires ; '0 0 * * *' = minuit chaque jour)
+  schedule:
+    - cron: '0 0 * * *'
+  # Manuel : pour tester, via l'interface GitHub (clic sur "Run workflow")
+  workflow_dispatch:
+
+# Les jobs (tâches) à exécuter
+jobs:
+  update-data:
+    # OS sur lequel ça tourne (Ubuntu est gratuit et rapide sur GitHub)
+    runs-on: ubuntu-latest
+
+    # Étapes du job
+    steps:
+      # Étape 1 : Checkout (télécharge ton code du repo GitHub sur la machine virtuelle)
+      - name: Checkout du code
+        uses: actions/checkout@v4  # Action officielle GitHub pour ça
+
+      # Étape 2 : Installer Python (version 3.12, compatible avec tes libs comme supabase)
+      - name: Installer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'  # Choisis une version récente pour la sécurité et les perfs
+
+      # Étape 3 : Installer les dépendances Python (via pip, en utilisant un fichier requirements.txt)
+      - name: Installer les dépendances
+        run: |
+          pip install -r requirements.txt
+
+      # Étape 4 : Exécuter le script Python (cd dans le dossier des scripts, puis run)
+      - name: Exécuter le script de mise à jour
+        env:  # Charge les env vars sécurisées (on les ajoutera à l'étape 3)
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          # cd dans le dossier des scripts (adapte si chemin différent)
+          cd "script python"
+          python import_textes_cloud.py
+
+      # Étape 5 : Optionnel - Commit et push si des fichiers changent (pas nécessaire ici, mais scalable)
+      # - name: Commit des changements si besoin
+      #   run: |
+      #     git config --global user.name 'GitHub Actions'
+      #     git config --global user.email 'actions@github.com'
+      #     git add .
+      #     git commit -m "Mise à jour auto des données" || echo "Pas de changements"
+      #     git push
