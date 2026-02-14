@@ -41,7 +41,10 @@ jobs:
         run: |
           # cd dans le dossier des scripts (adapte si chemin différent)
           cd "script python"
+          python import_acteurs_organes_cloud.py
           python import_textes_cloud.py
+          python import_dossiers_cloud.py
+          python import_actes_legislatifs_cloud.py
 
       # Étape 5 : Optionnel - Commit et push si des fichiers changent (pas nécessaire ici, mais scalable)
       # - name: Commit des changements si besoin
