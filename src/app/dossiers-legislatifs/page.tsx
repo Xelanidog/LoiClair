@@ -34,6 +34,22 @@ export default async function DossiersLegislatifsPage({ searchParams }: { search
   const validAges = ['moins_6m', '6m_1a', 'plus_1a'];
   const age = validAges.includes(ageFilter ?? '') ? ageFilter : undefined;
 
+  // calculer les bornes (seulement si age est défini)
+let sixMonthsAgo: Date | undefined;
+let oneYearAgo: Date | undefined;
+
+if (age) {
+  const today = new Date(); // Date actuelle (serveur-side, donc UTC par défaut, mais ça marche pour des filtres approximatifs).
+  
+  // Calcul pour 6 mois en arrière
+  sixMonthsAgo = new Date(today);
+  sixMonthsAgo.setDate(today.getDate() - 180); // Soustrait 180 jours (approximation simple).
+  
+  // Calcul pour 1 an en arrière
+  oneYearAgo = new Date(today);
+  oneYearAgo.setDate(today.getDate() - 365); // Soustrait 365 jours.
+}
+
   const typeFilter = typeof resolvedParams.type === 'string' ? resolvedParams.type.toLowerCase() : undefined; 
 
 
@@ -65,13 +81,28 @@ let query = supabase
   .select('*, initiateur_acteur_ref!inner(uid, nom, prenom, roles_text, groupe:organes(uid, libelle)), actes_legislatifs!actes_legislatifs_dossier_uid_fkey(date_acte), textes_count: textes!dossier_ref(count), date_promulgation');  
  
  
- 
   if (statut) {
     query = query.eq('statut_final', statut);
   }
 
   if (procedure) {
   query = query.eq('procedure_libelle', procedure);
+}
+
+// Après les if pour statut et procedure...
+
+if (age && sixMonthsAgo && oneYearAgo) {
+  const sixMonthsAgoISO = sixMonthsAgo.toISOString(); // Convertit en format timestamp ISO pour Supabase.
+  const oneYearAgoISO = oneYearAgo.toISOString();
+
+  if (age === 'moins_6m') {
+    query = query.gt('date_depot', sixMonthsAgoISO); // Plus récent que 6 mois en arrière.
+  } else if (age === '6m_1a') {
+    query = query.gt('date_depot', oneYearAgoISO) // Plus récent que 1 an en arrière...
+               .lte('date_depot', sixMonthsAgoISO); // ...mais pas plus récent que 6 mois en arrière.
+  } else if (age === 'plus_1a') {
+    query = query.lte('date_depot', oneYearAgoISO); // Plus ancien ou égal à 1 an en arrière.
+  }
 }
 
 // Query pour compter le total (duplique les filtres de la query principale)
@@ -85,6 +116,22 @@ if (statut) {
 }
 if (procedure) {
   countQuery = countQuery.eq('procedure_libelle', procedure);
+}
+
+// Après les if pour statut et procedure dans countQuery...
+
+if (age && sixMonthsAgo && oneYearAgo) {
+  const sixMonthsAgoISO = sixMonthsAgo.toISOString();
+  const oneYearAgoISO = oneYearAgo.toISOString();
+
+  if (age === 'moins_6m') {
+    countQuery = countQuery.gt('date_depot', sixMonthsAgoISO);
+  } else if (age === '6m_1a') {
+    countQuery = countQuery.gt('date_depot', oneYearAgoISO)
+                          .lte('date_depot', sixMonthsAgoISO);
+  } else if (age === 'plus_1a') {
+    countQuery = countQuery.lte('date_depot', oneYearAgoISO);
+  }
 }
 
 const { count: totalCount, error: countError } = await countQuery;
@@ -119,28 +166,6 @@ query = query
 
   const { data: dossiers, error } = await query;
 
-  // Filtrage par âge (post-fetch en JS si param présent).
-  let filteredDossiers = dossiers;
-
-  if (age) {
-    const today = new Date(); // Date actuelle pour calcul jours écoulés.
-
-    filteredDossiers = filteredDossiers.filter((dossier) => {
-      const actes = dossier.actes_legislatifs || [];
-      const actesAvecDates = actes.filter(acte => acte.date_acte && !isNaN(new Date(acte.date_acte).getTime()));
-      const minDate = actesAvecDates.sort((x, y) => new Date(x.date_acte).getTime() - new Date(y.date_acte).getTime())[0]?.date_acte;
-
-      if (!minDate) return false; // Ignore si pas de date valide.
-
-      const startDate = new Date(minDate);
-      const daysElapsed = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-
-      if (age === 'moins_6m') return daysElapsed < 180;
-      if (age === '6m_1a') return daysElapsed >= 180 && daysElapsed <= 365;
-      if (age === 'plus_1a') return daysElapsed > 365;
-      return false; // Fallback.
-    });
-  }
 
 
 

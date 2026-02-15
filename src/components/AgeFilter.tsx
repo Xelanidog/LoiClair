@@ -16,16 +16,19 @@ import {
 } from "@/components/ui/select";
 import { useEffect } from 'react'; // Pour écouter les changements d'URL.
 
+export const revalidate = 3600;
+
 export default function AgeFilter() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [selectedAge, setSelectedAge] = useState(searchParams.get('age') || 'tous');
 
-  useEffect(() => {
-  // Sync l'état local avec l'URL actuelle (reset à 'tous' si param absent).
-  const currentValue = searchParams.get('age') || 'tous'; // Remplace 'statut' par 'age' ou 'type' selon le filtre.
-  setSelectedAge(currentValue); // Met à jour l'état si URL changée (ex. : après reset).
-}, [searchParams]); // Dépend de searchParams pour re-run sur changements.
+useEffect(() => {
+  // Sync l'état local avec l'URL actuelle (reset à 'tous' si param absent ou invalide).
+  const validAges = ['tous', 'moins_6m', '6m_1a', 'plus_1a']; // Liste des valeurs valides pour éviter les bugs.
+  const currentValue = searchParams.get('age') || 'tous';
+  setSelectedAge(validAges.includes(currentValue) ? currentValue : 'tous'); // Reset si invalide.
+}, [searchParams]);
 
   const handleChange = (value: string) => {
     const newAge = value === 'tous' ? '' : value.toLowerCase();
