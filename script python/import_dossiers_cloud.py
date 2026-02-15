@@ -128,6 +128,38 @@ def extraire_statut_final_et_prom(actes):
     return statut_final, date_promulgation, code_loi, titre_loi, url_legifrance
 
 
+def extraire_date_depot_min(actes):
+    """Retourne la dateActe la plus ancienne trouvée de façon récursive."""
+    if not actes:
+        return None
+    
+    dates = []
+    
+    def recurse(obj):
+        if isinstance(obj, dict):
+            date_str = obj.get("dateActe")
+            if date_str and isinstance(date_str, str):
+                try:
+                    # Gère YYYY-MM-DD et YYYY-MM-DDTHH:MM:SS
+                    if "T" in date_str:
+                        dt = datetime.fromisoformat(date_str)
+                    else:
+                        dt = datetime.fromisoformat(date_str + "T00:00:00")
+                    dates.append(dt)
+                except (ValueError, TypeError, AttributeError):
+                    pass
+            # Récursion sur toutes les sous-clés
+            for v in obj.values():
+                recurse(v)
+        elif isinstance(obj, list):
+            for item in obj:
+                recurse(item)
+    
+    recurse(actes)
+    
+    return min(dates) if dates else None
+
+
 # def ajouter_acteur_si_manquant(uid_acteur):
 #    """Ajoute un acteur manquant avec placeholders si absent (pour éviter FK violations)."""
 #   if not uid_acteur:
@@ -320,6 +352,11 @@ def importer_dossier(data: dict, file_path: str = "unknown.json"):
         extraire_refs_recursif(actes_legislatifs, "voteRefs", votes_set, "voteRef")
         textes_associes_refs = list(textes_set)
         votes_refs = list(votes_set)
+
+        date_depot = extraire_date_depot_min(actes_legislatifs)
+        date_depot = date_depot.isoformat() if date_depot else None
+
+
         # Statut final & promulgation
         statut_final, date_promulgation, code_loi, titre_loi, url_legifrance = (
             extraire_statut_final_et_prom(actes_legislatifs)
@@ -348,6 +385,7 @@ def importer_dossier(data: dict, file_path: str = "unknown.json"):
             ),
             "fusion_dossier": json.dumps(fusion_dossier) if fusion_dossier else None,
             "statut_final": statut_final,
+            "date_depot": date_depot,
             "date_promulgation": date_promulgation,
             "code_loi": code_loi,
             "titre_loi": titre_loi,
