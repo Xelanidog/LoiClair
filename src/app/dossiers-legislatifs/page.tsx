@@ -9,12 +9,21 @@ import { Sparkles, ExternalLink } from 'lucide-react'; // Icônes.
 import StatutFilter from '@/components/StatutFilter'; // Filtre statut (client-side).
 import AgeFilter from '@/components/AgeFilter'; // Filtre âge (client-side).
 import TypeFilter from '@/components/TypeFilter';
-import GroupeFilter from '@/components/GroupeFilter';
 import ResetButton from '@/components/ResetButton';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination';
 
 // Signature avec await pour searchParams (Server Component).
 export default async function DossiersLegislatifsPage({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
   const resolvedParams = await searchParams; // Unwrap la Promise.
+  const ITEMS_PER_PAGE = 10; // On peut ajuster ça plus tard, ex. 20 si tu veux plus d'items visibles.
 
   // Récupération et validation des params URL.
   const statutFilter = typeof resolvedParams.statut === 'string' ? resolvedParams.statut.toLowerCase() : undefined;
@@ -25,33 +34,7 @@ export default async function DossiersLegislatifsPage({ searchParams }: { search
   const validAges = ['moins_6m', '6m_1a', 'plus_1a'];
   const age = validAges.includes(ageFilter ?? '') ? ageFilter : undefined;
 
-  const typeFilter = typeof resolvedParams.type === 'string' ? resolvedParams.type.toLowerCase() : undefined;
-
-
-
-  // Fetch des groupes uniques pour le filtre (distinct sur organes.libelle, via joins sur initiateur_acteur_ref et acteurs.groupe).
-const { data: uniqueGroupsData } = await supabase
-  .from('dossiers_legislatifs')
-  .select('initiateur_acteur_ref!inner(groupe:organes(libelle))') // Join interne pour filtrer seulement les initiateurs avec groupe valide.
-  .not('initiateur_acteur_ref', 'is', null); // Ignore les dossiers sans initiateur.
-
-// Extraction des libellés uniques (ignore null/undefined) et tri alphabétique.
-const uniqueGroups = [...new Set(
-  uniqueGroupsData?.map(item => item.initiateur_acteur_ref?.groupe?.libelle).filter(Boolean) || []
-)].sort();
-
-// Génère le mapping slug -> libelle groupe dynamiquement.
-const groupMap: { [key: string]: string } = {};
-uniqueGroups.forEach(group => {
-  const slug = group.toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // Retire accents.
-    .replace(/[^a-z0-9]+/g, '_') // Remplace espaces/punctuation par '_'.
-    .replace(/_+$/, ''); // Nettoie fin.
-  groupMap[slug] = group;
-});
-
-  const groupeFilter = typeof resolvedParams.groupe === 'string' ? resolvedParams.groupe.toLowerCase() : undefined;
-  const groupe = groupeFilter ? groupMap[groupeFilter] : undefined; // Utilise le map pour matcher la valeur DB exacte. 
+  const typeFilter = typeof resolvedParams.type === 'string' ? resolvedParams.type.toLowerCase() : undefined; 
 
 
   // Fetch des types uniques pour le filtre (distinct sur procedure_libelle, ignore null).
@@ -75,11 +58,14 @@ uniqueTypes.forEach(type => {
 
 const procedure = typeFilter ? procedureMap[typeFilter] : undefined;
 
+
   // Fetch Supabase avec filtre statut (si présent).
 let query = supabase
   .from('dossiers_legislatifs')
-  .select('*, initiateur_acteur_ref(uid, nom, prenom, roles_text, groupe:organes(uid, libelle)), actes_legislatifs!actes_legislatifs_dossier_uid_fkey(date_acte), textes_count: textes!dossier_ref(count), date_promulgation');  // Ajout de date_promulgation
-  
+  .select('*, initiateur_acteur_ref!inner(uid, nom, prenom, roles_text, groupe:organes(uid, libelle)), actes_legislatifs!actes_legislatifs_dossier_uid_fkey(date_acte), textes_count: textes!dossier_ref(count), date_promulgation');  
+ 
+ 
+ 
   if (statut) {
     query = query.eq('statut_final', statut);
   }
@@ -88,20 +74,53 @@ let query = supabase
   query = query.eq('procedure_libelle', procedure);
 }
 
+// Query pour compter le total (duplique les filtres de la query principale)
+let countQuery = supabase
+  .from('dossiers_legislatifs')
+  .select('uid', { count: 'exact' }); // Plus besoin du join sur groupe.
+
+// Applique les mêmes filtres que sur la query principale
+if (statut) {
+  countQuery = countQuery.eq('statut_final', statut);
+}
+if (procedure) {
+  countQuery = countQuery.eq('procedure_libelle', procedure);
+}
+
+const { count: totalCount, error: countError } = await countQuery;
+let finalTotalCount = totalCount || 0; // Fallback si undefined.
+if (countError) {
+  console.error('Erreur lors du count des dossiers:', countError);
+  finalTotalCount = 0; // Fallback safe pour éviter crash.
+}
+const totalPages = Math.ceil(finalTotalCount / ITEMS_PER_PAGE);
+
+
+
+
+// Récupération et validation du paramètre page (similaire à tes autres filtres)
+const pageParam = typeof resolvedParams.page === 'string' ? resolvedParams.page : undefined;
+let currentPage = pageParam ? parseInt(pageParam, 10) : 1; // Convertit en nombre, fallback à 1 si absent.
+if (isNaN(currentPage) || currentPage < 1) {
+  currentPage = 1; // Garde au minimum 1 si invalide.
+}
+// Optionnel : Limite à totalPages max, mais on le fera après car totalPages est calculé plus bas.
+let offset = (currentPage - 1) * ITEMS_PER_PAGE; // Calcule l'offset dynamique.
+
+if (currentPage > totalPages) {
+  currentPage = totalPages; // Ramène à la dernière page valide.
+}
+
+
+query = query
+  .order('date_depot', { ascending: false })   // Du plus récent au plus ancien
+  .range(offset, offset + ITEMS_PER_PAGE - 1);
 
 
   const { data: dossiers, error } = await query;
 
-
-    let filteredByGroupe = dossiers || []; // Start with all fetched.
-if (groupe) {
-  filteredByGroupe = filteredByGroupe.filter(dossier => 
-    dossier.initiateur_acteur_ref?.groupe?.libelle === groupe // Match exact sur libelle (case-sensitive, ajuste si besoin avec .toLowerCase()).
-  );
-}
-
   // Filtrage par âge (post-fetch en JS si param présent).
-  let filteredDossiers = filteredByGroupe;
+  let filteredDossiers = dossiers;
 
   if (age) {
     const today = new Date(); // Date actuelle pour calcul jours écoulés.
@@ -125,20 +144,9 @@ if (groupe) {
 
 
 
-  // Tri par date de démarrage descendante (plus récent en premier).
-  const sortedDossiers = filteredDossiers.sort((a, b) => {
-    const actesA = a.actes_legislatifs || [];
-    const actesAvecDatesA = actesA.filter(acte => acte.date_acte && !isNaN(new Date(acte.date_acte).getTime()));
-    const minDateA = actesAvecDatesA.sort((x, y) => new Date(x.date_acte).getTime() - new Date(y.date_acte).getTime())[0]?.date_acte;
-    const timeA = minDateA ? new Date(minDateA).getTime() : 0;
+ const sortedDossiers = dossiers || [];
 
-    const actesB = b.actes_legislatifs || [];
-    const actesAvecDatesB = actesB.filter(acte => acte.date_acte && !isNaN(new Date(acte.date_acte).getTime()));
-    const minDateB = actesAvecDatesB.sort((x, y) => new Date(x.date_acte).getTime() - new Date(y.date_acte).getTime())[0]?.date_acte;
-    const timeB = minDateB ? new Date(minDateB).getTime() : 0;
 
-    return timeB - timeA;
-  });
 
   return (
     <div className="container mx-auto p-4">
@@ -160,13 +168,11 @@ if (groupe) {
           <StatutFilter />
           <AgeFilter />
           <TypeFilter uniqueTypes={uniqueTypes} procedureMap={procedureMap} />
-          <GroupeFilter uniqueGroups={uniqueGroups} groupMap={groupMap} />
           <ResetButton />
                 </div>
 
       <div className="mb-4 text-sm text-gray-600">
-        {sortedDossiers.length} dossier{sortedDossiers.length > 1 ? 's' : ''} trouvé{sortedDossiers.length > 1 ? 's' : ''}.
-      </div>
+      {finalTotalCount} dossier{(totalCount || 0) > 1 ? 's' : ''} trouvé{(totalCount || 0) > 1 ? 's' : ''}.      </div>
 
 {sortedDossiers.length === 0 ? (
   <div className="text-center text-gray-600 mb-4">Aucun dossier législatif trouvé avec ces filtres.</div>
@@ -269,9 +275,6 @@ if (groupe) {
   }
 })()}
 
-              <p className="text-xs text-gray-400 text-right mt-2">
-  Debug: Textes disponibles : {dossier.textes_count?.[0]?.count ?? 0}
-</p>
 <p className="text-xs text-gray-400 text-right mt-1"> {/* mt-1 pour un petit espacement */}
   Debug: UID du dossier : {dossier.uid}
 </p>
@@ -281,6 +284,54 @@ if (groupe) {
         ))}
       </ul>
       )}
+
+
+      {sortedDossiers.length === 0 ? (
+  <div className="text-center text-gray-600 mb-4">Aucun dossier législatif trouvé avec ces filtres.</div>
+) : (
+  <>
+    <ul className="space-y-2">
+      {/* Tes map sur sortedDossiers... */}
+    </ul>
+    {/* Nouveau : Pagination ici */}
+    <Pagination className="mt-6 justify-center">
+      <PaginationContent>
+        <PaginationItem>
+          <PaginationPrevious
+  href={`?page=${currentPage - 1}${resolvedParams.statut ? `&statut=${resolvedParams.statut}` : ''}${resolvedParams.age ? `&age=${resolvedParams.age}` : ''}${resolvedParams.type ? `&type=${resolvedParams.type}` : ''}`}
+  className={currentPage === 1 ? 'pointer-events-none opacity-50' : ''}
+/>
+        </PaginationItem>
+        {/* Exemple simple pour 3 pages visibles + ellipses si plus */}
+        {currentPage > 2 && <PaginationItem><PaginationEllipsis /></PaginationItem>}
+        {currentPage > 1 && (
+          <PaginationItem>
+            <PaginationLink href={`?page=${currentPage - 1}${resolvedParams.statut ? `&statut=$   {resolvedParams.statut}` : ''}${resolvedParams.age ? `&age=   $${resolvedParams.age}` : ''}${resolvedParams.type ? `&type=$$   {resolvedParams.type}` : ''}`}>{currentPage - 1}</PaginationLink>
+          </PaginationItem>
+        )}
+        <PaginationItem>
+          <PaginationLink href={`?page=${currentPage}${resolvedParams.statut ? `&statut=$  {resolvedParams.statut}` : ''}${resolvedParams.age ? `&age=   $${resolvedParams.age}` : ''}${resolvedParams.type ? `&type=$$   {resolvedParams.type}` : ''}`} isActive>
+            {currentPage}
+          </PaginationLink>
+        </PaginationItem>
+        {currentPage < totalPages && (
+          <PaginationItem>
+            <PaginationLink href={`?page=${currentPage + 1}${resolvedParams.statut ? `&statut=$   {resolvedParams.statut}` : ''}${resolvedParams.age ? `&age=   $${resolvedParams.age}` : ''}${resolvedParams.type ? `&type=$$   {resolvedParams.type}` : ''}`}>{currentPage + 1}</PaginationLink>
+          </PaginationItem>
+        )}
+        {currentPage < totalPages - 1 && <PaginationItem><PaginationEllipsis /></PaginationItem>}
+        <PaginationItem>
+          <PaginationNext
+            href={`?page=${currentPage + 1}${resolvedParams.statut ? `&statut=$   {resolvedParams.statut}` : ''}${resolvedParams.age ? `&age=   $${resolvedParams.age}` : ''}${resolvedParams.type ? `&type=$$   {resolvedParams.type}` : ''}`}
+            className={currentPage === totalPages ? 'pointer-events-none opacity-50' : ''}
+          />
+        </PaginationItem>
+      </PaginationContent>
+    </Pagination>
+  </>
+)}
+
+
     </div>
   );
 }
