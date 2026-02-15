@@ -20,6 +20,7 @@ export default function ResetButton() {
     params.delete('statut');
     params.delete('age');
     params.delete('type');
+    params.delete('page');
     params.delete('groupe');
     // Push l'URL nettoyée (si vide, juste '/dossiers-legislatifs').
     router.push(`?${params.toString()}`);
