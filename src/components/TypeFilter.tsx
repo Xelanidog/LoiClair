@@ -39,6 +39,7 @@ export default function TypeFilter({ uniqueTypes, procedureMap }: { uniqueTypes:
     } else {
       params.delete('type');
     }
+    params.delete('page');
     router.push(`?${params.toString()}`);
   };
 

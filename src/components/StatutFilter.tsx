@@ -36,6 +36,7 @@ export default function StatutFilter() {
     } else {
       params.delete('statut');
     }
+    params.delete('page');
     router.push(`?${params.toString()}`); // Met à jour URL et recharge data server-side.
   };
 

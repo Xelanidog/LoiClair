@@ -39,6 +39,7 @@ useEffect(() => {
     } else {
       params.delete('age');
     }
+    params.delete('page');
     router.push(`?${params.toString()}`);
   };
 

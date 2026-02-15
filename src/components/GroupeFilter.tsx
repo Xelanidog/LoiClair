@@ -37,6 +37,7 @@ export default function GroupeFilter({ uniqueGroups, groupMap }: { uniqueGroups:
     } else {
       params.delete('groupe');
     }
+    params.delete('page');
     router.push(`?${params.toString()}`);
   };
 

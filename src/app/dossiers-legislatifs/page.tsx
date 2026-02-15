@@ -20,6 +20,26 @@ import {
   PaginationPrevious,
 } from '@/components/ui/pagination';
 
+
+// Fonction utilitaire pour générer une URL avec un nouveau 'page', en gardant tous les autres params.
+function generatePageUrl(currentParams: { [key: string]: string | string[] | undefined }, newPage: number) {
+  const params = new URLSearchParams();
+  
+  // Copie tous les params existants (statut, age, type, etc.)
+  Object.entries(currentParams).forEach(([key, value]) => {
+    if (key !== 'page' && value !== undefined) {  // Ignore 'page' et les undefined
+      params.set(key, Array.isArray(value) ? value.join(',') : value);  // Gère les arrays si besoin futur
+    }
+  });
+  
+  // Ajoute le nouveau 'page'
+  if (newPage > 1) {  // Pas besoin de 'page=1' dans l'URL
+    params.set('page', newPage.toString());
+  }
+  
+  return `?${params.toString()}`;
+}
+
 // Signature avec await pour searchParams (Server Component).
 export default async function DossiersLegislatifsPage({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
   const resolvedParams = await searchParams; // Unwrap la Promise.
@@ -318,41 +338,59 @@ query = query
     <ul className="space-y-2">
       {/* Tes map sur sortedDossiers... */}
     </ul>
-    {/* Nouveau : Pagination ici */}
-    <Pagination className="mt-6 justify-center">
-      <PaginationContent>
-        <PaginationItem>
-          <PaginationPrevious
-  href={`?page=${currentPage - 1}${resolvedParams.statut ? `&statut=${resolvedParams.statut}` : ''}${resolvedParams.age ? `&age=${resolvedParams.age}` : ''}${resolvedParams.type ? `&type=${resolvedParams.type}` : ''}`}
-  className={currentPage === 1 ? 'pointer-events-none opacity-50' : ''}
-/>
-        </PaginationItem>
-        {/* Exemple simple pour 3 pages visibles + ellipses si plus */}
-        {currentPage > 2 && <PaginationItem><PaginationEllipsis /></PaginationItem>}
-        {currentPage > 1 && (
-          <PaginationItem>
-            <PaginationLink href={`?page=${currentPage - 1}${resolvedParams.statut ? `&statut=$   {resolvedParams.statut}` : ''}${resolvedParams.age ? `&age=   $${resolvedParams.age}` : ''}${resolvedParams.type ? `&type=$$   {resolvedParams.type}` : ''}`}>{currentPage - 1}</PaginationLink>
-          </PaginationItem>
-        )}
-        <PaginationItem>
-          <PaginationLink href={`?page=${currentPage}${resolvedParams.statut ? `&statut=$  {resolvedParams.statut}` : ''}${resolvedParams.age ? `&age=   $${resolvedParams.age}` : ''}${resolvedParams.type ? `&type=$$   {resolvedParams.type}` : ''}`} isActive>
-            {currentPage}
-          </PaginationLink>
-        </PaginationItem>
-        {currentPage < totalPages && (
-          <PaginationItem>
-            <PaginationLink href={`?page=${currentPage + 1}${resolvedParams.statut ? `&statut=$   {resolvedParams.statut}` : ''}${resolvedParams.age ? `&age=   $${resolvedParams.age}` : ''}${resolvedParams.type ? `&type=$$   {resolvedParams.type}` : ''}`}>{currentPage + 1}</PaginationLink>
-          </PaginationItem>
-        )}
-        {currentPage < totalPages - 1 && <PaginationItem><PaginationEllipsis /></PaginationItem>}
-        <PaginationItem>
-          <PaginationNext
-            href={`?page=${currentPage + 1}${resolvedParams.statut ? `&statut=$   {resolvedParams.statut}` : ''}${resolvedParams.age ? `&age=   $${resolvedParams.age}` : ''}${resolvedParams.type ? `&type=$$   {resolvedParams.type}` : ''}`}
-            className={currentPage === totalPages ? 'pointer-events-none opacity-50' : ''}
-          />
-        </PaginationItem>
-      </PaginationContent>
-    </Pagination>
+
+
+{/* Nouveau : Pagination ici */}
+<Pagination className="mt-6 justify-center">
+  <PaginationContent>
+    {/* Bouton Précédent : Désactivé si page 1 */}
+    <PaginationItem>
+      <PaginationPrevious
+        href={generatePageUrl(resolvedParams, currentPage - 1)}
+        className={currentPage === 1 ? 'pointer-events-none opacity-50' : ''}
+      />
+    </PaginationItem>
+
+    {/* Ellipsis gauche si plus de 2 pages avant */}
+    {currentPage > 2 && <PaginationItem><PaginationEllipsis /></PaginationItem>}
+
+    {/* Lien vers page précédente (si existe) */}
+    {currentPage > 1 && (
+      <PaginationItem>
+        <PaginationLink href={generatePageUrl(resolvedParams, currentPage - 1)}>
+          {currentPage - 1}
+        </PaginationLink>
+      </PaginationItem>
+    )}
+
+    {/* Page actuelle : Marquée comme active */}
+    <PaginationItem>
+      <PaginationLink href={generatePageUrl(resolvedParams, currentPage)} isActive>
+        {currentPage}
+      </PaginationLink>
+    </PaginationItem>
+
+    {/* Lien vers page suivante (si existe) */}
+    {currentPage < totalPages && (
+      <PaginationItem>
+        <PaginationLink href={generatePageUrl(resolvedParams, currentPage + 1)}>
+          {currentPage + 1}
+        </PaginationLink>
+      </PaginationItem>
+    )}
+
+    {/* Ellipsis droite si plus de 1 page après */}
+    {currentPage < totalPages - 1 && <PaginationItem><PaginationEllipsis /></PaginationItem>}
+
+    {/* Bouton Suivant : Désactivé si dernière page */}
+    <PaginationItem>
+      <PaginationNext
+        href={generatePageUrl(resolvedParams, currentPage + 1)}
+        className={currentPage === totalPages ? 'pointer-events-none opacity-50' : ''}
+      />
+    </PaginationItem>
+  </PaginationContent>
+</Pagination>
   </>
 )}
 
