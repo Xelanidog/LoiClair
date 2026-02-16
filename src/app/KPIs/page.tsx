@@ -90,7 +90,7 @@ export default async function KpisPage() {
     <div className="container mx-auto py-8 px-4">
       <div className="mb-10">
         <h1 className="text-4xl font-bold mb-2">KPIs Parlement</h1>
-        <p className="text-xl text-muted-foreground">Activité législative en temps réel</p>
+        <p className="text-xl text-muted-foreground">Activité de la 17ième législature en temps réel</p>
       </div>
 
       {/* Cartes de synthèse */}
@@ -147,7 +147,7 @@ export default async function KpisPage() {
               <CardDescription>Le texte a été déposé au parlement (Assemblée Natioanle ou Sénat) et est étudié pour décision</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-5xl font-bold text-blue-600">{statsData.en_cours.toLocaleString('fr-FR')}</div>
+              <div className="text-5xl font-bold">{statsData.en_cours.toLocaleString('fr-FR')}</div>
             </CardContent>
           </Card>
 

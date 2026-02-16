@@ -213,7 +213,7 @@ query = query
       </p>
 
       <p className="text-xs text-muted-foreground mb-8">
-        Données de la 17ième legislature provenant de{' '}
+        Données de la 17ième legislature, mise à jours quotidiennement, provenant de{' '}
         <a href="https://data.assemblee-nationale.fr/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
           data.assemblee-nationale.fr
         </a>
