@@ -1,10 +1,7 @@
-// src/components/StatutFilter.tsx
-// Composant client-side pour le filtre par statut (utilise hooks React/Next et Shadcn Select pour UI élégante).
-
-'use client'; // Marque comme Client Component.
+'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Select,
   SelectContent,
@@ -13,43 +10,49 @@ import {
   SelectLabel,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"; // Import Shadcn Select (chemin standard si installé via Shadcn CLI).
-import { useEffect } from 'react'; // Pour écouter les changements d'URL.
+} from "@/components/ui/select";
 
 export default function StatutFilter() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [selectedStatut, setSelectedStatut] = useState(searchParams.get('statut') || 'tous');
+
+  // Valeur actuelle dans l'URL (ou 'tous' par défaut)
+  const [selectedStatut, setSelectedStatut] = useState(
+    searchParams.get('statut') || 'tous'
+  );
 
   useEffect(() => {
-  // Sync l'état local avec l'URL actuelle (reset à 'tous' si param absent).
-  const currentValue = searchParams.get('statut') || 'tous'; // Remplace 'statut' par 'age' ou 'type' selon le filtre.
-  setSelectedStatut(currentValue); // Met à jour l'état si URL changée (ex. : après reset).
-}, [searchParams]); // Dépend de searchParams pour re-run sur changements.
+    const current = searchParams.get('statut') || 'tous';
+    setSelectedStatut(current);
+  }, [searchParams]);
 
   const handleChange = (value: string) => {
-    const newStatut = value === 'tous' ? '' : value.toLowerCase();
-    setSelectedStatut(value); // Mise à jour état local.
+    setSelectedStatut(value);
     const params = new URLSearchParams(searchParams.toString());
-    if (newStatut) {
-      params.set('statut', newStatut);
-    } else {
+
+    if (value === 'tous') {
       params.delete('statut');
+    } else {
+      params.set('statut', value);
     }
-    params.delete('page');
-    router.push(`?${params.toString()}`); // Met à jour URL et recharge data server-side.
+
+    params.delete('page'); // On revient à la page 1 quand on change le filtre
+    router.push(`?${params.toString()}`);
   };
 
   return (
     <Select onValueChange={handleChange} value={selectedStatut}>
-      <SelectTrigger className="w-48 hover:bg-gray-100 hover:border-blue-300 transition-colors duration-200"> {/* Largeur max comme dans l'exemple pour compacité. */}
-        <SelectValue placeholder="Sélectionner un statut" />
+      <SelectTrigger className="w-56">
+        <SelectValue placeholder="Filtrer par statut" />
       </SelectTrigger>
       <SelectContent>
         <SelectGroup>
-          <SelectLabel>Statuts</SelectLabel> {/* Label groupe comme dans l'exemple. */}
+          <SelectLabel>Statut du dossier</SelectLabel>
           <SelectItem value="tous">Tous les statuts</SelectItem>
-          <SelectItem value="en_cours">En cours</SelectItem>
+          <SelectItem value="en_cours_d_examen">En cours d'examen</SelectItem>
+          <SelectItem value="adopte_par_assemblee">Adopté par l'Assemblée nationale</SelectItem>
+          <SelectItem value="adopte_par_senat">Adopté par le Sénat</SelectItem>
+          <SelectItem value="adopte_par_parlement">Adopté par le Parlement</SelectItem>
           <SelectItem value="promulguee">Promulguée</SelectItem>
         </SelectGroup>
       </SelectContent>

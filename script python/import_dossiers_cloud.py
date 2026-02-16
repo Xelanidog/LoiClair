@@ -127,6 +127,75 @@ def extraire_statut_final_et_prom(actes):
                 url_legifrance = sub_url or url_legifrance
     return statut_final, date_promulgation, code_loi, titre_loi, url_legifrance
 
+def determiner_statut_final_precis(actes) -> str:
+    """
+    Nouvelle logique robuste basée sur les actes DEC (Décision).
+    Plus fiable que la simple présence de BTA.
+    """
+    if not actes:
+        return "En cours d'examen"
+
+    has_an_adoption = False
+    has_sn_adoption = False
+    has_an_rejet = False
+    has_sn_rejet = False
+
+    def recurse(acte_list):
+        nonlocal has_an_adoption, has_sn_adoption, has_an_rejet, has_sn_rejet
+        
+        if isinstance(acte_list, dict):
+            acte_list = [acte_list]
+        if not isinstance(acte_list, list):
+            return
+
+        for acte in acte_list:
+            if not isinstance(acte, dict):
+                continue
+
+            code_acte = acte.get("codeActe", "")
+            conclusion = acte.get("statutConclusion", {}) or {}
+            libelle = conclusion.get("libelle", "").lower()
+
+            # Détection DEC à l'AN
+            if "AN" in code_acte and "DEC" in code_acte:
+                if "adopt" in libelle:
+                    has_an_adoption = True
+                elif "rejet" in libelle:
+                    has_an_rejet = True
+
+            # Détection DEC au Sénat
+            if "SN" in code_acte and "DEC" in code_acte:
+                if "adopt" in libelle:
+                    has_sn_adoption = True
+                elif "rejet" in libelle:
+                    has_sn_rejet = True
+
+            # Récursion sur sous-actes
+            sous = acte.get("actesLegislatifs")
+            if sous:
+                if isinstance(sous, dict) and "acteLegislatif" in sous:
+                    recurse(sous["acteLegislatif"])
+                else:
+                    recurse(sous)
+
+    recurse(actes)
+
+    # === Application des priorités ===
+    # On garde d'abord la détection PROM (déjà faite avant)
+    # Puis on applique les nouvelles règles DEC
+
+    if has_an_rejet and has_sn_rejet:
+        return "Rejeté"
+    
+    if has_an_adoption and has_sn_adoption:
+        return "Adopté par le Parlement"
+    elif has_an_adoption:
+        return "Adopté par l'Assemblée nationale"
+    elif has_sn_adoption:
+        return "Adopté par le Sénat"
+    
+    return "En cours d'examen"
+    
 
 def extraire_date_depot_min(actes):
     """Retourne la dateActe la plus ancienne trouvée de façon récursive."""
@@ -357,10 +426,18 @@ def importer_dossier(data: dict, file_path: str = "unknown.json"):
         date_depot = date_depot.isoformat() if date_depot else None
 
 
-        # Statut final & promulgation
-        statut_final, date_promulgation, code_loi, titre_loi, url_legifrance = (
+        # Statut de base (promulgation + rejets simples via ancienne fonction)
+        statut_base, date_promulgation, code_loi, titre_loi, url_legifrance = (
             extraire_statut_final_et_prom(actes_legislatifs)
         )
+
+        # === NOUVELLE LOGIQUE PRINCIPALE (plus précise) ===
+        if statut_base == "promulguee":
+            statut_final = "Promulguée"
+        else:
+            statut_final = determiner_statut_final_precis(actes_legislatifs)
+
+
         # Lien AN
         lien_an = reconstruire_lien_an(legislature, titre_chemin)
         # Préparation payload Supabase

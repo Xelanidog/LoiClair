@@ -45,10 +45,20 @@ export default async function DossiersLegislatifsPage({ searchParams }: { search
   const resolvedParams = await searchParams; // Unwrap la Promise.
   const ITEMS_PER_PAGE = 10; // On peut ajuster ça plus tard, ex. 20 si tu veux plus d'items visibles.
 
-  // Récupération et validation des params URL.
-  const statutFilter = typeof resolvedParams.statut === 'string' ? resolvedParams.statut.toLowerCase() : undefined;
-  const validStatuts = ['en_cours', 'promulguee'];
-  const statut = validStatuts.includes(statutFilter ?? '') ? statutFilter : undefined;
+  // === NOUVEAU : Mapping des slugs URL vers les vraies valeurs en base ===
+  const statutSlug = typeof resolvedParams.statut === 'string' 
+    ? resolvedParams.statut.toLowerCase() 
+    : undefined;
+
+  const statutMap: { [key: string]: string } = {
+    "en_cours_d_examen": "En cours d'examen",
+    "adopte_par_assemblee": "Adopté par l'Assemblée nationale",
+    "adopte_par_senat": "Adopté par le Sénat",
+    "adopte_par_parlement": "Adopté par le Parlement",
+    "promulguee": "Promulguée",
+  };
+
+  const statut = statutSlug ? statutMap[statutSlug] : undefined;
 
   const ageFilter = typeof resolvedParams.age === 'string' ? resolvedParams.age.toLowerCase() : undefined;
   const validAges = ['moins_6m', '6m_1a', 'plus_1a'];
@@ -246,14 +256,18 @@ query = query
                     <span className="px-2">{dossier.initiateur_acteur_ref.groupe.libelle ?? 'Mandat terminé'}</span>
                   </>
                 )}
-                <span
-                  className={`ml-2 px-2 py-1 rounded-full text-xs font-semibold ${
-                    dossier.statut_final === 'promulguee' ? 'bg-green-100 text-green-800' :
-                    dossier.statut_final === 'en_cours' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-gray-100 text-gray-800'
+                                <span
+                  className={`ml-2 px-3 py-1 rounded-full text-xs font-semibold ${
+                    dossier.statut_final === "Promulguée" 
+                      ? 'bg-green-100 text-green-800' 
+                    : dossier.statut_final === "En cours d'examen" 
+                      ? 'bg-yellow-100 text-yellow-800' 
+                    : dossier.statut_final.includes("Adopté") 
+                      ? 'bg-blue-100 text-blue-800' 
+                      : 'bg-gray-100 text-gray-800'
                   }`}
                 >
-                  {dossier.statut_final.charAt(0).toUpperCase() + dossier.statut_final.slice(1)}
+                  {dossier.statut_final}
                 </span>
               </div>
 
