@@ -185,30 +185,69 @@ def importer_acteur(acteur_data, file_name):
             if data.get("adresses")
             else None
         )
-        mandats = (
-            json.dumps(data.get("mandats", {}).get("mandat", []))
-            if data.get("mandats")
-            else None
-        )
+        mandats_raw = data.get("mandats", {}).get("mandat", [])
+        if isinstance(mandats_raw, dict):
+            mandats_raw = [mandats_raw]
+
+        if isinstance(mandats_raw, list) and len(mandats_raw) > 0:
+            # Tri par dateDebut descendant (les plus récents d'abord)
+            try:
+                mandats_raw.sort(
+                    key=lambda m: m.get("dateDebut") or "1900-01-01", 
+                    reverse=True
+                )
+            except:
+                pass  # en cas d'erreur de tri, on garde l'ordre original
+
+            # On garde seulement les 15 plus récents
+            mandats_raw = mandats_raw[:25]
+
+        mandats = json.dumps(mandats_raw) if mandats_raw else None
 
         # Extraction roles → TEXT propre et lisible (priorité Ministre > Sénateur > Député ; virgule si plusieurs)
+        # roles_text = tous les rôles historiques (même terminés)
+        # en_exercice = vrai uniquement si au moins un mandat est encore en cours
+                # === LOGIQUE ROLES ET STATUT ACTUEL ===
+                # === LOGIQUE SIMPLIFIÉE DEMANDÉE ===
         roles_set = set()
+        en_exercice = False
+        est_depute_actuel = False
+        est_senateur_actuel = False
+        est_ministre_actuel = False   # ← Sera false pour les Secrétaires d'État
+
         mandats_raw = data.get("mandats", {}).get("mandat", [])
-        if isinstance(
-            mandats_raw, dict
-        ):  # Wrapper si single mandat (cas comme ce JSON)
+        if isinstance(mandats_raw, dict):
             mandats_raw = [mandats_raw]
-        for mandat in (
-            mandats_raw if isinstance(mandats_raw, list) else []
-        ):  # Safe fallback si ni list ni dict
-            if mandat.get("dateFin") is None:  # Actif
-                type_organe = mandat.get("typeOrgane")
-                if type_organe == "ASSEMBLEE":
-                    roles_set.add("Député")
-                elif type_organe == "SENAT":
-                    roles_set.add("Sénateur")
-                elif type_organe in ["MINISTERE", "GOUVERNEMENT"]:
+
+        for mandat in mandats_raw if isinstance(mandats_raw, list) else []:
+            type_organe = mandat.get("typeOrgane")
+            date_fin = mandat.get("dateFin")
+            lib_qualite = str(mandat.get("infosQualite", {}).get("libQualite", "")).lower()
+
+            # 1. roles_text → tous les mandats (brut)
+            if type_organe == "ASSEMBLEE":
+                roles_set.add("Député")
+            elif type_organe == "SENAT":
+                roles_set.add("Sénateur")
+            elif type_organe in ["MINISTERE", "GOUVERNEMENT"]:
+                if "secrétaire d'état" in lib_qualite or "secrétaire d'etat" in lib_qualite:
+                    roles_set.add("Secrétaire d'État")
+                else:
                     roles_set.add("Ministre")
+
+            # 2. Statut actuel
+            if date_fin is None:
+                en_exercice = True
+
+                if type_organe == "ASSEMBLEE":
+                    est_depute_actuel = True
+                elif type_organe == "SENAT":
+                    est_senateur_actuel = True
+                elif type_organe in ["MINISTERE", "GOUVERNEMENT"]:
+                    # On exclut les Secrétaires d'État du champ "est_ministre_actuel"
+                    if any(keyword in lib_qualite for keyword in ["ministre", "premier ministre"]):
+                        est_ministre_actuel = True
+                            
 
         roles_text = None
         if roles_set:
@@ -530,6 +569,10 @@ def importer_acteur(acteur_data, file_name):
             "adresses": adresses,
             "mandats": mandats,
             "roles_text": roles_text,
+            "en_exercice": en_exercice,
+            "est_depute_actuel": est_depute_actuel,     
+            "est_senateur_actuel": est_senateur_actuel,  
+            "est_ministre_actuel": est_ministre_actuel,
             "profil_url": profil_url,
             "telephone": telephone,
             "linkedin_url": linkedin_url,
@@ -667,7 +710,7 @@ def importer_acteurs_organes_from_zip(zip_ref: zipfile.ZipFile):
     print(f"   - Acteurs (PA*) : {acteurs_count}")
     print(f"   - Organes (PO*) : {organes_count}")
 
-    batch_size = 100  # Envoi par lots de 100
+    batch_size = 500  # Envoi par lots de 500
     acteurs_batch = []
     organes_batch = []
     success_acteurs = 0
