@@ -204,11 +204,8 @@ def importer_acteur(acteur_data, file_name):
 
         mandats = json.dumps(mandats_raw) if mandats_raw else None
 
-        # Extraction roles → TEXT propre et lisible (priorité Ministre > Sénateur > Député ; virgule si plusieurs)
         # roles_text = tous les rôles historiques (même terminés)
-        # en_exercice = vrai uniquement si au moins un mandat est encore en cours
-                # === LOGIQUE ROLES ET STATUT ACTUEL ===
-                # === LOGIQUE SIMPLIFIÉE DEMANDÉE ===
+    
         roles_set = set()
         en_exercice = False
         est_depute_actuel = False
