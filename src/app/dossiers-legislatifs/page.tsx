@@ -98,7 +98,7 @@ const procedure = typeFilter ? procedureMap[typeFilter] : undefined;
   // Fetch Supabase avec filtre statut (si présent).
 let query = supabase
   .from('dossiers_legislatifs')
-  .select('*, initiateur_acteur_ref!inner(uid, nom, prenom, roles_text, groupe:organes(uid, libelle)), actes_legislatifs!actes_legislatifs_dossier_uid_fkey(date_acte), textes_count: textes!dossier_ref(count), date_promulgation');  
+  .select('*, initiateur_acteur_ref(uid, nom, prenom, roles_text, groupe:organes(uid, libelle)), actes_legislatifs!actes_legislatifs_dossier_uid_fkey(date_acte), textes_count: textes!dossier_ref(count), date_promulgation');  
  
  
   if (statut) {
@@ -219,11 +219,12 @@ query = query
       <div className="mb-4 text-sm text-gray-600">
       {finalTotalCount} dossier{(totalCount || 0) > 1 ? 's' : ''} trouvé{(totalCount || 0) > 1 ? 's' : ''}.      </div>
 
-{sortedDossiers.length === 0 ? (
+
+      {sortedDossiers.length === 0 ? (
   <div className="text-center text-gray-600 mb-4">Aucun dossier législatif trouvé avec ces filtres.</div>
 ) : (
-
-      <ul className="space-y-2">
+  <>
+    <ul className="space-y-2">
         {sortedDossiers.map((dossier) => (
           <li key={dossier.uid}>
             <div className="p-4 bg-white rounded-lg hover:bg-blue-50 transition-colors duration-200">
@@ -328,16 +329,6 @@ query = query
           </li>
         ))}
       </ul>
-      )}
-
-
-      {sortedDossiers.length === 0 ? (
-  <div className="text-center text-gray-600 mb-4">Aucun dossier législatif trouvé avec ces filtres.</div>
-) : (
-  <>
-    <ul className="space-y-2">
-      {/* Tes map sur sortedDossiers... */}
-    </ul>
 
 
 {/* Nouveau : Pagination ici */}
