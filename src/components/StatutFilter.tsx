@@ -45,7 +45,7 @@ export default function StatutFilter() {
       <SelectTrigger className="w-56">
         <SelectValue placeholder="Filtrer par statut" />
       </SelectTrigger>
-      <SelectContent>
+            <SelectContent>
         <SelectGroup>
           <SelectLabel>Statut du dossier</SelectLabel>
           <SelectItem value="tous">Tous les statuts</SelectItem>
@@ -53,6 +53,7 @@ export default function StatutFilter() {
           <SelectItem value="adopte_par_assemblee">Adopté par l'Assemblée nationale</SelectItem>
           <SelectItem value="adopte_par_senat">Adopté par le Sénat</SelectItem>
           <SelectItem value="adopte_par_parlement">Adopté par le Parlement</SelectItem>
+          <SelectItem value="rejetee">Rejeté</SelectItem>
           <SelectItem value="promulguee">Promulguée</SelectItem>
         </SelectGroup>
       </SelectContent>

@@ -129,20 +129,17 @@ def extraire_statut_final_et_prom(actes):
 
 def determiner_statut_final_precis(actes) -> str:
     """
-    Nouvelle logique robuste basée sur les actes DEC (Décision).
-    Plus fiable que la simple présence de BTA.
+    Version améliorée : prend en compte la DERNIÈRE décision (DEC) en date
+    pour chaque assemblée. Gère les rejets suivis d'une nouvelle lecture.
     """
     if not actes:
         return "En cours d'examen"
 
-    has_an_adoption = False
-    has_sn_adoption = False
-    has_an_rejet = False
-    has_sn_rejet = False
+    # Stocke les décisions par assemblée avec leur date
+    decisions_an = []   # liste de (date, est_adopte)
+    decisions_sn = []
 
     def recurse(acte_list):
-        nonlocal has_an_adoption, has_sn_adoption, has_an_rejet, has_sn_rejet
-        
         if isinstance(acte_list, dict):
             acte_list = [acte_list]
         if not isinstance(acte_list, list):
@@ -153,46 +150,59 @@ def determiner_statut_final_precis(actes) -> str:
                 continue
 
             code_acte = acte.get("codeActe", "")
-            conclusion = acte.get("statutConclusion", {}) or {}
-            libelle = conclusion.get("libelle", "").lower()
+            date_acte = acte.get("dateActe")
+            conclusion = acte.get("statutConclusion") or {}
+            libelle = str(conclusion.get("libelle", "")).lower()
 
-            # Détection DEC à l'AN
-            if "AN" in code_acte and "DEC" in code_acte:
-                if "adopt" in libelle:
-                    has_an_adoption = True
-                elif "rejet" in libelle:
-                    has_an_rejet = True
+            is_decision = "DEC" in code_acte
+            is_adopte = "adopt" in libelle
+            is_rejete = "rejet" in libelle
 
-            # Détection DEC au Sénat
-            if "SN" in code_acte and "DEC" in code_acte:
-                if "adopt" in libelle:
-                    has_sn_adoption = True
-                elif "rejet" in libelle:
-                    has_sn_rejet = True
+            if is_decision and date_acte and (is_adopte or is_rejete):
+                try:
+                    # Normalise la date
+                    if "T" in date_acte:
+                        dt = datetime.fromisoformat(date_acte.replace("Z", "+00:00"))
+                    else:
+                        dt = datetime.fromisoformat(date_acte + "T00:00:00")
+                    
+                    if "AN" in code_acte:
+                        decisions_an.append((dt, is_adopte))
+                    elif "SN" in code_acte:
+                        decisions_sn.append((dt, is_adopte))
+                except:
+                    pass  # date invalide → on ignore
 
-            # Récursion sur sous-actes
+            # Récursion
             sous = acte.get("actesLegislatifs")
             if sous:
                 if isinstance(sous, dict) and "acteLegislatif" in sous:
                     recurse(sous["acteLegislatif"])
-                else:
+                elif isinstance(sous, list):
                     recurse(sous)
 
     recurse(actes)
 
-    # === Application des priorités ===
-    # On garde d'abord la détection PROM (déjà faite avant)
-    # Puis on applique les nouvelles règles DEC
+    # === Prendre la décision la plus récente par assemblée ===
+    latest_an_adopte = None
+    if decisions_an:
+        latest_an = max(decisions_an, key=lambda x: x[0])  # tri par date
+        latest_an_adopte = latest_an[1]
 
-    if has_an_rejet and has_sn_rejet:
-        return "Rejeté"
-    
-    if has_an_adoption and has_sn_adoption:
+    latest_sn_adopte = None
+    if decisions_sn:
+        latest_sn = max(decisions_sn, key=lambda x: x[0])
+        latest_sn_adopte = latest_sn[1]
+
+    # === Application des règles ===
+    if latest_an_adopte is True and latest_sn_adopte is True:
         return "Adopté par le Parlement"
-    elif has_an_adoption:
+    elif latest_an_adopte is True:
         return "Adopté par l'Assemblée nationale"
-    elif has_sn_adoption:
+    elif latest_sn_adopte is True:
         return "Adopté par le Sénat"
+    elif latest_an_adopte is False and latest_sn_adopte is False:
+        return "Rejeté"
     
     return "En cours d'examen"
     

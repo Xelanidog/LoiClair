@@ -55,6 +55,7 @@ export default async function DossiersLegislatifsPage({ searchParams }: { search
     "adopte_par_assemblee": "Adopté par l'Assemblée nationale",
     "adopte_par_senat": "Adopté par le Sénat",
     "adopte_par_parlement": "Adopté par le Parlement",
+    "rejetee": "Rejeté",
     "promulguee": "Promulguée",
   };
 
@@ -256,19 +257,25 @@ query = query
                     <span className="px-2">{dossier.initiateur_acteur_ref.groupe.libelle ?? 'Mandat terminé'}</span>
                   </>
                 )}
-                                <span
-                  className={`ml-2 px-3 py-1 rounded-full text-xs font-semibold ${
-                    dossier.statut_final === "Promulguée" 
-                      ? 'bg-green-100 text-green-800' 
-                    : dossier.statut_final === "En cours d'examen" 
-                      ? 'bg-yellow-100 text-yellow-800' 
-                    : dossier.statut_final.includes("Adopté") 
-                      ? 'bg-blue-100 text-blue-800' 
-                      : 'bg-gray-100 text-gray-800'
-                  }`}
-                >
-                  {dossier.statut_final}
-                </span>
+                 <span
+  className={`ml-2 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap border ${
+    dossier.statut_final === "Promulguée"
+      ? "bg-green-100 text-green-800 border-green-200"
+      : dossier.statut_final === "Rejeté"
+      ? "bg-red-100 text-red-800 border-red-200"
+      : dossier.statut_final === "En cours d'examen"
+      ? "bg-yellow-100 text-yellow-800 border-yellow-200"
+      : dossier.statut_final === "Adopté par le Parlement"
+      ? "bg-purple-100 text-purple-800 border-purple-200"
+      : dossier.statut_final === "Adopté par l'Assemblée nationale"
+      ? "bg-blue-100 text-blue-800 border-blue-200"
+      : dossier.statut_final === "Adopté par le Sénat"
+      ? "bg-indigo-100 text-indigo-800 border-indigo-200"
+      : "bg-gray-100 text-gray-700 border-gray-200"
+  }`}
+>
+  {dossier.statut_final}
+</span>
               </div>
 
               <div className="flex items-center space-x-4 text-sm mt-2">
@@ -305,7 +312,7 @@ query = query
 
   const formattedDepotDate = new Date(premiereDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 
-  if (dossier.statut_final === 'promulguee' && dossier.date_promulgation) {
+  if (dossier.statut_final === "Promulguée" && dossier.date_promulgation) {
     // Cas promulgué : jours entre dépôt et promulgation
     const startDate = new Date(premiereDate);
     const promulDate = new Date(dossier.date_promulgation);
