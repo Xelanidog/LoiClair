@@ -18,20 +18,20 @@ import {
 } from '@/components/ui/chart';
 
 const chartConfig: ChartConfig = {
-  lois: {
-    label: "Lois déposées",
+  dossiers: {
+    label: "Dossiers déposés",
     color: "var(--chart-1)",
   },
 } satisfies ChartConfig;
 
-
-interface MonthlyLawsChartProps {
-  data: { month: string; lois: number }[];
+interface MonthlyDossiersChartProps {
+  data: { month: string; dossiers: number }[];   // ← Changé de "lois" à "dossiers"
 }
 
-export function MonthlyLawsChart({ data }: MonthlyLawsChartProps) {
-      const lastMonth = data[data.length - 1]?.lois ?? 0;
-  const prevMonth = data[data.length - 2]?.lois ?? 0;
+export function MonthlyDossiersChart({ data }: MonthlyDossiersChartProps) {
+  // Calcul de la tendance (mois courant vs mois précédent)
+  const lastMonth = data[data.length - 1]?.dossiers ?? 0;
+  const prevMonth = data[data.length - 2]?.dossiers ?? 0;
   const trend = prevMonth > 0 ? ((lastMonth - prevMonth) / prevMonth) * 100 : 0;
 
   const trendText = trend > 0 
@@ -46,7 +46,7 @@ export function MonthlyLawsChart({ data }: MonthlyLawsChartProps) {
         <div className="flex flex-1 flex-col justify-center gap-1 px-6 py-5 sm:py-6">
           <CardTitle>Évolution mensuelle</CardTitle>
           <CardDescription>
-            Nombre de lois déposées - 24 derniers mois
+            Nombre de dossiers législatifs déposés — 24 derniers mois
           </CardDescription>
         </div>
       </CardHeader>
@@ -63,27 +63,27 @@ export function MonthlyLawsChart({ data }: MonthlyLawsChartProps) {
           >
             <CartesianGrid vertical={false} strokeDasharray="3 3" />
             <XAxis
-  dataKey="month"
-  tickLine={false}
-  axisLine={false}
-  tickMargin={10}
-  fontSize={12}
-  tickFormatter={(value) => value.split('-')[0]}  // Affiche seulement short month (ex. 'janv.').
-/>
-<ChartTooltip
-  content={
-    <ChartTooltipContent 
-      className="w-[160px]"
-      labelFormatter={(value) => {
-        const [shortMonth, year] = value.split('-');
-        return `${shortMonth} ${year || ''}`;
-      }}
-    />
-  }
-/>
+              dataKey="month"
+              tickLine={false}
+              axisLine={false}
+              tickMargin={10}
+              fontSize={12}
+              tickFormatter={(value) => value.split('-')[0]}
+            />
+            <ChartTooltip
+              content={
+                <ChartTooltipContent 
+                  className="w-[160px]"
+                  labelFormatter={(value) => {
+                    const [shortMonth, year] = value.split('-');
+                    return `${shortMonth} ${year || ''}`;
+                  }}
+                />
+              }
+            />
             <Bar 
-              dataKey="lois" 
-              fill="var(--color-lois)" 
+              dataKey="dossiers" 
+              fill="var(--color-dossiers)" 
               radius={2}
             />
           </BarChart>
