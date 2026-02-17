@@ -117,8 +117,7 @@ const procedure = typeFilter ? procedureMap[typeFilter] : undefined;
   // Fetch Supabase avec filtre statut (si présent).
 let query = supabase
   .from('dossiers_legislatifs')
-  .select('*, initiateur_acteur_ref(uid, nom, prenom, roles_text, groupe:organes(uid, libelle)), actes_legislatifs!actes_legislatifs_dossier_uid_fkey(date_acte), textes_count: textes!dossier_ref(count), date_promulgation');  
- 
+  .select('*, initiateur_acteur_ref(uid, nom, prenom, roles_text, groupe:organes(uid, libelle)), textes_count: textes!dossier_ref(count), date_promulgation') 
  
   if (statut) {
     query = query.eq('statut_final', statut);
@@ -308,11 +307,9 @@ query = query
               </div>
 
 {(() => {
-  // Extraction commune de la date de dépôt (première acte valide)
-  const actes = dossier.actes_legislatifs || [];
-  const actesAvecDates = actes.filter(acte => acte.date_acte && !isNaN(new Date(acte.date_acte).getTime()));
-  const sortedActes = actesAvecDates.sort((a, b) => new Date(a.date_acte).getTime() - new Date(b.date_acte).getTime());
-  const premiereDate = sortedActes[0]?.date_acte;
+// Extraction commune de la date de dépôt (première acte valide)
+
+const premiereDate = dossier.date_depot;  // Directement la colonne officielle (timestamp ISO)
 
   if (!premiereDate) {
     return <p className="text-gray-600 text-sm mt-2">Date de dépôt : Inconnue</p>;
