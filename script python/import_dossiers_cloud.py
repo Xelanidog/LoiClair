@@ -419,6 +419,28 @@ def importer_dossier(data: dict, file_path: str = "unknown.json"):
         # ajouter_acteur_si_manquant(co['acteurRef'])
         # Ajoute organe manquant
         # ajouter_organe_si_manquant(initiateur_organe_ref)
+
+
+        # Nouvelle logique pour groupe
+        initiateur_groupe_uid = None
+        initiateur_groupe_libelle = None
+
+        if initiateur_acteur_ref:
+            acteur_resp = supabase.table('acteurs').select('groupe').eq('uid', initiateur_acteur_ref).execute()
+            if acteur_resp.data and acteur_resp.data[0].get('groupe'):
+                initiateur_groupe_uid = acteur_resp.data[0]['groupe']
+                
+                if initiateur_groupe_uid:
+                    organe_resp = supabase.table('organes').select('libelle').eq('uid', initiateur_groupe_uid).execute()
+                    if organe_resp.data:
+                        initiateur_groupe_libelle = organe_resp.data[0]['libelle']
+
+        elif initiateur_organe_ref:
+            organe_resp = supabase.table('organes').select('libelle').eq('uid', initiateur_organe_ref).execute()
+            if organe_resp.data:
+                initiateur_groupe_uid = initiateur_organe_ref
+                initiateur_groupe_libelle = organe_resp.data[0]['libelle']
+
         actes_legislatifs = (
             dossier.get("actesLegislatifs", {}).get("acteLegislatif", []) or []
         )
@@ -480,6 +502,8 @@ def importer_dossier(data: dict, file_path: str = "unknown.json"):
             "textes_associes_refs": textes_associes_refs,
             "votes_refs": votes_refs,
             "lien_an": lien_an,
+            "initiateur_groupe_uid": initiateur_groupe_uid,
+            "initiateur_groupe_libelle": initiateur_groupe_libelle,
         }
 
         return payload
