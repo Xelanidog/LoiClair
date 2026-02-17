@@ -307,23 +307,45 @@ query = query
               </div>
 
 {(() => {
-// Extraction commune de la date de dépôt (première acte valide)
+  const depotDateRaw: string | null = dossier.date_depot;
 
-const premiereDate = dossier.date_depot;  // Directement la colonne officielle (timestamp ISO)
-
-  if (!premiereDate) {
+  if (!depotDateRaw) {
     return <p className="text-gray-600 text-sm mt-2">Date de dépôt : Inconnue</p>;
   }
 
-  const formattedDepotDate = new Date(premiereDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  const depotDateObj = new Date(depotDateRaw);
+  if (isNaN(depotDateObj.getTime())) {
+    return <p className="text-gray-600 text-sm mt-2">Date de dépôt : Format invalide</p>;
+  }
+
+  // Affichage en français + timezone France (évite décalage de jour sur Vercel UTC)
+  const formattedDepotDate = new Intl.DateTimeFormat('fr-FR', {
+    dateStyle: 'long',
+    timeZone: 'Europe/Paris',
+  }).format(depotDateObj);
 
   if (dossier.statut_final === "Promulguée" && dossier.date_promulgation) {
     // Cas promulgué : jours entre dépôt et promulgation
-    const startDate = new Date(premiereDate);
-    const promulDate = new Date(dossier.date_promulgation);
-    const daysElapsed = Math.floor((promulDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-    const formattedPromulDate = promulDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-    const daysText = daysElapsed >= 0 ? `après ${daysElapsed} jour${daysElapsed > 1 ? 's' : ''}` : 'Date invalide';
+    const promulDateObj = new Date(dossier.date_promulgation);
+    if (isNaN(promulDateObj.getTime())) {
+      return (
+        <div className="flex items-center space-x-4 text-sm text-gray-600 mt-2">
+          <p className="px-2">Date de dépôt : {formattedDepotDate}</p>
+          <p className="px-2">Promulguée : date invalide</p>
+        </div>
+      );
+    }
+
+    const daysElapsed = Math.floor(
+      (promulDateObj.getTime() - depotDateObj.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    const formattedPromulDate = new Intl.DateTimeFormat('fr-FR', {
+      dateStyle: 'long',
+      timeZone: 'Europe/Paris',
+    }).format(promulDateObj);
+
+    const daysText =
+      daysElapsed >= 0 ? `après ${daysElapsed} jour${daysElapsed > 1 ? 's' : ''}` : 'Date invalide';
 
     return (
       <div className="flex items-center space-x-4 text-sm text-gray-600 mt-2">
@@ -334,9 +356,11 @@ const premiereDate = dossier.date_depot;  // Directement la colonne officielle (
   } else {
     // Cas par défaut (en cours) : jours depuis dépôt jusqu'à aujourd'hui
     const today = new Date();
-    const startDate = new Date(premiereDate);
-    const daysElapsed = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-    const daysText = daysElapsed >= 0 ? `Depuis ${daysElapsed} jour${daysElapsed > 1 ? 's' : ''}` : 'Date future';
+    const daysElapsed = Math.floor(
+      (today.getTime() - depotDateObj.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    const daysText =
+      daysElapsed >= 0 ? `Depuis ${daysElapsed} jour${daysElapsed > 1 ? 's' : ''}` : 'Date future';
 
     return (
       <div className="flex items-center space-x-4 text-sm text-gray-600 mt-2">
