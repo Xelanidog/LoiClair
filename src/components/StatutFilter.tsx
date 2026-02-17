@@ -11,12 +11,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function StatutFilter() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  // Valeur actuelle dans l'URL (ou 'tous' par défaut)
   const [selectedStatut, setSelectedStatut] = useState(
     searchParams.get('statut') || 'tous'
   );
@@ -36,16 +41,35 @@ export default function StatutFilter() {
       params.set('statut', value);
     }
 
-    params.delete('page'); // On revient à la page 1 quand on change le filtre
+    params.delete('page');
     router.push(`?${params.toString()}`);
   };
 
+  const isActive = selectedStatut !== 'tous';
+
   return (
+   <TooltipProvider>
+  <Tooltip>
     <Select onValueChange={handleChange} value={selectedStatut}>
-      <SelectTrigger className="w-56">
-        <SelectValue placeholder="Filtrer par statut" />
-      </SelectTrigger>
-            <SelectContent>
+      <TooltipTrigger asChild>
+        <SelectTrigger
+          className={`
+            max-w-56 transition-colors duration-200
+            ${isActive
+              ? 'border-blue-500 bg-blue-50 text-blue-800 hover:bg-blue-100'
+              : 'border-input hover:bg-gray-100 hover:border-blue-300'}
+          `}
+        >
+          <SelectValue placeholder="Filtrer par statut" />
+          {isActive && (
+            <span className="ml-2 inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
+              Actif
+            </span>
+          )}
+        </SelectTrigger>
+      </TooltipTrigger>
+
+      <SelectContent>
         <SelectGroup>
           <SelectLabel>Statut du dossier</SelectLabel>
           <SelectItem value="tous">Tous les statuts</SelectItem>
@@ -57,6 +81,16 @@ export default function StatutFilter() {
           <SelectItem value="promulguee">Promulguée</SelectItem>
         </SelectGroup>
       </SelectContent>
+
+      {/* TooltipContent doit être à l'intérieur du Tooltip, mais en dehors du Select */}
+      <TooltipContent side="bottom" align="start" className="max-w-xs text-base leading-relaxed">
+        <p className="font-medium">Filtre par statut du dossier</p>
+        <p className="text-muted-foreground mt-1">
+          Affiche uniquement les dossiers dans l’état choisi (en cours, adopté, promulgué, rejeté…).
+        </p>
+      </TooltipContent>
     </Select>
+  </Tooltip>
+</TooltipProvider>
   );
 }

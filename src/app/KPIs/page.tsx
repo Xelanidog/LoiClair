@@ -160,7 +160,7 @@ return (
       </div>
 
       {/* Barre de filtres : Type + Reset */}
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex items-center gap-3 flex-nowrap overflow-x-auto pb-1">
   <TypeFilter 
     typeOptions={typeOptions}
     // currentType n'est pas nécessaire car le composant lit searchParams directement
@@ -217,74 +217,101 @@ return (
 
             {/* Nouvelles cartes par statut */}
       <div className="mt-8">
-        <h2 className="text-4xl font-semibold mb-6">État des dossiers</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">En traitement</CardTitle>
-              <CardDescription>Le texte a été déposé au parlement (Assemblée Natioanle ou Sénat) et est étudié pour décision</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-5xl font-bold">{statsData.en_cours.toLocaleString('fr-FR')}</div>
-            </CardContent>
-          </Card>
+  <h2 className="text-4xl font-semibold mb-6">État des dossiers</h2>
+  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6">
 
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Adoptés par l'Assemblée Nationale</CardTitle>
-              <CardDescription>L'Assemblée Nationale a adopté. Prochaine étape est l'étude par le Sénat</CardDescription>
-
-            </CardHeader>
-            <CardContent>
-              <div className="text-5xl font-bold text-emerald-600">{statsData.adoptes_an.toLocaleString('fr-FR')}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Adoptés par le Sénat</CardTitle>
-               <CardDescription>Le Sénat a adopté. Prochaine étape est l'étude par l'assemblée Nationale</CardDescription>
-
-            </CardHeader>
-            <CardContent>
-              <div className="text-5xl font-bold text-emerald-600">{statsData.adoptes_senat.toLocaleString('fr-FR')}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Adoptés par le Parlement</CardTitle>
-              <CardDescription>Les deux assemblées (Nationale et Sénat) on adopté le texte. Prochaine étape est sa promulgation par le Présendent de la république</CardDescription>
-
-            </CardHeader>
-            <CardContent>
-              <div className="text-5xl font-bold text-emerald-600">{statsData.adoptes_parlement.toLocaleString('fr-FR')}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Promulgués</CardTitle>
-              <CardDescription>Le Président de la République a promulgué la loi. La loi est publiée au Journal officiel, entre en vigueur, et nécessite souvent des décrets d’application pour être pleinement applicable</CardDescription>
-
-            </CardHeader>
-            <CardContent>
-              <div className="text-5xl font-bold text-purple-600">{statsData.promulgues.toLocaleString('fr-FR')}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Rejetés</CardTitle>
-              <CardDescription>La loi est abandonnée, sauf si le gouvernement décide de déposer un nouveau projet ou une version modifiée du texte</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-5xl font-bold text-red-600">{statsData.rejetes.toLocaleString('fr-FR')}</div>
-            </CardContent>
-          </Card>
+    {/* Carte 1 - En traitement */}
+    <Card className="grid grid-rows-[auto_1fr_auto] gap-2 text-center">
+      <CardHeader className="pb-1">
+        <CardTitle className="text-base font-medium">En traitement</CardTitle>
+        <CardDescription className="text-sm text-muted-foreground leading-tight">
+          Le texte a été déposé au parlement (Assemblée Nationale ou Sénat) et est étudié pour décision
+        </CardDescription>
+      </CardHeader>
+      <div className="flex items-end justify-center mt-6 md:mt-8">
+        <div className="text-5xl font-bold">
+          {statsData.en_cours.toLocaleString('fr-FR')}
         </div>
       </div>
+    </Card>
+
+    {/* Carte 2 - Adoptés par l'Assemblée Nationale */}
+    <Card className="grid grid-rows-[auto_1fr_auto] gap-2 text-center">
+      <CardHeader className="pb-1">
+        <CardTitle className="text-base font-medium">Adoptés par l'Assemblée Nationale</CardTitle>
+        <CardDescription className="text-sm text-muted-foreground leading-tight">
+          L'Assemblée Nationale a adopté. Prochaine étape : étude par le Sénat
+        </CardDescription>
+      </CardHeader>
+      <div className="flex items-end justify-center mt-6 md:mt-8">
+        <div className="text-5xl font-bold text-emerald-600">
+          {statsData.adoptes_an.toLocaleString('fr-FR')}
+        </div>
+      </div>
+    </Card>
+
+    {/* Carte 3 - Adoptés par le Sénat */}
+    <Card className="grid grid-rows-[auto_1fr_auto] gap-2 text-center">
+      <CardHeader className="pb-1">
+        <CardTitle className="text-base font-medium">Adoptés par le Sénat</CardTitle>
+        <CardDescription className="text-sm text-muted-foreground leading-tight">
+          Le Sénat a adopté. Prochaine étape : étude par l'Assemblée Nationale
+        </CardDescription>
+      </CardHeader>
+      <div className="flex items-end justify-center mt-6 md:mt-8">
+        <div className="text-5xl font-bold text-emerald-600">
+          {statsData.adoptes_senat.toLocaleString('fr-FR')}
+        </div>
+      </div>
+    </Card>
+
+    {/* Carte 4 - Adoptés par le Parlement */}
+    <Card className="grid grid-rows-[auto_1fr_auto] gap-2 text-center">
+      <CardHeader className="pb-1">
+        <CardTitle className="text-base font-medium">Adoptés par le Parlement</CardTitle>
+        <CardDescription className="text-sm text-muted-foreground leading-tight">
+          Les deux assemblées ont adopté le texte. Prochaine étape : promulgation
+        </CardDescription>
+      </CardHeader>
+      <div className="flex items-end justify-center mt-6 md:mt-8">
+        <div className="text-5xl font-bold text-emerald-600">
+          {statsData.adoptes_parlement.toLocaleString('fr-FR')}
+        </div>
+      </div>
+    </Card>
+
+    {/* Carte 5 - Promulgués */}
+    <Card className="grid grid-rows-[auto_1fr_auto] gap-2 text-center">
+      <CardHeader className="pb-1">
+        <CardTitle className="text-base font-medium">Promulgués</CardTitle>
+        <CardDescription className="text-sm text-muted-foreground leading-tight">
+          Le Président a promulgué la loi. Publication au Journal officiel
+        </CardDescription>
+      </CardHeader>
+      <div className="flex items-end justify-center mt-6 md:mt-8">
+        <div className="text-5xl font-bold text-purple-600">
+          {statsData.promulgues.toLocaleString('fr-FR')}
+        </div>
+      </div>
+    </Card>
+
+    {/* Carte 6 - Rejetés */}
+    <Card className="grid grid-rows-[auto_1fr_auto] gap-2 text-center">
+      <CardHeader className="pb-1">
+        <CardTitle className="text-base font-medium">Rejetés</CardTitle>
+        <CardDescription className="text-sm text-muted-foreground leading-tight">
+          La loi est abandonnée (sauf nouveau dépôt ou version modifiée)
+        </CardDescription>
+      </CardHeader>
+      <div className="flex items-end justify-center mt-6 md:mt-8">
+        <div className="text-5xl font-bold text-red-600">
+          {statsData.rejetes.toLocaleString('fr-FR')}
+        </div>
+      </div>
+    </Card>
+
+  </div>
+</div>
     </div>
   );
 }
