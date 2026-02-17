@@ -964,7 +964,7 @@ def importer_textes_from_zip(zip_ref: zipfile.ZipFile):
     print(f"   - Textes (document/) : {textes_count}")
     print(f"   - Dossiers (pour PROM) : {dossiers_count}")
 
-    batch_size = 100  # on envoie 100 textes à la fois à Supabase
+    batch_size = 500  # on envoie 100 textes à la fois à Supabase
     batch = []
     success = 0
     failed = 0
