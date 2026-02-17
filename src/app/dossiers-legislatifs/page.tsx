@@ -103,6 +103,14 @@ uniqueTypes.forEach(type => {
   procedureMap[slug] = type;
 });
 
+// === NOUVELLE VERSION : tableau optimisé pour TypeFilter ===
+const typeOptions = uniqueTypes.map((libelle) => {
+  const slug = Object.keys(procedureMap).find(
+    (key) => procedureMap[key] === libelle
+  ) || '';
+  return { slug, libelle };
+});
+
 const procedure = typeFilter ? procedureMap[typeFilter] : undefined;
 
 
@@ -223,7 +231,7 @@ query = query
       <div className="mb-4 flex items-center gap-4">
           <StatutFilter />
           <AgeFilter />
-          <TypeFilter uniqueTypes={uniqueTypes} procedureMap={procedureMap} />
+          <TypeFilter typeOptions={typeOptions} />
           <ResetButton />
                 </div>
 

@@ -1,8 +1,46 @@
+// src/app/KPIs/page.tsx
+
 'use server';
 
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { MonthlyDossiersChart } from '@/components/ui/MonthlyDossiersChart';
+import TypeFilter from '@/components/TypeFilter';
+import ResetButton from '@/components/ResetButton';
+
+export default async function KpisPage({ 
+  searchParams 
+}: { 
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }> 
+}) {
+  const resolvedParams = await searchParams;
+
+  // === Extraction du filtre type (exactement comme dans dossiers-legislatifs) ===
+  const typeFilter = typeof resolvedParams.type === 'string' 
+    ? resolvedParams.type.toLowerCase() 
+    : undefined;
+
+  // Fetch des types uniques pour le filtre
+  const { data: uniqueProcedures } = await supabase
+    .from('dossiers_legislatifs')
+    .select('procedure_libelle')
+    .not('procedure_libelle', 'is', null);
+
+  const uniqueTypes = [...new Set(uniqueProcedures?.map(item => item.procedure_libelle) || [])].sort();
+
+  // Mapping slug → vraie valeur
+  const procedureMap: { [key: string]: string } = {};
+  uniqueTypes.forEach(type => {
+    const slug = type.toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/_+$/, '');
+    procedureMap[slug] = type;
+  });
+
+  const procedure = typeFilter ? procedureMap[typeFilter] : undefined;
+
+  // ← ici on va continuer dans la prochaine étape
 
 let statsData = { 
   total_dossiers: 0,
@@ -18,12 +56,21 @@ let statsData = {
 };
 
 try {
-  const { data: dossiers, error } = await supabase
+  // ────────────────────────────────────────────────────────────────
+  // Construction de la requête de base
+  let query = supabase
     .from('dossiers_legislatifs')
     .select('date_depot, statut_final')
     .not('date_depot', 'is', null)
     .order('date_depot', { ascending: false })
     .limit(10000);
+
+  // Appliquer le filtre sur procedure_libelle SI présent
+  if (procedure) {
+    query = query.eq('procedure_libelle', procedure);
+  }
+
+  const { data: dossiers, error } = await query;
 
   if (error) throw error;
 
@@ -38,7 +85,7 @@ try {
 
   statsData.mois_courant = depotDates.filter(d => d >= moisCourantStart).length;
 
-  // === Calcul des statuts ===
+  // Calcul des statuts (inchangé)
   dossiers?.forEach((d: any) => {
     const statut = d.statut_final?.toLowerCase() || 'inconnu';
 
@@ -50,7 +97,7 @@ try {
     else if (statut.includes('rejet')) statsData.rejetes++;
   });
 
-  // ... (le reste du code historique 24 mois reste identique)
+  // Calcul historique mensuel (inchangé)
   const startDate = new Date(now.getFullYear(), now.getMonth() - 23, 1);
   const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
   const monthlyCounts: { [key: string]: number } = {};
@@ -85,13 +132,45 @@ const chartData = statsData.historique.slice(-24).map(({ mois, count }) => {
   return { month: `${monthName}-${year}`, dossiers: count, year };
 });
 
-export default async function KpisPage() {
-  return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="mb-10">
+// Dans la page KPIs (serveur) – juste avant le return
+const typeOptions = uniqueTypes.map((libelle) => {
+  // On cherche le slug correspondant (inverse du mapping)
+  const slug = Object.keys(procedureMap).find(
+    (key) => procedureMap[key] === libelle
+  ) || '';
+
+  return { slug, libelle };
+});
+
+
+return (
+  <div className="container mx-auto py-8 px-4">
+    {/* Titre + filtre en haut – même style que la page dossiers */}
+    <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div>
         <h1 className="text-4xl font-bold mb-2">KPIs Parlement</h1>
-        <p className="text-xl text-muted-foreground">Activité de la 17ième législature en temps réel</p>
+        <p className="text-xl text-muted-foreground">
+          Activité de la 17ᵉ législature en temps réel
+          {procedure && (
+            <span className="ml-2 text-lg font-medium text-primary">
+              – {procedure}
+            </span>
+          )}
+        </p>
       </div>
+
+      {/* Barre de filtres : Type + Reset */}
+      <div className="flex flex-wrap items-center gap-3">
+  <TypeFilter 
+    typeOptions={typeOptions}
+    // currentType n'est pas nécessaire car le composant lit searchParams directement
+  />
+  <ResetButton 
+    currentParams={resolvedParams} 
+    fieldsToReset={['type']}
+  />
+</div>
+    </div>
 
       {/* Cartes de synthèse */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
