@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { MonthlyDossiersChart } from '@/components/ui/MonthlyDossiersChart';
 import TypeFilter from '@/components/TypeFilter';
 import ResetButton from '@/components/ResetButton';
+import GroupeFilter from '@/components/GroupeFilter';
 
 export default async function KpisPage({ 
   searchParams 
@@ -20,13 +21,38 @@ export default async function KpisPage({
     ? resolvedParams.type.toLowerCase() 
     : undefined;
 
-  // Fetch des types uniques pour le filtre
-  const { data: uniqueProcedures } = await supabase
-    .from('dossiers_legislatifs')
-    .select('procedure_libelle')
-    .not('procedure_libelle', 'is', null);
+    const groupeFilter = typeof resolvedParams.groupe === 'string' 
+   ? resolvedParams.groupe.toLowerCase() 
+   : undefined;
 
-  const uniqueTypes = [...new Set(uniqueProcedures?.map(item => item.procedure_libelle) || [])].sort();
+
+
+// ────────────────────────────────────────────────
+// PARALLÉLISATION : on lance les deux fetches en même temps
+// ────────────────────────────────────────────────
+
+// 1. Promesse pour les types (sans await)
+const typesPromise = supabase
+  .from('dossiers_legislatifs')
+  .select('procedure_libelle')
+  .not('procedure_libelle', 'is', null);
+
+// 2. Promesse pour les groupes (sans await)
+const groupesPromise = supabase
+  .from('dossiers_legislatifs')
+  .select('initiateur_groupe_libelle')
+  .not('initiateur_groupe_libelle', 'is', null);
+
+// 3. On attend les DEUX en parallèle
+const [typesResult, groupesResult] = await Promise.all([typesPromise, groupesPromise]);
+
+
+// ────────────────────────────────────────────────
+// Traitement des résultats
+// ────────────────────────────────────────────────
+
+
+const uniqueTypes = [...new Set(typesResult.data?.map(item => item.procedure_libelle) || [])].sort();
 
   // Mapping slug → vraie valeur
   const procedureMap: { [key: string]: string } = {};
@@ -38,9 +64,34 @@ export default async function KpisPage({
     procedureMap[slug] = type;
   });
 
-  const procedure = typeFilter ? procedureMap[typeFilter] : undefined;
+    const procedure = typeFilter ? procedureMap[typeFilter] : undefined;
 
-  // ← ici on va continuer dans la prochaine étape
+
+
+
+const uniqueGroupesLibelles = [...new Set(groupesResult.data?.map(item => item.initiateur_groupe_libelle) || [])].sort();
+
+  // Mapping slug → vraie valeur (groupe)
+  const groupeMap: { [key: string]: string } = {};
+  uniqueGroupesLibelles.forEach(libelle => {
+    const slug = libelle.toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')  // Enlève accents
+      .replace(/[^a-z0-9]+/g, '_')  // Remplace espaces/spéciaux par _
+      .replace(/_+$/, '');  // Enlève _ finaux
+    groupeMap[slug] = libelle;
+  });
+
+  // Options pour GroupeFilter (type GroupeOption du composant)
+  const groupeOptions = uniqueGroupesLibelles.map((libelle) => {
+    const slug = Object.entries(groupeMap).find(([s, l]) => l === libelle)?.[0] || '';
+    return { slug, libelle };
+  });
+
+  const groupe = groupeFilter ? groupeMap[groupeFilter] : undefined;
+
+
+
+
 
 let statsData = { 
   total_dossiers: 0,
@@ -68,6 +119,10 @@ try {
   // Appliquer le filtre sur procedure_libelle SI présent
   if (procedure) {
     query = query.eq('procedure_libelle', procedure);
+  }
+
+  if (groupe) {
+    query = query.eq('initiateur_groupe_libelle', groupe);
   }
 
   const { data: dossiers, error } = await query;
@@ -149,13 +204,10 @@ return (
     <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
       <div>
         <h1 className="text-4xl font-bold mb-2">KPIs Parlement</h1>
-        <p className="text-xl text-muted-foreground">
+        <p className="text-lg md:text-xl text-muted-foreground">
           Activité de la 17ᵉ législature en temps réel
-          {procedure && (
-            <span className="ml-2 text-lg font-medium text-primary">
-              – {procedure}
-            </span>
-          )}
+          {procedure && <span className="ml-2 font-medium text-sm text-blue-600">[ {procedure} ]</span>}
+          {groupe && <span className="ml-2 font-medium text-sm text-blue-600">[ {groupe} ]</span>}
         </p>
       </div>
 
@@ -165,10 +217,8 @@ return (
     typeOptions={typeOptions}
     // currentType n'est pas nécessaire car le composant lit searchParams directement
   />
-  <ResetButton 
-    currentParams={resolvedParams} 
-    fieldsToReset={['type']}
-  />
+  <GroupeFilter groupeOptions={groupeOptions} />
+  <ResetButton />
 </div>
     </div>
 
