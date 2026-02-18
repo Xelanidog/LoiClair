@@ -5,7 +5,7 @@ name: Mise à jour quotidienne des données LoiClair
 on:
   # Automatique : tous les jours à minuit UTC (cron est un format pour les horaires ; '0 0 * * *' = minuit chaque jour)
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '0 10 * * *'
   # Manuel : pour tester, via l'interface GitHub (clic sur "Run workflow")
   workflow_dispatch:
 
