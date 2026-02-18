@@ -19,6 +19,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination';
+import GroupeFilter from '@/components/GroupeFilter';
 
 
 // Fonction utilitaire pour générer une URL avec un nouveau 'page', en gardant tous les autres params.
@@ -82,6 +83,7 @@ if (age) {
 }
 
   const typeFilter = typeof resolvedParams.type === 'string' ? resolvedParams.type.toLowerCase() : undefined; 
+  const groupeFilter = typeof resolvedParams.groupe === 'string' ? resolvedParams.groupe.toLowerCase() : undefined;
 
 
   // Fetch des types uniques pour le filtre (distinct sur procedure_libelle, ignore null).
@@ -114,6 +116,34 @@ const typeOptions = uniqueTypes.map((libelle) => {
 const procedure = typeFilter ? procedureMap[typeFilter] : undefined;
 
 
+// Fetch des groupes uniques pour le filtre (distinct sur initiateur_groupe_libelle, ignore null).
+const { data: uniqueGroupes } = await supabase
+  .from('dossiers_legislatifs')
+  .select('initiateur_groupe_libelle')
+  .not('initiateur_groupe_libelle', 'is', null);
+
+// Extraction des valeurs uniques et tri alphabétique.
+const uniqueGroupesLibelles = [...new Set(uniqueGroupes?.map(item => item.initiateur_groupe_libelle) || [])].sort();
+
+// Génère le mapping slug -> valeur DB dynamiquement.
+const groupeMap: { [key: string]: string } = {};
+uniqueGroupesLibelles.forEach(libelle => {
+  const slug = libelle.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // Retire accents.
+    .replace(/[^a-z0-9]+/g, '_') // Remplace espaces/punctuation par '_'.
+    .replace(/_+$/, ''); // Nettoie fin.
+  groupeMap[slug] = libelle;
+});
+
+// Tableau optimisé pour GroupeFilter (comme typeOptions).
+const groupeOptions = uniqueGroupesLibelles.map((libelle) => {
+  const slug = Object.keys(groupeMap).find(
+    (key) => groupeMap[key] === libelle
+  ) || '';
+  return { slug, libelle };
+});
+
+
   // Fetch Supabase avec filtre statut (si présent).
 let query = supabase
   .from('dossiers_legislatifs')
@@ -143,6 +173,10 @@ if (age && sixMonthsAgo && oneYearAgo) {
   }
 }
 
+if (groupeFilter && groupeMap[groupeFilter]) {
+  query = query.eq('initiateur_groupe_libelle', groupeMap[groupeFilter]);
+}
+
 // Query pour compter le total (duplique les filtres de la query principale)
 let countQuery = supabase
   .from('dossiers_legislatifs')
@@ -170,6 +204,10 @@ if (age && sixMonthsAgo && oneYearAgo) {
   } else if (age === 'plus_1a') {
     countQuery = countQuery.lte('date_depot', oneYearAgoISO);
   }
+}
+
+if (groupeFilter && groupeMap[groupeFilter]) {
+  countQuery = countQuery.eq('initiateur_groupe_libelle', groupeMap[groupeFilter]);
 }
 
 const { count: totalCount, error: countError } = await countQuery;
@@ -231,6 +269,7 @@ query = query
           <StatutFilter />
           <AgeFilter />
           <TypeFilter typeOptions={typeOptions} />
+          <GroupeFilter groupeOptions={groupeOptions} />
           <ResetButton />
                 </div>
 

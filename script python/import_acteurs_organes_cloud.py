@@ -200,7 +200,7 @@ def importer_acteur(acteur_data, file_name):
                 pass  # en cas d'erreur de tri, on garde l'ordre original
 
             # On garde seulement les 15 plus récents
-            mandats_raw = mandats_raw[:25]
+            mandats_raw = mandats_raw[:50]
 
         mandats = json.dumps(mandats_raw) if mandats_raw else None
 

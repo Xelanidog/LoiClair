@@ -435,12 +435,6 @@ def importer_dossier(data: dict, file_path: str = "unknown.json"):
                     if organe_resp.data:
                         initiateur_groupe_libelle = organe_resp.data[0]['libelle']
 
-        elif initiateur_organe_ref:
-            organe_resp = supabase.table('organes').select('libelle').eq('uid', initiateur_organe_ref).execute()
-            if organe_resp.data:
-                initiateur_groupe_uid = initiateur_organe_ref
-                initiateur_groupe_libelle = organe_resp.data[0]['libelle']
-
         actes_legislatifs = (
             dossier.get("actesLegislatifs", {}).get("acteLegislatif", []) or []
         )
