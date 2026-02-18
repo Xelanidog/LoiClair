@@ -64,6 +64,18 @@ export default function Sidebar() {
                   Indicateurs clés
                 </Button>
               </Link>
+                <Link href="/Composition">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    "w-full justify-start text-xs h-8 px-4",
+                    isActive("/dashboard/indicateurs") && "bg-accent text-accent-foreground"
+                  )}
+                >
+                  Composition
+                </Button>
+              </Link>
               <Link href="/Week">
                 <Button
                   variant="ghost"
