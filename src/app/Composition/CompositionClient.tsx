@@ -12,6 +12,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Building2, Briefcase, Calendar, Scale, User, Users } from "lucide-react"
 import { AnimatedNumber } from "@/components/AnimatedNumber"
 import type { KpiMetrics } from './Compositionqueries'
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs"
 
 
 // Imports Shadcn chart – CRUCIAL pour que ChartContainer et ChartTooltipContent fonctionnent
@@ -28,13 +34,13 @@ interface Props {
   gouvData: KpiMetrics
 }
 
-export function CompositionClient({ anData, senatData, gouvData }: Props) {
+export function CompositionClient({ data, title, icon }: Props) {
   return (
-    <div className="space-y-16 md:space-y-20 lg:space-y-24">
-      <InstitutionCard title="Assemblée Nationale" icon={<Building2 className="h-4 w-4" />} data={anData} />
-      <InstitutionCard title="Sénat" icon={<Building2 className="h-4 w-4" />} data={senatData} />
-      <InstitutionCard title="Gouvernement" icon={<Briefcase className="h-4 w-4" />} data={gouvData} />
-    </div>
+    <InstitutionCard 
+      title={title}
+      icon={icon}
+      data={data}
+    />
   )
 }
 
@@ -194,7 +200,6 @@ function InstitutionCard({
     </Card>
   )
 }
-
 function KpiItem({ icon, title, value }: { icon: React.ReactNode; title: string; value: string }) {
   const numericValue = parseFloat(value.replace(/[^0-9.]/g, "")) || 0
   const hasPercent = value.includes("%")
