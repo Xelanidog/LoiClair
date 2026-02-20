@@ -32,10 +32,10 @@ export default async function CompositionPage() {
       </div>
 
       <Tabs defaultValue="an" className="w-full flex flex-col gap-5">
-  <TabsList variant="default" className=" gap-5  " >
-    <TabsTrigger value="an" className="px-6">Assemblée Nationale</TabsTrigger>
-    <TabsTrigger value="senat" className="px-6">Sénat</TabsTrigger>
-    <TabsTrigger value="gouv" className="px-6">Gouvernement</TabsTrigger>
+  <TabsList variant="default" className=" gap-5 rounded-xl " >
+    <TabsTrigger value="an" className="px-6 rounded-xl">Assemblée Nationale</TabsTrigger>
+    <TabsTrigger value="senat" className="px-6 rounded-xl">Sénat</TabsTrigger>
+    <TabsTrigger value="gouv" className="px-6 rounded-xl">Gouvernement</TabsTrigger>
   </TabsList>
 
         <Suspense fallback={
