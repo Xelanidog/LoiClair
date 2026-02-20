@@ -17,15 +17,18 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
+import { ResponsiveContainer } from 'recharts';
+
 
 
 interface Props {
-  anData: KpiMetrics
-  senatData: KpiMetrics
-  gouvData: KpiMetrics
+  data: KpiMetrics
+  title: string
+  icon: React.ReactNode
 }
 
 export function CompositionClient({ data, title, icon }: Props) {
+
   return (
     <InstitutionCard 
       title={title}
@@ -62,16 +65,14 @@ function InstitutionCard({
   }
 
   return (
-<Card className="overflow-hidden rounded-md pt-0 w-full min-w-[340px] sm:min-w-[380px] md:min-w-[420px] lg:min-w-[480px] max-w-md lg:max-w-lg xl:max-w-xl mx-auto">      <CardHeader className="border-b border-border/50 bg-muted/30 px-6 py-5 flex items-center justify-start gap-3 w-full">
-        <CardTitle className="flex items-center gap-3 m-0 p-0">
-          {icon}
-          {title}
-        </CardTitle>
-      </CardHeader>
 
-      <CardContent className="px-4 pb-4 pt-2 font-bold">
+    
+<Card className="overflow-hidden rounded-md">    
+      <CardContent className="px-4 pb-4 font-bold">
+
+
         {/* Ligne 1 : Membres + Parité */}
-        <div className="flex flex-wrap justify-start items-start gap-8 sm:gap-10 md:gap-12 lg:gap-14 mb-5">
+        <div className="flex flex-wrap justify-start items-start mb-5">
   <KpiItem
     icon={<Users className="h-5 w-5 text-muted-foreground" />}
     title="Membres"
@@ -101,7 +102,7 @@ function InstitutionCard({
 </div>
 
         {/* Ligne 2 : Âges */}
-        <div className="flex justify-left items-start gap-10 md:gap-12">
+        <div className="flex justify-left items-start pb-4">
 <KpiItem
   icon={<Calendar className="h-5 w-5 text-muted-foreground" />}
   title="Âge moyen"
@@ -133,16 +134,26 @@ function InstitutionCard({
 
         {/* Le pie chart – seulement pour AN */}
         {title === "Assemblée Nationale" && data.groupes && data.groupes.length > 0 && (
-        <div className="mt-4 pt-2 border-t">  
+
+            
+    
+        <div className="mt-4 pt-6 border-t">  
   <h3 className="text-lg font-semibold text-center">  
     Répartition par groupe politique
   </h3>
 
+<div style={{ height: '420px', width: '100%' }}>
+  
   <ChartContainer
     config={{}}
-    className="mx-auto w-full h-[420px] sm:h-[460px] md:h-[520px] lg:h-[560px] p-0 m-0"  
+    className="relative mx-auto w-full p-0 m-0 h-full"
   >
-      <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>    
+
+    <ResponsiveContainer width="100%" height="100%">
+
+    
+      <PieChart 
+      margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>    
     <RechartsTooltip
       cursor={false}
       content={({ active, payload }) => {
@@ -165,15 +176,15 @@ function InstitutionCard({
   nameKey="name"
   cx="50%"
   cy="50%"
-  innerRadius={80}
-  outerRadius={100}
+  innerRadius={100}
+  outerRadius={140}
   strokeWidth={2}
   stroke="hsl(var(--background))"
   labelLine={true}                // ← lignes reliant part → texte
   label={({ name, value, cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
     // Calcul position du label (extérieur pour parts < 5%, intérieur sinon)
     const RADIAN = Math.PI / 180;
-    const radius = innerRadius + (outerRadius - innerRadius) * 2.3; // un peu plus loin
+    const radius = innerRadius + (outerRadius - innerRadius) * 2; // un peu plus loin
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
     const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
@@ -231,7 +242,9 @@ function InstitutionCard({
   />
 </Pie>
   </PieChart>
+  </ResponsiveContainer>
 </ChartContainer>
+</div>
           </div>
         )}
       </CardContent>

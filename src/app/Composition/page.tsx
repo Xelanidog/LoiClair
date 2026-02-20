@@ -21,7 +21,7 @@ export default async function CompositionPage() {
   ])
 
   return (
-    <div className="container mx-auto py-12 px-4 sm:px-6 lg:px-12 xl:px-16 max-w-6xl">
+    <div className="container mx-auto py-12 max-w-7xl">
           <div className="text-center mb-10">
         <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-3">
           Composition des institutions
