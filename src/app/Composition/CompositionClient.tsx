@@ -62,8 +62,7 @@ function InstitutionCard({
   }
 
   return (
-    <Card className="overflow-hidden rounded-md pt-0">
-      <CardHeader className="border-b border-border/50 bg-muted/30 px-6 py-5 flex items-center justify-start gap-3 w-full">
+<Card className="overflow-hidden rounded-md pt-0 w-full min-w-[340px] sm:min-w-[380px] md:min-w-[420px] lg:min-w-[480px] max-w-md lg:max-w-lg xl:max-w-xl mx-auto">      <CardHeader className="border-b border-border/50 bg-muted/30 px-6 py-5 flex items-center justify-start gap-3 w-full">
         <CardTitle className="flex items-center gap-3 m-0 p-0">
           {icon}
           {title}
