@@ -52,6 +52,7 @@ function InstitutionCard({
   data: KpiMetrics
 }) {
   if (data.membres === 0) {
+  
     return (
       <Card>
         <CardHeader className="pb-4">
@@ -63,6 +64,12 @@ function InstitutionCard({
       </Card>
     )
   }
+
+    const membreLabel = title === "Assemblée Nationale" 
+  ? "Députés" 
+  : title === "Sénat" 
+    ? "Sénateurs" 
+    : "Membres";  // fallback rare
 
   return (
 
@@ -133,14 +140,13 @@ function InstitutionCard({
         </div>
 
         {/* Le pie chart – seulement pour AN */}
-        {title === "Assemblée Nationale" && data.groupes && data.groupes.length > 0 && (
-
-            
+{ (title === "Assemblée Nationale" || title === "Sénat") 
+  && data.groupes 
+  && data.groupes.length > 0 && (            
     
         <div className="mt-4 pt-6 border-t">  
   <h3 className="text-lg font-semibold text-center">  
-    Répartition par groupe politique
-  </h3>
+Répartition par groupe politique  </h3>
 
 <div style={{ height: '420px', width: '100%' }}>
   
@@ -232,7 +238,7 @@ function InstitutionCard({
               y={(viewBox.cy || 0) + 28}
               className="fill-muted-foreground text-sm sm:text-base"
             >
-              Députés
+              {membreLabel}
             </tspan>
           </text>
         );
