@@ -1,184 +1,127 @@
-// app/pourquoi/page.tsx
 import Link from "next/link";
-import { ArrowRight, LayoutDashboard, Lightbulb, Users } from "lucide-react";
+import { ArrowRight, RefreshCw, Sparkles, BarChart2, Search, Vote, BookOpen, MessageSquare, TrendingDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
-export default function IntroPage() {
+const features = [
+  { icon: RefreshCw, title: "Données en temps réel", desc: "Mise à jour quotidienne depuis les données officielles de l'Assemblée nationale." },
+  { icon: Sparkles, title: "Résumés par l'IA", desc: "Chaque texte législatif traduit en langage courant, sans jargon juridique." },
+  { icon: BarChart2, title: "Statistiques parlementaires", desc: "Qui vote quoi, parité, présence en séance — tout en chiffres." },
+  { icon: Search, title: "Trouver vos élus", desc: "Retrouvez et contactez votre député, sénateur ou ministre en secondes." },
+  { icon: Vote, title: "Votez comme un parlementaire", desc: "Donnez votre avis et comparez vos votes à ceux du Parlement." },
+];
+
+const stats = [
+  { stat: "54%", label: "d'abstention", sub: "législatives 2022 (2ᵉ tour)", source: "Ministère de l'Intérieur" },
+  { stat: "74%", label: "des Français", sub: "considèrent les politiques corrompus", source: "Baromètre CEVIPOF 2025" },
+  { stat: "16%", label: "des inscrits", sub: "n'ont voté à aucun tour en 2022", source: "Analyse post-électorale 2022" },
+];
+
+const obstacles = [
+  { icon: BookOpen, num: "01", title: "Dispersion des sources", desc: "Assemblée, Sénat, Légifrance, JO… tout est éparpillé, introuvable pour le citoyen ordinaire." },
+  { icon: MessageSquare, num: "02", title: "Langage très technique", desc: "Écrit pour des juristes, pas pour le citoyen moyen. Comprendre devient un effort." },
+  { icon: TrendingDown, num: "03", title: "Crise de confiance", desc: "Quand on ne comprend rien, on finit par ne plus croire. Et on arrête de voter." },
+];
+
+export default function PourquoiPage() {
   return (
-    <main className="min-h-screen bg-white text-gray-900">
-      {/* Hero / Introduction */}
-      <section className="pt-16 pb-24 px-6 md:px-12 lg:px-24">
-        <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-6">
-            Pourquoi LoiClair ?
+    <div className="max-h-[calc(100vh-theme(spacing.16))] overflow-y-auto">
+      <div className="max-w-7xl mx-auto px-6 py-12 space-y-20">
+
+        {/* Hero */}
+        <section className="text-center space-y-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs text-muted-foreground bg-muted/40 mb-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+            Bêta publique — Gratuit · Indépendant · Neutre
+          </div>
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight leading-tight">
+            Chaque semaine, des lois sont<br />
+            votées{" "}
+            <span className="text-primary">en votre nom.</span>
           </h1>
-
-          <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed mb-10">
-            La démocratie française est belle…  
-            mais beaucoup trop compliquée à suivre au quotidien.
+          <p className="text-muted-foreground text-lg max-w-2xl mx-auto leading-relaxed">
+            LoiClair traduit l'activité législative française en langage humain.
           </p>
-
-          <div className="inline-flex flex-col sm:flex-row items-center gap-5">
-            <Link
-              href="/"
-              className="group inline-flex items-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-full text-base font-medium hover:bg-gray-800 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5"
-            >
-              Découvrir LoiClair
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+          <div className="flex items-center justify-center gap-4 pt-2">
+            <Link href="/dossiers-legislatifs">
+              <Button size="lg" className="rounded-full gap-2">
+                Découvrir LoiClair
+                <ArrowRight className="h-4 w-4" />
+              </Button>
             </Link>
-
-            <span className="text-gray-500 text-sm">
-              Gratuit · Indépendant · Neutre
-            </span>
           </div>
-        </div>
-      </section>
+          
+        </section>
 
-      {/* Notre ambition */}
-      <section className="py-20 px-6 md:px-12 lg:px-24 bg-gray-50">
-        <div className="max-w-5xl mx-auto">
-          <h2 className="text-2xl md:text-3xl font-bold text-center mb-12">
-            Notre ambition
-          </h2>
-
-          <div className="grid md:grid-cols-3 gap-10">
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-50 text-blue-600 mb-5">
-                <Lightbulb className="h-6 w-6" />
+        {/* Features */}
+        <section className="space-y-6">
+          <h2 className="text-xl font-semibold text-center">Ce que vous pouvez faire</h2>
+          <div className="grid grid-cols-1 divide-y md:grid-cols-5 md:divide-y-0 md:divide-x border rounded-xl overflow-hidden">
+            {features.map(({ icon: Icon, title, desc }) => (
+              <div key={title} className="flex flex-col gap-3 p-6 bg-muted/20 hover:bg-muted/50 transition-colors">
+                <Icon className="h-4 w-4 text-muted-foreground" />
+                <h3 className="font-semibold text-sm">{title}</h3>
+                <p className="text-muted-foreground text-xs leading-relaxed">{desc}</p>
               </div>
-              <h3 className="text-xl font-semibold mb-3">Rendre lisible</h3>
-              <p className="text-gray-600 text-base leading-relaxed">
-                Transformer les textes juridiques en langage clair et honnête.
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-green-50 text-green-600 mb-5">
-                <LayoutDashboard className="h-6 w-6" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">Tableau de bord citoyen</h3>
-              <p className="text-gray-600 text-base leading-relaxed">
-                Devenir la référence visuelle simple et à jour de l’actualité législative.
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-50 text-amber-600 mb-5">
-                <Users className="h-6 w-6" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">Encourager la participation</h3>
-              <p className="text-gray-600 text-base leading-relaxed">
-                Quand on comprend, on s’implique. Notre but : plus de citoyens actifs.
-              </p>
-            </div>
+            ))}
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Le constat – chiffres bien lisibles */}
-      <section className="py-20 px-6 md:px-12 lg:px-24">
-        <div className="max-w-5xl mx-auto">
-          <h2 className="text-2xl md:text-3xl font-bold text-center mb-12">
-            Le constat
-          </h2>
-
-          <div className="grid md:grid-cols-3 gap-10">
-            <div className="text-center bg-gray-50 rounded-xl p-6 border border-gray-200 shadow-sm">
-              <div className="text-5xl md:text-6xl font-black text-gray-800 mb-3">54%</div>
-              <p className="text-base font-medium mb-1 text-gray-800">d’abstention</p>
-              <p className="text-sm text-gray-600 mb-1">
-                législatives 2022 (2ᵉ tour) – record
-              </p>
-              <p className="text-xs text-gray-500">
-                Ministère de l’Intérieur 2022
-              </p>
-            </div>
-
-            <div className="text-center bg-gray-50 rounded-xl p-6 border border-gray-200 shadow-sm">
-              <div className="text-5xl md:text-6xl font-black text-gray-800 mb-3">74%</div>
-              <p className="text-base font-medium mb-1 text-gray-800">des Français</p>
-              <p className="text-sm text-gray-600 mb-1">
-                considèrent les politiques corrompus
-              </p>
-              <p className="text-xs text-gray-500">
-                Baromètre CEVIPOF 2025
-              </p>
-            </div>
-
-            <div className="text-center bg-gray-50 rounded-xl p-6 border border-gray-200 shadow-sm">
-              <div className="text-5xl md:text-6xl font-black text-gray-800 mb-3">16%</div>
-              <p className="text-base font-medium mb-1 text-gray-800">des inscrits</p>
-              <p className="text-sm text-gray-600 mb-1">
-                n’ont voté à aucun tour en 2022
-              </p>
-              <p className="text-xs text-gray-500">
-                Analyse post-électorale 2022
-              </p>
-            </div>
+        {/* Constat */}
+        <section className="space-y-6">
+          <h2 className="text-xl font-semibold text-center">Le constat</h2>
+          <div className="grid md:grid-cols-3 gap-px bg-border rounded-xl overflow-hidden">
+            {stats.map(({ stat, label, sub, source }) => (
+              <div key={stat} className="bg-background flex flex-col items-center justify-center text-center p-10 space-y-2">
+                <div className="text-6xl md:text-7xl font-black tracking-tighter">{stat}</div>
+                <p className="font-semibold text-base">{label}</p>
+                <p className="text-muted-foreground text-sm">{sub}</p>
+                <p className="text-muted-foreground text-xs opacity-50">{source}</p>
+              </div>
+            ))}
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Les vrais obstacles – TOUS les 3 conservés */}
-      <section className="py-20 px-6 md:px-12 lg:px-24 bg-gray-50">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-2xl md:text-3xl font-bold text-center mb-12">
-            Les vrais obstacles
-          </h2>
-
-          <div className="space-y-10">
-            <div className="flex gap-6 items-start">
-              <div className="text-5xl font-black text-gray-300 flex-shrink-0">01</div>
-              <div>
-                <h3 className="text-lg font-semibold mb-2">Dispersion des sources</h3>
-                <p className="text-gray-600 text-sm leading-relaxed">
-                  Assemblée, Sénat, Légifrance, JO… tout est éparpillé.
-                </p>
+        {/* Obstacles — timeline verticale */}
+        <section className="space-y-6">
+          <h2 className="text-xl font-semibold text-center">Les vrais obstacles</h2>
+          <div className="max-w-2xl mx-auto">
+            {obstacles.map(({ icon: Icon, num, title, desc }, index) => (
+              <div key={num} className="flex gap-6 items-start">
+                {/* Timeline */}
+                <div className="flex flex-col items-center">
+                  <div className="w-8 h-8 rounded-full border-2 bg-background flex items-center justify-center flex-shrink-0">
+                    <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+                  </div>
+                  {index < obstacles.length - 1 && (
+                    <div className="w-px flex-1 bg-border my-1 min-h-[40px]" />
+                  )}
+                </div>
+                {/* Content */}
+                <div className="pb-10">
+                  <p className="text-xs text-muted-foreground mb-1">{num}</p>
+                  <h3 className="font-semibold text-sm mb-1">{title}</h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed">{desc}</p>
+                </div>
               </div>
-            </div>
-
-            <div className="flex gap-6 items-start">
-              <div className="text-5xl font-black text-gray-300 flex-shrink-0">02</div>
-              <div>
-                <h3 className="text-lg font-semibold mb-2">Langage très technique</h3>
-                <p className="text-gray-600 text-sm leading-relaxed">
-                  Écrit pour des juristes, pas pour le citoyen moyen.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-6 items-start">
-              <div className="text-5xl font-black text-gray-300 flex-shrink-0">03</div>
-              <div>
-                <h3 className="text-lg font-semibold mb-2">Crise de confiance</h3>
-                <p className="text-gray-600 text-sm leading-relaxed">
-                  Quand on ne comprend rien, on finit par ne plus croire.
-                </p>
-              </div>
-            </div>
+            ))}
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* CTA final */}
-      <section className="py-24 bg-gray-900 text-white">
-        <div className="max-w-4xl mx-auto px-6 text-center">
-          <h2 className="text-3xl font-bold mb-6">
-            Et si on rendait la politique lisible ?
-          </h2>
-
-          <p className="text-base md:text-lg mb-8 text-gray-300 max-w-2xl mx-auto">
+        {/* CTA final */}
+        <section className="rounded-xl bg-foreground text-background px-10 py-12 text-center space-y-4">
+          <h2 className="text-2xl font-bold">Et si on rendait la politique lisible ?</h2>
+          <p className="text-sm max-w-md mx-auto opacity-70">
             LoiClair : simplifier, vulgariser, et redonner envie de participer.
           </p>
-
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 px-7 py-3 bg-white text-gray-900 rounded-full text-base font-medium hover:bg-gray-100 transition-all duration-300"
-          >
-            Voir le tableau de bord
-            <ArrowRight className="h-4 w-4" />
+          <Link href="/dossiers-legislatifs">
+            <Button variant="secondary" size="lg" className="rounded-full gap-2 mt-2">
+              Voir les dossiers législatifs
+              <ArrowRight className="h-4 w-4" />
+            </Button>
           </Link>
-        </div>
-      </section>
-    </main>
+        </section>
+
+      </div>
+    </div>
   );
 }
