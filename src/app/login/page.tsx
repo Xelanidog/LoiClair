@@ -1,8 +1,8 @@
 'use client'
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 
-export default function LoginPage() {
+function LoginForm() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState(false)
   const router = useRouter()
@@ -23,19 +23,27 @@ export default function LoginPage() {
   }
 
   return (
+    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <h2>Accès privé</h2>
+      <input
+        type="password"
+        placeholder="Mot de passe"
+        value={password}
+        onChange={e => setPassword(e.target.value)}
+        style={{ padding: 8, fontSize: 16 }}
+      />
+      {error && <p style={{ color: 'red' }}>Mot de passe incorrect</p>}
+      <button type="submit" style={{ padding: 8 }}>Entrer</button>
+    </form>
+  )
+}
+
+export default function LoginPage() {
+  return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <h2>Accès privé</h2>
-        <input
-          type="password"
-          placeholder="Mot de passe"
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-          style={{ padding: 8, fontSize: 16 }}
-        />
-        {error && <p style={{ color: 'red' }}>Mot de passe incorrect</p>}
-        <button type="submit" style={{ padding: 8 }}>Entrer</button>
-      </form>
+      <Suspense fallback={<p>Chargement...</p>}>
+        <LoginForm />
+      </Suspense>
     </div>
   )
 }
