@@ -8,19 +8,21 @@ function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    const res = await fetch('/api/login', {
-      method: 'POST',
-      body: JSON.stringify({ password }),
-      headers: { 'Content-Type': 'application/json' },
-    })
-    if (res.ok) {
-      router.push(searchParams.get('from') || '/')
-    } else {
-      setError(true)
-    }
+ async function handleSubmit(e: React.FormEvent) {
+  e.preventDefault()
+  const res = await fetch('/api/login', {
+    method: 'POST',
+    body: JSON.stringify({ password }),
+    headers: { 'Content-Type': 'application/json' },
+  })
+  if (res.ok) {
+    const from = searchParams.get('from') || '/'
+    console.log('Login OK, redirection vers:', from)
+    window.location.href = from // ← remplace router.push par ça
+  } else {
+    setError(true)
   }
+}
 
   return (
     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
