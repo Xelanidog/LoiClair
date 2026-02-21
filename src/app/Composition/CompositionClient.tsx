@@ -9,7 +9,7 @@ import {
   Tooltip as RechartsTooltip,
 } from "recharts"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Building2, Briefcase, Calendar, Scale, Users, Group, User, Search } from "lucide-react"
+import { Building2, Briefcase, Calendar, Scale, Users, Group, User, Search, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
 import { AnimatedNumber } from "@/components/AnimatedNumber"
 import type { KpiMetrics, ActeurRow } from './Compositionqueries'
 import {
@@ -84,7 +84,7 @@ function InstitutionCard({
 
     
 <Card className="overflow-hidden rounded-md">    
-      <CardContent className="px-4 pb-4 font-bold">
+      <CardContent className="px-4 pb-4">
 
 
         {/* Ligne 1 : Membres + Parité */}
@@ -353,19 +353,45 @@ function KpiItem({
 // Tableau des acteurs
 // ────────────────────────────────────────────────
 
+type SortKey = 'nomComplet' | 'age' | 'profession' | 'groupe' | 'departement';
+type SortDir = 'asc' | 'desc';
+
 function ActeursTable({ acteurs }: { acteurs: ActeurRow[] }) {
   const [search, setSearch] = useState('');
+  const [sortKey, setSortKey] = useState<SortKey>('nomComplet');
+  const [sortDir, setSortDir] = useState<SortDir>('asc');
+
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortKey(key);
+      setSortDir('asc');
+    }
+  };
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return acteurs;
-    const q = search.toLowerCase();
-    return acteurs.filter(a =>
-      a.nomComplet.toLowerCase().includes(q) ||
-      a.profession?.toLowerCase().includes(q) ||
-      a.groupe?.toLowerCase().includes(q) ||
-      a.departement?.toLowerCase().includes(q)
-    );
-  }, [acteurs, search]);
+    let list = acteurs;
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter(a =>
+        a.nomComplet.toLowerCase().includes(q) ||
+        a.profession?.toLowerCase().includes(q) ||
+        a.groupe?.toLowerCase().includes(q) ||
+        a.departement?.toLowerCase().includes(q)
+      );
+    }
+    return [...list].sort((a, b) => {
+      const dir = sortDir === 'asc' ? 1 : -1;
+      const valA = a[sortKey];
+      const valB = b[sortKey];
+      if (valA == null && valB == null) return 0;
+      if (valA == null) return 1;
+      if (valB == null) return -1;
+      if (typeof valA === 'number' && typeof valB === 'number') return (valA - valB) * dir;
+      return String(valA).localeCompare(String(valB), 'fr') * dir;
+    });
+  }, [acteurs, search, sortKey, sortDir]);
 
   return (
     <div>
@@ -391,11 +417,27 @@ function ActeursTable({ acteurs }: { acteurs: ActeurRow[] }) {
           <Table>
             <TableHeader className="sticky top-0 bg-muted/80 backdrop-blur-sm z-10">
               <TableRow>
-                <TableHead>Nom Prénom</TableHead>
-                <TableHead className="w-[80px]">Âge</TableHead>
-                <TableHead>Profession</TableHead>
-                <TableHead>Groupe</TableHead>
-                <TableHead>Département</TableHead>
+                {([
+                  ['nomComplet', 'Nom Prénom', 'max-w-[160px]'],
+                  ['age', 'Âge', 'w-[80px]'],
+                  ['profession', 'Profession', 'max-w-[200px]'],
+                  ['groupe', 'Groupe', 'max-w-[200px]'],
+                  ['departement', 'Département', 'max-w-[200px]'],
+                ] as const).map(([key, label, cls]) => (
+                  <TableHead key={key} className={cls}>
+                    <button
+                      onClick={() => handleSort(key)}
+                      className="flex items-center gap-1 hover:text-foreground transition-colors"
+                    >
+                      {label}
+                      {sortKey === key ? (
+                        sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                      ) : (
+                        <ArrowUpDown className="h-3 w-3 opacity-40" />
+                      )}
+                    </button>
+                  </TableHead>
+                ))}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -408,11 +450,11 @@ function ActeursTable({ acteurs }: { acteurs: ActeurRow[] }) {
               ) : (
                 filtered.map((acteur, i) => (
                   <TableRow key={i}>
-                    <TableCell className="font-medium">{acteur.nomComplet}</TableCell>
+                    <TableCell className="max-w-[160px] truncate font-medium" title={acteur.nomComplet}>{acteur.nomComplet}</TableCell>
                     <TableCell>{acteur.age ?? '—'}{acteur.age ? ' ans' : ''}</TableCell>
-                    <TableCell className="text-muted-foreground">{acteur.profession ?? '—'}</TableCell>
-                    <TableCell>{acteur.groupe ?? '—'}</TableCell>
-                    <TableCell>{acteur.departement ?? '—'}</TableCell>
+                    <TableCell className="max-w-[200px] truncate text-muted-foreground" title={acteur.profession ?? undefined}>{acteur.profession ?? '—'}</TableCell>
+                    <TableCell className="max-w-[200px] truncate" title={acteur.groupe ?? undefined}>{acteur.groupe ?? '—'}</TableCell>
+                    <TableCell className="max-w-[200px] truncate" title={acteur.departement ?? undefined}>{acteur.departement ?? '—'}</TableCell>
                   </TableRow>
                 ))
               )}
