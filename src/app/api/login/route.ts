@@ -4,6 +4,10 @@ export async function POST(request: Request) {
   const PASSWORD = process.env.SITE_PASSWORD || 'changeme'
   const { password } = await request.json()
 
+  console.log('PASSWORD ENV:', process.env.SITE_PASSWORD)
+  console.log('PASSWORD RECU:', password)
+  console.log('MATCH:', password === PASSWORD)
+
   if (password !== PASSWORD) {
     return NextResponse.json({ error: 'Mauvais mot de passe' }, { status: 401 })
   }
