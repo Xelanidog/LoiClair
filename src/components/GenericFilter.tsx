@@ -28,8 +28,8 @@ interface GenericFilterProps {
   label: string;
   placeholder: string;
   allLabel: string;
-  tooltipTitle: string;
-  tooltipDescription: string;
+  tooltipTitle?: string;
+  tooltipDescription?: string;
   options: FilterOption[];
   validValues?: string[];
 }
@@ -73,40 +73,57 @@ export default function GenericFilter({
   };
 
   const isActive = selected !== 'tous';
+  const hasTooltip = tooltipTitle && tooltipDescription;
+
+  const trigger = (
+    <SelectTrigger
+      className={`
+        max-w-56 transition-colors duration-200
+        ${isActive
+          ? 'border-blue-500 bg-blue-50 text-blue-800 hover:bg-blue-100'
+          : 'border-input hover:bg-gray-100 hover:border-blue-300'}
+      `}
+    >
+      <SelectValue placeholder={placeholder} />
+      {isActive && (
+        <span className="ml-2 inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
+          Actif
+        </span>
+      )}
+    </SelectTrigger>
+  );
+
+  const selectContent = (
+    <SelectContent>
+      <SelectGroup>
+        <SelectLabel>{label}</SelectLabel>
+        <SelectItem value="tous">{allLabel}</SelectItem>
+        {options.map(({ slug, libelle }) => (
+          <SelectItem key={slug} value={slug}>
+            {libelle}
+          </SelectItem>
+        ))}
+      </SelectGroup>
+    </SelectContent>
+  );
+
+  if (!hasTooltip) {
+    return (
+      <Select onValueChange={handleChange} value={selected}>
+        {trigger}
+        {selectContent}
+      </Select>
+    );
+  }
 
   return (
     <TooltipProvider>
       <Tooltip>
         <Select onValueChange={handleChange} value={selected}>
           <TooltipTrigger asChild>
-            <SelectTrigger
-              className={`
-                max-w-56 transition-colors duration-200
-                ${isActive
-                  ? 'border-blue-500 bg-blue-50 text-blue-800 hover:bg-blue-100'
-                  : 'border-input hover:bg-gray-100 hover:border-blue-300'}
-              `}
-            >
-              <SelectValue placeholder={placeholder} />
-              {isActive && (
-                <span className="ml-2 inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
-                  Actif
-                </span>
-              )}
-            </SelectTrigger>
+            {trigger}
           </TooltipTrigger>
-
-          <SelectContent>
-            <SelectGroup>
-              <SelectLabel>{label}</SelectLabel>
-              <SelectItem value="tous">{allLabel}</SelectItem>
-              {options.map(({ slug, libelle }) => (
-                <SelectItem key={slug} value={slug}>
-                  {libelle}
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          </SelectContent>
+          {selectContent}
         </Select>
 
         <TooltipContent side="bottom" align="start" className="max-w-xs text-base leading-relaxed">

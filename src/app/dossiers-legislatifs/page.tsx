@@ -207,8 +207,6 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
             label="Statut du dossier"
             placeholder="Filtrer par statut"
             allLabel="Tous les statuts"
-            tooltipTitle="Filtre par statut du dossier"
-            tooltipDescription="Affiche uniquement les dossiers dans l'état choisi (en cours, adopté, promulgué, rejeté...)."
             options={[
               { slug: 'en_cours_d_examen', libelle: "En cours d'examen" },
               { slug: 'adopte_par_assemblee', libelle: "Adopté par l'Assemblée nationale" },
@@ -223,8 +221,6 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
             label="Âge du dossier"
             placeholder="Sélectionner une tranche d'âge"
             allLabel="Toutes les dates"
-            tooltipTitle="Filtre par ancienneté du dossier"
-            tooltipDescription="Affiche les textes récents, intermédiaires ou plus anciens."
             options={[
               { slug: 'moins_6m', libelle: 'Moins de 6 mois' },
               { slug: '6m_1a', libelle: 'Entre 6 mois et 1 an' },
@@ -237,8 +233,6 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
             label="Type de procédure"
             placeholder="Type de procédure"
             allLabel="Tous les types"
-            tooltipTitle="Filtre par type de procédure"
-            tooltipDescription="Ex : procédure législative ordinaire, projet de loi de finances, etc."
             options={typeOptions}
           />
           <GenericFilter
@@ -246,8 +240,6 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
             label="Groupe politique"
             placeholder="Groupe politique"
             allLabel="Tous les groupes"
-            tooltipTitle="Filtre par groupe politique initiateur"
-            tooltipDescription="Ex : La France insoumise, Renaissance, Les Républicains, Rassemblement National..."
             options={groupeOptions}
           />
           <ResetButton />
