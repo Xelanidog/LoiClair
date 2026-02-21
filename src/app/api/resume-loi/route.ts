@@ -6,13 +6,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { streamText } from 'ai'; // Core AI SDK (Vercel) pour appels IA unifiés (seul import nécessaire pour streaming)
 import { createXai } from '@ai-sdk/xai'; // Provider xAI/Grok spécifique
-import * as cheerio from 'cheerio'; // Parser HTML ESM
-import { SYSTEM_PROMPT_RESUME_LOI, USER_PROMPT_TEMPLATE_RESUME_LOI, PARAMS_RESUME_LOI, MODEL_RESUME_LOI, MAX_INPUT_CHARS_RESUME_LOI } from '@/lib/prompts'; // Centralisés.
+import * as cheerio from 'cheerio';
+import pdfParse from 'pdf-parse';
+import { SYSTEM_PROMPT_RESUME_LOI, USER_PROMPT_TEMPLATE_RESUME_LOI, PARAMS_RESUME_LOI, MODEL_RESUME_LOI, MAX_INPUT_CHARS_RESUME_LOI } from '@/lib/prompts';
 
-// Crée le provider xAI avec ta clé (de .env.local).
 const xai = createXai({ apiKey: process.env.XAI_API_KEY });
 
-// Fonction factorisée pour fetch et extraire texte (HTML ou PDF).
 async function fetchAndExtractText(lien: string): Promise<string> {
   const response = await fetch(lien);
   const contentType = response.headers.get('content-type') || '';
@@ -24,8 +23,6 @@ async function fetchAndExtractText(lien: string): Promise<string> {
   if (!contentType.includes('text/html') && !contentType.includes('application/pdf') && !contentType.includes('text/plain')) {
     throw new Error('Contenu non supporté.');
   }
-
-  const { default: pdfParse } = await import('pdf-parse');
 
   if (lien.endsWith('.pdf') || contentType.includes('application/pdf')) {
     try {

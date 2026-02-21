@@ -5,9 +5,8 @@
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { MonthlyDossiersChart } from '@/components/ui/MonthlyDossiersChart';
-import TypeFilter from '@/components/TypeFilter';
+import GenericFilter from '@/components/GenericFilter';
 import ResetButton from '@/components/ResetButton';
-import GroupeFilter from '@/components/GroupeFilter';
 
 export default async function KpisPage({ 
   searchParams 
@@ -52,42 +51,23 @@ const [typesResult, groupesResult] = await Promise.all([typesPromise, groupesPro
 // ────────────────────────────────────────────────
 
 
+const toSlug = (str: string) =>
+  str.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/_+$/, '');
+
 const uniqueTypes = [...new Set(typesResult.data?.map(item => item.procedure_libelle) || [])].sort();
-
-  // Mapping slug → vraie valeur
-  const procedureMap: { [key: string]: string } = {};
-  uniqueTypes.forEach(type => {
-    const slug = type.toLowerCase()
-      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-z0-9]+/g, '_')
-      .replace(/_+$/, '');
-    procedureMap[slug] = type;
-  });
-
-    const procedure = typeFilter ? procedureMap[typeFilter] : undefined;
-
-
-
+const procedureMap: { [key: string]: string } = {};
+uniqueTypes.forEach(type => { procedureMap[toSlug(type)] = type; });
+const typeOptions = uniqueTypes.map(libelle => ({ slug: toSlug(libelle), libelle }));
+const procedure = typeFilter ? procedureMap[typeFilter] : undefined;
 
 const uniqueGroupesLibelles = [...new Set(groupesResult.data?.map(item => item.initiateur_groupe_libelle) || [])].sort();
-
-  // Mapping slug → vraie valeur (groupe)
-  const groupeMap: { [key: string]: string } = {};
-  uniqueGroupesLibelles.forEach(libelle => {
-    const slug = libelle.toLowerCase()
-      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')  // Enlève accents
-      .replace(/[^a-z0-9]+/g, '_')  // Remplace espaces/spéciaux par _
-      .replace(/_+$/, '');  // Enlève _ finaux
-    groupeMap[slug] = libelle;
-  });
-
-  // Options pour GroupeFilter (type GroupeOption du composant)
-  const groupeOptions = uniqueGroupesLibelles.map((libelle) => {
-    const slug = Object.entries(groupeMap).find(([s, l]) => l === libelle)?.[0] || '';
-    return { slug, libelle };
-  });
-
-  const groupe = groupeFilter ? groupeMap[groupeFilter] : undefined;
+const groupeMap: { [key: string]: string } = {};
+uniqueGroupesLibelles.forEach(libelle => { groupeMap[toSlug(libelle)] = libelle; });
+const groupeOptions = uniqueGroupesLibelles.map(libelle => ({ slug: toSlug(libelle), libelle }));
+const groupe = groupeFilter ? groupeMap[groupeFilter] : undefined;
 
 
 
@@ -187,16 +167,6 @@ const chartData = statsData.historique.slice(-24).map(({ mois, count }) => {
   return { month: `${monthName}-${year}`, dossiers: count, year };
 });
 
-// Dans la page KPIs (serveur) – juste avant le return
-const typeOptions = uniqueTypes.map((libelle) => {
-  // On cherche le slug correspondant (inverse du mapping)
-  const slug = Object.keys(procedureMap).find(
-    (key) => procedureMap[key] === libelle
-  ) || '';
-
-  return { slug, libelle };
-});
-
 
 return (
   <div className="container mx-auto py-8 px-4">
@@ -211,15 +181,28 @@ return (
         </p>
       </div>
 
-      {/* Barre de filtres : Type + Reset */}
+      {/* Barre de filtres : Type + Groupe + Reset */}
       <div className="flex items-center gap-3 flex-nowrap overflow-x-auto pb-1">
-  <TypeFilter 
-    typeOptions={typeOptions}
-    // currentType n'est pas nécessaire car le composant lit searchParams directement
-  />
-  <GroupeFilter groupeOptions={groupeOptions} />
-  <ResetButton />
-</div>
+        <GenericFilter
+          paramName="type"
+          label="Type de procédure"
+          placeholder="Type de procédure"
+          allLabel="Tous les types"
+          tooltipTitle="Filtre par type de procédure"
+          tooltipDescription="Ex : procédure législative ordinaire, projet de loi de finances, etc."
+          options={typeOptions}
+        />
+        <GenericFilter
+          paramName="groupe"
+          label="Groupe politique"
+          placeholder="Groupe politique"
+          allLabel="Tous les groupes"
+          tooltipTitle="Filtre par groupe politique initiateur"
+          tooltipDescription="Ex : La France insoumise, Renaissance, Les Républicains..."
+          options={groupeOptions}
+        />
+        <ResetButton />
+      </div>
     </div>
 
       {/* Cartes de synthèse */}

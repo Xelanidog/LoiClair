@@ -2,36 +2,49 @@
 "use client"
 
 import Link from "next/link"
-import Image from "next/image";
 import { usePathname } from "next/navigation"
-
-import {
-  BarChart3,
-  FileText,
-  Building2,
-  Info,
-} from "lucide-react"
-
+import { BarChart3, Building2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import type { LucideIcon } from "lucide-react"
+
+function SidebarLink({ href, label }: { href: string; label: string }) {
+  const pathname = usePathname()
+  return (
+    <Link href={href}>
+      <Button
+        variant="ghost"
+        size="sm"
+        className={cn(
+          "w-full justify-start text-xs h-8 px-4",
+          pathname === href && "bg-accent text-accent-foreground"
+        )}
+      >
+        {label}
+      </Button>
+    </Link>
+  )
+}
+
+function SidebarSection({ icon: Icon, title, children }: { icon: LucideIcon; title: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <div className="flex items-center gap-2 px-3 mb-2">
+        <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          {title}
+        </span>
+      </div>
+      <div className="space-y-0.5 pl-5">{children}</div>
+    </div>
+  )
+}
 
 export default function Sidebar() {
-  const pathname = usePathname()
-
-  // Fonction qui dit si on est sur la page actuelle (pour surligner)
-  const isActive = (path: string) => pathname === path
-
   return (
-    <aside
-      className="
-        fixed inset-y-0 left-0 z-50   
-        w-72 backdrop-blur "
-    >
-      {/* Zone scrollable = TOUT SAUF la partie À propos en bas */}
-      <ScrollArea className="h-[calc(100vh-180px)]">  {/* 180px = hauteur approx. de la zone À propos */}
-        
-        {/* Logo + slogan */}
+    <aside className="fixed inset-y-0 left-0 z-50 w-72">
+      <ScrollArea className="h-[calc(100vh-180px)]">
         <div className="p-5 pb-6">
           <Link href="/" className="font-bold text-xl tracking-tight">
             LoiClair
@@ -41,155 +54,23 @@ export default function Sidebar() {
           </p>
         </div>
 
-        {/* Navigation principale (les sections qui scrollent) */}
         <nav className="px-3 py-6 space-y-7">
-          {/* ── 1. TABLEAU DE BORD ── */}
-          <div>
-            <div className="flex items-center gap-2 px-3 mb-2">
-              <BarChart3 className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Tableau de bord
-              </span>
-            </div>
-            <div className="space-y-0.5 pl-5">
-              <Link href="/KPIs">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={cn(
-                    "w-full justify-start text-xs h-8 px-4",
-                    isActive("/dashboard/indicateurs") && "bg-accent text-accent-foreground"
-                  )}
-                >
-                  Indicateurs clés
-                </Button>
-              </Link>
-                <Link href="/Composition">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={cn(
-                    "w-full justify-start text-xs h-8 px-4",
-                    isActive("/dashboard/indicateurs") && "bg-accent text-accent-foreground"
-                  )}
-                >
-                  Composition
-                </Button>
-              </Link>
-              <Link href="/Week">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={cn(
-                    "w-full justify-start text-xs h-8 px-4",
-                    isActive("/dashboard/cette-semaine") && "bg-accent text-accent-foreground"
-                  )}
-                >
-                  Cette semaine
-                </Button>
-              </Link>
-                <Link href="/dossiers-legislatifs">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={cn(
-                    "w-full justify-start text-xs h-8 px-4",
-                    isActive("/dossiers-legislatifs") && "bg-accent text-accent-foreground"
-                  )}
-                >
-                  Dossiers législatifs
-                </Button>
-              </Link>
-              
-            </div>
-          </div>
+          <SidebarSection icon={BarChart3} title="Tableau de bord">
+            <SidebarLink href="/KPIs" label="Indicateurs clés" />
+            <SidebarLink href="/Composition" label="Composition" />
+            <SidebarLink href="/dossiers-legislatifs" label="Dossiers législatifs" />
+          </SidebarSection>
 
-          {/* ── 3. ORGANES LÉGISLATIFS ── */}
-          <div>
-            <div className="flex items-center gap-2 px-3 mb-2">
-              <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Organes législatifs
-              </span>
-            </div>
-            <div className="space-y-0.5 pl-5">
-                            <Link href="/processus-legislatif">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={cn(
-                    "w-full justify-start text-xs h-8 px-4",
-                    isActive("/processus-legislatif") && "bg-accent text-accent-foreground"
-                  )}
-                >
-                  Processus législatif
-                </Button>
-              </Link>
-              <Link href="/type-textes">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={cn(
-                    "w-full justify-start text-xs h-8 px-4",
-                    isActive("/type-textes") && "bg-accent text-accent-foreground"
-                  )}
-                >
-                  Les types de texte
-                </Button>
-              </Link>
-              <Link href="/organes/assemblee">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={cn(
-                    "w-full justify-start text-xs h-8 px-4",
-                    isActive("/organes/assemblee") && "bg-accent text-accent-foreground"
-                  )}
-                >
-                  L'Assemblée nationale
-                </Button>
-              </Link>
-              <Link href="/organes/senat">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={cn(
-                    "w-full justify-start text-xs h-8 px-4",
-                    isActive("/organes/senat") && "bg-accent text-accent-foreground"
-                  )}
-                >
-                  Le Sénat
-                </Button>
-              </Link>
-              <Link href="/organes/gouvernement">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={cn(
-                    "w-full justify-start text-xs h-8 px-4",
-                    isActive("/organes/gouvernement") && "bg-accent text-accent-foreground"
-                  )}
-                >
-                  Gouvernement & Président
-                </Button>
-              </Link>
-              <Link href="/organes/conseil-constitutionnel">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={cn(
-                    "w-full justify-start text-xs h-8 px-4",
-                    isActive("/organes/conseil-constitutionnel") && "bg-accent text-accent-foreground"
-                  )}
-                >
-                  Conseil constitutionnel
-                </Button>
-              </Link>
-            </div>
-          </div>
+          <SidebarSection icon={Building2} title="Organes législatifs">
+            <SidebarLink href="/processus-legislatif" label="Processus législatif" />
+            <SidebarLink href="/type-textes" label="Les types de texte" />
+            <SidebarLink href="/organes/assemblee" label="L'Assemblée nationale" />
+            <SidebarLink href="/organes/senat" label="Le Sénat" />
+            <SidebarLink href="/organes/gouvernement" label="Gouvernement & Président" />
+            <SidebarLink href="/organes/conseil-constitutionnel" label="Conseil constitutionnel" />
+          </SidebarSection>
         </nav>
       </ScrollArea>
-
     </aside>
   )
 }

@@ -5,28 +5,31 @@ import { motion, useMotionValue, useTransform, useInView, animate } from "framer
 
 interface AnimatedNumberProps {
   value: number;
-  duration?: number;      
+  duration?: number;
   decimals?: number;
   prefix?: string;
   suffix?: string;
   delay?: number;
+  className?: string;
 }
 
 export function AnimatedNumber({
   value,
-  duration = 2.5,       
+  duration = 2.5,
   decimals = 0,
   prefix = "",
   suffix = "",
   delay = 0,
+  className,
 }: AnimatedNumberProps) {
   const ref = useRef<HTMLSpanElement>(null);
   const isInView = useInView(ref, { once: true, margin: "-50px" });
 
   const count = useMotionValue(0);
 
+  const formatRegex = /\B(?=(\d{3})+(?!\d))/g;
   const rounded = useTransform(count, (latest) =>
-    latest.toFixed(decimals).replace(/\B(?=(\d{3})+(?!\d))/g, " ")
+    latest.toFixed(decimals).replace(formatRegex, " ")
   );
 
   useEffect(() => {
@@ -47,7 +50,7 @@ export function AnimatedNumber({
   }, [isInView, value, count, duration, delay]);
 
   return (
-    <motion.span ref={ref}>
+    <motion.span ref={ref} className={className}>
       {prefix}
       <motion.span>{rounded}</motion.span>
       {suffix}

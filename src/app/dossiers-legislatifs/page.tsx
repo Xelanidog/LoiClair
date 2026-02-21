@@ -3,12 +3,10 @@
 // C'est un Server Component : fetch des données côté serveur pour sécurité et perf.
 // On utilise Tailwind pour un style basique : liste en colonne, cartes sans bordure avec hover.
 
-import { supabase } from '@/lib/supabase'; // Import du client Supabase.
-import Link from 'next/link'; // Liens internes Next.js.
-import { Sparkles, ExternalLink } from 'lucide-react'; // Icônes.
-import StatutFilter from '@/components/StatutFilter'; // Filtre statut (client-side).
-import AgeFilter from '@/components/AgeFilter'; // Filtre âge (client-side).
-import TypeFilter from '@/components/TypeFilter';
+import { supabase } from '@/lib/supabase';
+import Link from 'next/link';
+import { Sparkles, ExternalLink } from 'lucide-react';
+import GenericFilter from '@/components/GenericFilter';
 import ResetButton from '@/components/ResetButton';
 import {
   Pagination,
@@ -19,7 +17,6 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination';
-import GroupeFilter from '@/components/GroupeFilter';
 
 
 // Fonction utilitaire pour générer une URL avec un nouveau 'page', en gardant tous les autres params.
@@ -86,62 +83,31 @@ if (age) {
   const groupeFilter = typeof resolvedParams.groupe === 'string' ? resolvedParams.groupe.toLowerCase() : undefined;
 
 
-  // Fetch des types uniques pour le filtre (distinct sur procedure_libelle, ignore null).
-  const { data: uniqueProcedures } = await supabase
-  .from('dossiers_legislatifs')
-  .select('procedure_libelle')
-  .not('procedure_libelle', 'is', null); // Ignore les null.
+  // Helper pour générer un slug à partir d'un libellé
+  const toSlug = (str: string) =>
+    str.toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/_+$/, '');
 
-// Extraction des valeurs uniques et tri alphabétique.
-const uniqueTypes = [...new Set(uniqueProcedures?.map(item => item.procedure_libelle) || [])].sort();
+  // Fetch des types ET groupes uniques en parallèle
+  const [{ data: uniqueProcedures }, { data: uniqueGroupes }] = await Promise.all([
+    supabase.from('dossiers_legislatifs').select('procedure_libelle').not('procedure_libelle', 'is', null),
+    supabase.from('dossiers_legislatifs').select('initiateur_groupe_libelle').not('initiateur_groupe_libelle', 'is', null),
+  ]);
 
-// Génère le mapping slug -> valeur DB dynamiquement.
-const procedureMap: { [key: string]: string } = {};
-uniqueTypes.forEach(type => {
-  const slug = type.toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // Retire accents.
-    .replace(/[^a-z0-9]+/g, '_') // Remplace espaces/punctuation par '_'.
-    .replace(/_+$/, ''); // Nettoie fin.
-  procedureMap[slug] = type;
-});
+  // Types : extraction, dédoublonnage, mapping slug → DB
+  const uniqueTypes = [...new Set(uniqueProcedures?.map(item => item.procedure_libelle) || [])].sort();
+  const procedureMap: { [key: string]: string } = {};
+  uniqueTypes.forEach(type => { procedureMap[toSlug(type)] = type; });
+  const typeOptions = uniqueTypes.map(libelle => ({ slug: toSlug(libelle), libelle }));
+  const procedure = typeFilter ? procedureMap[typeFilter] : undefined;
 
-// === NOUVELLE VERSION : tableau optimisé pour TypeFilter ===
-const typeOptions = uniqueTypes.map((libelle) => {
-  const slug = Object.keys(procedureMap).find(
-    (key) => procedureMap[key] === libelle
-  ) || '';
-  return { slug, libelle };
-});
-
-const procedure = typeFilter ? procedureMap[typeFilter] : undefined;
-
-
-// Fetch des groupes uniques pour le filtre (distinct sur initiateur_groupe_libelle, ignore null).
-const { data: uniqueGroupes } = await supabase
-  .from('dossiers_legislatifs')
-  .select('initiateur_groupe_libelle')
-  .not('initiateur_groupe_libelle', 'is', null);
-
-// Extraction des valeurs uniques et tri alphabétique.
-const uniqueGroupesLibelles = [...new Set(uniqueGroupes?.map(item => item.initiateur_groupe_libelle) || [])].sort();
-
-// Génère le mapping slug -> valeur DB dynamiquement.
-const groupeMap: { [key: string]: string } = {};
-uniqueGroupesLibelles.forEach(libelle => {
-  const slug = libelle.toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // Retire accents.
-    .replace(/[^a-z0-9]+/g, '_') // Remplace espaces/punctuation par '_'.
-    .replace(/_+$/, ''); // Nettoie fin.
-  groupeMap[slug] = libelle;
-});
-
-// Tableau optimisé pour GroupeFilter (comme typeOptions).
-const groupeOptions = uniqueGroupesLibelles.map((libelle) => {
-  const slug = Object.keys(groupeMap).find(
-    (key) => groupeMap[key] === libelle
-  ) || '';
-  return { slug, libelle };
-});
+  // Groupes : extraction, dédoublonnage, mapping slug → DB
+  const uniqueGroupesLibelles = [...new Set(uniqueGroupes?.map(item => item.initiateur_groupe_libelle) || [])].sort();
+  const groupeMap: { [key: string]: string } = {};
+  uniqueGroupesLibelles.forEach(libelle => { groupeMap[toSlug(libelle)] = libelle; });
+  const groupeOptions = uniqueGroupesLibelles.map(libelle => ({ slug: toSlug(libelle), libelle }));
 
 
   // Fetch Supabase avec filtre statut (si présent).
@@ -177,70 +143,40 @@ if (groupeFilter && groupeMap[groupeFilter]) {
   query = query.eq('initiateur_groupe_libelle', groupeMap[groupeFilter]);
 }
 
-// Query pour compter le total (duplique les filtres de la query principale)
-let countQuery = supabase
-  .from('dossiers_legislatifs')
-  .select('uid', { count: 'exact' }); // Plus besoin du join sur groupe.
-
-// Applique les mêmes filtres que sur la query principale
-if (statut) {
-  countQuery = countQuery.eq('statut_final', statut);
-}
-if (procedure) {
-  countQuery = countQuery.eq('procedure_libelle', procedure);
-}
-
-// Après les if pour statut et procedure dans countQuery...
-
-if (age && sixMonthsAgo && oneYearAgo) {
-  const sixMonthsAgoISO = sixMonthsAgo.toISOString();
-  const oneYearAgoISO = oneYearAgo.toISOString();
-
-  if (age === 'moins_6m') {
-    countQuery = countQuery.gt('date_depot', sixMonthsAgoISO);
-  } else if (age === '6m_1a') {
-    countQuery = countQuery.gt('date_depot', oneYearAgoISO)
-                          .lte('date_depot', sixMonthsAgoISO);
-  } else if (age === 'plus_1a') {
-    countQuery = countQuery.lte('date_depot', oneYearAgoISO);
+// Helper pour appliquer les mêmes filtres sur n'importe quelle query
+function applyFilters(q: any) {
+  if (statut) q = q.eq('statut_final', statut);
+  if (procedure) q = q.eq('procedure_libelle', procedure);
+  if (age && sixMonthsAgo && oneYearAgo) {
+    const sixMonthsAgoISO = sixMonthsAgo.toISOString();
+    const oneYearAgoISO = oneYearAgo.toISOString();
+    if (age === 'moins_6m') q = q.gt('date_depot', sixMonthsAgoISO);
+    else if (age === '6m_1a') q = q.gt('date_depot', oneYearAgoISO).lte('date_depot', sixMonthsAgoISO);
+    else if (age === 'plus_1a') q = q.lte('date_depot', oneYearAgoISO);
   }
+  if (groupeFilter && groupeMap[groupeFilter]) q = q.eq('initiateur_groupe_libelle', groupeMap[groupeFilter]);
+  return q;
 }
 
-if (groupeFilter && groupeMap[groupeFilter]) {
-  countQuery = countQuery.eq('initiateur_groupe_libelle', groupeMap[groupeFilter]);
-}
+// Pagination : récupérer et valider le paramètre page
+const pageParam = typeof resolvedParams.page === 'string' ? resolvedParams.page : undefined;
+let currentPage = pageParam ? parseInt(pageParam, 10) : 1;
+if (isNaN(currentPage) || currentPage < 1) currentPage = 1;
+const offset = (currentPage - 1) * ITEMS_PER_PAGE;
 
-const { count: totalCount, error: countError } = await countQuery;
-let finalTotalCount = totalCount || 0; // Fallback si undefined.
+// Count et données principales en parallèle (même filtres, pas de duplication)
+const countQuery = applyFilters(supabase.from('dossiers_legislatifs').select('uid', { count: 'exact' }));
+query = applyFilters(query).order('date_depot', { ascending: false }).range(offset, offset + ITEMS_PER_PAGE - 1);
+
+const [{ count: totalCount, error: countError }, { data: dossiers, error }] = await Promise.all([countQuery, query]);
+
+let finalTotalCount = totalCount || 0;
 if (countError) {
   console.error('Erreur lors du count des dossiers:', countError);
-  finalTotalCount = 0; // Fallback safe pour éviter crash.
+  finalTotalCount = 0;
 }
 const totalPages = Math.ceil(finalTotalCount / ITEMS_PER_PAGE);
-
-
-
-
-// Récupération et validation du paramètre page (similaire à tes autres filtres)
-const pageParam = typeof resolvedParams.page === 'string' ? resolvedParams.page : undefined;
-let currentPage = pageParam ? parseInt(pageParam, 10) : 1; // Convertit en nombre, fallback à 1 si absent.
-if (isNaN(currentPage) || currentPage < 1) {
-  currentPage = 1; // Garde au minimum 1 si invalide.
-}
-// Optionnel : Limite à totalPages max, mais on le fera après car totalPages est calculé plus bas.
-let offset = (currentPage - 1) * ITEMS_PER_PAGE; // Calcule l'offset dynamique.
-
-if (currentPage > totalPages) {
-  currentPage = totalPages; // Ramène à la dernière page valide.
-}
-
-
-query = query
-  .order('date_depot', { ascending: false })   // Du plus récent au plus ancien
-  .range(offset, offset + ITEMS_PER_PAGE - 1);
-
-
-  const { data: dossiers, error } = await query;
+if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
 
 
 
@@ -264,14 +200,58 @@ query = query
         </a>
       </p>
 
-      {/* Filtres (avec labels et gap pour espacement) */}
+      {/* Filtres */}
       <div className="mb-4 flex items-center gap-4">
-          <StatutFilter />
-          <AgeFilter />
-          <TypeFilter typeOptions={typeOptions} />
-          <GroupeFilter groupeOptions={groupeOptions} />
+          <GenericFilter
+            paramName="statut"
+            label="Statut du dossier"
+            placeholder="Filtrer par statut"
+            allLabel="Tous les statuts"
+            tooltipTitle="Filtre par statut du dossier"
+            tooltipDescription="Affiche uniquement les dossiers dans l'état choisi (en cours, adopté, promulgué, rejeté...)."
+            options={[
+              { slug: 'en_cours_d_examen', libelle: "En cours d'examen" },
+              { slug: 'adopte_par_assemblee', libelle: "Adopté par l'Assemblée nationale" },
+              { slug: 'adopte_par_senat', libelle: "Adopté par le Sénat" },
+              { slug: 'adopte_par_parlement', libelle: "Adopté par le Parlement" },
+              { slug: 'rejetee', libelle: "Rejeté" },
+              { slug: 'promulguee', libelle: "Promulguée" },
+            ]}
+          />
+          <GenericFilter
+            paramName="age"
+            label="Âge du dossier"
+            placeholder="Sélectionner une tranche d'âge"
+            allLabel="Toutes les dates"
+            tooltipTitle="Filtre par ancienneté du dossier"
+            tooltipDescription="Affiche les textes récents, intermédiaires ou plus anciens."
+            options={[
+              { slug: 'moins_6m', libelle: 'Moins de 6 mois' },
+              { slug: '6m_1a', libelle: 'Entre 6 mois et 1 an' },
+              { slug: 'plus_1a', libelle: "Plus d'1 an" },
+            ]}
+            validValues={['moins_6m', '6m_1a', 'plus_1a']}
+          />
+          <GenericFilter
+            paramName="type"
+            label="Type de procédure"
+            placeholder="Type de procédure"
+            allLabel="Tous les types"
+            tooltipTitle="Filtre par type de procédure"
+            tooltipDescription="Ex : procédure législative ordinaire, projet de loi de finances, etc."
+            options={typeOptions}
+          />
+          <GenericFilter
+            paramName="groupe"
+            label="Groupe politique"
+            placeholder="Groupe politique"
+            allLabel="Tous les groupes"
+            tooltipTitle="Filtre par groupe politique initiateur"
+            tooltipDescription="Ex : La France insoumise, Renaissance, Les Républicains, Rassemblement National..."
+            options={groupeOptions}
+          />
           <ResetButton />
-                </div>
+      </div>
 
       <div className="mb-4 text-sm text-gray-600">
       {finalTotalCount} dossier{(totalCount || 0) > 1 ? 's' : ''} trouvé{(totalCount || 0) > 1 ? 's' : ''}.      </div>
@@ -410,9 +390,6 @@ query = query
   }
 })()}
 
-<p className="text-xs text-gray-400 text-right mt-1"> {/* mt-1 pour un petit espacement */}
-  Debug: UID du dossier : {dossier.uid}
-</p>
 
             </div>
           </li>
