@@ -4,10 +4,11 @@ import type { NextRequest } from 'next/server'
 const COOKIE_NAME = 'site-auth'
 
 export function middleware(request: NextRequest) {
-  const PASSWORD = process.env.SITE_PASSWORD || 'changeme' // ← déplacé ici
+  const PASSWORD = process.env.SITE_PASSWORD || 'changeme'
   const { pathname } = request.nextUrl
 
-  if (pathname.startsWith('/login')) {
+  // Laisser passer la page login ET les routes API
+  if (pathname.startsWith('/login') || pathname.startsWith('/api')) {
     return NextResponse.next()
   }
 
