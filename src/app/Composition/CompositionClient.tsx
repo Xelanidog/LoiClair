@@ -9,9 +9,18 @@ import {
   Tooltip as RechartsTooltip,
 } from "recharts"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Building2, Briefcase, Calendar, Scale, Users, Group, User } from "lucide-react"
+import { Building2, Briefcase, Calendar, Scale, Users, Group, User, Search } from "lucide-react"
 import { AnimatedNumber } from "@/components/AnimatedNumber"
-import type { KpiMetrics } from './Compositionqueries'
+import type { KpiMetrics, ActeurRow } from './Compositionqueries'
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table"
+import { useState, useMemo } from "react"
 import {
   ChartContainer,
   ChartTooltip,
@@ -253,6 +262,13 @@ Répartition par groupe politique  </h3>
 </div>
           </div>
         )}
+
+        {/* Tableau des acteurs */}
+        {data.acteursList.length > 0 && (
+          <div className="mt-6 pt-6 border-t">
+            <ActeursTable acteurs={data.acteursList} />
+          </div>
+        )}
       </CardContent>
     </Card>
   )
@@ -329,6 +345,81 @@ function KpiItem({
     </span>
   )}
 </div>
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────
+// Tableau des acteurs
+// ────────────────────────────────────────────────
+
+function ActeursTable({ acteurs }: { acteurs: ActeurRow[] }) {
+  const [search, setSearch] = useState('');
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return acteurs;
+    const q = search.toLowerCase();
+    return acteurs.filter(a =>
+      a.nomComplet.toLowerCase().includes(q) ||
+      a.profession?.toLowerCase().includes(q) ||
+      a.groupe?.toLowerCase().includes(q) ||
+      a.departement?.toLowerCase().includes(q)
+    );
+  }, [acteurs, search]);
+
+  return (
+    <div>
+      <h3 className="text-lg font-semibold mb-4">
+        Liste des membres ({filtered.length})
+      </h3>
+
+      {/* Barre de recherche */}
+      <div className="relative mb-4">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <input
+          type="text"
+          placeholder="Rechercher par nom, profession, groupe, département…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full pl-10 pr-4 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+        />
+      </div>
+
+      {/* Tableau scrollable */}
+      <div className="rounded-lg border overflow-hidden">
+        <div className="max-h-[500px] overflow-y-auto">
+          <Table>
+            <TableHeader className="sticky top-0 bg-muted/80 backdrop-blur-sm z-10">
+              <TableRow>
+                <TableHead>Nom Prénom</TableHead>
+                <TableHead className="w-[80px]">Âge</TableHead>
+                <TableHead>Profession</TableHead>
+                <TableHead>Groupe</TableHead>
+                <TableHead>Département</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filtered.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                    Aucun résultat
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filtered.map((acteur, i) => (
+                  <TableRow key={i}>
+                    <TableCell className="font-medium">{acteur.nomComplet}</TableCell>
+                    <TableCell>{acteur.age ?? '—'}{acteur.age ? ' ans' : ''}</TableCell>
+                    <TableCell className="text-muted-foreground">{acteur.profession ?? '—'}</TableCell>
+                    <TableCell>{acteur.groupe ?? '—'}</TableCell>
+                    <TableCell>{acteur.departement ?? '—'}</TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
     </div>
   );
 }

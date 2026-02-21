@@ -4,6 +4,14 @@ import { PostgrestSingleResponse } from '@supabase/supabase-js';
 
 export type Institution = 'AN' | 'Senat' | 'Gouvernement';
 
+export interface ActeurRow {
+  nomComplet: string;
+  age: number | null;
+  profession: string | null;
+  groupe: string | null;
+  departement: string | null;
+}
+
 export interface KpiMetrics {
   membres: number;
   ageMoyen: number | null;
@@ -13,6 +21,7 @@ export interface KpiMetrics {
   mandatsActifsMoyens: number | null;
   groupes: Array<{ name: string; value: number; fill: string }> | null;
   nombreGroupes: number | null;
+  acteursList: ActeurRow[];
 }
 
 // Palette de couleurs partagée (Tailwind 500/400)
@@ -31,10 +40,31 @@ function getInstitutionFilter(institution: Institution) {
   }
 }
 
+// Construit la map uid → libellé pour les organes (groupes politiques)
+async function buildOrganesMap(acteurs: any[]): Promise<Map<string, string>> {
+  const uids = new Set<string>();
+  acteurs.forEach(a => { if (a.groupe) uids.add(a.groupe); });
+
+  if (uids.size === 0) return new Map();
+
+  const { data: organesData } = await supabase
+    .from('organes')
+    .select('uid, libelle')
+    .in('uid', Array.from(uids));
+
+  const organesMap = new Map<string, string>();
+  organesData?.forEach(o => {
+    organesMap.set(o.uid, o.libelle || o.uid);
+  });
+
+  return organesMap;
+}
+
 // Fonction mutualisée : construit les données de groupes à partir des acteurs
-async function buildGroupesData(
-  acteurs: any[]
-): Promise<Array<{ name: string; value: number; fill: string }> | null> {
+function buildGroupesData(
+  acteurs: any[],
+  organesMap: Map<string, string>
+): Array<{ name: string; value: number; fill: string }> | null {
   const groupesMap = new Map<string, number>();
 
   acteurs.forEach(a => {
@@ -44,18 +74,6 @@ async function buildGroupesData(
   });
 
   if (groupesMap.size === 0) return null;
-
-  const uids = Array.from(groupesMap.keys());
-
-  const { data: organesData } = await supabase
-    .from('organes')
-    .select('uid, libelle')
-    .in('uid', uids);
-
-  const organesMap = new Map<string, string>();
-  organesData?.forEach(o => {
-    organesMap.set(o.uid, o.libelle || o.uid);
-  });
 
   const groupes = Array.from(groupesMap.entries())
     .map(([uid, value]) => ({
@@ -79,7 +97,7 @@ export async function getKpiMetrics(
   const baseFilter = getInstitutionFilter(institution);
   let query = supabase
     .from('acteurs')
-    .select('age, civ, prenom, nom, groupe, mandats, departement_election')
+    .select('age, civ, prenom, nom, groupe, mandats, departement_election, libelle_profession')
     .eq('en_exercice', true)
     .match(baseFilter);
 
@@ -94,6 +112,7 @@ export async function getKpiMetrics(
     return {
       membres: 0, ageMoyen: null, plusJeune: null, plusAge: null,
       pariteFemmes: null, mandatsActifsMoyens: null, groupes: null, nombreGroupes: null,
+      acteursList: [],
     };
   }
 
@@ -140,11 +159,25 @@ export async function getKpiMetrics(
   });
   const mandatsActifsMoyens = membres > 0 ? totalMandatsActifs / membres : null;
 
+  // Résolution des noms de groupes (une seule requête organes)
+  const organesMap = await buildOrganesMap(acteurs);
+
   // Groupes : mutualisé pour AN et Sénat
   let groupes: KpiMetrics['groupes'] = null;
   if (institution === 'AN' || institution === 'Senat') {
-    groupes = await buildGroupesData(acteurs);
+    groupes = buildGroupesData(acteurs, organesMap);
   }
+
+  // Liste des acteurs pour le tableau
+  const acteursList: ActeurRow[] = acteurs
+    .map(a => ({
+      nomComplet: `${a.prenom ?? ''} ${a.nom ?? ''}`.trim(),
+      age: a.age ?? null,
+      profession: a.libelle_profession ?? null,
+      groupe: a.groupe ? (organesMap.get(a.groupe) ?? null) : null,
+      departement: a.departement_election ?? null,
+    }))
+    .sort((a, b) => a.nomComplet.localeCompare(b.nomComplet, 'fr'));
 
   return {
     membres,
@@ -155,5 +188,6 @@ export async function getKpiMetrics(
     mandatsActifsMoyens: mandatsActifsMoyens ? Math.round(mandatsActifsMoyens * 10) / 10 : null,
     groupes,
     nombreGroupes: groupes ? groupes.length : null,
+    acteursList,
   };
 }
