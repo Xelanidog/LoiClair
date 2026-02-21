@@ -5,6 +5,7 @@
 
 import json
 import os
+from pathlib import Path
 from supabase import create_client, Client
 from dotenv import load_dotenv
 import requests
@@ -13,8 +14,8 @@ import zipfile
 from tqdm import tqdm
 from datetime import datetime
 
-# Charger .env.local
-load_dotenv(dotenv_path="/Users/algodin/Documents/LoiClair website/loiclair/.env.local")
+# Charger .env.local (chemin relatif au script, portable sur toutes les machines)
+load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent / ".env.local")
 supabase_url = os.getenv("SUPABASE_URL")
 supabase_key = os.getenv("SUPABASE_KEY")
 if not supabase_url or not supabase_key:
@@ -170,7 +171,7 @@ def determiner_statut_final_precis(actes) -> str:
                         decisions_an.append((dt, is_adopte))
                     elif "SN" in code_acte:
                         decisions_sn.append((dt, is_adopte))
-                except:
+                except (ValueError, AttributeError):
                     pass  # date invalide → on ignore
 
             # Récursion
@@ -270,13 +271,32 @@ def extraire_date_depot_min(actes):
 
 
 # ===================================================================
+# Utilitaires Supabase
+# ===================================================================
+def fetch_all_rows(table: str, columns: str) -> list:
+    """Récupère toutes les lignes d'une table Supabase en gérant la pagination (limite 1000/page)."""
+    all_rows = []
+    page_size = 1000
+    offset = 0
+    while True:
+        resp = supabase.table(table).select(columns).range(offset, offset + page_size - 1).execute()
+        if not resp.data:
+            break
+        all_rows.extend(resp.data)
+        if len(resp.data) < page_size:
+            break
+        offset += page_size
+    return all_rows
+
+
+# ===================================================================
 # Téléchargement du ZIP
 # ===================================================================
 def download_zip(url: str) -> zipfile.ZipFile:
     """Télécharge le ZIP en mémoire depuis l'URL et renvoie l'objet ZipFile ouvert.
     Gère les erreurs HTTP pour robustesse.
     """
-    response = requests.get(url)
+    response = requests.get(url, timeout=120)
     response.raise_for_status()  # Lève une exception si code HTTP != 200 (ex. : lien mort)
     return zipfile.ZipFile(
         io.BytesIO(response.content)
@@ -290,6 +310,29 @@ def importer_dossiers_from_zip(
     zip_ref: zipfile.ZipFile, dossier_prefix: str = "json/dossierParlementaire/"
 ):
     """Boucle sur tous les .json avec batch upsert + résumé final à la fin seulement"""
+
+    # --- Pré-chargement des lookups (évite N+1 requêtes dans la boucle) ---
+    print("Chargement des acteurs et organes en mémoire...")
+    acteurs_rows = fetch_all_rows("acteurs", "uid,groupe")
+    acteur_to_groupe = {
+        row["uid"]: row["groupe"]
+        for row in acteurs_rows
+        if row.get("groupe")
+    }
+
+    groupe_uids = list(set(acteur_to_groupe.values()))
+    organe_to_libelle: dict = {}
+    if groupe_uids:
+        chunk_size = 500
+        for i in range(0, len(groupe_uids), chunk_size):
+            chunk = groupe_uids[i : i + chunk_size]
+            resp = supabase.table("organes").select("uid,libelle").in_("uid", chunk).execute()
+            if resp.data:
+                for row in resp.data:
+                    organe_to_libelle[row["uid"]] = row["libelle"]
+
+    print(f"  → {len(acteur_to_groupe)} acteurs, {len(organe_to_libelle)} organes chargés.\n")
+    # ----------------------------------------------------------------------
 
     success = 0
     failed = 0
@@ -311,7 +354,7 @@ def importer_dossiers_from_zip(
         with zip_ref.open(file_path) as json_stream:
             dossier_data = json.load(json_stream)
 
-            payload = importer_dossier(dossier_data, file_path)
+            payload = importer_dossier(dossier_data, file_path, acteur_to_groupe, organe_to_libelle)
 
             if payload is not None:
                 batch.append(payload)
@@ -319,27 +362,25 @@ def importer_dossiers_from_zip(
             else:
                 failed += 1
 
-            #            # Log toutes les 100 dossiers
-            #            if idx % 100 == 0 and idx > 0:
-            #                tqdm.write(f"Traité {idx}/{len(json_files)}")
-
             # Upsert par batch
             if len(batch) >= batch_size:
-                response = (
+                resp = (
                     supabase.table("dossiers_legislatifs")
                     .upsert(batch, on_conflict="uid")
                     .execute()
                 )
+                if not resp.data:
+                    tqdm.write(f"❌ Erreur sur batch intermédiaire (idx {idx}): {getattr(resp, 'error', 'inconnu')}")
                 batch = []  # Reset batch
 
     if batch:  # Envoi final du batch restant
-        response = (
+        resp = (
             supabase.table("dossiers_legislatifs")
             .upsert(batch, on_conflict="uid")
             .execute()
         )
-        if not response.data:  # Optionnel : pour debug silencieux
-            print(f"❌ Erreur sur batch final : {response.error}")
+        if not resp.data:
+            print(f"❌ Erreur sur batch final : {getattr(resp, 'error', 'inconnu')}")
 
     # ←══════════════════════════════════════════════════════════════
     #                  RAPPORT FINAL (Une seule fois !)
@@ -356,7 +397,7 @@ def importer_dossiers_from_zip(
 # ===================================================================
 # Import d'un seul dossier
 # ===================================================================
-def importer_dossier(data: dict, file_path: str = "unknown.json"):
+def importer_dossier(data: dict, file_path: str = "unknown.json", acteur_to_groupe: dict = None, organe_to_libelle: dict = None):
 
     try:
         dossier = data.get("dossierParlementaire", {})
@@ -421,19 +462,14 @@ def importer_dossier(data: dict, file_path: str = "unknown.json"):
         # ajouter_organe_si_manquant(initiateur_organe_ref)
 
 
-        # Nouvelle logique pour groupe
+        # Lookup groupe depuis les dicts pré-chargés (pas de requête Supabase ici)
         initiateur_groupe_uid = None
         initiateur_groupe_libelle = None
 
-        if initiateur_acteur_ref:
-            acteur_resp = supabase.table('acteurs').select('groupe').eq('uid', initiateur_acteur_ref).execute()
-            if acteur_resp.data and acteur_resp.data[0].get('groupe'):
-                initiateur_groupe_uid = acteur_resp.data[0]['groupe']
-                
-                if initiateur_groupe_uid:
-                    organe_resp = supabase.table('organes').select('libelle').eq('uid', initiateur_groupe_uid).execute()
-                    if organe_resp.data:
-                        initiateur_groupe_libelle = organe_resp.data[0]['libelle']
+        if initiateur_acteur_ref and acteur_to_groupe:
+            initiateur_groupe_uid = acteur_to_groupe.get(initiateur_acteur_ref)
+            if initiateur_groupe_uid and organe_to_libelle:
+                initiateur_groupe_libelle = organe_to_libelle.get(initiateur_groupe_uid)
 
         actes_legislatifs = (
             dossier.get("actesLegislatifs", {}).get("acteLegislatif", []) or []
@@ -515,6 +551,5 @@ def importer_dossier(data: dict, file_path: str = "unknown.json"):
 if __name__ == "__main__":
     URL_DOSSIERS = "https://data.assemblee-nationale.fr/static/openData/repository/17/loi/dossiers_legislatifs/Dossiers_Legislatifs.json.zip"
     zip_ref = download_zip(URL_DOSSIERS)
-    print(zip_ref.namelist()[:5])
     importer_dossiers_from_zip(zip_ref)
     print("Import terminé !")
