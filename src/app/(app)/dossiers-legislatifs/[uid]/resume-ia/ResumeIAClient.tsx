@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -40,6 +40,9 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes }: Res
     initialTextes.reduce((acc, t) => ({ ...acc, [t.uid]: 'en_cours' as const }), {} as Record<string, 'en_cours'>)
   );
 
+  // Ref pour éviter d'appeler complete() plusieurs fois pour le même texte
+  const completedForRef = useRef<string | null>(null);
+
   const {
     completion, complete, isLoading: isLoadingResume, error, setCompletion,
   } = useCompletion({
@@ -67,8 +70,13 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes }: Res
           continue;
         }
         try {
-          const response = await fetch(texte.lien_texte, { method: 'HEAD' });
-          setLiensStatus(prev => ({ ...prev, [texte.uid]: response.ok ? 'valide' : 'invalide' }));
+          const response = await fetch('/api/verifier-lien', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: texte.lien_texte }),
+          });
+          const data = await response.json();
+          setLiensStatus(prev => ({ ...prev, [texte.uid]: data.ok ? 'valide' : 'invalide' }));
         } catch {
           setLiensStatus(prev => ({ ...prev, [texte.uid]: 'invalide' }));
         }
@@ -77,18 +85,22 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes }: Res
     if (textes.length > 0) verifierLiens();
   }, [textes]);
 
-  // Lancement du résumé IA quand on sélectionne un texte
+  // Lancement du résumé IA uniquement quand le lien est confirmé valide
   useEffect(() => {
     if (!selectedUid) return;
+    if (liensStatus[selectedUid] !== 'valide') return;
+    if (completedForRef.current === selectedUid) return; // déjà lancé pour ce texte
+
     const selectedTexte = textes.find(t => t.uid === selectedUid);
     if (!selectedTexte?.lien_texte) return;
 
+    completedForRef.current = selectedUid;
     setCompletion('');
     complete(JSON.stringify({
       lien: selectedTexte.lien_texte,
       titre_texte: selectedTexte.titre_principal_court || selectedTexte.denomination || 'Texte inconnu',
     }));
-  }, [selectedUid, textes, complete, setCompletion]);
+  }, [selectedUid, textes, liensStatus, complete, setCompletion]);
 
   const handleSelectRow = (id: string, checked: boolean) => {
     if (checked) setSelectedUid(id);
@@ -191,7 +203,9 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes }: Res
           </TooltipProvider>
         )}
 
-        {error ? (
+        {selectedTexte && liensStatus[selectedTexte.uid] === 'invalide' ? (
+          <p className="text-muted-foreground">Ce texte n'a pas encore été publié. Sélectionnez un autre texte.</p>
+        ) : error ? (
           <p className="text-red-500">Erreur : {error.message}</p>
         ) : completion ? (
           <div className="prose max-w-none" key={completion.length}>
