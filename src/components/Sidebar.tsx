@@ -58,7 +58,7 @@ export default function Sidebar() {
           <SidebarSection icon={BarChart3} title="Tableau de bord">
             <SidebarLink href="/KPIs" label="Indicateurs clés" />
             <SidebarLink href="/Composition" label="Composition" />
-            <SidebarLink href="/dossiers-legislatifs" label="Dossiers législatifs" />
+            <SidebarLink href="/dossiers-legislatifs" label="Tous les textes" />
           </SidebarSection>
 
           <SidebarSection icon={Building2} title="Organes législatifs">

@@ -187,10 +187,10 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Liste des Dossiers Législatifs</h1>
+      <h1 className="text-2xl font-bold mb-4">Liste des textes</h1>
 
       <p className="text-sm text-muted-foreground leading-relaxed mb-4">
-        Un dossier législatif, c’est le parcours complet d’une proposition ou d’un projet de loi, depuis son dépôt jusqu’à sa promulgation (ou son abandon). On y trouve tous les textes, débats, votes et étapes réelles, pas seulement la théorie.
+        Les textes sont organisés par dossiers législatifs. Un dossier législatif, c’est le parcours complet d’une proposition ou d’un projet de loi, depuis son dépôt jusqu’à sa promulgation (ou son abandon). On y trouve tous les textes, débats, votes et étapes réelles, pas seulement la théorie.
       </p>
 
       <p className="text-xs text-muted-foreground mb-8">

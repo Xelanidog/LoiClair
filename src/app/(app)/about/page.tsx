@@ -30,7 +30,7 @@ export default function AboutPage() {
         <section className="mb-12">
           <h2 className="text-2xl font-semibold mb-6">Qu'est-ce que LoiClair ?</h2>
           <p className="text-base leading-relaxed mb-6">
-            LoiClair est un site web qui rend le droit et la politique française vraiment accessibles à tout le monde. Nous utilisons l'intelligence artificielle pour transformer les textes de loi, amendements, débats parlementaires et processus institutionnels en explications simples, concrètes et imagées.
+            LoiClair est un site web qui rend le droit et la politique française vraiment accessibles à tous. Nous permettons à chacun de traduire et simplifier les textes de loi, amendements, débats parlementaires et processus institutionnels en explications simples, concrètes et imagées, grâce a l'intelligence artificielle. Nous produisons aussi des statistiques interessantes directement depuis les données officielles des institutions.
           </p>
           <p className="text-base leading-relaxed">
             Notre but : répondre aux vraies questions des citoyens (« Mais en vrai qui décide ? », « Est-ce que ça va changer ma vie ? ») en expliquant les étapes réelles (souvent très différentes de la théorie), les acteurs impliqués et les impacts quotidiens.
@@ -41,26 +41,23 @@ export default function AboutPage() {
         <section className="mb-12">
           <h2 className="text-2xl font-semibold mb-6">Comment le site a été construit</h2>
           <p className="text-base leading-relaxed mb-4">
-            LoiClair est un projet créé <strong>entièrement avec l’aide de l’IA</strong> : depuis l’écriture du code jusqu’à la mise en forme des données brutes (comme ton CSV des lois), en passant par les résumés intelligents des textes de loi et des débats parlementaires.
+          LoiClair est un projet independant rendu possible grâce à l'utilisation <strong> de l’IA</strong> : depuis l’écriture du code jusqu’à l'analyse et la mise en forme des données brutes, en passant par les résumés intelligents des textes de loi et des débats parlementaires.
           </p>
           <p className="text-base leading-relaxed mb-6">
-            Technologies utilisées pour fluidité et simplicité :
+            Technologies utilisées :
           </p>
           {/* Liste badges : légère mise en avant sans alourdir */}
           <ul className="list-disc pl-6 mb-8 space-y-2 text-base">
             <li>
-              <Badge variant="secondary" className="mr-2">Next.js</Badge> + <Badge variant="secondary" className="mr-2">React</Badge> + <Badge variant="secondary" className="mr-2">TypeScript</Badge> : interface rapide, sans bugs
+              <Badge variant="secondary" className="mr-2">Next.js</Badge> + <Badge variant="secondary" className="mr-2">React</Badge> + <Badge variant="secondary" className="mr-2">TypeScript</Badge> : interface moderne et rapide.
             </li>
             <li>
               <Badge variant="secondary" className="mr-2">Shadcn/ui</Badge> + <Badge variant="secondary" className="mr-2">Tailwind CSS</Badge> : design minimaliste, 100% responsive (desktop → mobile)
             </li>
             <li>
-              IA avancée (prompts optimisés) : analyse neutre des données officielles, vulgarisation fiable
+              IA avancée : Xai avec prompts optimisés pour les resumés, Claude Code pour le développement.
             </li>
           </ul>
-          <p className="text-base leading-relaxed">
-            Résultat : site sans pub, qui charge en 1s, clair comme un dashboard.
-          </p>
         </section>
 
         {/* Section 3 : Sources (liste textuelle complète, liens directs) */}
@@ -112,10 +109,10 @@ export default function AboutPage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 mb-4">
             <Button variant="default" asChild>
-              <a href="mailto:feedback@loiclair.fr">Envoyer feedback</a>
+              <a href="mailto:Loiclair@protonmail.com">Envoyer feedback</a>
             </Button>
             <Button variant="outline" asChild>
-              <a href="mailto:contact@loiclair.fr">Proposer contribution</a>
+              <a href="mailto:Loiclair@protonmail.com">Proposer contribution</a>
             </Button>
           </div>
           <p className="text-sm text-muted-foreground">
