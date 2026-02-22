@@ -10,6 +10,20 @@ export interface ActeurRow {
   profession: string | null;
   groupe: string | null;
   departement: string | null;
+  taux_presence: number | null;
+  taux_presence_solennels: number | null;
+  taux_cohesion_groupe: number | null;
+}
+
+export interface GroupeRow {
+  uid: string;
+  libelle: string;
+  nb_deputes: number;
+  pct_representation: number | null;
+  taux_presence_moyen: number | null;
+  taux_presence_solennels_moyen: number | null;
+  taux_cohesion_interne: number | null;
+  fill: string;
 }
 
 export interface KpiMetrics {
@@ -21,7 +35,18 @@ export interface KpiMetrics {
   mandatsActifsMoyens: number | null;
   groupes: Array<{ name: string; value: number; fill: string }> | null;
   nombreGroupes: number | null;
+  presenceMoyenne: number | null;
+  presenceSolennelsMoyenne: number | null;
   acteursList: ActeurRow[];
+  groupesList: GroupeRow[];
+}
+
+// Infos d'un organe : libellé + stats de vote
+interface OrganeInfo {
+  libelle: string;
+  taux_presence_moyen: number | null;
+  taux_presence_solennels_moyen: number | null;
+  taux_cohesion_interne: number | null;
 }
 
 // Palette de couleurs partagée (Tailwind 500/400)
@@ -40,8 +65,8 @@ function getInstitutionFilter(institution: Institution) {
   }
 }
 
-// Construit la map uid → libellé pour les organes (groupes politiques)
-async function buildOrganesMap(acteurs: any[]): Promise<Map<string, string>> {
+// Construit la map uid → OrganeInfo (libellé + stats de vote) en une seule requête
+async function buildOrganesMap(acteurs: any[]): Promise<Map<string, OrganeInfo>> {
   const uids = new Set<string>();
   acteurs.forEach(a => { if (a.groupe) uids.add(a.groupe); });
 
@@ -49,21 +74,26 @@ async function buildOrganesMap(acteurs: any[]): Promise<Map<string, string>> {
 
   const { data: organesData } = await supabase
     .from('organes')
-    .select('uid, libelle')
+    .select('uid, libelle, taux_presence_moyen, taux_presence_solennels_moyen, taux_cohesion_interne')
     .in('uid', Array.from(uids));
 
-  const organesMap = new Map<string, string>();
+  const organesMap = new Map<string, OrganeInfo>();
   organesData?.forEach(o => {
-    organesMap.set(o.uid, o.libelle || o.uid);
+    organesMap.set(o.uid, {
+      libelle: o.libelle || o.uid,
+      taux_presence_moyen: o.taux_presence_moyen ?? null,
+      taux_presence_solennels_moyen: o.taux_presence_solennels_moyen ?? null,
+      taux_cohesion_interne: o.taux_cohesion_interne ?? null,
+    });
   });
 
   return organesMap;
 }
 
-// Fonction mutualisée : construit les données de groupes à partir des acteurs
+// Données pour le pie chart (nom + nb membres + couleur)
 function buildGroupesData(
   acteurs: any[],
-  organesMap: Map<string, string>
+  organesMap: Map<string, OrganeInfo>
 ): Array<{ name: string; value: number; fill: string }> | null {
   const groupesMap = new Map<string, number>();
 
@@ -77,7 +107,7 @@ function buildGroupesData(
 
   const groupes = Array.from(groupesMap.entries())
     .map(([uid, value]) => ({
-      name: organesMap.get(uid) || uid,
+      name: organesMap.get(uid)?.libelle || uid,
       value,
       fill: '#888888',
     }))
@@ -90,6 +120,38 @@ function buildGroupesData(
   return groupes;
 }
 
+// Tableau récapitulatif des groupes avec toutes leurs stats
+function buildGroupesList(
+  acteurs: any[],
+  organesMap: Map<string, OrganeInfo>,
+  totalMembres: number
+): GroupeRow[] {
+  const groupesCount = new Map<string, number>();
+  acteurs.forEach(a => {
+    if (a.groupe) groupesCount.set(a.groupe, (groupesCount.get(a.groupe) || 0) + 1);
+  });
+
+  if (groupesCount.size === 0) return [];
+
+  return Array.from(groupesCount.entries())
+    .sort((a, b) => b[1] - a[1])
+    .map(([uid, nb], index) => {
+      const info = organesMap.get(uid);
+      return {
+        uid,
+        libelle: info?.libelle || uid,
+        nb_deputes: nb,
+        pct_representation: totalMembres > 0
+          ? Math.round((nb / totalMembres) * 1000) / 10
+          : null,
+        taux_presence_moyen: info?.taux_presence_moyen ?? null,
+        taux_presence_solennels_moyen: info?.taux_presence_solennels_moyen ?? null,
+        taux_cohesion_interne: info?.taux_cohesion_interne ?? null,
+        fill: GROUP_COLOR_PALETTE[index % GROUP_COLOR_PALETTE.length],
+      };
+    });
+}
+
 export async function getKpiMetrics(
   institution: Institution,
   groupeFilter?: string
@@ -97,7 +159,7 @@ export async function getKpiMetrics(
   const baseFilter = getInstitutionFilter(institution);
   let query = supabase
     .from('acteurs')
-    .select('age, civ, prenom, nom, groupe, mandats, departement_election, libelle_profession')
+    .select('age, civ, prenom, nom, groupe, mandats, departement_election, libelle_profession, taux_presence, taux_presence_solennels, taux_cohesion_groupe')
     .eq('en_exercice', true)
     .match(baseFilter);
 
@@ -112,7 +174,8 @@ export async function getKpiMetrics(
     return {
       membres: 0, ageMoyen: null, plusJeune: null, plusAge: null,
       pariteFemmes: null, mandatsActifsMoyens: null, groupes: null, nombreGroupes: null,
-      acteursList: [],
+      presenceMoyenne: null, presenceSolennelsMoyenne: null,
+      acteursList: [], groupesList: [],
     };
   }
 
@@ -159,14 +222,31 @@ export async function getKpiMetrics(
   });
   const mandatsActifsMoyens = membres > 0 ? totalMandatsActifs / membres : null;
 
-  // Résolution des noms de groupes (une seule requête organes)
+  // Moyennes de présence aux votes (calculées sur les acteurs ayant des données)
+  const withPresence = acteurs.filter(a => a.taux_presence != null);
+  const presenceMoyenne = withPresence.length > 0
+    ? Math.round(withPresence.reduce((sum: number, a) => sum + a.taux_presence, 0) / withPresence.length * 10) / 10
+    : null;
+
+  const withPresenceSol = acteurs.filter(a => a.taux_presence_solennels != null);
+  const presenceSolennelsMoyenne = withPresenceSol.length > 0
+    ? Math.round(withPresenceSol.reduce((sum: number, a) => sum + a.taux_presence_solennels, 0) / withPresenceSol.length * 10) / 10
+    : null;
+
+  // Résolution des libellés et stats de vote des groupes (une seule requête Supabase)
   const organesMap = await buildOrganesMap(acteurs);
 
-  // Groupes : mutualisé pour AN et Sénat
+  // Pie chart (AN + Sénat)
   let groupes: KpiMetrics['groupes'] = null;
   if (institution === 'AN' || institution === 'Senat') {
     groupes = buildGroupesData(acteurs, organesMap);
   }
+
+  // Tableau récapitulatif des groupes avec stats (AN + Sénat)
+  // Pour le Sénat, les colonnes de vote seront null (scrutins AN uniquement)
+  const groupesList = (institution === 'AN' || institution === 'Senat')
+    ? buildGroupesList(acteurs, organesMap, membres)
+    : [];
 
   // Liste des acteurs pour le tableau
   const acteursList: ActeurRow[] = acteurs
@@ -174,8 +254,11 @@ export async function getKpiMetrics(
       nomComplet: `${a.prenom ?? ''} ${a.nom ?? ''}`.trim(),
       age: a.age ?? null,
       profession: a.libelle_profession ?? null,
-      groupe: a.groupe ? (organesMap.get(a.groupe) ?? null) : null,
+      groupe: a.groupe ? (organesMap.get(a.groupe)?.libelle ?? null) : null,
       departement: a.departement_election ?? null,
+      taux_presence: a.taux_presence ?? null,
+      taux_presence_solennels: a.taux_presence_solennels ?? null,
+      taux_cohesion_groupe: a.taux_cohesion_groupe ?? null,
     }))
     .sort((a, b) => a.nomComplet.localeCompare(b.nomComplet, 'fr'));
 
@@ -188,6 +271,9 @@ export async function getKpiMetrics(
     mandatsActifsMoyens: mandatsActifsMoyens ? Math.round(mandatsActifsMoyens * 10) / 10 : null,
     groupes,
     nombreGroupes: groupes ? groupes.length : null,
+    presenceMoyenne,
+    presenceSolennelsMoyenne,
     acteursList,
+    groupesList,
   };
 }

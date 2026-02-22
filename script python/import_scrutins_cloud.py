@@ -193,6 +193,20 @@ def parser_scrutin(data: dict) -> tuple:
 
 
 # ===================================================================
+# Correspondances de groupes renommés
+# ===================================================================
+# Certains groupes politiques ont été renommés en cours de législature.
+# Les scrutins anciens référencent l'UID de l'ancien groupe, les nouveaux
+# l'UID du nouveau groupe. Cette table d'alias permet de cumuler leurs
+# statistiques sous l'UID du groupe actif (le plus récent).
+#
+# Format : { "uid_ancien": "uid_actif" }
+GROUPE_ALIAS: dict[str, str] = {
+    "PO847173": "PO872880",  # UDR → UDDPLR (renommé le 5 sept. 2025)
+}
+
+
+# ===================================================================
 # Boucle principale
 # ===================================================================
 
@@ -232,27 +246,33 @@ def importer_scrutins_from_zip(zip_ref: zipfile.ZipFile):
 
     # --- Structures d'accumulation en mémoire ---
     # Par acteur :
-    #   votes_total           : nombre de scrutins où l'acteur apparaît (présent ou absent officiel)
+    #   votes_total                : nombre de scrutins où l'acteur apparaît (présent ou absent officiel)
     #   votes_pour/contre/abstentions : votes effectifs (acteur = PRÉSENT)
-    #   votes_absent          : nonVotant (absent officiel : ministre, délégation…)
-    #   taux_presence         : (votes_pour + votes_contre + votes_abstentions) / total_scrutins_legislature × 100
-    #                           ↳ abstention = PRÉSENT (choix délibéré), nonVotant = ABSENT
-    #                           ↳ les absents de l'hémicycle n'apparaissent pas du tout dans le JSON
-    #                           ↳ total_scrutins_legislature = variable `success` (scrutins parsés avec succès)
-    #   cohesion_eligible     : scrutins où l'acteur était présent et son groupe a une position connue
-    #   cohesion_accord       : parmi les éligibles, ceux où il a voté comme la position majoritaire du groupe
+    #   votes_absent               : nonVotant (absent officiel : ministre, délégation…)
+    #   taux_presence              : (votes_pour + votes_contre + votes_abstentions) / total_scrutins × 100
+    #                                ↳ abstention = PRÉSENT (choix délibéré), nonVotant = ABSENT
+    #                                ↳ les absents de l'hémicycle n'apparaissent pas du tout dans le JSON
+    #                                ↳ dénominateur = `success` (tous les scrutins parsés)
+    #   votes_actifs_solennels     : votes actifs (pour/contre/abstention) sur scrutins MOC ou SPS uniquement
+    #   taux_presence_solennels    : votes_actifs_solennels / success_importants × 100
+    #                                ↳ dénominateur = `success_importants` (scrutins MOC + SPS uniquement)
+    #   cohesion_eligible          : scrutins où l'acteur était présent et son groupe a une position connue
+    #   cohesion_accord            : parmi les éligibles, ceux où il a voté comme la position majoritaire du groupe
     stats_acteurs = {}
 
     # Par organe (groupe politique) :
-    #   scrutins_total             : nombre de scrutins où le groupe a participé
-    #   membres_presents_cumul     : somme des membres présents sur tous scrutins
-    #   membres_totaux_cumul       : somme du nombre de membres déclarés par scrutin
-    #   cohesion_votes_cumul       : somme des membres ayant voté comme la position majoritaire
-    #   cohesion_eligible_cumul    : somme des membres présents (éligibles à la cohésion)
+    #   scrutins_total                    : nombre de scrutins où le groupe a participé
+    #   membres_presents_cumul            : somme des membres présents sur tous scrutins
+    #   membres_totaux_cumul              : somme du nombre de membres déclarés par scrutin
+    #   membres_presents_solennels_cumul  : idem, restreint aux scrutins MOC + SPS
+    #   membres_totaux_solennels_cumul    : idem, restreint aux scrutins MOC + SPS
+    #   cohesion_votes_cumul              : somme des membres ayant voté comme la position majoritaire
+    #   cohesion_eligible_cumul           : somme des membres présents (éligibles à la cohésion)
     stats_organes = {}
 
     payloads_scrutins = []
-    success = 0
+    success = 0            # total de scrutins parsés avec succès
+    success_importants = 0 # parmi eux : scrutins MOC (motion de censure) ou SPS (solennel)
     failed = 0
 
     # --- Boucle de parsing ---
@@ -270,13 +290,22 @@ def importer_scrutins_from_zip(zip_ref: zipfile.ZipFile):
             payloads_scrutins.append(payload_scrutin)
             success += 1
 
+            # Détection scrutin "important" (Motion de Censure ou Scrutin Public Solennel)
+            is_scrutin_important = payload_scrutin.get("type_vote_code") in ("MOC", "SPS")
+            if is_scrutin_important:
+                success_importants += 1
+
             # Accumulation stats organes
             for organe_ref, stats in votes_par_organe.items():
+                # Redirection : si ce groupe a été renommé, on cumule sous le nouveau nom
+                organe_ref = GROUPE_ALIAS.get(organe_ref, organe_ref)
                 if organe_ref not in stats_organes:
                     stats_organes[organe_ref] = {
                         "scrutins_total": 0,
                         "membres_presents_cumul": 0,
                         "membres_totaux_cumul": 0,
+                        "membres_presents_solennels_cumul": 0,
+                        "membres_totaux_solennels_cumul": 0,
                         "cohesion_votes_cumul": 0,
                         "cohesion_eligible_cumul": 0,
                     }
@@ -287,6 +316,11 @@ def importer_scrutins_from_zip(zip_ref: zipfile.ZipFile):
                 # Membres présents = ceux qui ont voté (pour + contre + abstentions)
                 membres_presents = stats["pour"] + stats["contre"] + stats["abstentions"]
                 s["membres_presents_cumul"] += membres_presents
+
+                # Présence sur scrutins importants (MOC + SPS) uniquement
+                if is_scrutin_important:
+                    s["membres_presents_solennels_cumul"] += membres_presents
+                    s["membres_totaux_solennels_cumul"] += stats["nombreMembres"]
 
                 # Cohésion interne : % de membres qui votent comme la position majoritaire du groupe
                 pm = stats["positionMajoritaire"]
@@ -311,6 +345,7 @@ def importer_scrutins_from_zip(zip_ref: zipfile.ZipFile):
                         "votes_contre": 0,
                         "votes_abstentions": 0,
                         "votes_absent": 0,
+                        "votes_actifs_solennels": 0,
                         "cohesion_eligible": 0,
                         "cohesion_accord": 0,
                     }
@@ -327,6 +362,10 @@ def importer_scrutins_from_zip(zip_ref: zipfile.ZipFile):
                     s["votes_abstentions"] += 1
                 elif position == "nonVotant":
                     s["votes_absent"] += 1
+
+                # Présence sur scrutins importants (MOC + SPS) : acteur présent et vote actif
+                if is_scrutin_important and position != "nonVotant":
+                    s["votes_actifs_solennels"] += 1
 
                 # Cohésion : compare la position de l'acteur avec la position majoritaire de son groupe
                 # On n'inclut pas les absents dans le calcul de cohésion
@@ -373,6 +412,11 @@ def importer_scrutins_from_zip(zip_ref: zipfile.ZipFile):
         taux_presence = (
             round(votes_actifs / success * 100, 2) if success > 0 else None
         )
+        # taux_presence_solennels = présence sur scrutins MOC + SPS uniquement
+        taux_presence_solennels = (
+            round(s["votes_actifs_solennels"] / success_importants * 100, 2)
+            if success_importants > 0 else None
+        )
         ce = s["cohesion_eligible"]
         taux_cohesion = round(s["cohesion_accord"] / ce * 100, 2) if ce > 0 else None
 
@@ -384,6 +428,7 @@ def importer_scrutins_from_zip(zip_ref: zipfile.ZipFile):
             "votes_abstentions": s["votes_abstentions"],
             "votes_absent": s["votes_absent"],
             "taux_presence": taux_presence,
+            "taux_presence_solennels": taux_presence_solennels,
             "taux_cohesion_groupe": taux_cohesion,
         })
 
@@ -409,8 +454,12 @@ def importer_scrutins_from_zip(zip_ref: zipfile.ZipFile):
             continue
 
         mt = s["membres_totaux_cumul"]
-        taux_participation = (
+        taux_presence_moyen = (
             round(s["membres_presents_cumul"] / mt * 100, 2) if mt > 0 else None
+        )
+        mt_sol = s["membres_totaux_solennels_cumul"]
+        taux_presence_solennels_moyen = (
+            round(s["membres_presents_solennels_cumul"] / mt_sol * 100, 2) if mt_sol > 0 else None
         )
         ce = s["cohesion_eligible_cumul"]
         taux_cohesion = round(s["cohesion_votes_cumul"] / ce * 100, 2) if ce > 0 else None
@@ -418,7 +467,8 @@ def importer_scrutins_from_zip(zip_ref: zipfile.ZipFile):
         batch_organes.append({
             "uid": organe_ref,
             "scrutins_total": s["scrutins_total"],
-            "taux_presence_moyen": taux_participation,
+            "taux_presence_moyen": taux_presence_moyen,
+            "taux_presence_solennels_moyen": taux_presence_solennels_moyen,
             "taux_cohesion_interne": taux_cohesion,
         })
 
@@ -437,6 +487,7 @@ def importer_scrutins_from_zip(zip_ref: zipfile.ZipFile):
     print(f"           IMPORT SCRUTINS TERMINÉ")
     print(f"{'='*60}")
     print(f"   Scrutins importés  : {success}")
+    print(f"   dont MOC + SPS     : {success_importants}")
     print(f"   Scrutins en erreur : {failed}")
     print(f"   Total traités      : {success + failed} / {len(json_files)}")
     print(f"   Acteurs mis à jour : {len(batch_acteurs)}")

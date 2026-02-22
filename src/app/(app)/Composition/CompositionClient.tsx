@@ -9,9 +9,9 @@ import {
   Tooltip as RechartsTooltip,
 } from "recharts"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Building2, Briefcase, Calendar, Scale, Users, Group, User, Search, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
+import { Building2, Briefcase, Calendar, Scale, Users, Group, User, Search, ArrowUpDown, ArrowUp, ArrowDown, BarChart2 } from "lucide-react"
 import { AnimatedNumber } from "@/components/AnimatedNumber"
-import type { KpiMetrics, ActeurRow } from './Compositionqueries'
+import type { KpiMetrics, ActeurRow, GroupeRow } from './Compositionqueries'
 import {
   Table,
   TableHeader,
@@ -88,7 +88,7 @@ function InstitutionCard({
 
 
         {/* Ligne 1 : Membres + Parité */}
-        <div className="flex flex-wrap justify-start items-start mb-5">
+        <div className="flex flex-wrap justify-start items-start mb-8">
   <KpiItem
     icon={<Users className="h-5 w-5 text-muted-foreground" />}
     title="Membres"
@@ -118,7 +118,7 @@ function InstitutionCard({
 </div>
 
         {/* Ligne 2 : Âges */}
-        <div className="flex justify-left items-start pb-4">
+        <div className="flex justify-left items-start mb-8">
 <KpiItem
   icon={<Calendar className="h-5 w-5 text-muted-foreground" />}
   title="Âge moyen"
@@ -148,6 +148,26 @@ function InstitutionCard({
         
         </div>
 
+        {/* Ligne 3 : Présence aux votes (affiché uniquement si données disponibles) */}
+        {(data.presenceMoyenne !== null || data.presenceSolennelsMoyenne !== null) && (
+          <div className="flex flex-wrap justify-start items-start pb-4 gap-6">
+            <KpiItem
+              icon={<BarChart2 className="h-5 w-5 text-muted-foreground" />}
+              title="Présence moyenne (tous votes)"
+              value={data.presenceMoyenne}
+              animate={true}
+              decimals={1}
+            />
+            <KpiItem
+              icon={<BarChart2 className="h-5 w-5 text-muted-foreground" />}
+              title="Présence moyenne (votes solennels)"
+              value={data.presenceSolennelsMoyenne}
+              animate={true}
+              decimals={1}
+            />
+          </div>
+        )}
+
         {/* Le pie chart – seulement pour AN */}
 { (title === "Assemblée Nationale" || title === "Sénat") 
   && data.groupes 
@@ -157,8 +177,8 @@ function InstitutionCard({
   <h3 className="text-lg font-semibold text-center">  
 Répartition par groupe politique  </h3>
 
-<div style={{ height: '420px', width: '100%' }}>
-  
+<div style={{ height: '390px', width: '100%' }}>
+
   <ChartContainer
     config={{}}
     className="relative mx-auto w-full p-0 m-0 h-full"
@@ -166,9 +186,7 @@ Répartition par groupe politique  </h3>
 
     <ResponsiveContainer width="100%" height="100%">
 
-    
-      <PieChart 
-      margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>    
+      <PieChart margin={{ top: 0, right: 100, bottom: 0, left: 100 }}>
     <RechartsTooltip
       cursor={false}
       content={({ active, payload }) => {
@@ -190,21 +208,21 @@ Répartition par groupe politique  </h3>
   dataKey="value"
   nameKey="name"
   cx="50%"
-  cy="50%"
-  innerRadius={100}
-  outerRadius={140}
+  cy="90%"
+  startAngle={180}
+  endAngle={0}
+  innerRadius={145}
+  outerRadius={195}
   strokeWidth={2}
   stroke="hsl(var(--background))"
-  labelLine={true}                // ← lignes reliant part → texte
+  labelLine={true}
   label={({ name, value, cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
-    // Calcul position du label (extérieur pour parts < 5%, intérieur sinon)
     const RADIAN = Math.PI / 180;
-    const radius = innerRadius + (outerRadius - innerRadius) * 2; // un peu plus loin
+    const radius = outerRadius + 40;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
     const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
-    // On affiche seulement si la part est assez grosse (évite surcharge visuelle)
-    if (percent < 0.005) return null; // < 2% → pas de label
+    if (percent < 0.005) return null; // < 0.5% → pas de label
 
     return (
       <text
@@ -218,13 +236,13 @@ Répartition par groupe politique  </h3>
       </text>
     );
   }}
-  paddingAngle={3} // petit espace entre parts
+  paddingAngle={2}
 >
   {data.groupes.map((entry, index) => (
     <Cell key={`cell-${index}`} fill={entry.fill} />
   ))}
 
-  {/* Centre total députés */}
+  {/* Total au centre du demi-cercle */}
   <Label
     content={({ viewBox }) => {
       if (viewBox && "cx" in viewBox && "cy" in viewBox) {
@@ -237,14 +255,14 @@ Répartition par groupe politique  </h3>
           >
             <tspan
               x={viewBox.cx}
-              y={viewBox.cy}
+              y={(viewBox.cy || 0) - 16}
               className="fill-foreground text-4xl font-bold"
             >
               {data.membres.toLocaleString('fr-FR')}
             </tspan>
             <tspan
               x={viewBox.cx}
-              y={(viewBox.cy || 0) + 28}
+              y={(viewBox.cy || 0) + 12}
               className="fill-muted-foreground text-sm sm:text-base"
             >
               {membreLabel}
@@ -263,10 +281,17 @@ Répartition par groupe politique  </h3>
           </div>
         )}
 
+        {/* Tableau des groupes politiques avec stats (AN uniquement) */}
+        {data.groupesList.length > 0 && (
+          <div className="mt-6 pt-6 border-t">
+            <GroupesTable groupes={data.groupesList} />
+          </div>
+        )}
+
         {/* Tableau des acteurs */}
         {data.acteursList.length > 0 && (
           <div className="mt-6 pt-6 border-t">
-            <ActeursTable acteurs={data.acteursList} />
+            <ActeursTable acteurs={data.acteursList} showVoteStats={data.groupesList.length > 0} />
           </div>
         )}
       </CardContent>
@@ -314,7 +339,7 @@ function KpiItem({
   }
 
   // Détection suffix
-  const hasPercent = title.toLowerCase().includes('parité') || String(value).includes('%');
+  const hasPercent = title.toLowerCase().includes('parité') || title.toLowerCase().includes('présence') || String(value).includes('%');
   const hasAns = title.toLowerCase().includes('âge') || title.includes('jeune') || title.includes('âgé');
   const suffix = hasPercent ? ' %' : hasAns ? ' ans' : '';
 
@@ -350,13 +375,123 @@ function KpiItem({
 }
 
 // ────────────────────────────────────────────────
+// Badge coloré pour les pourcentages
+// ────────────────────────────────────────────────
+
+function PctBadge({ value }: { value: number | null }) {
+  if (value === null) return <span className="text-muted-foreground">—</span>;
+  const colorClass =
+    value >= 75 ? 'text-emerald-600 dark:text-emerald-400'
+    : value >= 50 ? 'text-amber-600 dark:text-amber-400'
+    : 'text-red-500 dark:text-red-400';
+  return (
+    <span className={`font-semibold tabular-nums ${colorClass}`}>
+      {value.toFixed(1)} %
+    </span>
+  );
+}
+
+// ────────────────────────────────────────────────
+// Tableau récapitulatif des groupes politiques
+// ────────────────────────────────────────────────
+
+type GroupeSortKey = 'libelle' | 'nb_deputes' | 'pct_representation' | 'taux_presence_moyen' | 'taux_presence_solennels_moyen' | 'taux_cohesion_interne';
+
+function GroupesTable({ groupes }: { groupes: GroupeRow[] }) {
+  const [sortKey, setSortKey] = useState<GroupeSortKey>('nb_deputes');
+  const [sortDir, setSortDir] = useState<SortDir>('desc');
+
+  const handleSort = (key: GroupeSortKey) => {
+    if (sortKey === key) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortKey(key);
+      setSortDir(key === 'libelle' ? 'asc' : 'desc');
+    }
+  };
+
+  const sorted = useMemo(() => {
+    return [...groupes].sort((a, b) => {
+      const dir = sortDir === 'asc' ? 1 : -1;
+      const valA = a[sortKey];
+      const valB = b[sortKey];
+      if (valA == null && valB == null) return 0;
+      if (valA == null) return 1;
+      if (valB == null) return -1;
+      if (typeof valA === 'number' && typeof valB === 'number') return (valA - valB) * dir;
+      return String(valA).localeCompare(String(valB), 'fr') * dir;
+    });
+  }, [groupes, sortKey, sortDir]);
+
+  const columns: [GroupeSortKey, string, string][] = [
+    ['libelle', 'Groupe', 'min-w-[180px]'],
+    ['nb_deputes', 'Effectif', 'w-[90px]'],
+    ['pct_representation', 'Représentation', 'w-[130px]'],
+    ['taux_presence_moyen', 'Présence votes globale', 'w-[130px]'],
+    ['taux_presence_solennels_moyen', 'Présence votes solennels', 'w-[140px]'],
+    ['taux_cohesion_interne', 'Cohésion interne', 'w-[130px]'],
+  ];
+
+  return (
+    <div>
+      <h3 className="text-lg font-semibold mb-4">Groupes politiques</h3>
+      <div className="rounded-lg border overflow-auto">
+        <Table>
+          <TableHeader className="bg-muted/80">
+            <TableRow>
+              {columns.map(([key, label, cls]) => (
+                <TableHead key={key} className={key !== 'libelle' ? `${cls} text-right` : cls}>
+                  <button
+                    onClick={() => handleSort(key)}
+                    className={`flex items-center gap-1 hover:text-foreground transition-colors ${key !== 'libelle' ? 'ml-auto' : ''}`}
+                  >
+                    {label}
+                    {sortKey === key ? (
+                      sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                    ) : (
+                      <ArrowUpDown className="h-3 w-3 opacity-40" />
+                    )}
+                  </button>
+                </TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sorted.map((g) => (
+              <TableRow key={g.uid}>
+                <TableCell className="font-medium">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="inline-block w-2.5 h-2.5 rounded-full shrink-0"
+                      style={{ backgroundColor: g.fill }}
+                    />
+                    {g.libelle}
+                  </div>
+                </TableCell>
+                <TableCell className="text-right tabular-nums">{g.nb_deputes}</TableCell>
+                <TableCell className="text-right tabular-nums">
+                  {g.pct_representation != null ? `${g.pct_representation.toFixed(1)} %` : '—'}
+                </TableCell>
+                <TableCell className="text-right"><PctBadge value={g.taux_presence_moyen} /></TableCell>
+                <TableCell className="text-right"><PctBadge value={g.taux_presence_solennels_moyen} /></TableCell>
+                <TableCell className="text-right"><PctBadge value={g.taux_cohesion_interne} /></TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────
 // Tableau des acteurs
 // ────────────────────────────────────────────────
 
-type SortKey = 'nomComplet' | 'age' | 'profession' | 'groupe' | 'departement';
+type SortKey = 'nomComplet' | 'age' | 'profession' | 'groupe' | 'departement' | 'taux_presence' | 'taux_presence_solennels' | 'taux_cohesion_groupe';
 type SortDir = 'asc' | 'desc';
 
-function ActeursTable({ acteurs }: { acteurs: ActeurRow[] }) {
+function ActeursTable({ acteurs, showVoteStats = false }: { acteurs: ActeurRow[]; showVoteStats?: boolean }) {
   const [search, setSearch] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('nomComplet');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
@@ -393,6 +528,20 @@ function ActeursTable({ acteurs }: { acteurs: ActeurRow[] }) {
     });
   }, [acteurs, search, sortKey, sortDir]);
 
+  const baseColumns: [SortKey, string, string][] = [
+    ['nomComplet', 'Nom Prénom', 'max-w-[160px]'],
+    ['age', 'Âge', 'w-[80px]'],
+    ['profession', 'Profession', 'max-w-[200px]'],
+    ['groupe', 'Groupe', 'max-w-[180px]'],
+    ['departement', 'Département', 'max-w-[160px]'],
+  ];
+  const voteColumns: [SortKey, string, string][] = [
+    ['taux_presence', 'Présence votes', 'w-[95px]'],
+    ['taux_presence_solennels', 'Présence votes sol.', 'w-[115px]'],
+    ['taux_cohesion_groupe', 'Cohésion', 'w-[100px]'],
+  ];
+  const columns = showVoteStats ? [...baseColumns, ...voteColumns] : baseColumns;
+
   return (
     <div>
       <h3 className="text-lg font-semibold mb-4">
@@ -403,29 +552,23 @@ function ActeursTable({ acteurs }: { acteurs: ActeurRow[] }) {
       <div className="relative mb-4">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <input
-  type="text"
-  placeholder="Rechercher par nom, profession, groupe, département…"
-  value={search}
-  onChange={(e) => setSearch(e.target.value)}
-  onFocus={e => e.currentTarget.style.borderColor = 'oklch(0.55 0.28 320)'}
-  onBlur={e => e.currentTarget.style.borderColor = ''}
-  className="w-full pl-10 pr-4 py-2 rounded-lg border bg-background text-sm focus:outline-none transition-all"
-/>
+          type="text"
+          placeholder="Rechercher par nom, profession, groupe, département…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          onFocus={e => e.currentTarget.style.borderColor = 'oklch(0.55 0.28 320)'}
+          onBlur={e => e.currentTarget.style.borderColor = ''}
+          className="w-full pl-10 pr-4 py-2 rounded-lg border bg-background text-sm focus:outline-none transition-all"
+        />
       </div>
 
       {/* Tableau scrollable */}
       <div className="rounded-lg border">
-      <div style={{ height: '600px', overflowY: 'auto' }}>
+        <div style={{ height: '600px', overflowY: 'auto' }}>
           <Table>
             <TableHeader className="sticky top-0 bg-muted/80 backdrop-blur-sm z-10">
               <TableRow>
-                {([
-                  ['nomComplet', 'Nom Prénom', 'max-w-[160px]'],
-                  ['age', 'Âge', 'w-[80px]'],
-                  ['profession', 'Profession', 'max-w-[200px]'],
-                  ['groupe', 'Groupe', 'max-w-[200px]'],
-                  ['departement', 'Département', 'max-w-[200px]'],
-                ] as const).map(([key, label, cls]) => (
+                {columns.map(([key, label, cls]) => (
                   <TableHead key={key} className={cls}>
                     <button
                       onClick={() => handleSort(key)}
@@ -445,7 +588,7 @@ function ActeursTable({ acteurs }: { acteurs: ActeurRow[] }) {
             <TableBody>
               {filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={columns.length} className="text-center text-muted-foreground py-8">
                     Aucun résultat
                   </TableCell>
                 </TableRow>
@@ -457,6 +600,13 @@ function ActeursTable({ acteurs }: { acteurs: ActeurRow[] }) {
                     <TableCell className="max-w-[200px] truncate text-muted-foreground" title={acteur.profession ?? undefined}>{acteur.profession ?? '—'}</TableCell>
                     <TableCell className="max-w-[200px] truncate" title={acteur.groupe ?? undefined}>{acteur.groupe ?? '—'}</TableCell>
                     <TableCell className="max-w-[200px] truncate" title={acteur.departement ?? undefined}>{acteur.departement ?? '—'}</TableCell>
+                    {showVoteStats && (
+                      <>
+                        <TableCell><PctBadge value={acteur.taux_presence} /></TableCell>
+                        <TableCell><PctBadge value={acteur.taux_presence_solennels} /></TableCell>
+                        <TableCell><PctBadge value={acteur.taux_cohesion_groupe} /></TableCell>
+                      </>
+                    )}
                   </TableRow>
                 ))
               )}
