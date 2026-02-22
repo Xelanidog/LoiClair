@@ -30,7 +30,7 @@ export default function AboutPage() {
         <section className="mb-12">
           <h2 className="text-2xl font-semibold mb-6">Qu'est-ce que LoiClair ?</h2>
           <p className="text-base leading-relaxed mb-6">
-            LoiClair est un site web qui rend le droit et la politique française vraiment accessibles à tous. Nous permettons à chacun de traduire et simplifier les textes de loi, amendements, débats parlementaires et processus institutionnels en explications simples, concrètes et imagées, grâce a l'intelligence artificielle. Nous produisons aussi des statistiques interessantes directement depuis les données officielles des institutions.
+            LoiClair est un site web qui rend le droit et la politique française vraiment accessibles à tous. Nous permettons à chacun de traduire et simplifier les textes de loi, amendements, débats parlementaires et processus institutionnels en explications simples, concrètes et imagées, grâce a l'intelligence artificielle. Nous produisons aussi des statistiques directement depuis les données officielles des institutions.
           </p>
           <p className="text-base leading-relaxed">
             Notre but : répondre aux vraies questions des citoyens (« Mais en vrai qui décide ? », « Est-ce que ça va changer ma vie ? ») en expliquant les étapes réelles (souvent très différentes de la théorie), les acteurs impliqués et les impacts quotidiens.

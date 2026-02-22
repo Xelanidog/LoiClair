@@ -31,7 +31,7 @@ export default function PourquoiPage() {
         <section className="text-center space-y-6">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs text-muted-foreground bg-muted/40 mb-2">
             <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-            Bêta publique — Gratuit · Indépendant · Neutre
+            Bêta privée — Gratuit · Indépendant · Neutre
           </div>
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight leading-tight">
             Chaque semaine, des lois sont<br />
