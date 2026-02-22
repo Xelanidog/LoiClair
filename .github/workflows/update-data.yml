@@ -45,6 +45,7 @@ jobs:
           python import_dossiers_cloud.py
           python import_textes_cloud.py
           python import_actes_legislatifs_cloud.py
+          python import_scrutins_cloud.py
 
       # Étape 5 : Optionnel - Commit et push si des fichiers changent (pas nécessaire ici, mais scalable)
       # - name: Commit des changements si besoin
