@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { Sparkles, ExternalLink } from 'lucide-react';
 import GenericFilter from '@/components/GenericFilter';
 import ResetButton from '@/components/ResetButton';
+import SearchInput from '@/components/SearchInput';
 import {
   Pagination,
   PaginationContent,
@@ -79,8 +80,9 @@ if (age) {
   oneYearAgo.setDate(today.getDate() - 365); // Soustrait 365 jours.
 }
 
-  const typeFilter = typeof resolvedParams.type === 'string' ? resolvedParams.type.toLowerCase() : undefined; 
+  const typeFilter = typeof resolvedParams.type === 'string' ? resolvedParams.type.toLowerCase() : undefined;
   const groupeFilter = typeof resolvedParams.groupe === 'string' ? resolvedParams.groupe.toLowerCase() : undefined;
+  const keyword = typeof resolvedParams.q === 'string' ? resolvedParams.q.trim() : undefined;
 
 
   // Helper pour générer un slug à partir d'un libellé
@@ -90,11 +92,17 @@ if (age) {
       .replace(/[^a-z0-9]+/g, '_')
       .replace(/_+$/, '');
 
-  // Fetch des types ET groupes uniques en parallèle
-  const [{ data: uniqueProcedures }, { data: uniqueGroupes }] = await Promise.all([
+  // Fetch des types, groupes ET acteurs correspondant au mot-clé en parallèle
+  const [{ data: uniqueProcedures }, { data: uniqueGroupes }, { data: matchingActeurs }] = await Promise.all([
     supabase.from('dossiers_legislatifs').select('procedure_libelle').not('procedure_libelle', 'is', null),
     supabase.from('dossiers_legislatifs').select('initiateur_groupe_libelle').not('initiateur_groupe_libelle', 'is', null),
+    keyword
+      ? supabase.from('acteurs').select('uid').or(`nom.ilike.%${keyword}%,prenom.ilike.%${keyword}%`)
+      : Promise.resolve({ data: [] as { uid: string }[] }),
   ]);
+
+  // UIDs des acteurs dont le nom/prénom correspond au mot-clé
+  const acteurUids = (matchingActeurs ?? []).map(a => a.uid);
 
   // Types : extraction, dédoublonnage, mapping slug → DB
   const uniqueTypes = [...new Set(uniqueProcedures?.map(item => item.procedure_libelle) || [])].sort();
@@ -155,6 +163,15 @@ function applyFilters(q: any) {
     else if (age === 'plus_1a') q = q.lte('date_depot', oneYearAgoISO);
   }
   if (groupeFilter && groupeMap[groupeFilter]) q = q.eq('initiateur_groupe_libelle', groupeMap[groupeFilter]);
+  if (keyword) {
+    if (acteurUids.length > 0) {
+      // Cherche dans le titre OU parmi les auteurs connus
+      q = q.or(`titre.ilike.%${keyword}%,initiateur_acteur_ref.in.(${acteurUids.join(',')})`)
+    } else {
+      // Aucun acteur ne correspond → filtre uniquement sur le titre
+      q = q.ilike('titre', `%${keyword}%`);
+    }
+  }
   return q;
 }
 
@@ -202,6 +219,7 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
 
       {/* Filtres */}
       <div className="mb-4 flex items-center gap-4">
+          <SearchInput />
           <GenericFilter
             paramName="statut"
             label="Statut du dossier"

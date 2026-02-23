@@ -22,12 +22,13 @@ export default function ResetButton() {
     params.delete('type');
     params.delete('page');
     params.delete('groupe');
+    params.delete('q');
     // Push l'URL nettoyée (si vide, juste '/dossiers-legislatifs').
     router.push(`?${params.toString()}`);
   };
 
   // Vérifie si des filtres sont actifs (pour disable le bouton si pas besoin).
-const hasFilters = searchParams.has('statut') || searchParams.has('age') || searchParams.has('type') || searchParams.has('groupe');
+const hasFilters = searchParams.has('statut') || searchParams.has('age') || searchParams.has('type') || searchParams.has('groupe') || searchParams.has('q');
 
   return (
     <TooltipProvider>
