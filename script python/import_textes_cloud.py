@@ -586,8 +586,14 @@ def importer_texte(texte_data: dict, file_name: str = "unknown.json") -> list:
             "ADOPTSEANCE": "Adopté en séance",
             "ADOPTCOM": "Adopté en comission",
             "REJETSEANCE": "Rejeté en séance",
-            # Ajoute d'autres mappings si tu en as
         }.get(statut_adoption)
+        # Fallback : si statutAdoption est absent, lire notice.adoptionConforme (ex. motions de censure)
+        if not statut_adoption:
+            adoption_conforme = texte.get("notice", {}).get("adoptionConforme") if texte.get("notice") else None
+            if adoption_conforme == "true":
+                statut_adoption, libelle_statut = "ADOPTE", "Adoptée"
+            elif adoption_conforme == "false":
+                statut_adoption, libelle_statut = "REJETE", "Rejetée"
         # Extraction depot code/libelle (de classification.famille.depot)
         famille = (
             classification.get("famille", {}) if classification.get("famille") else {}
@@ -674,8 +680,8 @@ def importer_texte(texte_data: dict, file_name: str = "unknown.json") -> list:
                 else None
             ),  # Ajouté else None pour safe
             "provenance": (
-                texte.get("provenance", "AN") if texte.get("provenance") else "AN"
-            ),  # Default 'AN' si absent
+                "Assemblée Nationale" if texte.get("provenance") == "AN" else texte.get("provenance")
+            ),
             "dossier_ref": (
                 texte.get("dossierRef") if texte.get("dossierRef") else None
             ),  # Nullable, déjà safe
@@ -786,8 +792,13 @@ def importer_texte(texte_data: dict, file_name: str = "unknown.json") -> list:
                     "ADOPTSEANCE": "Adopté en séance",
                     "ADOPTCOM": "Adopté en comission",
                     "REJETSEANCE": "Rejeté en séance",
-                    # Ajoute d'autres mappings si tu en as
                 }.get(statut_adoption_tome)
+                if not statut_adoption_tome:
+                    adoption_conforme_tome = texte_tome.get("notice", {}).get("adoptionConforme") if texte_tome.get("notice") else None
+                    if adoption_conforme_tome == "true":
+                        statut_adoption_tome, libelle_statut_tome = "ADOPTE", "Adoptée"
+                    elif adoption_conforme_tome == "false":
+                        statut_adoption_tome, libelle_statut_tome = "REJETE", "Rejetée"
                 famille_tome = (
                     classification_tome.get("famille")
                     if classification_tome.get("famille")
@@ -877,9 +888,7 @@ def importer_texte(texte_data: dict, file_name: str = "unknown.json") -> list:
                         else None
                     ),
                     "provenance": (
-                        texte_tome.get("provenance", "AN")
-                        if texte_tome.get("provenance")
-                        else "AN"
+                        "Assemblée Nationale" if texte_tome.get("provenance") == "AN" else texte_tome.get("provenance")
                     ),
                     "dossier_ref": (
                         texte_tome.get("dossierRef")
