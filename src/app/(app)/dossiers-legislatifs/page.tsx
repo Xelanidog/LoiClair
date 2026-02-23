@@ -200,7 +200,63 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
 
  const sortedDossiers = dossiers || [];
 
+  // Ordre canonique des étapes clés du parcours législatif
+  const STEP_CONFIG: Record<string, { label: string; priority: number }> = {
+    'AN1':    { label: 'Ass. nat.',      priority: 10 },
+    'SN1':    { label: 'Sénat',          priority: 20 },
+    'ANLUNI': { label: 'AN (unique)',    priority: 10 },
+    'CMP':    { label: 'CMP',            priority: 25 },
+    'AN2':    { label: 'AN (2ᵉ)',       priority: 30 },
+    'SN2':    { label: 'Sénat (2ᵉ)',    priority: 40 },
+    'ANNLEC': { label: 'AN (nouv.)',     priority: 50 },
+    'SNNLEC': { label: 'Sénat (nouv.)', priority: 60 },
+    'ANLDEF': { label: 'AN (déf.)',      priority: 70 },
+    'CC':     { label: 'Cons. const.',  priority: 80 },
+    'PROM':   { label: 'Promulguée',    priority: 90 },
+  };
 
+  const MILESTONE_CODES = Object.keys(STEP_CONFIG);
+
+  // Requête batch des actes top-level pour les 10 dossiers affichés
+  const { data: actesData } = await supabase
+    .from('actes_legislatifs')
+    .select('dossier_uid, code_acte')
+    .in('dossier_uid', sortedDossiers.map(d => d.uid))
+    .is('parent_uid', null)
+    .in('code_acte', MILESTONE_CODES);
+
+  // Map dossierUid → Set des codes présents
+  const actesByDossier = new Map<string, Set<string>>();
+  for (const acte of actesData ?? []) {
+    if (!actesByDossier.has(acte.dossier_uid))
+      actesByDossier.set(acte.dossier_uid, new Set());
+    actesByDossier.get(acte.dossier_uid)!.add(acte.code_acte);
+  }
+
+  // Helper : calcul du texte de durée pour l'en-tête de la carte
+  function getDaysInfo(dossier: typeof sortedDossiers[0]): string {
+    const depotDateRaw: string | null = dossier.date_depot;
+    if (!depotDateRaw) return '';
+    const depotDate = new Date(depotDateRaw);
+    if (isNaN(depotDate.getTime())) return '';
+
+    if (dossier.statut_final === "Promulguée" && dossier.date_promulgation) {
+      const promulDate = new Date(dossier.date_promulgation);
+      if (isNaN(promulDate.getTime())) return '';
+      const days = Math.floor((promulDate.getTime() - depotDate.getTime()) / 86400000);
+      return `${days} jour${days > 1 ? 's' : ''}`;
+    }
+    const days = Math.floor((Date.now() - depotDate.getTime()) / 86400000);
+    return `${days >= 0 ? days : 0} jour${days > 1 ? 's' : ''}`;
+  }
+
+  // Helper : date de dépôt formatée
+  function formatDepotDate(dateRaw: string | null): string {
+    if (!dateRaw) return '';
+    const d = new Date(dateRaw);
+    if (isNaN(d.getTime())) return '';
+    return new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long', timeZone: 'Europe/Paris' }).format(d);
+  }
 
   return (
     <div className="container mx-auto p-4">
@@ -271,139 +327,120 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
   <div className="text-center text-gray-600 mb-4">Aucun dossier législatif trouvé avec ces filtres.</div>
 ) : (
   <>
-    <ul className="space-y-2">
-        {sortedDossiers.map((dossier) => (
-          <li key={dossier.uid}>
-            <div className="p-4 bg-white rounded-lg hover:bg-blue-50 transition-colors duration-200">
-              <h2 className="text-l font-semibold mb-3">{dossier.titre}</h2>
+    <ul className="space-y-3">
+        {sortedDossiers.map((dossier) => {
+          const isRejected = dossier.statut_final === "Rejeté";
+          const daysInfo = getDaysInfo(dossier);
+          const depotDate = formatDepotDate(dossier.date_depot);
 
-              <div className="flex items-center space-x-4 text-sm text-gray-600 mt-1">
-                <span className="text-red-800 uppercase px-2">{dossier.procedure_libelle}</span>
-                {dossier.initiateur_acteur_ref && (
-                  <>
-                    <span>•</span>
-                    <span className="px-2">{`${dossier.initiateur_acteur_ref.prenom} ${dossier.initiateur_acteur_ref.nom}`}</span>
-                    <span>•</span>
-                    <span className="px-2">{dossier.initiateur_acteur_ref.roles_text ?? 'Non spécifié'}</span>
-                  </>
-                )}
-                {dossier.initiateur_acteur_ref?.groupe && (
-                  <>
-                    <span>•</span>
-                    <span className="px-2">{dossier.initiateur_acteur_ref.groupe.libelle ?? 'Mandat terminé'}</span>
-                  </>
-                )}
-                 <span
-  className={`ml-2 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap border ${
-    dossier.statut_final === "Promulguée"
-      ? "bg-green-100 text-green-800 border-green-200"
-      : dossier.statut_final === "Rejeté"
-      ? "bg-red-100 text-red-800 border-red-200"
-      : dossier.statut_final === "En cours d'examen"
-      ? "bg-yellow-100 text-yellow-800 border-yellow-200"
-      : dossier.statut_final === "Adopté par le Parlement"
-      ? "bg-purple-100 text-purple-800 border-purple-200"
-      : dossier.statut_final === "Adopté par l'Assemblée nationale"
-      ? "bg-blue-100 text-blue-800 border-blue-200"
-      : dossier.statut_final === "Adopté par le Sénat"
-      ? "bg-indigo-100 text-indigo-800 border-indigo-200"
-      : "bg-gray-100 text-gray-700 border-gray-200"
-  }`}
->
-  {dossier.statut_final}
-</span>
+          const badgeClass =
+            dossier.statut_final === "Promulguée" ? "bg-green-100 text-green-800 border-green-200" :
+            dossier.statut_final === "Rejeté" ? "bg-red-100 text-red-800 border-red-200" :
+            dossier.statut_final === "En cours d'examen" ? "bg-yellow-100 text-yellow-800 border-yellow-200" :
+            dossier.statut_final === "Adopté par le Parlement" ? "bg-purple-100 text-purple-800 border-purple-200" :
+            dossier.statut_final === "Adopté par l'Assemblée nationale" ? "bg-blue-100 text-blue-800 border-blue-200" :
+            dossier.statut_final === "Adopté par le Sénat" ? "bg-indigo-100 text-indigo-800 border-indigo-200" :
+            "bg-gray-100 text-gray-700 border-gray-200";
+
+          return (
+            <li key={dossier.uid}>
+              <div className="p-5 bg-card rounded-xl border border-border hover:border-primary/40 hover:shadow-sm transition-all duration-200">
+
+                {/* En-tête : badge statut + durée */}
+                <div className="flex items-center justify-between mb-3">
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${badgeClass}`}>
+                    {dossier.statut_final ?? 'Inconnu'}
+                  </span>
+                  {daysInfo && (
+                    <span className="text-xs text-muted-foreground">
+                      {dossier.statut_final === "Promulguée" ? `Promulguée en ${daysInfo}` : isRejected ? `Déposé il y a ${daysInfo}` : `En cours depuis ${daysInfo}`}
+                    </span>
+                  )}
+                </div>
+
+                {/* Titre */}
+                <h2 className="text-base font-semibold leading-snug mb-3">{dossier.titre}</h2>
+
+                {/* Méta : type · auteur · groupe */}
+                <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground mb-4">
+                  {dossier.procedure_libelle && (
+                    <span className="px-2 py-0.5 rounded-md bg-muted font-medium uppercase tracking-wide">
+                      {dossier.procedure_libelle}
+                    </span>
+                  )}
+                  {dossier.initiateur_acteur_ref && (
+                    <>
+                      <span className="text-border">·</span>
+                      <span>{dossier.initiateur_acteur_ref.prenom} {dossier.initiateur_acteur_ref.nom}</span>
+                    </>
+                  )}
+                  {dossier.initiateur_acteur_ref?.groupe && (
+                    <>
+                      <span className="text-border">·</span>
+                      <span className="px-2 py-0.5 rounded-md bg-muted">
+                        {dossier.initiateur_acteur_ref.groupe.libelle ?? 'Mandat terminé'}
+                      </span>
+                    </>
+                  )}
+                  {depotDate && (
+                    <>
+                      <span className="text-border">·</span>
+                      <span>Déposé le {depotDate}</span>
+                    </>
+                  )}
+                </div>
+
+                {/* Timeline dynamique basée sur les actes réels */}
+                {(() => {
+                  const codes = actesByDossier.get(dossier.uid) ?? new Set<string>();
+                  const milestoneSteps = MILESTONE_CODES
+                    .filter(code => codes.has(code))
+                    .sort((a, b) => STEP_CONFIG[a].priority - STEP_CONFIG[b].priority)
+                    .map(code => ({ label: STEP_CONFIG[code].label }));
+                  const steps = [{ label: 'Dépôt' }, ...milestoneSteps];
+                  const lastIdx = steps.length - 1;
+                  const lineColor = isRejected ? 'bg-red-400' : 'bg-primary';
+                  return (
+                    <div className="flex mb-6 overflow-x-auto">
+                      {steps.map((step, i) => (
+                        <div key={i} className="w-12 sm:w-20 shrink-0 flex flex-col">
+                          <div className="flex items-center">
+                            <div className={`w-2.5 h-2.5 rounded-full border-2 shrink-0 ${isRejected && i === lastIdx ? 'bg-red-500 border-red-500' : 'bg-primary border-primary'}`} />
+                            {i < lastIdx && <div className={`flex-1 h-px ${lineColor}`} />}
+                          </div>
+                          <span className="text-[10px] leading-tight mt-1.5 text-foreground font-medium">{step.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
+
+                {/* Liens */}
+                <div className="flex flex-wrap gap-3 pt-3 border-t border-border text-xs">
+                  <Link href={`/dossiers-legislatifs/${dossier.uid}/resume-ia`} target="_blank" className="flex items-center gap-1.5 text-primary hover:underline font-medium">
+                    <Sparkles className="w-3.5 h-3.5" /> Résumé IA
+                  </Link>
+                  {dossier.lien_an && (
+                    <a href={dossier.lien_an} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground hover:underline">
+                      <ExternalLink className="w-3.5 h-3.5" /> Assemblée Nationale
+                    </a>
+                  )}
+                  {dossier.senat_chemin && (
+                    <a href={dossier.senat_chemin} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground hover:underline">
+                      <ExternalLink className="w-3.5 h-3.5" /> Sénat
+                    </a>
+                  )}
+                  {dossier.url_legifrance && (
+                    <a href={dossier.url_legifrance} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground hover:underline">
+                      <ExternalLink className="w-3.5 h-3.5" /> Légifrance
+                    </a>
+                  )}
+                </div>
+
               </div>
-
-              <div className="flex items-center space-x-4 text-sm mt-2">
-                <Link href={`/dossiers-legislatifs/${dossier.uid}/resume-ia`} target="_blank" className="flex items-center text-blue-500 hover:underline px-2">
-                  <Sparkles className="w-4 h-3 mr-2" /> Résumé et discussion IA
-                </Link>
-                {dossier.lien_an && (
-                  <a href={dossier.lien_an} target="_blank" rel="noopener noreferrer" className="flex items-center text-blue-500 hover:underline px-2">
-                    <ExternalLink className="w-4 h-3 mr-2" /> Dossier Assemblée Nationale
-                  </a>
-                )}
-                {dossier.senat_chemin && (
-                  <a href={dossier.senat_chemin} target="_blank" rel="noopener noreferrer" className="flex items-center text-blue-500 hover:underline px-2">
-                    <ExternalLink className="w-4 h-3 mr-2" /> Dossier Sénat
-                  </a>
-                )}
-                {dossier.url_legifrance && (
-                  <a href={dossier.url_legifrance} target="_blank" rel="noopener noreferrer" className="flex items-center text-blue-500 hover:underline px-2">
-                    <ExternalLink className="w-4 h-3 mr-2" /> Légifrance
-                  </a>
-                )}
-              </div>
-
-{(() => {
-  const depotDateRaw: string | null = dossier.date_depot;
-
-  if (!depotDateRaw) {
-    return <p className="text-gray-600 text-sm mt-2">Date de dépôt : Inconnue</p>;
-  }
-
-  const depotDateObj = new Date(depotDateRaw);
-  if (isNaN(depotDateObj.getTime())) {
-    return <p className="text-gray-600 text-sm mt-2">Date de dépôt : Format invalide</p>;
-  }
-
-  // Affichage en français + timezone France (évite décalage de jour sur Vercel UTC)
-  const formattedDepotDate = new Intl.DateTimeFormat('fr-FR', {
-    dateStyle: 'long',
-    timeZone: 'Europe/Paris',
-  }).format(depotDateObj);
-
-  if (dossier.statut_final === "Promulguée" && dossier.date_promulgation) {
-    // Cas promulgué : jours entre dépôt et promulgation
-    const promulDateObj = new Date(dossier.date_promulgation);
-    if (isNaN(promulDateObj.getTime())) {
-      return (
-        <div className="flex items-center space-x-4 text-sm text-gray-600 mt-2">
-          <p className="px-2">Date de dépôt : {formattedDepotDate}</p>
-          <p className="px-2">Promulguée : date invalide</p>
-        </div>
-      );
-    }
-
-    const daysElapsed = Math.floor(
-      (promulDateObj.getTime() - depotDateObj.getTime()) / (1000 * 60 * 60 * 24)
-    );
-    const formattedPromulDate = new Intl.DateTimeFormat('fr-FR', {
-      dateStyle: 'long',
-      timeZone: 'Europe/Paris',
-    }).format(promulDateObj);
-
-    const daysText =
-      daysElapsed >= 0 ? `après ${daysElapsed} jour${daysElapsed > 1 ? 's' : ''}` : 'Date invalide';
-
-    return (
-      <div className="flex items-center space-x-4 text-sm text-gray-600 mt-2">
-        <p className="px-2">Date de dépôt : {formattedDepotDate}</p>
-        <p className="px-2">Promulguée le {formattedPromulDate} {daysText}</p>
-      </div>
-    );
-  } else {
-    // Cas par défaut (en cours) : jours depuis dépôt jusqu'à aujourd'hui
-    const today = new Date();
-    const daysElapsed = Math.floor(
-      (today.getTime() - depotDateObj.getTime()) / (1000 * 60 * 60 * 24)
-    );
-    const daysText =
-      daysElapsed >= 0 ? `Depuis ${daysElapsed} jour${daysElapsed > 1 ? 's' : ''}` : 'Date future';
-
-    return (
-      <div className="flex items-center space-x-4 text-sm text-gray-600 mt-2">
-        <p className="px-2">Date de dépôt : {formattedDepotDate}</p>
-        <p className="px-2">{daysText}</p>
-      </div>
-    );
-  }
-})()}
-
-
-            </div>
-          </li>
-        ))}
+            </li>
+          );
+        })}
       </ul>
 
 
