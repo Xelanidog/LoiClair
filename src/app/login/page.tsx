@@ -62,6 +62,11 @@ export default function LoginPage() {
           </p>
         </div>
 
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs text-muted-foreground bg-muted/40 mb-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+            Bêta privée
+          </div>
+
         {/* Formulaire */}
         <Suspense fallback={<p>Chargement...</p>}>
           <LoginForm />
