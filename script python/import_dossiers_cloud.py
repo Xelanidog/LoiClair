@@ -206,7 +206,56 @@ def determiner_statut_final_precis(actes) -> str:
         return "Rejeté"
     
     return "En cours d'examen"
-    
+
+
+def determiner_statut_final_chambre_unique(actes) -> str:
+    """
+    Pour les procédures à chambre unique (codes 8, 13, 22).
+    Seul le dernier vote DEC trouvé est pris en compte (tout se passe à l'AN).
+    """
+    if not actes:
+        return "En cours d'examen"
+
+    decisions = []
+
+    def recurse(acte_list):
+        if isinstance(acte_list, dict):
+            acte_list = [acte_list]
+        if not isinstance(acte_list, list):
+            return
+        for acte in acte_list:
+            if not isinstance(acte, dict):
+                continue
+            code_acte = acte.get("codeActe", "")
+            date_acte = acte.get("dateActe")
+            conclusion = acte.get("statutConclusion") or acte.get("decision") or {}
+            libelle = str(conclusion.get("libelle", "")).lower()
+            is_adopte = "adopt" in libelle
+            is_rejete = "rejet" in libelle
+            if ("DEC" in code_acte or "VOTE" in code_acte) and date_acte and (is_adopte or is_rejete):
+                try:
+                    dt = datetime.fromisoformat(
+                        date_acte.replace("Z", "+00:00") if "T" in date_acte
+                        else date_acte + "T00:00:00"
+                    )
+                    decisions.append((dt, is_adopte))
+                except (ValueError, AttributeError):
+                    pass
+            sous = acte.get("actesLegislatifs")
+            if sous:
+                if isinstance(sous, dict) and "acteLegislatif" in sous:
+                    recurse(sous["acteLegislatif"])
+                elif isinstance(sous, list):
+                    recurse(sous)
+
+    recurse(actes)
+
+    if not decisions:
+        return "En cours d'examen"
+
+    latest = max(decisions, key=lambda x: x[0])
+    return "Adopté par l'Assemblée nationale" if latest[1] else "Rejeté"
+
 
 def extraire_date_depot_min(actes):
     """Retourne la dateActe la plus ancienne trouvée de façon récursive."""
@@ -494,8 +543,12 @@ def importer_dossier(data: dict, file_path: str = "unknown.json", acteur_to_grou
         )
 
         # === NOUVELLE LOGIQUE PRINCIPALE (plus précise) ===
+        PROCEDURES_CHAMBRE_UNIQUE = {"8", "13", "22"}
+
         if statut_base == "promulguee":
             statut_final = "Promulguée"
+        elif str(procedure_code or "") in PROCEDURES_CHAMBRE_UNIQUE:
+            statut_final = determiner_statut_final_chambre_unique(actes_legislatifs)
         else:
             statut_final = determiner_statut_final_precis(actes_legislatifs)
 

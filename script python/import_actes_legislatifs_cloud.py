@@ -189,7 +189,7 @@ def parser_acte(acte_data, dossier_uid, parent_uid=None, debug=False):
                     print(f"Erreur parsing date pour {uid}: {ve} - Fallback à raw str")
                 date_acte = date_acte_raw  # Fallback str si non parsable
 
-        statut_conclusion = acte_data.get("statutConclusion", {}).get("libelle")
+        statut_conclusion = (acte_data.get("statutConclusion") or acte_data.get("decision") or {}).get("libelle")
 
         # textes_associes : amélioration - gère nesting plus profond (ex. dict avec 'textesAssocies' array), filtre TAP, prend premier non-TAP
         try:
