@@ -587,13 +587,6 @@ def importer_texte(texte_data: dict, file_name: str = "unknown.json") -> list:
             "ADOPTCOM": "Adopté en comission",
             "REJETSEANCE": "Rejeté en séance",
         }.get(statut_adoption)
-        # Fallback : si statutAdoption est absent, lire notice.adoptionConforme (ex. motions de censure)
-        if not statut_adoption:
-            adoption_conforme = texte.get("notice", {}).get("adoptionConforme") if texte.get("notice") else None
-            if adoption_conforme == "true":
-                statut_adoption, libelle_statut = "ADOPTE", "Adoptée"
-            elif adoption_conforme == "false":
-                statut_adoption, libelle_statut = "REJETE", "Rejetée"
         # Extraction depot code/libelle (de classification.famille.depot)
         famille = (
             classification.get("famille", {}) if classification.get("famille") else {}
@@ -793,12 +786,6 @@ def importer_texte(texte_data: dict, file_name: str = "unknown.json") -> list:
                     "ADOPTCOM": "Adopté en comission",
                     "REJETSEANCE": "Rejeté en séance",
                 }.get(statut_adoption_tome)
-                if not statut_adoption_tome:
-                    adoption_conforme_tome = texte_tome.get("notice", {}).get("adoptionConforme") if texte_tome.get("notice") else None
-                    if adoption_conforme_tome == "true":
-                        statut_adoption_tome, libelle_statut_tome = "ADOPTE", "Adoptée"
-                    elif adoption_conforme_tome == "false":
-                        statut_adoption_tome, libelle_statut_tome = "REJETE", "Rejetée"
                 famille_tome = (
                     classification_tome.get("famille")
                     if classification_tome.get("famille")
