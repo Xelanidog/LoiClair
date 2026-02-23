@@ -234,6 +234,44 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
     actesByDossier.get(acte.dossier_uid)!.add(acte.code_acte);
   }
 
+  // Fallback auteur : pour les dossiers sans initiateur, utiliser l'auteur du premier texte associé
+  const uidsWithoutInitiateur = sortedDossiers
+    .filter(d => !d.initiateur_acteur_ref)
+    .map(d => d.uid);
+
+  type FallbackActeur = { prenom: string | null; nom: string | null; groupe: { uid: string; libelle: string } | null };
+  const fallbackActeursByDossier = new Map<string, FallbackActeur>();
+
+  if (uidsWithoutInitiateur.length > 0) {
+    const { data: textesWithAuthors } = await supabase
+      .from('textes')
+      .select('dossier_ref, auteurs_refs')
+      .in('dossier_ref', uidsWithoutInitiateur)
+      .not('auteurs_refs', 'is', null);
+
+    const acteurRefMap = new Map<string, string>(); // dossierUid → premier acteurRef
+    for (const texte of textesWithAuthors ?? []) {
+      if (!acteurRefMap.has(texte.dossier_ref) && texte.auteurs_refs) {
+        const firstRef = texte.auteurs_refs.split(',')[0]?.trim();
+        if (firstRef) acteurRefMap.set(texte.dossier_ref, firstRef);
+      }
+    }
+
+    const acteurRefs = [...new Set(acteurRefMap.values())];
+    if (acteurRefs.length > 0) {
+      const { data: acteursData } = await supabase
+        .from('acteurs')
+        .select('uid, nom, prenom, groupe:organes(uid, libelle)')
+        .in('uid', acteurRefs);
+
+      const acteursMap = new Map((acteursData ?? []).map(a => [a.uid, a]));
+      for (const [dossierUid, acteurRef] of acteurRefMap) {
+        const acteur = acteursMap.get(acteurRef);
+        if (acteur) fallbackActeursByDossier.set(dossierUid, acteur as unknown as FallbackActeur);
+      }
+    }
+  }
+
   // Helper : calcul du texte de durée pour l'en-tête de la carte
   function getDaysInfo(dossier: typeof sortedDossiers[0]): string {
     const depotDateRaw: string | null = dossier.date_depot;
@@ -369,20 +407,24 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
                       {dossier.procedure_libelle}
                     </span>
                   )}
-                  {dossier.initiateur_acteur_ref && (
-                    <>
-                      <span className="text-border">·</span>
-                      <span>{dossier.initiateur_acteur_ref.prenom} {dossier.initiateur_acteur_ref.nom}</span>
-                    </>
-                  )}
-                  {dossier.initiateur_acteur_ref?.groupe && (
-                    <>
-                      <span className="text-border">·</span>
-                      <span className="px-2 py-0.5 rounded-md bg-muted">
-                        {dossier.initiateur_acteur_ref.groupe.libelle ?? 'Mandat terminé'}
-                      </span>
-                    </>
-                  )}
+                  {(() => {
+                    const displayActeur = dossier.initiateur_acteur_ref ?? fallbackActeursByDossier.get(dossier.uid) ?? null;
+                    if (!displayActeur) return null;
+                    return (
+                      <>
+                        <span className="text-border">·</span>
+                        <span>{displayActeur.prenom} {displayActeur.nom}</span>
+                        {displayActeur.groupe && (
+                          <>
+                            <span className="text-border">·</span>
+                            <span className="px-2 py-0.5 rounded-md bg-muted">
+                              {displayActeur.groupe.libelle ?? 'Mandat terminé'}
+                            </span>
+                          </>
+                        )}
+                      </>
+                    );
+                  })()}
                   {depotDate && (
                     <>
                       <span className="text-border">·</span>
