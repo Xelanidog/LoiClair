@@ -41,6 +41,7 @@ yarn-error.log*
 next-env.d.ts
 
 #documents
+/Docs 
 CLAUDE.md 
 Backlog.md 
 LoiClair PDD.md

@@ -124,3 +124,14 @@
   }
 }
 
+/* Rainbow button animation */
+@property --rainbow-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes rainbow-rotate {
+  to { --rainbow-angle: 360deg; }
+}
+

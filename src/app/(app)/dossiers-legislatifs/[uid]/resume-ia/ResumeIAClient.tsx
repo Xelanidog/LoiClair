@@ -1,17 +1,16 @@
 "use client";
 
 import { useEffect, useRef, useState } from 'react';
-import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from '@/components/ui/table';
-import { Loader2 } from "lucide-react";
+import { Loader2, HelpCircle, ListChecks, TrendingUp, ExternalLink, Check, ChevronsUpDown } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
 import { useCompletion } from '@ai-sdk/react';
 import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
-  Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
-} from '@/components/ui/tooltip';
+  Command, CommandGroup, CommandItem, CommandList,
+} from '@/components/ui/command';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 
 interface Texte {
@@ -22,6 +21,7 @@ interface Texte {
   titre_principal_court: string | null;
   lien_texte: string | null;
   libelle_statut_adoption: string | null;
+  provenance: string | null;
   organe_auteur: { libelle: string } | null;
 }
 
@@ -29,6 +29,24 @@ interface ResumeIAClientProps {
   uid: string;
   titreDossier: string;
   initialTextes: Texte[];
+}
+
+const CARDS = [
+  { key: 'pourquoi',    Icon: HelpCircle,  title: 'Pourquoi cette loi ?' },
+  { key: 'changements', Icon: ListChecks,  title: 'Changements clés' },
+  { key: 'impact',      Icon: TrendingUp,  title: 'Impact attendu' },
+] as const;
+
+function parseCompletion(text: string): Record<string, string> {
+  const extract = (header: string) => {
+    const match = text.match(new RegExp(`## ${header}([\\s\\S]*?)(?=## |$)`));
+    return match?.[1]?.trim() || '';
+  };
+  return {
+    pourquoi:    extract('Pourquoi cette loi \\?'),
+    changements: extract('Changements clés'),
+    impact:      extract('Impact attendu'),
+  };
 }
 
 export default function ResumeIAClient({ uid, titreDossier, initialTextes }: ResumeIAClientProps) {
@@ -40,7 +58,7 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes }: Res
     initialTextes.reduce((acc, t) => ({ ...acc, [t.uid]: 'en_cours' as const }), {} as Record<string, 'en_cours'>)
   );
 
-  // Ref pour éviter d'appeler complete() plusieurs fois pour le même texte
+  const [open, setOpen] = useState(false);
   const completedForRef = useRef<string | null>(null);
 
   const {
@@ -89,7 +107,7 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes }: Res
   useEffect(() => {
     if (!selectedUid) return;
     if (liensStatus[selectedUid] !== 'valide') return;
-    if (completedForRef.current === selectedUid) return; // déjà lancé pour ce texte
+    if (completedForRef.current === selectedUid) return;
 
     const selectedTexte = textes.find(t => t.uid === selectedUid);
     if (!selectedTexte?.lien_texte) return;
@@ -102,10 +120,7 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes }: Res
     }));
   }, [selectedUid, textes, liensStatus, complete, setCompletion]);
 
-  const handleSelectRow = (id: string, checked: boolean) => {
-    if (checked) setSelectedUid(id);
-    else if (selectedUid === id) setSelectedUid(null);
-  };
+  const handleSelectChange = (uid: string) => setSelectedUid(uid);
 
   const formatDate = (dateCreation: string | null, datePublication: string | null) => {
     const dateToUse = dateCreation || datePublication;
@@ -114,112 +129,180 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes }: Res
   };
 
   const selectedTexte = selectedUid ? textes.find((t) => t.uid === selectedUid) : null;
+  const sections = parseCompletion(completion);
+  const hasContent = Object.values(sections).some(v => v.length > 0);
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">
-        Résumé IA pour {titreDossier || `le dossier ${uid}`}
+    <div className="container mx-auto p-6 max-w-5xl">
+      <h1 className="text-2xl font-bold mb-6">
+        Résumé IA — {titreDossier || `dossier ${uid}`}
       </h1>
-      <p className="mb-4">Liste des textes liés.</p>
 
-      <div className="overflow-x-auto max-w-full">
-        <Table className="table-fixed">
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-8" />
-              <TableHead className="w-32">Date de création</TableHead>
-              <TableHead className="w-40">Dénomination</TableHead>
-              <TableHead className="w-[200px] min-w-[200px]">Provenance</TableHead>
-              <TableHead className="w-[200px] min-w-[200px]">Titre</TableHead>
-              <TableHead className="w-32">Statut</TableHead>
-              <TableHead className="w-40">Lien Texte</TableHead>
-              <TableHead className="w-32">Statut Lien</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {textes.map((texte) => (
-              <TableRow key={texte.uid} data-state={selectedUid === texte.uid ? "selected" : undefined}>
-                <TableCell>
-                  <Checkbox
-                    id={`row-${texte.uid}-checkbox`}
-                    checked={selectedUid === texte.uid}
-                    onCheckedChange={(checked) => handleSelectRow(texte.uid, checked === true)}
-                  />
-                </TableCell>
-                <TableCell>{formatDate(texte.date_creation, texte.date_publication)}</TableCell>
-                <TableCell className="font-medium truncate max-w-[160px]">
-                  {texte.denomination || 'Inconnue'}
-                </TableCell>
-                <TableCell className="max-w-[200px] whitespace-normal break-words" title={texte.organe_auteur?.libelle || 'Inconnue'}>
-                  {texte.organe_auteur?.libelle || 'Inconnue'}
-                </TableCell>
-                <TableCell className="max-w-[200px] whitespace-normal break-words" title={texte.titre_principal_court || 'Inconnu'}>
-                  {texte.titre_principal_court || 'Inconnu'}
-                </TableCell>
-                <TableCell className="truncate max-w-[120px]">
-                  {texte.libelle_statut_adoption || 'Inconnu'}
-                </TableCell>
-                <TableCell>
-                  {texte.lien_texte ? (
-                    <a href={texte.lien_texte} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline truncate max-w-[140px] block">
-                      Voir le texte
-                    </a>
-                  ) : 'Aucun lien disponible'}
-                </TableCell>
-                <TableCell>
-                  {liensStatus[texte.uid] === 'valide' && <Badge variant="outline" className="border-green-500 text-green-700">Valide</Badge>}
-                  {liensStatus[texte.uid] === 'invalide' && <Badge variant="destructive">Invalide</Badge>}
-                  {liensStatus[texte.uid] === 'en_cours' && <Badge variant="secondary">Vérification...</Badge>}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+      {/* Combobox de sélection du texte */}
+      <div className="mb-2">
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={open}
+              className="w-full max-w-xl justify-between font-normal"
+            >
+              <span className="truncate">
+                {selectedTexte
+                  ? `${selectedTexte.denomination || 'Texte'} — ${formatDate(selectedTexte.date_creation, selectedTexte.date_publication)}`
+                  : 'Sélectionner un texte à analyser...'}
+              </span>
+              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[520px] p-0" side="bottom" align="start">
+            <Command>
+              <CommandList>
+                <CommandGroup>
+                  {textes.map(t => (
+                    <CommandItem
+                      key={t.uid}
+                      value={t.uid}
+                      onSelect={() => { handleSelectChange(t.uid); setOpen(false); }}
+                      disabled={liensStatus[t.uid] === 'invalide'}
+                      className="flex items-center gap-2 py-2"
+                    >
+                      <div className="flex flex-col gap-0.5 flex-1 min-w-0">
+                        <span className="font-medium text-sm">
+                          {t.denomination || 'Texte'}
+                        </span>
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap">
+                          {t.provenance && <span>{t.provenance}</span>}
+                          {t.provenance && t.organe_auteur?.libelle && <span>·</span>}
+                          {t.organe_auteur?.libelle && <span>{t.organe_auteur.libelle}</span>}
+                          <span>·</span>
+                          <Badge variant="secondary" className="text-xs py-0 h-4">
+                            {t.libelle_statut_adoption || 'Statut inconnu'}
+                          </Badge>
+                          <span>·</span>
+                          <span>{formatDate(t.date_creation, t.date_publication)}</span>
+                          {liensStatus[t.uid] === 'invalide' && (
+                            <span className="text-destructive">· Non disponible</span>
+                          )}
+                        </div>
+                      </div>
+                      {selectedUid === t.uid && (
+                        <Check className="h-4 w-4 shrink-0 text-primary" />
+                      )}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
       </div>
 
-      {/* Section résumé IA */}
-      <div className="mt-8">
-        <h2 className="text-xl font-bold mb-2">Résumé IA du texte sélectionné</h2>
+      {/* Metadata du texte sélectionné */}
+      {selectedTexte && (
+        <div className="flex flex-wrap items-center gap-3 mb-8 text-sm text-muted-foreground">
+          {selectedTexte.organe_auteur?.libelle && (
+            <span>{selectedTexte.organe_auteur.libelle}</span>
+          )}
+          {selectedTexte.libelle_statut_adoption && (
+            <>
+              <span>·</span>
+              <Badge variant="secondary">{selectedTexte.libelle_statut_adoption}</Badge>
+            </>
+          )}
+          {selectedTexte.lien_texte && (
+            <>
+              <span>·</span>
+              <a
+                href={selectedTexte.lien_texte}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-primary hover:underline"
+              >
+                Voir le texte officiel
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            </>
+          )}
+          {liensStatus[selectedTexte.uid] === 'en_cours' && (
+            <>
+              <span>·</span>
+              <span className="flex items-center gap-1">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Vérification du lien...
+              </span>
+            </>
+          )}
+        </div>
+      )}
 
-        {selectedTexte && selectedTexte.lien_texte && (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  onClick={() => handleDiscussWithAI(
-                    selectedTexte.titre_principal_court || selectedTexte.denomination || 'Texte inconnu',
-                    selectedTexte.lien_texte!
-                  )}
-                  className="mb-4"
-                >
-                  Discuter de ce texte avec l'IA (Perplexity)
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Ouvre Perplexity avec le texte pré-chargé (compte gratuit recommandé pour discussions étendues)</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        )}
+      {/* État : pas de texte sélectionné */}
+      {!selectedTexte && (
+        <p className="text-muted-foreground">Sélectionnez un texte pour générer le résumé IA.</p>
+      )}
 
-        {selectedTexte && liensStatus[selectedTexte.uid] === 'invalide' ? (
-          <p className="text-muted-foreground">Ce texte n'a pas encore été publié. Sélectionnez un autre texte.</p>
-        ) : error ? (
-          <p className="text-red-500">Erreur : {error.message}</p>
-        ) : completion ? (
-          <div className="prose max-w-none" key={completion.length}>
-            <ReactMarkdown>{completion}</ReactMarkdown>
-          </div>
-        ) : isLoadingResume ? (
-          <div className="flex justify-center items-center h-32">
-            <Loader2 className="h-6 w-6 animate-spin" />
-            <p className="ml-2">Génération du résumé...</p>
-          </div>
-        ) : (
-          <p>Sélectionnez un texte pour générer le résumé IA...</p>
-        )}
-      </div>
+      {/* État : lien invalide */}
+      {selectedTexte && liensStatus[selectedTexte.uid] === 'invalide' && (
+        <p className="text-muted-foreground">Ce texte n&apos;a pas encore été publié. Sélectionnez un autre texte.</p>
+      )}
+
+      {/* État : erreur */}
+      {error && (
+        <p className="text-destructive">Erreur : {error.message}</p>
+      )}
+
+      {/* 3 cartes structurées */}
+      {selectedTexte && liensStatus[selectedTexte.uid] !== 'invalide' && !error && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {CARDS.map(({ key, Icon, title }) => (
+            <Card key={key}>
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Icon className="h-4 w-4 text-primary shrink-0" />
+                  {title}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm prose prose-sm max-w-none dark:prose-invert">
+                {sections[key] ? (
+                  <ReactMarkdown>{sections[key]}</ReactMarkdown>
+                ) : isLoadingResume ? (
+                  <div className="space-y-2">
+                    <Skeleton className="h-3 w-full" />
+                    <Skeleton className="h-3 w-5/6" />
+                    <Skeleton className="h-3 w-4/6" />
+                    <Skeleton className="h-3 w-full" />
+                    <Skeleton className="h-3 w-3/6" />
+                  </div>
+                ) : null}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Rainbow button Perplexity — sous les cartes */}
+      {selectedTexte && selectedTexte.lien_texte && (hasContent || (!isLoadingResume && !error)) && liensStatus[selectedTexte.uid] === 'valide' && (
+        <div className="flex justify-center mt-8">
+          <button
+            onClick={() => handleDiscussWithAI(
+              selectedTexte.titre_principal_court || selectedTexte.denomination || 'Texte inconnu',
+              selectedTexte.lien_texte!
+            )}
+            className="cursor-pointer hover:scale-105 active:scale-95 transition-transform rounded-xl"
+            style={{
+              background: 'conic-gradient(from var(--rainbow-angle), #ff0080, #ff8c00, #ffe600, #00ff88, #00cfff, #8a2be2, #ff0080)',
+              animation: 'rainbow-rotate 4s linear infinite',
+              padding: '2px',
+            }}
+          >
+            <span className="flex items-center gap-2 px-5 py-2.5 rounded-[10px] bg-background text-foreground font-medium text-sm">
+              <ExternalLink className="h-4 w-4" />
+              Approfondir avec Perplexity
+            </span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -9,9 +9,21 @@
 // - PARAMS_XXX : Objet avec maxTokens, temperature, etc.
 // ──────────────────────────────────────────────────────────────────────────────
 
-// Prompt pour le résumé de loi (vulgarisation accessible).
+// Prompt pour le résumé de loi (vulgarisation accessible, structuré en 3 sections).
 export const SYSTEM_PROMPT_RESUME_LOI = `
-Résume ce texte en moins de 500 mots.
+Tu es un expert en droit français qui vulgarise les textes législatifs pour les citoyens.
+Réponds en 3 sections structurées avec ces titres EXACTS :
+
+## Pourquoi cette loi ?
+[Contexte et objectif principal du texte, 2-3 phrases]
+
+## Changements clés
+[Les 3-4 modifications principales sous forme de liste courte]
+
+## Impact attendu
+[Conséquences concrètes pour les citoyens, 2-3 phrases]
+
+Sois neutre, accessible et concis. Maximum 120 mots par section.
 `; // Fin du prompt système – multiligne pour lisibilité.
 
 
@@ -20,7 +32,7 @@ Résume ce texte de loi intitulé "{titre_texte}" : {texteComplet}.
 `; // Template avec placeholders {var} – on remplace par .replace() dans route.ts pour interpolation sécurisée.
 
 export const PARAMS_RESUME_LOI = {
-  maxTokens: 500, // Limite pour réponses concises (ajuste pour coût/perf).
+  maxTokens: 700, // Augmenté pour couvrir les 3 sections (3 × 120 mots ≈ 500-600 tokens).
   temperature: 0.7, // Équilibré : factuel sans créativité excessive (0=strict, 1=créatif).
 };
 

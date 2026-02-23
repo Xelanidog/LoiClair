@@ -11,8 +11,9 @@ export default async function ResumeIAPage({ params }: { params: Promise<{ uid: 
   const [textesResult, dossierResult] = await Promise.all([
     supabase
       .from('textes')
-      .select('uid, date_creation, date_publication, denomination, titre_principal_court, lien_texte, libelle_statut_adoption, organe_auteur:organe_auteur_ref(libelle)')
+      .select('uid, date_creation, date_publication, denomination, titre_principal_court, lien_texte, libelle_statut_adoption, provenance, organe_auteur:organe_auteur_ref(libelle)')
       .eq('dossier_ref', uid)
+      .not('uid', 'ilike', '%TAP%')
       .order('date_creation', { ascending: true }),
     supabase
       .from('dossiers_legislatifs')
