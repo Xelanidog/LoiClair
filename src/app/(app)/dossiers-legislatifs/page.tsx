@@ -6,6 +6,7 @@
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import { Sparkles, ExternalLink } from 'lucide-react';
+import ShimmerText from '@/components/ShimmerText';
 import GenericFilter from '@/components/GenericFilter';
 import ResetButton from '@/components/ResetButton';
 import SearchInput from '@/components/SearchInput';
@@ -417,8 +418,9 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
 
                 {/* Liens */}
                 <div className="flex flex-wrap gap-3 pt-3 border-t border-border text-xs">
-                  <Link href={`/dossiers-legislatifs/${dossier.uid}/resume-ia`} target="_blank" className="flex items-center gap-1.5 text-primary hover:underline font-medium">
-                    <Sparkles className="w-3.5 h-3.5" /> Résumé IA
+                  <Link href={`/dossiers-legislatifs/${dossier.uid}/resume-ia`} target="_blank" className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border border-primary/30 hover:border-primary/60 hover:scale-105 transition-all duration-200 group">
+                    <Sparkles className="w-3.5 h-3.5 text-fuchsia-600 group-hover:rotate-12 transition-transform duration-200" />
+                    <ShimmerText>Résumé IA</ShimmerText>
                   </Link>
                   {dossier.lien_an && (
                     <a href={dossier.lien_an} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground hover:underline">
