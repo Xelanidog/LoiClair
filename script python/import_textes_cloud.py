@@ -587,7 +587,7 @@ def importer_texte(texte_data: dict, file_name: str = "unknown.json") -> list:
             "ADOPTCOM": "Adopté en comission",
             "REJETSEANCE": "Rejeté en séance",
             # Ajoute d'autres mappings si tu en as
-        }.get(statut_adoption, "Non défini")
+        }.get(statut_adoption)
         # Extraction depot code/libelle (de classification.famille.depot)
         famille = (
             classification.get("famille", {}) if classification.get("famille") else {}
@@ -787,7 +787,7 @@ def importer_texte(texte_data: dict, file_name: str = "unknown.json") -> list:
                     "ADOPTCOM": "Adopté en comission",
                     "REJETSEANCE": "Rejeté en séance",
                     # Ajoute d'autres mappings si tu en as
-                }.get(statut_adoption_tome, "Non défini")
+                }.get(statut_adoption_tome)
                 famille_tome = (
                     classification_tome.get("famille")
                     if classification_tome.get("famille")

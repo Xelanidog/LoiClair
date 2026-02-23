@@ -176,10 +176,12 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes }: Res
                           {t.provenance && <span>{t.provenance}</span>}
                           {t.provenance && t.organe_auteur?.libelle && <span>·</span>}
                           {t.organe_auteur?.libelle && <span>{t.organe_auteur.libelle}</span>}
-                          <span>·</span>
-                          <Badge variant="secondary" className="text-xs py-0 h-4">
-                            {t.libelle_statut_adoption || 'Statut inconnu'}
-                          </Badge>
+                          {t.libelle_statut_adoption && <span>·</span>}
+                          {t.libelle_statut_adoption && (
+                            <Badge variant="secondary" className="text-xs py-0 h-4">
+                              {t.libelle_statut_adoption}
+                            </Badge>
+                          )}
                           <span>·</span>
                           <span>{formatDate(t.date_creation, t.date_publication)}</span>
                           {liensStatus[t.uid] === 'invalide' && (
