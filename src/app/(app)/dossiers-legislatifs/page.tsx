@@ -218,7 +218,7 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
       </p>
 
       {/* Filtres */}
-      <div className="mb-4 flex items-center gap-4">
+      <div className="mb-4 flex flex-wrap items-center gap-3">
           <SearchInput />
           <GenericFilter
             paramName="statut"

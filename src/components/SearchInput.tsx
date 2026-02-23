@@ -48,6 +48,8 @@ export default function SearchInput() {
         placeholder="Rechercher par titre ou auteur…"
         value={value}
         onChange={(e) => setValue(e.target.value)}
+        onFocus={e => e.currentTarget.style.borderColor = 'oklch(0.55 0.28 320)'}
+
         className="w-full pl-10 pr-8 py-2 h-10 rounded-lg border bg-background text-sm focus:outline-none transition-all"
       />
       {value && (

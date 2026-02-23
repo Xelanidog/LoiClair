@@ -1,16 +1,18 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import Sidebar from "@/components/Sidebar"
+import MobileNav from "@/components/MobileNav"
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex flex-col min-h-screen">
+      <MobileNav />
       <div className="flex flex-1 overflow-hidden">
-        <aside className="w-72 flex-shrink-0 bg-background border-r">
+        <aside className="hidden lg:block w-72 flex-shrink-0 bg-background border-r">
           <Sidebar />
         </aside>
         <main className="flex-1 overflow-auto bg-background">
-          <div className="p-6 md:p-8 lg:p-10">
+          <div className="pt-14 lg:pt-0 p-6 md:p-8 lg:p-10">
             {children}
           </div>
         </main>
