@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { MonthlyDossiersChart } from '@/components/ui/MonthlyDossiersChart';
 import GenericFilter from '@/components/GenericFilter';
 import ResetButton from '@/components/ResetButton';
+import { GroupeStatsTable } from '@/components/GroupeStatsTable';
 
 export default async function KpisPage({ 
   searchParams 
@@ -42,8 +43,22 @@ const groupesPromise = supabase
   .select('initiateur_groupe_libelle')
   .not('initiateur_groupe_libelle', 'is', null);
 
-// 3. On attend les DEUX en parallèle
-const [typesResult, groupesResult] = await Promise.all([typesPromise, groupesPromise]);
+// 3. Promesse pour les délais par chambre (table actes_legislatifs, globale)
+const actesDelaisPromise = supabase
+  .from('actes_legislatifs')
+  .select('dossier_uid, code_acte, date_acte, statut_conclusion')
+  .in('code_acte', [
+    'AN1-DEPOT', 'AN2-DEPOT', 'ANLDEF-DEPOT', 'ANLUNI-DEPOT', 'ANNLEC-DEPOT',
+    'AN1-DEBATS-DEC', 'AN2-DEBATS-DEC', 'ANLDEF-DEBATS-DEC', 'ANLUNI-DEBATS-DEC', 'ANNLEC-DEBATS-DEC',
+    'CMP-DEBATS-AN-DEC',
+    'SN1-DEPOT', 'SN2-DEPOT', 'SNNLEC-DEPOT',
+    'SN1-DEBATS-DEC', 'SN2-DEBATS-DEC', 'SNNLEC-DEBATS-DEC',
+    'CMP-DEBATS-SN-DEC',
+  ])
+  .not('date_acte', 'is', null);
+
+// 4. On attend les TROIS en parallèle
+const [typesResult, groupesResult, actesDelaisResult] = await Promise.all([typesPromise, groupesPromise, actesDelaisPromise]);
 
 
 // ────────────────────────────────────────────────
@@ -73,7 +88,36 @@ const groupe = groupeFilter ? groupeMap[groupeFilter] : undefined;
 
 
 
-let statsData = { 
+const PROCEDURES_PROMULGABLES = new Set([
+  'Proposition de loi ordinaire',
+  'Projet de loi ordinaire',
+  'Projet ou proposition de loi constitutionnelle',
+  'Projet ou proposition de loi organique',
+  'Projet de ratification des traités et conventions',
+  'Projet de loi de finances rectificative',
+  'Projet de loi de financement de la sécurité sociale',
+  'Projet de loi de finances de l\'année',
+]);
+
+// Textes sans vote chambre — exclus des dénominateurs AN et SN
+const EXCLUS_TOUS = new Set([
+  'Pétitions',
+  'Allocution du Président de l\'Assemblée nationale',
+  'Commission d\'enquête',
+  'Mission d\'information',
+  'Rapport d\'information sans mission',
+]);
+
+// Textes supplémentaires exclus du dénominateur SN (procédures AN uniquement)
+const EXCLUS_SN_SUPPL = new Set([
+  'Engagement de la responsabilité gouvernementale',
+  'Résolution',
+]);
+
+let dossiersData: any[] = [];
+let groupeStats: { groupe: string; total: number; total_an: number; total_sn: number; total_promulgables: number; promulgues: number; adoptes_an: number; adoptes_sn: number }[] = [];
+
+let statsData = {
   total_dossiers: 0,
   mois_courant: 0,
   moyenne_mensuelle: 0,
@@ -84,6 +128,17 @@ let statsData = {
   adoptes_parlement: 0,
   promulgues: 0,
   rejetes: 0,
+  total_promulgables: 0,
+  taux_promulgation: 0,
+  delai_moyen_jours: 0,
+  delai_min_jours: 0,
+  delai_max_jours: 0,
+  delai_moyen_an_jours: 0,
+  delai_min_an_jours: 0,
+  delai_max_an_jours: 0,
+  delai_moyen_sn_jours: 0,
+  delai_min_sn_jours: 0,
+  delai_max_sn_jours: 0,
 };
 
 try {
@@ -91,7 +146,7 @@ try {
   // Construction de la requête de base
   let query = supabase
     .from('dossiers_legislatifs')
-    .select('date_depot, statut_final')
+    .select('uid, date_depot, statut_final, date_promulgation, procedure_libelle, initiateur_groupe_libelle')
     .not('date_depot', 'is', null)
     .order('date_depot', { ascending: false })
     .limit(10000);
@@ -109,19 +164,20 @@ try {
 
   if (error) throw error;
 
-  statsData.total_dossiers = dossiers?.length || 0;
+  dossiersData = dossiers || [];
+  statsData.total_dossiers = dossiersData.length;
 
   const now = new Date();
   const moisCourantStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-  const depotDates = (dossiers || [])
+  const depotDates = dossiersData
     .map((row: any) => row.date_depot ? new Date(row.date_depot) : null)
     .filter((date): date is Date => date !== null && !isNaN(date.getTime()));
 
   statsData.mois_courant = depotDates.filter(d => d >= moisCourantStart).length;
 
-  // Calcul des statuts (inchangé)
-  dossiers?.forEach((d: any) => {
+  // Calcul des statuts
+  dossiersData.forEach((d: any) => {
     const statut = d.statut_final?.toLowerCase() || 'inconnu';
 
     if (statut === 'en_cours' || statut.includes('cours')) statsData.en_cours++;
@@ -130,7 +186,23 @@ try {
     else if (statut.includes('parlement') || statut.includes('navette') || statut === 'adopté') statsData.adoptes_parlement++;
     else if (statut.includes('promulgu')) statsData.promulgues++;
     else if (statut.includes('rejet')) statsData.rejetes++;
+
+    if (PROCEDURES_PROMULGABLES.has(d.procedure_libelle)) statsData.total_promulgables++;
   });
+
+  // Taux de promulgation : promulgués / textes à vocation législative
+  statsData.taux_promulgation = statsData.total_promulgables > 0
+    ? Math.round(statsData.promulgues * 1000 / statsData.total_promulgables) / 10
+    : 0;
+
+  // Délai moyen dépôt → promulgation (en jours)
+  const delais = dossiersData
+    .filter((d: any) => d.date_promulgation && d.date_depot)
+    .map((d: any) => (new Date(d.date_promulgation).getTime() - new Date(d.date_depot).getTime()) / 86400000)
+    .filter((j: number) => j > 0);
+  statsData.delai_moyen_jours = delais.length > 0 ? Math.round(delais.reduce((a: number, b: number) => a + b, 0) / delais.length) : 0;
+  statsData.delai_min_jours = delais.length > 0 ? Math.round(Math.min(...delais)) : 0;
+  statsData.delai_max_jours = delais.length > 0 ? Math.round(Math.max(...delais)) : 0;
 
   // Calcul historique mensuel (inchangé)
   const startDate = new Date(now.getFullYear(), now.getMonth() - 23, 1);
@@ -158,6 +230,94 @@ try {
 
 } catch (error) {
   console.error('❌ Erreur Supabase KPIs :', error);
+}
+
+// Calcul des délais par chambre (depuis actes_legislatifs)
+try {
+  const actes = actesDelaisResult.data || [];
+  const depotsAN = new Map<string, Date>();
+  const decisionsAN = new Map<string, Date>();
+  const depotsSN = new Map<string, Date>();
+  const decisionsSN = new Map<string, Date>();
+  const adoptesAN = new Set<string>();
+  const adoptesSN = new Set<string>();
+
+  // Adoption = tout sauf rejeté/rejetée/désaccord (inclut modifié, 49-3, art.45, définitive art.151-7, etc.)
+  const estAdopte = (s: string | null) =>
+    !!s && (s.toLowerCase().includes('adopt') || s.toLowerCase().includes('modifi') || s.toLowerCase().includes('définitiv'));
+
+  const isDecisionAN = (code: string) =>
+    (code.startsWith('AN') || code === 'CMP-DEBATS-AN-DEC') && code.endsWith('DEBATS-DEC');
+  const isDecisionSN = (code: string) =>
+    (code.startsWith('SN') || code === 'CMP-DEBATS-SN-DEC') && code.endsWith('DEBATS-DEC');
+
+  for (const acte of actes) {
+    const date = new Date(acte.date_acte);
+    const { dossier_uid, code_acte, statut_conclusion } = acte;
+    if (code_acte.startsWith('AN') && code_acte.endsWith('DEPOT')) {
+      if (!depotsAN.has(dossier_uid) || date < depotsAN.get(dossier_uid)!) depotsAN.set(dossier_uid, date);
+    } else if (isDecisionAN(code_acte) && estAdopte(statut_conclusion)) {
+      if (!decisionsAN.has(dossier_uid) || date < decisionsAN.get(dossier_uid)!) decisionsAN.set(dossier_uid, date);
+      adoptesAN.add(dossier_uid);
+    } else if (code_acte.startsWith('SN') && code_acte.endsWith('DEPOT')) {
+      if (!depotsSN.has(dossier_uid) || date < depotsSN.get(dossier_uid)!) depotsSN.set(dossier_uid, date);
+    } else if (isDecisionSN(code_acte) && estAdopte(statut_conclusion)) {
+      // DLR5L11N19503 exclu du calcul de délai : dossier déposé en 2000, bloqué 11 ans au Sénat (cas politique unique)
+      if (dossier_uid !== 'DLR5L11N19503' && (!decisionsSN.has(dossier_uid) || date < decisionsSN.get(dossier_uid)!)) decisionsSN.set(dossier_uid, date);
+      adoptesSN.add(dossier_uid);
+    }
+  }
+
+  const calcStats = (depots: Map<string, Date>, decisions: Map<string, Date>) => {
+    const delais: number[] = [];
+    for (const [uid, depot] of depots) {
+      const decision = decisions.get(uid);
+      if (decision && decision > depot) delais.push((decision.getTime() - depot.getTime()) / 86400000);
+    }
+    if (delais.length === 0) return { moyenne: 0, min: 0, max: 0 };
+    return {
+      moyenne: Math.round(delais.reduce((a, b) => a + b, 0) / delais.length),
+      min: Math.round(Math.min(...delais)),
+      max: Math.round(Math.max(...delais)),
+    };
+  };
+
+  const sAN = calcStats(depotsAN, decisionsAN);
+  statsData.delai_moyen_an_jours = sAN.moyenne;
+  statsData.delai_min_an_jours = sAN.min;
+  statsData.delai_max_an_jours = sAN.max;
+
+  const sSN = calcStats(depotsSN, decisionsSN);
+  statsData.delai_moyen_sn_jours = sSN.moyenne;
+  statsData.delai_min_sn_jours = sSN.min;
+  statsData.delai_max_sn_jours = sSN.max;
+
+  // Stats par groupe politique
+  const gsMap = new Map<string, { total: number; total_an: number; total_sn: number; total_promulgables: number; promulgues: number; adoptes_an: number; adoptes_sn: number }>();
+  for (const d of dossiersData) {
+    const g = d.initiateur_groupe_libelle;
+    if (!g) continue;
+    if (!gsMap.has(g)) gsMap.set(g, { total: 0, total_an: 0, total_sn: 0, total_promulgables: 0, promulgues: 0, adoptes_an: 0, adoptes_sn: 0 });
+    const gs = gsMap.get(g)!;
+    const proc = d.procedure_libelle;
+    gs.total++;
+    if (d.uid && adoptesAN.has(d.uid)) gs.adoptes_an++;
+    if (d.uid && adoptesSN.has(d.uid)) gs.adoptes_sn++;
+    if (!EXCLUS_TOUS.has(proc)) {
+      gs.total_an++;
+      if (!EXCLUS_SN_SUPPL.has(proc)) gs.total_sn++;
+    }
+    if (PROCEDURES_PROMULGABLES.has(proc)) {
+      gs.total_promulgables++;
+      if (d.statut_final?.toLowerCase().includes('promulgu')) gs.promulgues++;
+    }
+  }
+  groupeStats = [...gsMap.entries()]
+    .map(([groupe, s]) => ({ groupe, ...s }))
+    .filter(g => g.total >= 10)
+    .sort((a, b) => b.total - a.total);
+} catch (error) {
+  console.error('❌ Erreur calcul délais chambre :', error);
 }
 
 // Données graphique
@@ -345,6 +505,105 @@ return (
 
   </div>
 </div>
+
+      {/* Efficacité du processus */}
+      <div className="mt-8">
+        <h2 className="text-4xl font-semibold mb-6">Efficacité du processus</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+
+          <Card className="text-center">
+            <CardHeader>
+              <CardTitle>Taux de promulgation</CardTitle>
+              <CardDescription>
+                Part des dossiers terminés qui ont abouti à une loi signée par le Président
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-5xl font-bold text-purple-600">
+                {statsData.taux_promulgation} %
+              </div>
+              <p className="text-sm text-muted-foreground mt-2">
+                {statsData.promulgues} promulgués sur {statsData.total_promulgables} textes à vocation législative
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="text-center">
+            <CardHeader>
+              <CardTitle>Délai moyen de promulgation</CardTitle>
+              <CardDescription>
+                Temps moyen entre le dépôt du texte et sa promulgation en loi
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-5xl font-bold text-primary">
+                {statsData.delai_moyen_jours} j
+              </div>
+              <p className="text-sm text-muted-foreground mt-2">
+                Du dépôt au Journal officiel
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Min {statsData.delai_min_jours} j — Max {statsData.delai_max_jours} j
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="text-center">
+            <CardHeader>
+              <CardTitle>Délai moyen à l'Assemblée</CardTitle>
+              <CardDescription>
+                Du dépôt à l'AN jusqu'à la décision d'adoption par l'Assemblée nationale
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-5xl font-bold text-blue-600">
+                {statsData.delai_moyen_an_jours} j
+              </div>
+              <p className="text-sm text-muted-foreground mt-2">
+                Par texte adopté à l'AN
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Min {statsData.delai_min_an_jours} j — Max {statsData.delai_max_an_jours} j
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="text-center">
+            <CardHeader>
+              <CardTitle>Délai moyen au Sénat</CardTitle>
+              <CardDescription>
+                Du dépôt au Sénat jusqu'à la décision d'adoption par le Sénat
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-5xl font-bold text-orange-600">
+                {statsData.delai_moyen_sn_jours} j
+              </div>
+              <p className="text-sm text-muted-foreground mt-2">
+                Par texte adopté au Sénat
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Min {statsData.delai_min_sn_jours} j — Max {statsData.delai_max_sn_jours} j
+              </p>
+              <p className="text-xs text-muted-foreground mt-2 italic">
+                * Hors dossier «&nbsp;Droit de vote des étrangers&nbsp;» (déposé en 2000, bloqué 11 ans au Sénat pour raisons politiques — cas unique exclu comme valeur aberrante)
+              </p>
+            </CardContent>
+          </Card>
+
+        </div>
+      </div>
+
+      {/* Taux de succès par groupe politique */}
+      {groupeStats.length > 0 && (
+        <div className="mt-8">
+          <h2 className="text-4xl font-semibold mb-2">Succès législatif par groupe</h2>
+          <p className="text-muted-foreground mb-6">
+            Adoption AN/SN : sur tous les textes pertinents aux deux chambres. Promulgation : sur les textes à vocation législative uniquement (eg. certains texte étudiés au parlement n'ont pas vocation à être promulgués; comme les résolution par exemple).
+          </p>
+          <GroupeStatsTable data={groupeStats} />
+        </div>
+      )}
     </div>
   );
 }
