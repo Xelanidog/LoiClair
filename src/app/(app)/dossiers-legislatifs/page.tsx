@@ -388,6 +388,8 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
           const daysInfo = getDaysInfo(dossier);
           const depotDate = formatDepotDate(dossier.date_depot);
 
+          const textesCount = (dossier.textes_count as { count: number }[] | null)?.[0]?.count ?? 0;
+
           const badgeClass =
             dossier.statut_final === "Promulguée" ? "bg-green-100 text-green-800 border-green-200" :
             dossier.statut_final === "Rejeté" ? "bg-red-100 text-red-800 border-red-200" :
@@ -475,7 +477,7 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
                 })()}
 
                 {/* Liens */}
-                <div className="flex flex-wrap gap-3 pt-3 border-t border-border text-xs">
+                <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-border text-xs">
                   <Link href={`/dossiers-legislatifs/${dossier.uid}/resume-ia`} target="_blank" className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border border-primary/30 hover:border-primary/60 hover:scale-105 transition-all duration-200 group">
                     <Sparkles className="w-3.5 h-3.5 text-fuchsia-600 group-hover:rotate-12 transition-transform duration-200" />
                     <ShimmerText>Résumé IA</ShimmerText>
@@ -495,6 +497,13 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
                       <ExternalLink className="w-3.5 h-3.5" /> Légifrance
                     </a>
                   )}
+                  <div className="ml-auto flex items-center gap-3">
+                    <span className={`inline-flex items-center gap-1 ${textesCount > 0 ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${textesCount > 0 ? 'bg-green-500' : 'bg-muted-foreground/40'}`} />
+                      {textesCount > 0 ? `${textesCount} texte${textesCount > 1 ? 's' : ''}` : 'Aucun texte publié'}
+                    </span>
+                    <span className="font-mono text-[10px] text-muted-foreground/40 select-all">{dossier.uid}</span>
+                  </div>
                 </div>
 
               </div>
