@@ -64,6 +64,7 @@ export function SidebarNavContent({ onNavigation }: { onNavigation?: () => void 
           <SidebarLink href="/documentation/guide" label="Guide d'utilisation" onNavigation={onNavigation} />
           <SidebarLink href="/documentation/glossaire" label="Glossaire" onNavigation={onNavigation} />
           <SidebarLink href="/documentation/methode" label="Méthodologie" onNavigation={onNavigation} />
+          <SidebarLink href="/documentation/conformite-ia" label="Conformité AI Act" onNavigation={onNavigation} />
         </SidebarSection>
 
         <SidebarSection icon={Building2} title="Organes législatifs">

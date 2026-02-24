@@ -122,8 +122,10 @@ Sur chaque carte, un bouton **Résumé IA** donne accès à une explication du t
 Sur la page de résumé :
 
 - Un **menu déroulant** permet de choisir le texte à résumer parmi ceux rattachés au dossier (un dossier peut contenir plusieurs versions du texte).
-- Le résumé est structuré en **3 sections** : contexte, contenu, et enjeux.
+- Le résumé est structuré en **3 sections** : *Pourquoi cette loi ?*, *Changements clés*, et *Impact attendu*.
 - Un lien vers **le texte officiel** est disponible pour aller plus loin.
+
+En bas de chaque page de résumé, une section **Transparence** indique que le contenu a été généré par une intelligence artificielle, avec un lien vers la page [Conformité AI Act](/documentation/conformite-ia). En dépliants les **Paramètres de génération**, vous pouvez consulter l'ensemble des réglages utilisés : le nom du modèle, le fournisseur, la température (qui contrôle la créativité de l'IA), le nombre maximum de tokens produits, et le prompt système — c'est-à-dire les instructions exactes données à l'IA pour produire le résumé.
 
 > Le résumé est généré à la demande et peut prendre quelques secondes.
 
@@ -177,8 +179,9 @@ La page **Types de textes** explique les différentes catégories de textes qui 
 
 ## Documentation
 
-La section **Documentation**, accessible dans le menu de gauche, rassemble trois ressources complémentaires :
+La section **Documentation**, accessible dans le menu de gauche, rassemble quatre ressources complémentaires :
 
 - **Guide d'utilisation** — vous êtes ici.
 - **Glossaire** — définitions des termes législatifs utilisés sur LoiClair : statuts des dossiers, types de procédures, étapes législatives. Le glossaire est alimenté directement par les données en base — les termes apparaissent automatiquement à mesure que de nouvelles procédures sont référencées.
 - **Méthodologie** — explication détaillée de chaque indicateur affiché sur le site : formule de calcul, variables utilisées et exclues, source des données, limites d'interprétation.
+- **Conformité AI Act** — explication du règlement européen sur l'intelligence artificielle (règlement UE 2024/1689), du rôle de LoiClair en tant que déployeur, et des mesures concrètes mises en place pour se conformer à l'Article 50 : signalement visible sur chaque résumé, publication du prompt système, marquage machine-readable, et neutralité explicite des instructions données à l'IA.

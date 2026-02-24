@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from 'react';
-import { Loader2, HelpCircle, ListChecks, TrendingUp, ExternalLink, Check, ChevronsUpDown } from "lucide-react";
+import { Loader2, HelpCircle, ListChecks, TrendingUp, ExternalLink, Check, ChevronsUpDown, ChevronDown, Bot } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
+import { SYSTEM_PROMPT_RESUME_LOI, PARAMS_RESUME_LOI, MODEL_RESUME_LOI, MAX_INPUT_CHARS_RESUME_LOI } from '@/lib/prompts';
 import { useCompletion } from '@ai-sdk/react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -133,7 +134,7 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes }: Res
   const hasContent = Object.values(sections).some(v => v.length > 0);
 
   return (
-    <div className="container mx-auto p-6 max-w-5xl">
+    <div className="container mx-auto p-6 max-w-7xl">
       <h1 className="text-2xl font-bold mb-6">
         Résumé IA — {titreDossier || `dossier ${uid}`}
       </h1>
@@ -305,6 +306,62 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes }: Res
           </button>
         </div>
       )}
+
+      {/* Section transparence IA — Article 50 AI Act */}
+      <div className="mt-12 border-t pt-8">
+        <div className="flex items-center gap-2 mb-4">
+          <Bot className="h-4 w-4 text-muted-foreground" />
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Contenu généré par intelligence artificielle</span>
+          <a href="/documentation/conformite-ia" className="text-xs text-primary hover:underline ml-1">
+            Conformité AI Act →
+          </a>
+        </div>
+
+        <details className="group">
+          <summary className="flex items-center gap-2 cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors list-none select-none">
+            <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
+            Paramètres de génération
+          </summary>
+
+          <div className="mt-4 space-y-4">
+            {/* Tableau des paramètres */}
+            <div className="rounded-lg border overflow-hidden text-sm">
+              <table className="w-full">
+                <tbody>
+                  <tr className="border-b">
+                    <td className="px-4 py-2.5 text-muted-foreground font-medium bg-muted/30 w-1/3">Modèle</td>
+                    <td className="px-4 py-2.5 font-mono text-xs">{MODEL_RESUME_LOI}</td>
+                  </tr>
+                  <tr className="border-b">
+                    <td className="px-4 py-2.5 text-muted-foreground font-medium bg-muted/30">Fournisseur</td>
+                    <td className="px-4 py-2.5">xAI (Grok)</td>
+                  </tr>
+                  <tr className="border-b">
+                    <td className="px-4 py-2.5 text-muted-foreground font-medium bg-muted/30">Température</td>
+                    <td className="px-4 py-2.5 font-mono text-xs">{PARAMS_RESUME_LOI.temperature} <span className="text-muted-foreground font-sans">(0 = strict, 1 = créatif)</span></td>
+                  </tr>
+                  <tr className="border-b">
+                    <td className="px-4 py-2.5 text-muted-foreground font-medium bg-muted/30">Tokens max (sortie)</td>
+                    <td className="px-4 py-2.5 font-mono text-xs">{PARAMS_RESUME_LOI.maxTokens}</td>
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-2.5 text-muted-foreground font-medium bg-muted/30">Caractères max (entrée)</td>
+                    <td className="px-4 py-2.5 font-mono text-xs">{MAX_INPUT_CHARS_RESUME_LOI.toLocaleString('fr-FR')} <span className="text-muted-foreground font-sans">(≈ {Math.round(MAX_INPUT_CHARS_RESUME_LOI / 4).toLocaleString('fr-FR')} tokens)</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* Prompt système */}
+            <div>
+              <p className="text-xs text-muted-foreground mb-2 font-medium">Prompt système (instructions données à l&apos;IA)</p>
+              <pre className="text-xs bg-muted/40 border rounded-lg p-4 overflow-x-auto whitespace-pre-wrap leading-relaxed font-mono">
+                {SYSTEM_PROMPT_RESUME_LOI.trim()}
+              </pre>
+            </div>
+          </div>
+        </details>
+      </div>
     </div>
   );
 }

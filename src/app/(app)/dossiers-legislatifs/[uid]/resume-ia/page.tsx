@@ -2,7 +2,18 @@
 // Server Component : fetch initial des données, puis passe au client pour l'interactivité IA
 
 import { supabase } from '@/lib/supabase';
+import { MODEL_RESUME_LOI } from '@/lib/prompts';
 import ResumeIAClient from './ResumeIAClient';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  other: {
+    // Marquage machine-readable (Article 50 AI Act)
+    'ai-generated': 'true',
+    'ai-model': MODEL_RESUME_LOI,
+    'ai-provider': 'xAI (Grok)',
+  },
+};
 
 export default async function ResumeIAPage({ params }: { params: Promise<{ uid: string }> }) {
   const { uid } = await params;
