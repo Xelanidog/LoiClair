@@ -4,6 +4,7 @@
 
 import json
 import os
+import re
 import requests
 import io
 import zipfile
@@ -12,6 +13,14 @@ from dotenv import load_dotenv
 from tqdm import tqdm
 import traceback
 from datetime import date  # Pour calcul âge dans acteurs
+
+
+def clean_profession(value: str | None) -> str | None:
+    """Supprime le préfixe '(XX) - ' et met en majuscule la première lettre."""
+    if not isinstance(value, str):
+        return value
+    value = re.sub(r"^\(\d+\)\s*-\s*", "", value).strip()
+    return value[0].upper() + value[1:] if value else value
 
 
 # ===================================================================
@@ -139,7 +148,7 @@ def importer_acteur(acteur_data, file_name):
         profession = data["profession"]
         if isinstance(profession, dict):
             libelle_profession_raw = profession.get("libelleCourant")
-            libelle_profession = (
+            libelle_profession = clean_profession(
                 libelle_profession_raw
                 if not (
                     isinstance(libelle_profession_raw, dict)

@@ -83,6 +83,7 @@ if (age) {
 
   const typeFilter = typeof resolvedParams.type === 'string' ? resolvedParams.type.toLowerCase() : undefined;
   const groupeFilter = typeof resolvedParams.groupe === 'string' ? resolvedParams.groupe.toLowerCase() : undefined;
+  const themeFilter = typeof resolvedParams.theme === 'string' ? resolvedParams.theme.toLowerCase() : undefined;
   const keyword = typeof resolvedParams.q === 'string' ? resolvedParams.q.trim() : undefined;
 
 
@@ -93,10 +94,11 @@ if (age) {
       .replace(/[^a-z0-9]+/g, '_')
       .replace(/_+$/, '');
 
-  // Fetch des types, groupes ET acteurs correspondant au mot-clé en parallèle
-  const [{ data: uniqueProcedures }, { data: uniqueGroupes }, { data: matchingActeurs }] = await Promise.all([
+  // Fetch des types, groupes, thèmes ET acteurs correspondant au mot-clé en parallèle
+  const [{ data: uniqueProcedures }, { data: uniqueGroupes }, { data: uniqueThemes }, { data: matchingActeurs }] = await Promise.all([
     supabase.from('dossiers_legislatifs').select('procedure_libelle').not('procedure_libelle', 'is', null),
     supabase.from('dossiers_legislatifs').select('initiateur_groupe_libelle').not('initiateur_groupe_libelle', 'is', null),
+    supabase.from('dossiers_legislatifs').select('themes').not('themes', 'is', null),
     keyword
       ? supabase.from('acteurs').select('uid').or(`nom.ilike.%${keyword}%,prenom.ilike.%${keyword}%`)
       : Promise.resolve({ data: [] as { uid: string }[] }),
@@ -118,6 +120,12 @@ if (age) {
   uniqueGroupesLibelles.forEach(libelle => { groupeMap[toSlug(libelle)] = libelle; });
   const groupeOptions = uniqueGroupesLibelles.map(libelle => ({ slug: toSlug(libelle), libelle }));
 
+  // Thèmes : extraction (flatten des arrays), dédoublonnage, mapping slug → DB
+  const allThemes = (uniqueThemes ?? []).flatMap(item => item.themes ?? []);
+  const uniqueThemesList = [...new Set(allThemes)].sort();
+  const themeMap: { [key: string]: string } = {};
+  uniqueThemesList.forEach(libelle => { themeMap[toSlug(libelle)] = libelle; });
+  const themeOptions = uniqueThemesList.map(libelle => ({ slug: toSlug(libelle), libelle }));
 
   // Fetch Supabase avec filtre statut (si présent).
 let query = supabase
@@ -164,6 +172,7 @@ function applyFilters(q: any) {
     else if (age === 'plus_1a') q = q.lte('date_depot', oneYearAgoISO);
   }
   if (groupeFilter && groupeMap[groupeFilter]) q = q.eq('initiateur_groupe_libelle', groupeMap[groupeFilter]);
+  if (themeFilter && themeMap[themeFilter]) q = q.contains('themes', [themeMap[themeFilter]]);
   if (keyword) {
     if (acteurUids.length > 0) {
       // Cherche dans le titre OU parmi les auteurs connus
@@ -354,6 +363,13 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
             placeholder="Groupe politique"
             allLabel="Tous les groupes"
             options={groupeOptions}
+          />
+          <GenericFilter
+            paramName="theme"
+            label="Thème"
+            placeholder="Filtrer par thème"
+            allLabel="Tous les thèmes"
+            options={themeOptions}
           />
           <ResetButton />
       </div>

@@ -5,6 +5,7 @@
 
 import json
 import os
+import sys
 from pathlib import Path
 from supabase import create_client, Client
 from dotenv import load_dotenv
@@ -13,6 +14,10 @@ import io
 import zipfile
 from tqdm import tqdm
 from datetime import datetime
+
+# Ajouter le dossier scripts/ au path pour importer classify_themes
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
+from classify_themes import classify_themes
 
 # Charger .env.local (chemin relatif au script, portable sur toutes les machines)
 load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent / ".env.local")
@@ -380,7 +385,21 @@ def importer_dossiers_from_zip(
                 for row in resp.data:
                     organe_to_libelle[row["uid"]] = row["libelle"]
 
-    print(f"  → {len(acteur_to_groupe)} acteurs, {len(organe_to_libelle)} organes chargés.\n")
+    print(f"  → {len(acteur_to_groupe)} acteurs, {len(organe_to_libelle)} organes chargés.")
+
+    # Chargement des gouvernements (pour attribuer le bon gouvernement selon la date de dépôt)
+    gvt_rows = supabase.table("organes").select("uid,libelle_abrege,date_debut,date_fin").eq("code_type", "GOUVERNEMENT").execute()
+    gouvernements = []  # liste de (date_debut, date_fin_ou_None, uid)
+    gouvernements_uids = set()
+    for g in (gvt_rows.data or []):
+        if not g.get("date_debut"):
+            continue
+        deb = datetime.fromisoformat(g["date_debut"].replace("Z", "+00:00"))
+        fin = datetime.fromisoformat(g["date_fin"].replace("Z", "+00:00")) if g.get("date_fin") else None
+        gouvernements.append((deb, fin, g["uid"]))
+        gouvernements_uids.add(g["uid"])
+    gouvernements.sort(key=lambda x: x[0])
+    print(f"  → {len(gouvernements)} gouvernements chargés.\n")
     # ----------------------------------------------------------------------
 
     success = 0
@@ -403,7 +422,7 @@ def importer_dossiers_from_zip(
         with zip_ref.open(file_path) as json_stream:
             dossier_data = json.load(json_stream)
 
-            payload = importer_dossier(dossier_data, file_path, acteur_to_groupe, organe_to_libelle)
+            payload = importer_dossier(dossier_data, file_path, acteur_to_groupe, organe_to_libelle, gouvernements, gouvernements_uids)
 
             if payload is not None:
                 batch.append(payload)
@@ -446,7 +465,7 @@ def importer_dossiers_from_zip(
 # ===================================================================
 # Import d'un seul dossier
 # ===================================================================
-def importer_dossier(data: dict, file_path: str = "unknown.json", acteur_to_groupe: dict = None, organe_to_libelle: dict = None):
+def importer_dossier(data: dict, file_path: str = "unknown.json", acteur_to_groupe: dict = None, organe_to_libelle: dict = None, gouvernements: list = None, gouvernements_uids: set = None):
 
     try:
         dossier = data.get("dossierParlementaire", {})
@@ -515,10 +534,22 @@ def importer_dossier(data: dict, file_path: str = "unknown.json", acteur_to_grou
         initiateur_groupe_uid = None
         initiateur_groupe_libelle = None
 
-        if initiateur_acteur_ref and acteur_to_groupe:
-            initiateur_groupe_uid = acteur_to_groupe.get(initiateur_acteur_ref)
-            if initiateur_groupe_uid and organe_to_libelle:
-                initiateur_groupe_libelle = organe_to_libelle.get(initiateur_groupe_uid)
+        # 1. Cas gouvernemental : l'initiateur est un organe gouvernement
+        #    → on utilise initiateur_organe_ref s'il est directement un gouvernement connu,
+        #      sinon on retrouve le bon gouvernement via la date de dépôt.
+        if gouvernements_uids and initiateur_organe_ref and initiateur_organe_ref in gouvernements_uids:
+            initiateur_groupe_uid = initiateur_organe_ref
+            initiateur_groupe_libelle = "Gouvernement"
+
+        # 2. Cas parlementaire (proposition de loi) : lookup via l'acteur initiateur
+        #    On exclut les UIDs de gouvernements pour éviter que des ministres-députés
+        #    contaminent le résultat avec leur ancien groupe ou le gouvernement actuel.
+        elif initiateur_acteur_ref and acteur_to_groupe:
+            groupe_uid = acteur_to_groupe.get(initiateur_acteur_ref)
+            if groupe_uid and (gouvernements_uids is None or groupe_uid not in gouvernements_uids):
+                initiateur_groupe_uid = groupe_uid
+                if organe_to_libelle:
+                    initiateur_groupe_libelle = organe_to_libelle.get(initiateur_groupe_uid)
 
         actes_legislatifs = (
             dossier.get("actesLegislatifs", {}).get("acteLegislatif", []) or []
@@ -536,6 +567,17 @@ def importer_dossier(data: dict, file_path: str = "unknown.json", acteur_to_grou
         date_depot = extraire_date_depot_min(actes_legislatifs)
         date_depot = date_depot.isoformat() if date_depot else None
 
+        # 3. Fallback gouvernemental : pas de groupe trouvé, on cherche le gouvernement actif à la date de dépôt
+        if not initiateur_groupe_uid and gouvernements and date_depot:
+            try:
+                dt = datetime.fromisoformat(date_depot)
+                for deb, fin, gvt_uid in gouvernements:
+                    if deb <= dt and (fin is None or fin >= dt):
+                        initiateur_groupe_uid = gvt_uid
+                        initiateur_groupe_libelle = "Gouvernement"
+                        break
+            except (ValueError, TypeError):
+                pass
 
         # Statut de base (promulgation + rejets simples via ancienne fonction)
         statut_base, date_promulgation, code_loi, titre_loi, url_legifrance = (
@@ -587,6 +629,7 @@ def importer_dossier(data: dict, file_path: str = "unknown.json", acteur_to_grou
             "lien_an": lien_an,
             "initiateur_groupe_uid": initiateur_groupe_uid,
             "initiateur_groupe_libelle": initiateur_groupe_libelle,
+            "themes": classify_themes(titre) or None,
         }
 
         return payload
