@@ -8,6 +8,7 @@ import {
   Label,
   Tooltip as RechartsTooltip,
 } from "recharts"
+import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Building2, Briefcase, Calendar, Scale, Users, Group, User, Search, ArrowUpDown, ArrowUp, ArrowDown, BarChart2 } from "lucide-react"
 import { AnimatedNumber } from "@/components/AnimatedNumber"
@@ -116,6 +117,9 @@ function InstitutionCard({
     />
   )}
 </div>
+        <Link href="/documentation/methode#parite-femmes" className="text-xs text-muted-foreground/60 hover:text-foreground transition-colors -mt-6 mb-4 inline-block">
+          Comment c'est calculé →
+        </Link>
 
         {/* Ligne 2 : Âges */}
         <div className="flex justify-left items-start mb-8">
@@ -153,19 +157,24 @@ function InstitutionCard({
           <div className="flex flex-wrap justify-start items-start pb-4 gap-6">
             <KpiItem
               icon={<BarChart2 className="h-5 w-5 text-muted-foreground" />}
-              title="Présence moyenne (tous votes)"
+              title="Participation moyenne (tous votes)"
               value={data.presenceMoyenne}
               animate={true}
               decimals={1}
             />
             <KpiItem
               icon={<BarChart2 className="h-5 w-5 text-muted-foreground" />}
-              title="Présence moyenne (votes solennels)"
+              title="Participation moyenne (votes solennels)"
               value={data.presenceSolennelsMoyenne}
               animate={true}
               decimals={1}
             />
           </div>
+        )}
+        {(data.presenceMoyenne !== null || data.presenceSolennelsMoyenne !== null) && (
+          <Link href="/documentation/methode#taux-de-participation-aux-votes" className="text-xs text-muted-foreground/60 hover:text-foreground transition-colors -mt-2 mb-4 inline-block">
+            Comment c'est calculé →
+          </Link>
         )}
 
         {/* Le pie chart – seulement pour AN */}
@@ -427,14 +436,17 @@ function GroupesTable({ groupes }: { groupes: GroupeRow[] }) {
     ['libelle', 'Groupe', 'min-w-[180px]'],
     ['nb_deputes', 'Effectif', 'w-[90px]'],
     ['pct_representation', 'Représentation', 'w-[130px]'],
-    ['taux_presence_moyen', 'Présence votes globale', 'w-[130px]'],
-    ['taux_presence_solennels_moyen', 'Présence votes solennels', 'w-[140px]'],
+    ['taux_presence_moyen', 'Participation votes', 'w-[130px]'],
+    ['taux_presence_solennels_moyen', 'Participation votes solennels', 'w-[140px]'],
     ['taux_cohesion_interne', 'Cohésion interne', 'w-[130px]'],
   ];
 
   return (
     <div>
-      <h3 className="text-lg font-semibold mb-4">Groupes politiques</h3>
+      <h3 className="text-lg font-semibold mb-1">Groupes politiques</h3>
+      <Link href="/documentation/methode#taux-de-cohesion" className="text-xs text-muted-foreground/60 hover:text-foreground transition-colors mb-4 inline-block">
+        Participation et cohésion : comment c'est calculé →
+      </Link>
       <div className="rounded-lg border overflow-auto">
         <Table>
           <TableHeader className="bg-muted/80">
@@ -536,8 +548,8 @@ function ActeursTable({ acteurs, showVoteStats = false }: { acteurs: ActeurRow[]
     ['departement', 'Département', 'max-w-[160px]'],
   ];
   const voteColumns: [SortKey, string, string][] = [
-    ['taux_presence', 'Présence votes', 'w-[95px]'],
-    ['taux_presence_solennels', 'Présence votes sol.', 'w-[115px]'],
+    ['taux_presence', 'Participation votes', 'w-[95px]'],
+    ['taux_presence_solennels', 'Participation votes sol.', 'w-[115px]'],
     ['taux_cohesion_groupe', 'Cohésion', 'w-[100px]'],
   ];
   const columns = showVoteStats ? [...baseColumns, ...voteColumns] : baseColumns;

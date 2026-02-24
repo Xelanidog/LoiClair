@@ -2,6 +2,7 @@
 
 'use server';
 
+import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { MonthlyDossiersChart } from '@/components/ui/MonthlyDossiersChart';
@@ -525,6 +526,9 @@ return (
               <p className="text-sm text-muted-foreground mt-2">
                 {statsData.promulgues} promulgués sur {statsData.total_promulgables} textes à vocation législative
               </p>
+              <Link href="/documentation/methode#taux-de-promulgation" className="text-xs text-muted-foreground/60 hover:text-foreground transition-colors mt-3 inline-block">
+                Comment c'est calculé →
+              </Link>
             </CardContent>
           </Card>
 
@@ -545,6 +549,9 @@ return (
               <p className="text-xs text-muted-foreground mt-1">
                 Min {statsData.delai_min_jours} j — Max {statsData.delai_max_jours} j
               </p>
+              <Link href="/documentation/methode#delai-moyen-de-promulgation" className="text-xs text-muted-foreground/60 hover:text-foreground transition-colors mt-3 inline-block">
+                Comment c'est calculé →
+              </Link>
             </CardContent>
           </Card>
 
@@ -565,6 +572,9 @@ return (
               <p className="text-xs text-muted-foreground mt-1">
                 Min {statsData.delai_min_an_jours} j — Max {statsData.delai_max_an_jours} j
               </p>
+              <Link href="/documentation/methode#delai-moyen-a-lassemblee-nationale" className="text-xs text-muted-foreground/60 hover:text-foreground transition-colors mt-3 inline-block">
+                Comment c'est calculé →
+              </Link>
             </CardContent>
           </Card>
 
@@ -585,9 +595,10 @@ return (
               <p className="text-xs text-muted-foreground mt-1">
                 Min {statsData.delai_min_sn_jours} j — Max {statsData.delai_max_sn_jours} j
               </p>
-              <p className="text-xs text-muted-foreground mt-2 italic">
-                * Hors dossier «&nbsp;Droit de vote des étrangers&nbsp;» (déposé en 2000, bloqué 11 ans au Sénat pour raisons politiques — cas unique exclu comme valeur aberrante)
-              </p>
+            
+              <Link href="/documentation/methode#delai-moyen-au-senat" className="text-xs text-muted-foreground/60 hover:text-foreground transition-colors mt-3 inline-block">
+                Comment c'est calculé →
+              </Link>
             </CardContent>
           </Card>
 
@@ -598,9 +609,12 @@ return (
       {groupeStats.length > 0 && (
         <div className="mt-8">
           <h2 className="text-4xl font-semibold mb-2">Succès législatif par groupe</h2>
-          <p className="text-muted-foreground mb-6">
+          <p className="text-muted-foreground mb-2">
             Adoption Assemblé Nationale et Sénat : sur tous les textes pertinents aux deux chambres. Promulgation : sur les textes à vocation législative uniquement (par exemple certains texte étudiés au parlement n'ont pas vocation à être promulgués; comme les résolution par exemple).
           </p>
+          <Link href="/documentation/methode#succes-legislatif-par-groupe-politique" className="text-xs text-muted-foreground/60 hover:text-foreground transition-colors mb-6 inline-block">
+            Comment c'est calculé →
+          </Link>
           <GroupeStatsTable data={groupeStats} />
         </div>
       )}
