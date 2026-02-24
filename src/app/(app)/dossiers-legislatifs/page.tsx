@@ -10,6 +10,8 @@ import ShimmerText from '@/components/ShimmerText';
 import GenericFilter from '@/components/GenericFilter';
 import ResetButton from '@/components/ResetButton';
 import SearchInput from '@/components/SearchInput';
+import ProcedureTooltip from '@/components/ProcedureTooltip';
+import { DEFINITIONS } from '@/lib/definitions';
 import {
   Pagination,
   PaginationContent,
@@ -421,9 +423,9 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
                 {/* Méta : type · auteur · groupe */}
                 <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground mb-4">
                   {dossier.procedure_libelle && (
-                    <span className="px-2 py-0.5 rounded-md bg-muted font-medium uppercase tracking-wide">
-                      {dossier.procedure_libelle}
-                    </span>
+                    DEFINITIONS[dossier.procedure_libelle]
+                      ? <ProcedureTooltip label={dossier.procedure_libelle} description={DEFINITIONS[dossier.procedure_libelle]} />
+                      : <span className="px-2 py-0.5 rounded-md bg-muted font-medium uppercase tracking-wide">{dossier.procedure_libelle}</span>
                   )}
                   {(() => {
                     const displayActeur = dossier.initiateur_acteur_ref ?? fallbackActeursByDossier.get(dossier.uid) ?? null;
