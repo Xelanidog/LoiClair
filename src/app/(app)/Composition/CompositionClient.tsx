@@ -463,9 +463,14 @@ function GroupesTable({ groupes }: { groupes: GroupeRow[] }) {
   return (
     <div>
       <h3 className="text-lg font-semibold mb-1">Groupes politiques</h3>
-      <Link href="/documentation/methode#taux-de-cohesion" className="text-xs text-muted-foreground/60 hover:text-foreground transition-colors mb-4 inline-block">
-        Participation et cohésion : comment c'est calculé →
-      </Link>
+      <span className="text-xs text-muted-foreground/60 mb-4 inline-flex gap-3">
+        <Link href="/documentation/methode#taux-de-participation-aux-votes" className="hover:text-foreground transition-colors">
+          Participation : comment c'est calculé →
+        </Link>
+        <Link href="/documentation/methode#taux-de-cohesion" className="hover:text-foreground transition-colors">
+          Cohésion : comment c'est calculé →
+        </Link>
+      </span>
       <div className="rounded-lg border overflow-auto">
         <Table>
           <TableHeader className="bg-muted/80">

@@ -110,7 +110,7 @@ Plusieurs filtres permettent de cibler les dossiers qui vous intéressent :
 - **Type de procédure** — pour isoler un type de texte en particulier.
 - **Statut** — pour ne voir que les textes promulgués, en cours, rejetés, etc.
 - **Groupe politique** — pour filtrer par groupe initiateur.
-- **Thème** — pour afficher uniquement les dossiers portant sur un sujet donné (santé, éducation, transports, etc.). Les thèmes sont attribués automatiquement à partir du titre de chaque dossier (voir [Méthodologie — Classification thématique](/documentation/methode#classification-thématique)).
+- **Thème** — pour afficher uniquement les dossiers portant sur un sujet donné (santé, éducation, transports, etc.). Les thèmes sont attribués automatiquement à partir du titre de chaque dossier (voir [Méthodologie — Classification thématique](/documentation/methode#classification-thematique)).
 - **Barre de recherche** — pour chercher un dossier par mot-clé dans le titre.
 
 La pagination en bas de page permet de naviguer entre les résultats (10 dossiers par page).

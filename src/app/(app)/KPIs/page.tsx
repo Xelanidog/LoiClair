@@ -592,7 +592,7 @@ return (
               <p className="text-xs text-muted-foreground mt-1">
                 Min {statsData.delai_min_an_jours} j — Max {statsData.delai_max_an_jours} j
               </p>
-              <Link href="/documentation/methode#delai-moyen-a-lassemblee-nationale" className="text-xs text-muted-foreground/60 hover:text-foreground transition-colors mt-3 inline-block">
+              <Link href="/documentation/methode#delai-moyen-a-l-assemblee-nationale" className="text-xs text-muted-foreground/60 hover:text-foreground transition-colors mt-3 inline-block">
                 Comment c'est calculé →
               </Link>
             </CardContent>
