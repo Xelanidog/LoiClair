@@ -46,7 +46,13 @@ Pour chaque délai, les valeurs minimum et maximum sont affichées pour montrer 
 
 ### Succès législatif par groupe politique
 
-Un tableau en bas de page compare les taux d'adoption et de promulgation pour chaque groupe politique ayant initié au moins 10 dossiers.
+Un tableau en bas de page compare les taux d'adoption et de promulgation pour chaque groupe politique ayant initié au moins 10 dossiers. Les groupes sont organisés en trois sections distinctes :
+
+- **Assemblée nationale** — les groupes politiques de l'Assemblée nationale.
+- **Sénat** — les groupes politiques du Sénat.
+- **Gouvernement** — l'ensemble des gouvernements de la législature, agrégés en une seule ligne combinant leurs statistiques.
+
+Cliquez sur les en-têtes de colonnes pour trier le tableau selon le critère de votre choix.
 
 ⚠ Ce tableau doit être lu avec prudence : un groupe d'opposition a structurellement moins de textes adoptés qu'un groupe de la majorité. Un faible taux ne reflète pas la qualité du travail parlementaire, mais la réalité arithmétique du vote majoritaire.
 

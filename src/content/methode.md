@@ -152,6 +152,9 @@ Variables **incluses** :
 Variables **exclues et pourquoi** :
 - Les groupes ayant initié **moins de 10 dossiers** sont exclus. Avec si peu de textes, les pourcentages ne sont pas significatifs — un seul texte adopté ou rejeté ferait varier le taux de 10 à 100 %, ce qui serait trompeur.
 
+**Agrégation des gouvernements**
+Tous les gouvernements de la législature (actuel et anciens) sont fusionnés en une seule ligne "Gouvernement". Les anciens gouvernements restent présents dans les données car certains dossiers qu'ils ont déposés sont toujours actifs — des textes redéposés ou des procédures multi-législatures encore en cours. Cette agrégation évite d'afficher plusieurs lignes "Gouvernement" aux statistiques fragmentées et donne une vue d'ensemble plus lisible de l'action gouvernementale.
+
 **D'où viennent les données**
 Les données proviennent de l'open data de l'Assemblée nationale, mises à jour chaque nuit.
 
@@ -161,7 +164,7 @@ Les données proviennent de l'open data de l'Assemblée nationale, mises à jour
 ⚠ Le taux de promulgation n'est pas directement comparable entre la majorité et l'opposition. Il doit être interprété en tenant compte de la position de chaque groupe au sein ou en dehors de la coalition gouvernementale.
 
 **Comment interpréter**
-Pour les groupes de la majorité gouvernementale, un taux de promulgation supérieur à 40 % est élevé. Pour un groupe d'opposition, tout texte adopté et promulgué est notable et mérite attention. Le classement par nombre total de textes déposés (affiché dans le tableau) donne un contexte utile à la lecture des taux.
+Pour les groupes de la majorité gouvernementale, un taux de promulgation supérieur à 40 % est élevé. Pour un groupe d'opposition, tout texte adopté et promulgué est notable et mérite attention. Le tableau est cliquable : trier par "% Promulgation" permet de comparer l'efficacité finale de chaque groupe ; trier par "% Adoption Assemblée nationale" ou "% Adoption Sénat" donne un aperçu de leur influence chambre par chambre.
 
 ---
 
