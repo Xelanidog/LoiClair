@@ -58,8 +58,14 @@ const actesDelaisPromise = supabase
   ])
   .not('date_acte', 'is', null);
 
-// 4. On attend les TROIS en parallèle
-const [typesResult, groupesResult, actesDelaisResult] = await Promise.all([typesPromise, groupesPromise, actesDelaisPromise]);
+// 4. Promesse pour le type de chambre des organes (groupes politiques)
+const organesChambrePromise = supabase
+  .from('organes')
+  .select('uid, code_type')
+  .in('code_type', ['GP', 'GROUPESENAT', 'GOUVERNEMENT']);
+
+// 5. On attend les QUATRE en parallèle
+const [typesResult, groupesResult, actesDelaisResult, organesChambreResult] = await Promise.all([typesPromise, groupesPromise, actesDelaisPromise, organesChambrePromise]);
 
 
 // ────────────────────────────────────────────────
@@ -116,7 +122,7 @@ const EXCLUS_SN_SUPPL = new Set([
 ]);
 
 let dossiersData: any[] = [];
-let groupeStats: { groupe: string; total: number; total_an: number; total_sn: number; total_promulgables: number; promulgues: number; adoptes_an: number; adoptes_sn: number }[] = [];
+let groupeStats: { groupe: string; chambre: string; total: number; total_an: number; total_sn: number; total_promulgables: number; promulgues: number; adoptes_an: number; adoptes_sn: number }[] = [];
 
 let statsData = {
   total_dossiers: 0,
@@ -147,7 +153,7 @@ try {
   // Construction de la requête de base
   let query = supabase
     .from('dossiers_legislatifs')
-    .select('uid, date_depot, statut_final, date_promulgation, procedure_libelle, initiateur_groupe_libelle')
+    .select('uid, date_depot, statut_final, date_promulgation, procedure_libelle, initiateur_groupe_libelle, initiateur_groupe_uid')
     .not('date_depot', 'is', null)
     .order('date_depot', { ascending: false })
     .limit(10000);
@@ -293,13 +299,28 @@ try {
   statsData.delai_min_sn_jours = sSN.min;
   statsData.delai_max_sn_jours = sSN.max;
 
-  // Stats par groupe politique
-  const gsMap = new Map<string, { total: number; total_an: number; total_sn: number; total_promulgables: number; promulgues: number; adoptes_an: number; adoptes_sn: number }>();
+  // Mapping uid organe → chambre
+  const organesChambreMap = new Map<string, string>(
+    (organesChambreResult.data || []).map(o => [
+      o.uid,
+      o.code_type === 'GP' ? 'AN' : o.code_type === 'GROUPESENAT' ? 'Sénat' : 'Gouvernement',
+    ])
+  );
+
+  // Stats par groupe politique (clé = uid, sauf gouvernements tous fusionnés en une seule ligne)
+  const gsMap = new Map<string, { groupe: string; chambre: string; total: number; total_an: number; total_sn: number; total_promulgables: number; promulgues: number; adoptes_an: number; adoptes_sn: number }>();
   for (const d of dossiersData) {
+    const gUid = d.initiateur_groupe_uid;
     const g = d.initiateur_groupe_libelle;
     if (!g) continue;
-    if (!gsMap.has(g)) gsMap.set(g, { total: 0, total_an: 0, total_sn: 0, total_promulgables: 0, promulgues: 0, adoptes_an: 0, adoptes_sn: 0 });
-    const gs = gsMap.get(g)!;
+    const chambre = gUid ? (organesChambreMap.get(gUid) || 'Autre') : 'Autre';
+    const key = chambre === 'Gouvernement' ? 'GOUVERNEMENT' : (gUid || g);
+    if (!gsMap.has(key)) gsMap.set(key, {
+      groupe: chambre === 'Gouvernement' ? 'Gouvernement' : g,
+      chambre,
+      total: 0, total_an: 0, total_sn: 0, total_promulgables: 0, promulgues: 0, adoptes_an: 0, adoptes_sn: 0,
+    });
+    const gs = gsMap.get(key)!;
     const proc = d.procedure_libelle;
     gs.total++;
     if (d.uid && adoptesAN.has(d.uid)) gs.adoptes_an++;
@@ -313,8 +334,7 @@ try {
       if (d.statut_final?.toLowerCase().includes('promulgu')) gs.promulgues++;
     }
   }
-  groupeStats = [...gsMap.entries()]
-    .map(([groupe, s]) => ({ groupe, ...s }))
+  groupeStats = [...gsMap.values()]
     .filter(g => g.total >= 10)
     .sort((a, b) => b.total - a.total);
 } catch (error) {
