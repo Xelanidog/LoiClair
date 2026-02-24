@@ -181,9 +181,9 @@ export default function ConformiteIAPage() {
             </p>
             <div className="space-y-2 mt-2">
               {[
-                { title: 'Signalement visible', desc: 'Indiquer clairement à l\'utilisateur que le contenu a été généré par une IA (lisible par un humain).' },
-                { title: 'Marquage machine-readable', desc: 'Marquer le contenu généré dans un format détectable par d\'autres systèmes. LoiClair implémente des balises <meta> dans le <head> de chaque page résumé (ai-generated, ai-model, ai-provider).' },
-                { title: 'Ne pas induire en erreur', desc: 'Le contenu IA ne doit pas être présenté comme une analyse humaine ou officielle.' },
+                { title: 'Signalement visible', desc: 'Indiquer clairement à l\'utilisateur que le contenu a été généré par une IA (lisible par un humain).', todo: false },
+                { title: 'Marquage machine-readable', desc: 'Marquer le contenu généré dans un format détectable par d\'autres systèmes. LoiClair implémente des balises <meta> dans le <head> de chaque page résumé (ai-generated, ai-model, ai-provider).', todo: false },
+                { title: 'Ne pas induire en erreur', desc: 'Le contenu IA ne doit pas être présenté comme une analyse humaine ou officielle.', todo: false },
               ].map(({ title, desc, todo }) => (
                 <div key={title} className="flex gap-3 p-3 rounded-lg border">
                   <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />
