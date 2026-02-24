@@ -21,7 +21,7 @@ export default async function CompositionPage() {
   ])
 
   return (
-    <div className="container mx-auto py-12 max-w-7xl">
+    <div className="container mx-auto py-8 sm:py-12 px-4 max-w-7xl">
           <div className="text-center mb-10">
         <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-3">
           Composition des institutions
@@ -32,10 +32,10 @@ export default async function CompositionPage() {
       </div>
 
       <Tabs defaultValue="an" className="w-full flex flex-col gap-5">
-  <TabsList variant="default" className=" gap-5 rounded-xl " >
-    <TabsTrigger value="an" className="px-6 rounded-xl">Assemblée Nationale</TabsTrigger>
-    <TabsTrigger value="senat" className="px-6 rounded-xl">Sénat</TabsTrigger>
-    <TabsTrigger value="gouv" className="px-6 rounded-xl">Gouvernement</TabsTrigger>
+  <TabsList variant="default" className="gap-2 sm:gap-5 rounded-xl flex-wrap h-auto" >
+    <TabsTrigger value="an" className="px-2 sm:px-6 rounded-xl text-sm sm:text-base">Assemblée Nationale</TabsTrigger>
+    <TabsTrigger value="senat" className="px-2 sm:px-6 rounded-xl text-sm sm:text-base">Sénat</TabsTrigger>
+    <TabsTrigger value="gouv" className="px-2 sm:px-6 rounded-xl text-sm sm:text-base">Gouvernement</TabsTrigger>
   </TabsList>
 
         <Suspense fallback={

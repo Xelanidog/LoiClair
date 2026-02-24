@@ -18,6 +18,7 @@ export interface ActeurRow {
 export interface GroupeRow {
   uid: string;
   libelle: string;
+  libelle_abrege: string;
   nb_deputes: number;
   pct_representation: number | null;
   taux_presence_moyen: number | null;
@@ -33,7 +34,7 @@ export interface KpiMetrics {
   plusAge: { age: number; nom: string; details?: string } | null;
   pariteFemmes: number | null;
   mandatsActifsMoyens: number | null;
-  groupes: Array<{ name: string; value: number; fill: string }> | null;
+  groupes: Array<{ name: string; nameShort: string; value: number; fill: string }> | null;
   nombreGroupes: number | null;
   presenceMoyenne: number | null;
   presenceSolennelsMoyenne: number | null;
@@ -44,6 +45,7 @@ export interface KpiMetrics {
 // Infos d'un organe : libellé + stats de vote
 interface OrganeInfo {
   libelle: string;
+  libelleAbrege: string;
   taux_presence_moyen: number | null;
   taux_presence_solennels_moyen: number | null;
   taux_cohesion_interne: number | null;
@@ -74,13 +76,14 @@ async function buildOrganesMap(acteurs: any[]): Promise<Map<string, OrganeInfo>>
 
   const { data: organesData } = await supabase
     .from('organes')
-    .select('uid, libelle, taux_presence_moyen, taux_presence_solennels_moyen, taux_cohesion_interne')
+    .select('uid, libelle, libelle_abrege, taux_presence_moyen, taux_presence_solennels_moyen, taux_cohesion_interne')
     .in('uid', Array.from(uids));
 
   const organesMap = new Map<string, OrganeInfo>();
   organesData?.forEach(o => {
     organesMap.set(o.uid, {
       libelle: o.libelle || o.uid,
+      libelleAbrege: o.libelle_abrege || o.libelle || o.uid,
       taux_presence_moyen: o.taux_presence_moyen ?? null,
       taux_presence_solennels_moyen: o.taux_presence_solennels_moyen ?? null,
       taux_cohesion_interne: o.taux_cohesion_interne ?? null,
@@ -94,7 +97,7 @@ async function buildOrganesMap(acteurs: any[]): Promise<Map<string, OrganeInfo>>
 function buildGroupesData(
   acteurs: any[],
   organesMap: Map<string, OrganeInfo>
-): Array<{ name: string; value: number; fill: string }> | null {
+): Array<{ name: string; nameShort: string; value: number; fill: string }> | null {
   const groupesMap = new Map<string, number>();
 
   acteurs.forEach(a => {
@@ -108,6 +111,7 @@ function buildGroupesData(
   const groupes = Array.from(groupesMap.entries())
     .map(([uid, value]) => ({
       name: organesMap.get(uid)?.libelle || uid,
+      nameShort: organesMap.get(uid)?.libelleAbrege || organesMap.get(uid)?.libelle || uid,
       value,
       fill: '#888888',
     }))
@@ -140,6 +144,7 @@ function buildGroupesList(
       return {
         uid,
         libelle: info?.libelle || uid,
+        libelle_abrege: info?.libelleAbrege || info?.libelle || uid,
         nb_deputes: nb,
         pct_representation: totalMembres > 0
           ? Math.round((nb / totalMembres) * 1000) / 10

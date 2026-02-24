@@ -21,7 +21,7 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table"
-import { useState, useMemo } from "react"
+import { useState, useMemo, useRef, useEffect } from "react"
 import {
   ChartContainer,
   ChartTooltip,
@@ -122,7 +122,7 @@ function InstitutionCard({
         </Link>
 
         {/* Ligne 2 : Âges */}
-        <div className="flex justify-left items-start mb-8">
+        <div className="flex flex-wrap justify-left items-start mb-8">
 <KpiItem
   icon={<Calendar className="h-5 w-5 text-muted-foreground" />}
   title="Âge moyen"
@@ -177,117 +177,16 @@ function InstitutionCard({
           </Link>
         )}
 
-        {/* Le pie chart – seulement pour AN */}
-{ (title === "Assemblée Nationale" || title === "Sénat") 
-  && data.groupes 
-  && data.groupes.length > 0 && (            
-    
-        <div className="mt-4 pt-6 border-t">  
-  <h3 className="text-lg font-semibold text-center">  
-Répartition par groupe politique  </h3>
-
-<div style={{ height: '390px', width: '100%' }}>
-
-  <ChartContainer
-    config={{}}
-    className="relative mx-auto w-full p-0 m-0 h-full"
-  >
-
-    <ResponsiveContainer width="100%" height="100%">
-
-      <PieChart margin={{ top: 0, right: 100, bottom: 0, left: 100 }}>
-    <RechartsTooltip
-      cursor={false}
-      content={({ active, payload }) => {
-        if (active && payload && payload.length) {
-          const item = payload[0].payload as { name: string; value: number };
-          return (
-            <div className="bg-white border border-gray-300 rounded p-3 shadow-md text-sm">
-              <p className="font-semibold">{item.name}</p>
-              <p>{item.value} députés</p>
-            </div>
-          );
-        }
-        return null;
-      }}
-    />
-
-    <Pie
-  data={data.groupes}
-  dataKey="value"
-  nameKey="name"
-  cx="50%"
-  cy="90%"
-  startAngle={180}
-  endAngle={0}
-  innerRadius={145}
-  outerRadius={195}
-  strokeWidth={2}
-  stroke="hsl(var(--background))"
-  labelLine={true}
-  label={({ name, value, cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
-    const RADIAN = Math.PI / 180;
-    const radius = outerRadius + 40;
-    const x = cx + radius * Math.cos(-midAngle * RADIAN);
-    const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-    if (percent < 0.005) return null; // < 0.5% → pas de label
-
-    return (
-      <text
-        x={x}
-        y={y}
-        textAnchor={x > cx ? 'start' : 'end'}
-        dominantBaseline="central"
-        className="text-md font-medium fill-foreground pointer-events-none"
-      >
-        {name} {value}
-      </text>
-    );
-  }}
-  paddingAngle={2}
->
-  {data.groupes.map((entry, index) => (
-    <Cell key={`cell-${index}`} fill={entry.fill} />
-  ))}
-
-  {/* Total au centre du demi-cercle */}
-  <Label
-    content={({ viewBox }) => {
-      if (viewBox && "cx" in viewBox && "cy" in viewBox) {
-        return (
-          <text
-            x={viewBox.cx}
-            y={viewBox.cy}
-            textAnchor="middle"
-            dominantBaseline="middle"
-          >
-            <tspan
-              x={viewBox.cx}
-              y={(viewBox.cy || 0) - 16}
-              className="fill-foreground text-4xl font-bold"
-            >
-              {data.membres.toLocaleString('fr-FR')}
-            </tspan>
-            <tspan
-              x={viewBox.cx}
-              y={(viewBox.cy || 0) + 12}
-              className="fill-muted-foreground text-sm sm:text-base"
-            >
-              {membreLabel}
-            </tspan>
-          </text>
-        );
-      }
-      return null;
-    }}
-  />
-</Pie>
-  </PieChart>
-  </ResponsiveContainer>
-</ChartContainer>
-</div>
-          </div>
+        {/* Le pie chart – seulement pour AN et Sénat */}
+{ (title === "Assemblée Nationale" || title === "Sénat")
+  && data.groupes
+  && data.groupes.length > 0 && (
+        <div className="mt-4 pt-6 border-t">
+          <h3 className="text-lg font-semibold text-center mb-4">
+            Répartition par groupe politique
+          </h3>
+          <GroupPieChart data={data.groupes} membres={data.membres} membreLabel={membreLabel} />
+        </div>
         )}
 
         {/* Tableau des groupes politiques avec stats (AN uniquement) */}
@@ -328,7 +227,7 @@ function KpiItem({
 }) {
   if (value === null || value === '—') {
     return (
-      <div className="text-left min-w-[110px] sm:min-w-[180px] space-y-1">  {/* min-w un peu plus large */}
+      <div className="text-left min-w-[100px] sm:min-w-[140px] space-y-1">
         <div className="flex justify-left mb-2 opacity-80">{icon}</div>
         <div className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
           {title}
@@ -353,7 +252,7 @@ function KpiItem({
   const suffix = hasPercent ? ' %' : hasAns ? ' ans' : '';
 
   return (
-    <div className="text-left min-w-[180px] sm:min-w-[220px] space-y-1">  {/* augmenté pour le nom */}
+    <div className="text-left min-w-[140px] sm:min-w-[200px] space-y-1">
       <div className="flex justify-left mb-2 opacity-80">{icon}</div>
       <div className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
         {title}
@@ -379,6 +278,126 @@ function KpiItem({
     </span>
   )}
 </div>
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────
+// Graphique demi-cercle responsive
+// ────────────────────────────────────────────────
+
+function GroupPieChart({
+  data,
+  membres,
+  membreLabel,
+}: {
+  data: Array<{ name: string; nameShort: string; value: number; fill: string }>;
+  membres: number;
+  membreLabel: string;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(600);
+
+  useEffect(() => {
+    const el = ref.current?.parentElement;
+    if (!el) return;
+    setWidth(el.clientWidth);
+    const ro = new ResizeObserver(([e]) => setWidth(e.contentRect.width));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const isMobile = width < 520;
+  const outerR = isMobile
+    ? Math.min(140, Math.max(60, width / 2 - 20))
+    : Math.min(195, Math.max(100, width / 2 - 50));
+  const innerR = Math.round(outerR * 0.74);
+  // cy juste assez bas pour laisser de la place aux labels au-dessus de l'arc
+  const cy = isMobile ? outerR + 10 : outerR + 40;
+  const chartH = cy + 25;
+  const margin = isMobile ? 5 : 80;
+
+  return (
+    <div ref={ref}>
+      <div style={{ height: `${chartH}px`, width: '100%' }}>
+        <ChartContainer config={{}} className="relative mx-auto w-full p-0 m-0 h-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart margin={{ top: 0, right: margin, bottom: 0, left: margin }}>
+              <RechartsTooltip
+                cursor={false}
+                content={({ active, payload }) => {
+                  if (active && payload && payload.length) {
+                    const item = payload[0].payload as { name: string; value: number };
+                    return (
+                      <div className="bg-white border border-gray-300 rounded p-3 shadow-md text-sm">
+                        <p className="font-semibold">{item.name}</p>
+                        <p>{item.value} {membreLabel.toLowerCase()}</p>
+                      </div>
+                    );
+                  }
+                  return null;
+                }}
+              />
+              <Pie
+                data={data}
+                dataKey="value"
+                nameKey="name"
+                cx="50%"
+                cy={cy}
+                startAngle={180}
+                endAngle={0}
+                innerRadius={innerR}
+                outerRadius={outerR}
+                strokeWidth={2}
+                stroke="hsl(var(--background))"
+                labelLine={!isMobile}
+                label={isMobile ? false : ({ cx, cy, midAngle, outerRadius: oR, percent, index }) => {
+                  const RADIAN = Math.PI / 180;
+                  const radius = oR + 30;
+                  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                  if (percent < 0.005) return null;
+                  const entry = data[index];
+                  return (
+                    <text
+                      x={x}
+                      y={y}
+                      textAnchor={x > cx ? 'start' : 'end'}
+                      dominantBaseline="central"
+                      className="text-sm font-medium fill-foreground pointer-events-none"
+                    >
+                      {entry?.nameShort} {entry?.value}
+                    </text>
+                  );
+                }}
+                paddingAngle={2}
+              >
+                {data.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.fill} />
+                ))}
+                <Label
+                  content={({ viewBox }) => {
+                    if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                      return (
+                        <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle" dominantBaseline="middle">
+                          <tspan x={viewBox.cx} y={(viewBox.cy || 0) - 16} className="fill-foreground text-4xl font-bold">
+                            {membres.toLocaleString('fr-FR')}
+                          </tspan>
+                          <tspan x={viewBox.cx} y={(viewBox.cy || 0) + 12} className="fill-muted-foreground text-sm">
+                            {membreLabel}
+                          </tspan>
+                        </text>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+              </Pie>
+            </PieChart>
+          </ResponsiveContainer>
+        </ChartContainer>
+      </div>
+
     </div>
   );
 }
@@ -477,7 +496,10 @@ function GroupesTable({ groupes }: { groupes: GroupeRow[] }) {
                       className="inline-block w-2.5 h-2.5 rounded-full shrink-0"
                       style={{ backgroundColor: g.fill }}
                     />
-                    {g.libelle}
+                    <span className="font-semibold shrink-0">{g.libelle_abrege}</span>
+                    {g.libelle_abrege !== g.libelle && (
+                      <span className="text-muted-foreground font-normal">{g.libelle}</span>
+                    )}
                   </div>
                 </TableCell>
                 <TableCell className="text-right tabular-nums">{g.nb_deputes}</TableCell>
