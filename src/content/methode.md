@@ -294,3 +294,38 @@ Les positions majoritaires des groupes et les votes individuels proviennent de l
 La plupart des groupes politiques affichent une cohésion supérieure à 80 %, ce qui est normal dans le système parlementaire français où la discipline de groupe est forte. En dessous de 70 %, le groupe connaît des divisions significatives. Une cohésion de 95 % ou plus indique un groupe très discipliné ou un petit groupe où les divergences sont rares.
 
 Pour un parlementaire individuel, une cohésion au-dessus de 90 % est très alignée sur son groupe. Entre 70 % et 90 %, il y a des divergences occasionnelles. En dessous de 70 %, le membre vote régulièrement différemment de son groupe.
+
+---
+
+## Classification thématique
+
+**Ce que ça mesure**
+Chaque dossier législatif est classé dans un ou plusieurs thèmes (santé, éducation, transports, etc.) pour permettre de filtrer les textes par sujet sur la page « Tous les textes ». Un même dossier peut appartenir à plusieurs thèmes : par exemple, un texte sur la pollution des transports sera classé à la fois dans « Environnement » et « Transports ».
+
+**Comment c'est calculé**
+Le thème est attribué automatiquement à partir du **titre** du dossier, par détection de mots-clés caractéristiques de chaque sujet.
+
+Pour chaque thème, une liste de termes typiques a été définie. Par exemple :
+- **Transports** : transport, ferroviaire, autoroute, aérien, SNCF, RATP, véhicule, mobilité…
+- **Éducation** : enseignement, scolaire, école, université, étudiant, lycée, apprentissage…
+- **Questions sociales et santé** : santé, hôpital, maladie, handicap, vaccin, sécurité sociale…
+
+Quand le titre d'un dossier contient au moins un des termes associés à un thème, ce thème lui est attribué. Si le titre contient des termes de plusieurs thèmes, le dossier reçoit tous les thèmes correspondants.
+
+Les 27 thèmes disponibles sont :
+Affaires étrangères et coopération, Agriculture et pêche, Anciens combattants, Budget, Collectivités territoriales, Culture, Défense, Économie et finances (fiscalité), Éducation, Énergie, Entreprises, Environnement, Famille, Fonction publique, Justice, Logement et urbanisme, Outre-mer, Police et sécurité, Pouvoirs publics et Constitution, Questions sociales et santé, Recherche (sciences et techniques), Sécurité sociale, Sports, Traités et conventions, Transports, Travail, Union européenne.
+
+Exemple concret : le dossier « Projet de loi relatif à l'accélération de la production d'énergies renouvelables » sera classé dans le thème **Énergie** grâce au mot « énergies ».
+
+**D'où viennent les données**
+Les titres des dossiers proviennent de l'open data de l'Assemblée nationale. Les listes de mots-clés ont été construites et validées manuellement en les comparant aux thèmes officiels du Sénat sur un échantillon de plus de 8 000 dossiers.
+
+**Ce que ça ne mesure pas**
+⚠ Certains dossiers au titre très court ou très administratif (par exemple « Prorogation de l'état d'urgence ») peuvent ne recevoir aucun thème. Environ 15 % des dossiers restent sans thème attribué.
+
+⚠ La classification se base uniquement sur le titre, pas sur le contenu complet du texte. Un dossier dont le titre ne mentionne pas explicitement le sujet peut être mal classé ou non classé.
+
+⚠ Certains thèmes se recoupent partiellement. Par exemple, un texte sur la « sécurité sociale » peut apparaître à la fois dans « Sécurité sociale » et « Questions sociales et santé ». C'est un comportement attendu, pas une erreur.
+
+**Comment interpréter**
+Le filtre par thème est utile pour explorer l'activité législative par domaine. Il se combine avec les autres filtres (statut, type de procédure, groupe politique, recherche) : chaque filtre restreint indépendamment la liste des résultats. Par exemple, filtrer par thème « Éducation » et statut « Promulgué » affichera uniquement les textes sur l'éducation qui ont été promulgués.
