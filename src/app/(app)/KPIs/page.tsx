@@ -493,7 +493,7 @@ return (
       <CardHeader className="pb-1">
         <CardTitle className="text-base font-medium">Rejetés</CardTitle>
         <CardDescription className="text-sm text-muted-foreground leading-tight">
-          La loi est abandonnée (sauf nouveau dépôt ou version modifiée)
+          Le texte est abandonnée (sauf nouveau dépôt ou version modifiée)
         </CardDescription>
       </CardHeader>
       <div className="flex items-end justify-center mt-6 md:mt-8">
@@ -599,7 +599,7 @@ return (
         <div className="mt-8">
           <h2 className="text-4xl font-semibold mb-2">Succès législatif par groupe</h2>
           <p className="text-muted-foreground mb-6">
-            Adoption AN/SN : sur tous les textes pertinents aux deux chambres. Promulgation : sur les textes à vocation législative uniquement (eg. certains texte étudiés au parlement n'ont pas vocation à être promulgués; comme les résolution par exemple).
+            Adoption Assemblé Nationale et Sénat : sur tous les textes pertinents aux deux chambres. Promulgation : sur les textes à vocation législative uniquement (par exemple certains texte étudiés au parlement n'ont pas vocation à être promulgués; comme les résolution par exemple).
           </p>
           <GroupeStatsTable data={groupeStats} />
         </div>

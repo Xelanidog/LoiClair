@@ -3,7 +3,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BarChart3, Building2 } from "lucide-react"
+import { BarChart3, Building2, BookOpen } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -58,6 +58,12 @@ export function SidebarNavContent({ onNavigation }: { onNavigation?: () => void 
           <SidebarLink href="/KPIs" label="Indicateurs clés" onNavigation={onNavigation} />
           <SidebarLink href="/Composition" label="Composition" onNavigation={onNavigation} />
           <SidebarLink href="/dossiers-legislatifs" label="Tous les textes" onNavigation={onNavigation} />
+        </SidebarSection>
+
+        <SidebarSection icon={BookOpen} title="Documentation">
+          <SidebarLink href="/documentation/guide" label="Guide d'utilisation" onNavigation={onNavigation} />
+          <SidebarLink href="/documentation/glossaire" label="Glossaire" onNavigation={onNavigation} />
+          <SidebarLink href="/documentation/methode" label="Méthodologie" onNavigation={onNavigation} />
         </SidebarSection>
 
         <SidebarSection icon={Building2} title="Organes législatifs">
