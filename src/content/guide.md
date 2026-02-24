@@ -1,77 +1,177 @@
 # Guide d'utilisation de LoiClair
 
-LoiClair est un tableau de bord citoyen qui rend l'activité législative française lisible et accessible à tous, sans expertise préalable. Ce guide explique comment utiliser les principales fonctionnalités du site.
+LoiClair est un tableau de bord citoyen qui rend l'activité législative française lisible et accessible à tous, sans expertise préalable. Ce guide présente l'ensemble des pages du site et explique comment les utiliser.
 
 ---
 
-## Section Documentation
+## Indicateurs clés
 
-Le menu de gauche contient désormais une section **Documentation** avec trois entrées :
+La page **Indicateurs clés** donne une vue d'ensemble chiffrée de l'activité du Parlement depuis le début de la 17ᵉ législature (en cours).
 
-- **Guide d'utilisation** : vous êtes ici. Explique comment utiliser les pages du site.
-- **Glossaire** : définitions des termes législatifs utilisés sur LoiClair (statuts, types de textes, étapes, procédures). Le glossaire est mis à jour automatiquement à mesure que de nouveaux types de données apparaissent.
-- **Méthodologie** : explique comment sont calculés chaque indicateur affiché, d'où viennent les données, et quelles sont leurs limites.
+### Chiffres de synthèse
 
----
+Trois chiffres en haut de page résument l'activité globale :
 
-## Tableau de bord — Indicateurs clés (KPIs)
+- **Total** : le nombre de dossiers législatifs déposés depuis le début de la législature.
+- **Ce mois-ci** : les dossiers déposés au cours du mois en cours.
+- **Moyenne mensuelle** : la moyenne de dépôts par mois, calculée sur les 24 derniers mois.
 
-La page **Indicateurs clés** donne une vue d'ensemble chiffrée de l'activité du Parlement depuis le début de la législature en cours.
+### Graphique d'activité
 
-### Ce que vous pouvez y lire
+Un graphique à barres montre l'évolution mensuelle du nombre de dépôts sur les 2 dernières années. Il permet de repérer les périodes d'intense activité (rentrée parlementaire, examen du budget) et les creux (été, intersessions).
 
-**En haut de page**, trois chiffres de synthèse :
-- Le nombre total de dossiers législatifs déposés
-- Le nombre de dossiers déposés ce mois-ci
-- La moyenne mensuelle sur les 24 derniers mois
+### État des dossiers
 
-**Le graphique** montre l'évolution du nombre de dépôts mois par mois sur 2 ans.
+Six cases répartissent l'ensemble des dossiers selon leur avancement dans le parcours législatif :
 
-**L'état des dossiers** répartit tous les textes selon leur avancement : en traitement, adoptés par l'Assemblée nationale, adoptés par le Sénat, adoptés par le Parlement, promulgués, ou rejetés.
+- **En traitement** — le texte a été déposé et est étudié par une chambre.
+- **Adoptés par l'Assemblée nationale** — l'AN a voté, le Sénat doit encore se prononcer.
+- **Adoptés par le Sénat** — le Sénat a voté, l'AN doit encore se prononcer.
+- **Adoptés par le Parlement** — les deux chambres ont voté le même texte, il attend la promulgation.
+- **Promulgués** — le Président a signé la loi, publiée au Journal officiel.
+- **Rejetés** — le texte a été abandonné (un nouveau dépôt reste possible).
 
-### Indicateurs d'efficacité
+### Efficacité du processus
 
 Quatre indicateurs mesurent la vitesse et le rendement du processus législatif :
 
-- **Taux de promulgation** : la part des textes à vocation législative qui ont effectivement abouti à une loi signée par le Président. Exprimé en pourcentage.
-- **Délai moyen de promulgation** : le temps moyen (en jours) entre le dépôt d'un texte et sa publication au Journal officiel.
-- **Délai moyen à l'Assemblée nationale** : le temps moyen entre le dépôt d'un texte à l'Assemblée et son adoption par cette chambre.
-- **Délai moyen au Sénat** : le même indicateur, pour le Sénat.
+- **Taux de promulgation** : la part des textes à vocation législative qui ont abouti à une loi.
+- **Délai moyen de promulgation** : le temps moyen entre le dépôt et la publication au Journal officiel.
+- **Délai moyen à l'Assemblée nationale** : le temps moyen entre le dépôt à l'AN et son adoption par cette chambre.
+- **Délai moyen au Sénat** : le même indicateur pour la chambre haute.
 
-Pour chaque délai, les valeurs minimum et maximum sont également affichées.
+Pour chaque délai, les valeurs minimum et maximum sont affichées pour montrer la dispersion.
+
+> Pour comprendre précisément comment ces indicateurs sont calculés, consultez la page [Méthodologie](/documentation/methode).
 
 ### Succès législatif par groupe politique
 
-Un tableau en bas de page compare, pour chaque groupe politique ayant initié au moins 10 dossiers, leurs taux d'adoption à l'Assemblée nationale, au Sénat et leur taux de promulgation.
+Un tableau en bas de page compare les taux d'adoption et de promulgation pour chaque groupe politique ayant initié au moins 10 dossiers.
 
-⚠ Ce tableau doit être lu avec précaution : un groupe d'opposition dépose naturellement plus de textes qui ne sont pas adoptés, car il ne dispose pas de la majorité. Un faible taux ne signifie pas qu'un groupe travaille mal.
+⚠ Ce tableau doit être lu avec prudence : un groupe d'opposition a structurellement moins de textes adoptés qu'un groupe de la majorité. Un faible taux ne reflète pas la qualité du travail parlementaire, mais la réalité arithmétique du vote majoritaire.
 
-### Filtres disponibles
+### Filtres
 
-Deux filtres en haut de la page permettent d'affiner tous les indicateurs :
-- **Type de procédure** : projets de loi ordinaires, lois de finances, propositions de loi, etc.
-- **Groupe politique** : pour isoler l'activité d'un groupe en particulier.
+Deux menus déroulants en haut de page permettent d'affiner tous les indicateurs :
+
+- **Type de procédure** — pour isoler les projets de loi, les lois de finances, les propositions de loi, etc.
+- **Groupe politique** — pour voir l'activité d'un groupe en particulier.
 
 Le bouton **Réinitialiser** efface les filtres et revient à la vue globale.
 
 ---
 
+## Composition du Parlement
+
+La page **Composition** présente la composition des trois institutions principales sous forme de statistiques animées.
+
+### Les trois onglets
+
+- **Assemblée nationale** — 577 députés élus au suffrage universel direct.
+- **Sénat** — 348 sénateurs élus par les grands électeurs.
+- **Gouvernement** — ministres nommés par le Président de la République.
+
+### Ce que vous pouvez y lire
+
+Pour chaque institution, plusieurs indicateurs de composition sont affichés :
+
+- La répartition hommes/femmes (parité)
+- L'âge moyen et la distribution par tranches d'âge
+- Le nombre de membres par groupe politique
+
+Ces chiffres s'animent à l'ouverture de la page pour rendre la lecture plus agréable.
+
+---
+
 ## Dossiers législatifs
 
-La page **Tous les textes** liste l'ensemble des dossiers législatifs de la législature en cours.
+La page **Tous les textes** liste l'ensemble des dossiers législatifs déposés pendant la législature en cours.
 
-### Cartes de dossiers
+### Lire une carte de dossier
 
 Chaque dossier est présenté sous forme de carte avec :
-- Le titre du texte et son type de procédure
-- Le groupe politique à l'origine du dépôt
-- Un indicateur visuel de progression montrant l'étape actuelle du texte dans le parcours législatif
-- Le statut en cours (en traitement, adopté, promulgué, rejeté…)
+
+- Le **titre** du texte et le **type de procédure** (projet de loi ordinaire, proposition de loi, loi de finances…)
+- Le **groupe politique** ou le **ministre** à l'origine du dépôt
+- Un **indicateur de progression** visuel montrant l'étape atteinte dans le parcours législatif
+- Le **statut actuel** (en traitement, adopté, promulgué, rejeté…)
+- La **date de dépôt**
+
+### Filtres et recherche
+
+Plusieurs filtres permettent de cibler les dossiers qui vous intéressent :
+
+- **Type de procédure** — pour isoler un type de texte en particulier.
+- **Statut** — pour ne voir que les textes promulgués, en cours, rejetés, etc.
+- **Groupe politique** — pour filtrer par groupe initiateur.
+- **Barre de recherche** — pour chercher un dossier par mot-clé dans le titre.
+
+La pagination en bas de page permet de naviguer entre les résultats (10 dossiers par page).
 
 ### Résumé par intelligence artificielle
 
-Chaque dossier dispose d'un bouton **Résumé IA** qui génère automatiquement une explication du texte en langage courant, sans jargon juridique.
+Sur chaque carte, un bouton **Résumé IA** donne accès à une explication du texte générée automatiquement par intelligence artificielle, en langage courant et sans jargon juridique.
 
-La page de résumé est organisée ainsi :
-- Un **menu déroulant** permet de sélectionner le texte à résumer parmi ceux rattachés au dossier.
-- Le résumé est présenté en **3 sections distinctes** pour faciliter la lecture : contexte, contenu et enjeux.
+Sur la page de résumé :
+
+- Un **menu déroulant** permet de choisir le texte à résumer parmi ceux rattachés au dossier (un dossier peut contenir plusieurs versions du texte).
+- Le résumé est structuré en **3 sections** : contexte, contenu, et enjeux.
+- Un lien vers **le texte officiel** est disponible pour aller plus loin.
+
+> Le résumé est généré à la demande et peut prendre quelques secondes.
+
+---
+
+## Processus législatif
+
+La page **Processus législatif** est une ressource pédagogique qui explique comment une loi est créée en France, de A à Z.
+
+### Les organes du Parlement
+
+Un accordéon présente le rôle de chacun des 5 acteurs principaux :
+
+- **L'Assemblée nationale** — 577 députés, première chambre du Parlement.
+- **Le Sénat** — 348 sénateurs, chambre haute du Parlement.
+- **Le Gouvernement** — peut déposer des projets de loi et engager sa responsabilité.
+- **Le Président de la République** — promulgue les lois et peut saisir le Conseil constitutionnel.
+- **Le Conseil constitutionnel** — vérifie la conformité des lois à la Constitution.
+
+### Les étapes d'une loi
+
+Une frise chronologique présente les 7 étapes que traverse un texte législatif ordinaire :
+
+1. Dépôt du texte
+2. Examen en commission
+3. Débat en séance publique (1ʳᵉ chambre)
+4. Navette entre les deux chambres (ou Commission mixte paritaire)
+5. Vote final
+6. Contrôle constitutionnel (si saisine)
+7. Promulgation et publication au Journal officiel
+
+> En moyenne, une loi ordinaire prend entre 6 et 12 mois pour parcourir ce chemin.
+
+---
+
+## Types de textes législatifs
+
+La page **Types de textes** explique les différentes catégories de textes qui peuvent être déposés au Parlement.
+
+### Les principaux types
+
+- **Projet de loi** — déposé par le gouvernement.
+- **Proposition de loi** — déposée par un ou plusieurs parlementaires.
+- **Loi organique** — loi qui précise les modalités d'application de la Constitution ; procédure renforcée.
+- **Loi constitutionnelle** — modifie la Constitution elle-même ; procédure spéciale (référendum ou Congrès).
+- **Loi de finances** — budget annuel de l'État.
+- **Résolution** — texte exprimant une position du Parlement, sans force de loi.
+- **Rapport d'information** — bilan ou analyse produit par une commission parlementaire.
+
+---
+
+## Documentation
+
+La section **Documentation**, accessible dans le menu de gauche, rassemble trois ressources complémentaires :
+
+- **Guide d'utilisation** — vous êtes ici.
+- **Glossaire** — définitions des termes législatifs utilisés sur LoiClair : statuts des dossiers, types de procédures, étapes législatives. Le glossaire est alimenté directement par les données en base — les termes apparaissent automatiquement à mesure que de nouvelles procédures sont référencées.
+- **Méthodologie** — explication détaillée de chaque indicateur affiché sur le site : formule de calcul, variables utilisées et exclues, source des données, limites d'interprétation.
