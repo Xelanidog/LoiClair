@@ -47,4 +47,7 @@ Backlog.md
 LoiClair PDD.md
 Tables supabase.md 
 
+__pycache__/
+*.pyc
+
 

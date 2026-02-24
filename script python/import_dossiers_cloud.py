@@ -16,7 +16,7 @@ from tqdm import tqdm
 from datetime import datetime
 
 # Ajouter le dossier scripts/ au path pour importer classify_themes
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts/ python"))
 from classify_themes import classify_themes
 
 # Charger .env.local (chemin relatif au script, portable sur toutes les machines)
