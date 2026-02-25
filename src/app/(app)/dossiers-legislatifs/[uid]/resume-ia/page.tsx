@@ -16,8 +16,10 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function ResumeIAPage({ params }: { params: Promise<{ uid: string }> }) {
+export default async function ResumeIAPage({ params, searchParams }: { params: Promise<{ uid: string }>; searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
   const { uid } = await params;
+  const resolvedSearchParams = await searchParams;
+  const initialTexteUid = typeof resolvedSearchParams.texte === 'string' ? resolvedSearchParams.texte : null;
 
   // Fetch textes, dossier complet, et actes législatifs en parallèle
   const [textesResult, dossierResult, actesResult] = await Promise.all([
@@ -55,6 +57,49 @@ export default async function ResumeIAPage({ params }: { params: Promise<{ uid: 
     .filter(code => actesCodes.has(code))
     .sort((a, b) => STEP_CONFIG[a].priority - STEP_CONFIG[b].priority)
     .map(code => STEP_CONFIG[code].label);
+
+  // Scrutins associés aux textes via actes_legislatifs
+  // Un acte peut avoir textes_associes (→ texte uid) ET vote_refs (→ scrutin uid)
+  const { data: actesAvecVote } = await supabase
+    .from('actes_legislatifs')
+    .select('textes_associes, vote_refs')
+    .eq('dossier_uid', uid)
+    .not('textes_associes', 'is', null)
+    .not('vote_refs', 'is', null);
+
+  const voteRefsSet = new Set((actesAvecVote ?? []).map(a => a.vote_refs));
+  const voteRefs = [...voteRefsSet];
+
+  let scrutinsParTexte: Record<string, {
+    sortLibelle: string; type: string; pour: number; contre: number;
+    abstentions: number; votants: number; nonVotants: number; suffragesRequis: number; date: string;
+  }> = {};
+
+  if (voteRefs.length > 0) {
+    const { data: scrutinsData } = await supabase
+      .from('scrutins')
+      .select('uid, sort_libelle, type_vote_libelle, synthese_pour, synthese_contre, synthese_abstentions, synthese_nombre_votants, synthese_non_votants, synthese_suffrages_requis, date_scrutin')
+      .in('uid', voteRefs);
+
+    const scrutinsMap = new Map((scrutinsData ?? []).map(s => [s.uid, s]));
+
+    for (const acte of actesAvecVote ?? []) {
+      const s = scrutinsMap.get(acte.vote_refs);
+      if (s && acte.textes_associes) {
+        scrutinsParTexte[acte.textes_associes] = {
+          sortLibelle: s.sort_libelle ?? '',
+          type: s.type_vote_libelle ?? '',
+          pour: s.synthese_pour ?? 0,
+          contre: s.synthese_contre ?? 0,
+          abstentions: s.synthese_abstentions ?? 0,
+          votants: s.synthese_nombre_votants ?? 0,
+          nonVotants: s.synthese_non_votants ?? 0,
+          suffragesRequis: s.synthese_suffrages_requis ?? 0,
+          date: s.date_scrutin ?? '',
+        };
+      }
+    }
+  }
 
   // Auteur : initiateur direct ou fallback via les textes
   // Supabase renvoie les joins comme des arrays, on normalise
@@ -103,6 +148,8 @@ export default async function ResumeIAPage({ params }: { params: Promise<{ uid: 
       auteurNom={auteur ? `${auteur.prenom ?? ''} ${auteur.nom ?? ''}`.trim() : null}
       auteurGroupe={auteur?.groupe?.libelle ?? null}
       timelineSteps={timelineSteps}
+      scrutinsParTexte={scrutinsParTexte}
+      initialTexteUid={initialTexteUid}
     />
   );
 }

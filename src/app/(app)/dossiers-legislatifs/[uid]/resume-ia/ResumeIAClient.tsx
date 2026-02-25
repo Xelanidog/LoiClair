@@ -28,6 +28,18 @@ interface Texte {
   organe_auteur: { libelle: string } | null;
 }
 
+export interface ScrutinData {
+  sortLibelle: string;
+  type: string;
+  pour: number;
+  contre: number;
+  abstentions: number;
+  votants: number;
+  nonVotants: number;
+  suffragesRequis: number;
+  date: string;
+}
+
 interface ResumeIAClientProps {
   uid: string;
   titreDossier: string;
@@ -39,6 +51,8 @@ interface ResumeIAClientProps {
   auteurNom: string | null;
   auteurGroupe: string | null;
   timelineSteps: string[];
+  scrutinsParTexte: Record<string, ScrutinData>;
+  initialTexteUid: string | null;
 }
 
 const CARDS = [
@@ -68,11 +82,12 @@ const BADGE_CLASSES: Record<string, string> = {
   "Adopté par le Sénat": "bg-indigo-100 text-indigo-800 border-indigo-200",
 };
 
-export default function ResumeIAClient({ uid, titreDossier, initialTextes, statutFinal, procedureLibelle, dateDepot, datePromulgation, auteurNom, auteurGroupe, timelineSteps }: ResumeIAClientProps) {
+export default function ResumeIAClient({ uid, titreDossier, initialTextes, statutFinal, procedureLibelle, dateDepot, datePromulgation, auteurNom, auteurGroupe, timelineSteps, scrutinsParTexte, initialTexteUid }: ResumeIAClientProps) {
   const [textes] = useState<Texte[]>(initialTextes);
-  const [selectedUid, setSelectedUid] = useState<string | null>(
-    initialTextes.length > 0 ? initialTextes[initialTextes.length - 1].uid : null
-  );
+  const [selectedUid, setSelectedUid] = useState<string | null>(() => {
+    if (initialTexteUid && initialTextes.some(t => t.uid === initialTexteUid)) return initialTexteUid;
+    return initialTextes.length > 0 ? initialTextes[initialTextes.length - 1].uid : null;
+  });
   const [liensStatus, setLiensStatus] = useState<Record<string, 'valide' | 'invalide' | 'en_cours' | null>>(
     initialTextes.reduce((acc, t) => ({ ...acc, [t.uid]: 'en_cours' as const }), {} as Record<string, 'en_cours'>)
   );
@@ -315,6 +330,66 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
           )}
         </div>
       )}
+
+      {/* Résultat du scrutin — affiché si le texte sélectionné a un vote associé */}
+      {selectedUid && scrutinsParTexte[selectedUid] && (() => {
+        const s = scrutinsParTexte[selectedUid];
+        const resultLower = s.sortLibelle.toLowerCase();
+        const isRejected = resultLower.includes('rejet') || resultLower.includes("n'a pas adopt") || resultLower.includes('pas adopté');
+        const isAdopted = !isRejected && resultLower.includes('adopt');
+        const TOTAL_DEPUTES = 577;
+        const absents = Math.max(TOTAL_DEPUTES - s.votants - s.nonVotants, 0);
+        const dateStr = s.date ? new Date(s.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Paris' }) : null;
+        const majorityPct = s.suffragesRequis > 0 ? (s.suffragesRequis / TOTAL_DEPUTES) * 100 : 0;
+
+        return (
+          <div className="mb-6 rounded-lg border px-4 py-3" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${isAdopted ? 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/60 dark:text-green-300 dark:border-green-800' : isRejected ? 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/60 dark:text-red-300 dark:border-red-800' : 'bg-muted text-muted-foreground border-border'}`}>
+                {isAdopted ? 'Adopté' : isRejected ? 'Rejeté' : 'Vote'}
+              </span>
+              <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                <div className="relative flex-1 h-2 rounded-full overflow-hidden isolate" style={{ display: 'flex', backgroundColor: 'var(--color-muted)' }}>
+                  <div style={{ width: `${(s.pour / TOTAL_DEPUTES) * 100}%`, backgroundColor: '#22c55e', minWidth: s.pour > 0 ? '2px' : '0' }} className="h-full" />
+                  <div style={{ width: `${(s.contre / TOTAL_DEPUTES) * 100}%`, backgroundColor: '#ef4444', minWidth: s.contre > 0 ? '2px' : '0' }} className="h-full" />
+                  <div style={{ width: `${(s.abstentions / TOTAL_DEPUTES) * 100}%`, backgroundColor: '#9ca3af', minWidth: s.abstentions > 0 ? '2px' : '0' }} className="h-full" />
+                  <div style={{ width: `${(s.nonVotants / TOTAL_DEPUTES) * 100}%`, backgroundColor: '#fb923c', minWidth: s.nonVotants > 0 ? '2px' : '0' }} className="h-full" />
+                  <div style={{ width: `${(absents / TOTAL_DEPUTES) * 100}%`, backgroundColor: '#e5e7eb' }} className="h-full dark:hidden" />
+                  <div style={{ width: `${(absents / TOTAL_DEPUTES) * 100}%`, backgroundColor: '#374151' }} className="h-full hidden dark:block" />
+                  {majorityPct > 0 && (
+                    <div className="absolute top-0 h-full w-0.5 bg-foreground/60" style={{ left: `${majorityPct}%` }} title={`Majorité requise : ${s.suffragesRequis}`} />
+                  )}
+                </div>
+                <span className="text-xs text-muted-foreground tabular-nums shrink-0 font-medium">
+                  {s.pour}–{s.contre}–{s.abstentions}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: '#22c55e' }} />Pour : {s.pour}</div>
+              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: '#ef4444' }} />Contre : {s.contre}</div>
+              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: '#9ca3af' }} />Abstentions : {s.abstentions}</div>
+              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: '#fb923c' }} />Non-votants : {s.nonVotants}</div>
+              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full shrink-0 bg-gray-200 dark:bg-gray-700" />Absents : {absents}</div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
+              {s.type && <span className="capitalize">{s.type}</span>}
+              {s.type && dateStr && <span>·</span>}
+              {dateStr && <span>{dateStr}</span>}
+              <span>·</span>
+              <span>{s.votants} votants sur 577</span>
+              {s.suffragesRequis > 0 && (
+                <>
+                  <span>·</span>
+                  <span>Majorité requise : {s.suffragesRequis} voix</span>
+                </>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* État : pas de texte sélectionné */}
       {!selectedTexte && (
