@@ -168,6 +168,7 @@ function EventBody({ group }: { group: GroupedFeedEvent }) {
       return null; // contenu déjà dans CardTitle
 
     case "DEPOT_RAPPORT":
+    case "CMP_RAPPORT":
       if (multi) {
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 14 }}>
@@ -194,14 +195,23 @@ function EventBody({ group }: { group: GroupedFeedEvent }) {
     case "DECISION":
       if (multi) {
         return (
-          <div className="space-y-2" style={{ marginTop: 6 }}>
-            {events.map(ev => (
-              <div key={ev.id} className="space-y-1">
-                <StatusBadge statut={ev.statutConclusion} />
-                {ev.votePour != null && <VoteBar event={ev} />}
-                {dossierUid && <ResumeIALink dossierUid={dossierUid} texteUid={ev.texteUid} />}
-              </div>
-            ))}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 14 }}>
+            {events.map(ev => {
+              const inst = institutionName(ev.organeCodeType, ev.organeName);
+              return (
+                <div key={ev.id}>
+                  <div className="flex items-baseline gap-1 text-xs text-muted-foreground overflow-hidden">
+                    <span className="shrink-0">·</span>
+                    {inst && <span className="font-bold text-foreground shrink-0">{inst}</span>}
+                  </div>
+                  <div className="ml-3 mt-0.5 space-y-1">
+                    <StatusBadge statut={ev.statutConclusion} />
+                    {ev.votePour != null && <VoteBar event={ev} />}
+                    {dossierUid && <ResumeIALink dossierUid={dossierUid} texteUid={ev.texteUid} />}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         );
       }
@@ -217,30 +227,6 @@ function EventBody({ group }: { group: GroupedFeedEvent }) {
 
     case "CMP_CONVOCATION":
       return null; // contenu dans CardTitle
-
-    case "CMP_RAPPORT":
-      if (multi) {
-        return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 14 }}>
-            {events.map(ev => (
-              <div key={ev.id}>
-                <div className="flex items-baseline gap-1 text-xs text-muted-foreground overflow-hidden">
-                  <span className="shrink-0">·</span>
-                  {ev.texteProvenance && <span className="font-bold text-foreground shrink-0">{ev.texteProvenance}</span>}
-                  {ev.organeName && <span className="font-normal truncate">/{ev.organeName}</span>}
-                </div>
-                <p className="text-sm leading-snug ml-3 mt-0.5">
-                  <span className="text-muted-foreground">{ev.organeCodeType === "COMSENAT" ? "Sénat" : "Assemblée"} · </span>
-                  {ev.libelleActe && <span className="text-muted-foreground">{ev.libelleActe}. </span>}
-                  <span>{ev.texteTitre || ev.texteDenomination || ev.titre}</span>
-                  {dossierUid && <>{" "}<ResumeIALink dossierUid={dossierUid} texteUid={ev.texteUid} /></>}
-                </p>
-              </div>
-            ))}
-          </div>
-        );
-      }
-      return null;
 
     case "MOTION_CENSURE":
       if (multi) {
@@ -366,8 +352,8 @@ function CardTitle({ group, e }: { group: GroupedFeedEvent; e: FeedEvent }) {
       </p>
     );
   }
-  // DEPOT_RAPPORT : single → chambre · libelleActe titre, multi → dossierTitre
-  if (t === "DEPOT_RAPPORT") {
+  // DEPOT_RAPPORT / CMP_RAPPORT : single → chambre · libelleActe titre, multi → dossierTitre
+  if (t === "DEPOT_RAPPORT" || t === "CMP_RAPPORT") {
     if (group.events.length > 1) {
       return (
         <p className="text-sm leading-snug mb-0.5">
@@ -400,30 +386,42 @@ function CardTitle({ group, e }: { group: GroupedFeedEvent; e: FeedEvent }) {
       </p>
     );
   }
-  // CMP_RAPPORT : même format que DEPOT_RAPPORT
-  if (t === "CMP_RAPPORT") {
-    if (group.events.length > 1) {
-      return (
-        <p className="text-sm leading-snug mb-0.5">
-          {group.dossierTitre || e.titre}
-        </p>
-      );
-    }
-    const chambre = e.organeCodeType === "COMSENAT" ? "Sénat" : "Assemblée";
-    return (
-      <p className="text-sm leading-snug mb-0.5">
-        <span className="text-muted-foreground">{chambre} · </span>
-        {e.libelleActe && <span className="text-muted-foreground">{e.libelleActe}. </span>}
-        <span>{e.texteTitre || e.texteDenomination || group.dossierTitre || e.titre}</span>
-      </p>
-    );
-  }
   // Défaut : dossierTitre ou titre
   return (
     <p className="text-sm leading-snug mb-0.5">
       {group.dossierTitre || e.titre}
     </p>
   );
+}
+
+// ── Context info helper ─────────────────────────────────────
+
+function getContextInfo(type: FeedEventType, e: FeedEvent, multi: boolean) {
+  if (type === "DEPOT_TEXTE" || type === "NAVETTE") {
+    if (!e.auteur) return null;
+    return <>
+      <span className="font-bold text-foreground shrink-0">{e.auteur}</span>
+      {e.groupeAbrege && <span className="font-normal shrink-0">/{e.groupeAbrege}</span>}
+    </>;
+  }
+  if (type === "DECISION") {
+    if (multi) return null;
+    const inst = institutionName(e.organeCodeType, e.organeName);
+    return inst ? <span className="shrink-0">/{inst}</span> : null;
+  }
+  if (type === "DEPOT_RAPPORT" || type === "CMP_RAPPORT") {
+    if (multi || !e.texteProvenance) return null;
+    return <>
+      <span className="font-bold text-foreground shrink-0">{e.texteProvenance}</span>
+      {e.organeName && <span className="font-normal truncate">/{e.organeName}</span>}
+    </>;
+  }
+  if (type === "CMP_CONVOCATION") return null;
+  if (type === "CC_SAISINE") {
+    const inst = institutionName(e.organeCodeType, e.organeName);
+    return inst ? <span className="shrink-0">/{inst}</span> : null;
+  }
+  return e.organeName ? <span className="truncate">{e.organeName}</span> : null;
 }
 
 // ── Grouped event card (unifié style X) ─────────────────────
@@ -434,6 +432,7 @@ function GroupedEventCard({ group, index }: { group: GroupedFeedEvent; index: nu
   const e = group.events[0];
   const multi = group.events.length > 1;
   const shortDate = formatShortDate(group.date);
+  const context = getContextInfo(group.type, e, multi);
 
   return (
     <motion.article
@@ -452,29 +451,9 @@ function GroupedEventCard({ group, index }: { group: GroupedFeedEvent; index: nu
         {/* Ligne 1 : label · contexte · date */}
         <div className="flex items-baseline gap-1 text-xs text-muted-foreground mb-0.5 overflow-hidden">
           <span className={cn("font-semibold shrink-0", config.color)}>{(group.type === "CMP_CONVOCATION" || group.type === "CC_SAISINE") && e.libelleActe ? e.libelleActe : config.label}</span>
-          {group.type !== "CC_SAISINE" && <span className="shrink-0">·</span>}
-          {(group.type === "DEPOT_TEXTE" || group.type === "NAVETTE") && e.auteur ? (
-            <>
-              <span className="font-bold text-foreground shrink-0">{e.auteur}</span>
-              {e.groupeAbrege && <span className="font-normal shrink-0">/{e.groupeAbrege}</span>}
-            </>
-          ) : group.type === "DECISION" ? (
-            (() => { const inst = institutionName(e.organeCodeType, e.organeName); return inst ? <span className="shrink-0">/{inst}</span> : null; })()
-          ) : (group.type === "DEPOT_RAPPORT" || group.type === "CMP_RAPPORT") && !multi && e.texteProvenance ? (
-            <>
-              <span className="font-bold text-foreground shrink-0">{e.texteProvenance}</span>
-              {e.organeName && <span className="font-normal truncate">/{e.organeName}</span>}
-            </>
-          ) : (group.type === "DEPOT_RAPPORT" || group.type === "CMP_RAPPORT") && multi ? (
-            null
-          ) : group.type === "CMP_CONVOCATION" ? (
-            null
-          ) : group.type === "CC_SAISINE" ? (
-            (() => { const inst = institutionName(e.organeCodeType, e.organeName); return inst ? <span className="shrink-0">/{inst}</span> : null; })()
-          ) : (
-            e.organeName && <span className="truncate">{e.organeName}</span>
-          )}
-          {((group.type === "DEPOT_TEXTE" || group.type === "NAVETTE") ? e.auteur : group.type === "DECISION" ? institutionName(e.organeCodeType, e.organeName) : (group.type === "DEPOT_RAPPORT" || group.type === "CMP_RAPPORT") ? (!multi && e.texteProvenance) : group.type === "CMP_CONVOCATION" ? false : group.type === "CC_SAISINE" ? institutionName(e.organeCodeType, e.organeName) : e.organeName) && <span className="shrink-0">·</span>}
+          {group.type !== "CC_SAISINE" && !(group.type === "DECISION" && !multi) && <span className="shrink-0">·</span>}
+          {context}
+          {context && <span className="shrink-0">·</span>}
           <span className="shrink-0">{shortDate}</span>
           {multi && (
             <span className="text-[10px] ml-1 px-1.5 py-px rounded-full bg-muted text-muted-foreground shrink-0">

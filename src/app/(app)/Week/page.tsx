@@ -371,30 +371,56 @@ export default async function WeekPage({
   // Dédupliquer les motions par uid (la base peut contenir des doublons)
   const uniqueMotions = [...new Map(motionActes.map(a => [a.uid, a])).values()];
 
-  // Récupérer les statut_conclusion des enfants "Décision sur une motion de censure"
-  const motionUids = uniqueMotions.map(a => a.uid);
-  const motionDecisionMap = await getMotionDecisionActes(supabase, motionUids);
+  // Filtrer les scrutins significatifs (JS seulement, pas de requête)
+  const filteredScrutins = scrutins.filter(s => {
+    const titre = (s.titre || '').toLowerCase();
+    return titre.includes('ensemble') || titre.includes('motion de rejet');
+  });
 
-  // Collecter tous les UIDs a resoudre depuis les actes ET les motions
+  // ── Round 2 : résolutions intermédiaires (parallèle) ──
+  const motionUids = uniqueMotions.map(a => a.uid);
+  const scrutinUidsForMap = filteredScrutins.map(s => s.uid);
+  const [motionDecisionMap, scrutinActeMap] = await Promise.all([
+    getMotionDecisionActes(supabase, motionUids),
+    getScrutinActeMap(supabase, scrutinUidsForMap),
+  ]);
+
+  // Collecter TOUS les UIDs depuis actes + motions + scrutinActeMap
   const texteUids = new Set<string>();
   const organeUids = new Set<string>();
   const scrutinUidsFromActes = new Set<string>();
+  const dossierUidsSet = new Set<string>();
 
   for (const a of [...actes, ...uniqueMotions]) {
     if (a.textes_associes) texteUids.add(a.textes_associes);
     if (a.texte_adopte) texteUids.add(a.texte_adopte);
     if (a.organe_ref) organeUids.add(a.organe_ref);
     if (a.vote_refs) scrutinUidsFromActes.add(a.vote_refs);
+    if (a.dossier_uid) dossierUidsSet.add(a.dossier_uid);
   }
 
-  // Recuperer titres dossiers + refs enrichis en parallele
-  const dossierUids = [...new Set([...actes, ...uniqueMotions].map(a => a.dossier_uid).filter(Boolean))] as string[];
+  for (const acte of scrutinActeMap.values()) {
+    if (acte.dossier_uid) dossierUidsSet.add(acte.dossier_uid);
+    if (acte.organe_ref) organeUids.add(acte.organe_ref);
+    if (acte.textes_associes) texteUids.add(acte.textes_associes);
+    if (acte.texte_adopte) texteUids.add(acte.texte_adopte);
+    if (acte.vote_refs) scrutinUidsFromActes.add(acte.vote_refs);
+  }
+
+  // ── Round 3 : résolution unique de toutes les refs (parallèle) ──
   const [dossierTitles, textes, organes, scrutinsMapFromActes] = await Promise.all([
-    getDossierTitles(supabase, dossierUids),
+    getDossierTitles(supabase, [...dossierUidsSet]),
     getTextesByUids(supabase, [...texteUids]),
     getOrganesByUids(supabase, [...organeUids]),
     getScrutinsByUids(supabase, [...scrutinUidsFromActes]),
   ]);
+
+  // Injecter les scrutins filtrés (données déjà disponibles depuis round 1)
+  for (const s of filteredScrutins) {
+    if (!scrutinsMapFromActes.has(s.uid)) {
+      scrutinsMapFromActes.set(s.uid, s);
+    }
+  }
 
   // Transformer les actes en FeedEvents enrichis (filtrer AUTRE)
   const acteEvents: FeedEvent[] = actes
@@ -409,44 +435,6 @@ export default async function WeekPage({
       );
     })
     .filter(e => e.type !== 'AUTRE');
-
-  // Transformer les scrutins en FeedEvents de type DECISION
-  // Garder uniquement les votes significatifs pour un citoyen
-  const filteredScrutins = scrutins.filter(s => {
-    const titre = (s.titre || '').toLowerCase();
-    return titre.includes('ensemble') || titre.includes('motion de rejet');
-  });
-
-  // Lier les scrutins a leurs actes via actes_legislatifs.vote_refs
-  const scrutinUidsForMap = filteredScrutins.map(s => s.uid);
-  const scrutinActeMap = await getScrutinActeMap(supabase, scrutinUidsForMap);
-
-  // Collecter les UIDs manquants des actes liés aux scrutins
-  const missingDossierUids: string[] = [];
-  const missingOrganeUids: string[] = [];
-  const missingTexteUids: string[] = [];
-  for (const acte of scrutinActeMap.values()) {
-    if (acte.dossier_uid && !dossierTitles.has(acte.dossier_uid)) missingDossierUids.push(acte.dossier_uid);
-    if (acte.organe_ref && !organes.has(acte.organe_ref)) missingOrganeUids.push(acte.organe_ref);
-    if (acte.textes_associes && !textes.has(acte.textes_associes)) missingTexteUids.push(acte.textes_associes);
-    if (acte.texte_adopte && !textes.has(acte.texte_adopte)) missingTexteUids.push(acte.texte_adopte);
-  }
-
-  const [extraTitles, extraOrganes, extraTextes] = await Promise.all([
-    getDossierTitles(supabase, [...new Set(missingDossierUids)]),
-    getOrganesByUids(supabase, [...new Set(missingOrganeUids)]),
-    getTextesByUids(supabase, [...new Set(missingTexteUids)]),
-  ]);
-  for (const [uid, val] of extraTitles) dossierTitles.set(uid, val);
-  for (const [uid, val] of extraOrganes) organes.set(uid, val);
-  for (const [uid, val] of extraTextes) textes.set(uid, val);
-
-  // Ajouter les scrutins filtrés dans scrutinsMap pour résolution des votes
-  for (const s of filteredScrutins) {
-    if (!scrutinsMapFromActes.has(s.uid)) {
-      scrutinsMapFromActes.set(s.uid, s);
-    }
-  }
 
   // Réutiliser acteToFeedEvent pour les scrutins ayant un acte lié (pas de duplication)
   const scrutinEvents: FeedEvent[] = filteredScrutins.map(s => {
