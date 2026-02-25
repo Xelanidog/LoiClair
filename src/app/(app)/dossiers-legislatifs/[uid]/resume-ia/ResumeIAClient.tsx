@@ -1,5 +1,6 @@
 "use client";
 
+import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { Loader2, HelpCircle, ListChecks, TrendingUp, ExternalLink, Check, ChevronsUpDown, ChevronDown, Bot } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
@@ -228,6 +229,9 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
             </div>
           );
         })()}
+        <Link href={`/Week?dossier=${uid}`} className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-1">
+          Voir la chronologie →
+        </Link>
       </div>
 
       {/* Combobox de sélection du texte */}
