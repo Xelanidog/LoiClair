@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, RefreshCw, Sparkles, BarChart2, Search, Vote, BookOpen, MessageSquare, TrendingDown } from "lucide-react";
+import { ArrowRight, RefreshCw, Sparkles, BarChart2, Search, Vote, BookOpen, MessageSquare, TrendingDown, Newspaper } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const features = [
@@ -8,6 +8,7 @@ const features = [
   { icon: BarChart2, title: "Statistiques parlementaires", desc: "Qui vote quoi, parité, présence en séance — tout en chiffres." },
   { icon: Search, title: "Trouver vos élus", desc: "Retrouvez et contactez votre député, sénateur ou ministre en secondes." },
   { icon: Vote, title: "Votez comme un parlementaire", desc: "Donnez votre avis et comparez vos votes à ceux du Parlement." },
+  { icon: Newspaper, title: "Fil d'actualité", desc: "Chaque semaine, l'essentiel de l'activité parlementaire résumé en un coup d'œil." },
 ];
 
 const stats = [
@@ -42,8 +43,8 @@ export default function PourquoiPage() {
             LoiClair traduit l'activité législative française en langage humain.
           </p>
           <div className="flex items-center justify-center gap-4 pt-2">
-            <Link href="/dossiers-legislatifs">
-              <Button size="lg" className="rounded-full gap-2">
+            <Link href="/Week">
+              <Button size="lg" className="rounded-full gap-2 hover:scale-105 hover:shadow-lg transition-all">
                 Découvrir LoiClair
                 <ArrowRight className="h-4 w-4" />
               </Button>
@@ -55,7 +56,7 @@ export default function PourquoiPage() {
         {/* Features */}
         <section className="space-y-6">
           <h2 className="text-xl font-semibold text-center">Ce que vous pouvez faire</h2>
-          <div className="grid grid-cols-1 divide-y md:grid-cols-5 md:divide-y-0 md:divide-x border rounded-xl overflow-hidden">
+          <div className="grid grid-cols-1 divide-y md:grid-cols-3 md:divide-y-0 md:divide-x border rounded-xl overflow-hidden">
             {features.map(({ icon: Icon, title, desc }) => (
               <div key={title} className="flex flex-col gap-3 p-6 bg-muted/20 hover:bg-muted/50 transition-colors">
                 <Icon className="h-4 w-4 text-muted-foreground" />
