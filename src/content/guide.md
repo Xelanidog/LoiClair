@@ -121,6 +121,7 @@ Sur chaque carte, un bouton **Résumé IA** donne accès à une explication du t
 
 Sur la page de résumé :
 
+- Sous le titre, un **bandeau d'informations** reprend les données essentielles du dossier : son **statut** (en cours, adopté, promulgué, rejeté…), le **type de procédure**, le nom de l'**auteur** et son **groupe politique**, ainsi que la **date de dépôt**. Si le dossier a franchi plusieurs étapes, une **frise de progression** montre visuellement le parcours législatif accompli (Dépôt → Assemblée nationale → Sénat → Promulguée, etc.).
 - Un **menu déroulant** permet de choisir le texte à résumer parmi ceux rattachés au dossier (un dossier peut contenir plusieurs versions du texte).
 - Le résumé est structuré en **3 sections** : *Pourquoi cette loi ?*, *Changements clés*, et *Impact attendu*.
 - Un lien vers **le texte officiel** est disponible pour aller plus loin.
