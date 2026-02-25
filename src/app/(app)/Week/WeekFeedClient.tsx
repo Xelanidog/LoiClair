@@ -268,28 +268,6 @@ function EventBody({ group }: { group: GroupedFeedEvent }) {
     case "DECL_GOUVERNEMENT":
       return null;
 
-    case "MOTION_VOTE":
-      if (multi) {
-        return (
-          <div className="space-y-2.5">
-            {events.map(ev => (
-              <div key={ev.id} className="space-y-1">
-                <StatusBadge statut={ev.statutConclusion} />
-                {ev.scrutinTitre && <p className="text-xs text-muted-foreground">{ev.scrutinTitre}</p>}
-                <VoteBar event={ev} />
-                {dossierUid && <ResumeIALink dossierUid={dossierUid} texteUid={ev.texteUid} />}
-              </div>
-            ))}
-          </div>
-        );
-      }
-      return (
-        <div className="space-y-1.5">
-          <StatusBadge statut={e.statutConclusion} />
-          <VoteBar event={e} />
-        </div>
-      );
-
     case "CC_SAISINE":
       return null;
 
@@ -367,14 +345,6 @@ function CardTitle({ group, e }: { group: GroupedFeedEvent; e: FeedEvent }) {
     return (
       <p className="text-sm leading-snug mb-0.5">
         {group.dossierTitre || e.texteTitre || e.texteDenomination || e.titre}
-      </p>
-    );
-  }
-  // MOTION_VOTE (dossier mode seulement) : scrutinTitre
-  if (t === "MOTION_VOTE") {
-    return (
-      <p className="text-sm leading-snug mb-0.5">
-        {e.scrutinTitre || group.dossierTitre || e.titre}
       </p>
     );
   }

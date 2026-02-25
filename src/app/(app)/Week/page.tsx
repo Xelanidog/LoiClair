@@ -321,7 +321,7 @@ export default async function WeekPage({
         }
         return acteToFeedEvent(a, dossierInfo ?? null, textes, organes, scrutinsMap);
       })
-      .filter(e => e.type !== 'AUTRE');
+      .filter(e => e.type !== 'AUTRE' && e.type !== 'MOTION_VOTE');
 
     // 5. Grouper par dossierUid + date + type
     const groupMap = groupFeedEvents(feedEvents);
