@@ -309,18 +309,18 @@ function CardFooter({ dossierUid, texteUid, showResumeIA = true }: { dossierUid?
         ) : <span />}
       </div>
       <div style={{ display: "flex", flexGrow: 1, flexBasis: 0, justifyContent: "space-around", alignItems: "center" }}>
-        <button type="button" className="text-muted-foreground/30 hover:text-green-500 transition-colors" aria-label="J'approuve">
+        <motion.button type="button" whileHover={{ scale: 1.25 }} whileTap={{ scale: 0.95 }} className="p-2 rounded-full text-muted-foreground/30 hover:text-green-500 hover:bg-muted/50 transition-colors" aria-label="J'approuve">
           <ThumbsUp className="w-3.5 h-3.5" />
-        </button>
-        <button type="button" className="text-muted-foreground/30 hover:text-red-500 transition-colors" aria-label="Je désapprouve">
+        </motion.button>
+        <motion.button type="button" whileHover={{ scale: 1.25 }} whileTap={{ scale: 0.95 }} className="p-2 rounded-full text-muted-foreground/30 hover:text-red-500 hover:bg-muted/50 transition-colors" aria-label="Je désapprouve">
           <ThumbsDown className="w-3.5 h-3.5" />
-        </button>
-        <button type="button" className="text-muted-foreground/30 hover:text-blue-500 transition-colors" aria-label="Sauvegarder">
+        </motion.button>
+        <motion.button type="button" whileHover={{ scale: 1.25 }} whileTap={{ scale: 0.95 }} className="p-2 rounded-full text-muted-foreground/30 hover:text-blue-500 hover:bg-muted/50 transition-colors" aria-label="Sauvegarder">
           <Bookmark className="w-3.5 h-3.5" />
-        </button>
-        <button type="button" className="text-muted-foreground/30 hover:text-blue-500 transition-colors" aria-label="Partager">
+        </motion.button>
+        <motion.button type="button" whileHover={{ scale: 1.25 }} whileTap={{ scale: 0.95 }} className="p-2 rounded-full text-muted-foreground/30 hover:text-blue-500 hover:bg-muted/50 transition-colors" aria-label="Partager">
           <Share2 className="w-3.5 h-3.5" />
-        </button>
+        </motion.button>
       </div>
     </div>
   );
