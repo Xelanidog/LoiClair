@@ -13,6 +13,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
+import ProcedureTooltip from '@/components/ProcedureTooltip';
+import { DEFINITIONS } from '@/lib/definitions';
 
 interface Texte {
   uid: string;
@@ -30,6 +32,13 @@ interface ResumeIAClientProps {
   uid: string;
   titreDossier: string;
   initialTextes: Texte[];
+  statutFinal: string | null;
+  procedureLibelle: string | null;
+  dateDepot: string | null;
+  datePromulgation: string | null;
+  auteurNom: string | null;
+  auteurGroupe: string | null;
+  timelineSteps: string[];
 }
 
 const CARDS = [
@@ -50,7 +59,16 @@ function parseCompletion(text: string): Record<string, string> {
   };
 }
 
-export default function ResumeIAClient({ uid, titreDossier, initialTextes }: ResumeIAClientProps) {
+const BADGE_CLASSES: Record<string, string> = {
+  "Promulguée": "bg-green-100 text-green-800 border-green-200",
+  "Rejeté": "bg-red-100 text-red-800 border-red-200",
+  "En cours d'examen": "bg-yellow-100 text-yellow-800 border-yellow-200",
+  "Adopté par le Parlement": "bg-purple-100 text-purple-800 border-purple-200",
+  "Adopté par l'Assemblée nationale": "bg-blue-100 text-blue-800 border-blue-200",
+  "Adopté par le Sénat": "bg-indigo-100 text-indigo-800 border-indigo-200",
+};
+
+export default function ResumeIAClient({ uid, titreDossier, initialTextes, statutFinal, procedureLibelle, dateDepot, datePromulgation, auteurNom, auteurGroupe, timelineSteps }: ResumeIAClientProps) {
   const [textes] = useState<Texte[]>(initialTextes);
   const [selectedUid, setSelectedUid] = useState<string | null>(
     initialTextes.length > 0 ? initialTextes[initialTextes.length - 1].uid : null
@@ -135,9 +153,67 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes }: Res
 
   return (
     <div className="container mx-auto p-6 max-w-7xl">
-      <h1 className="text-2xl font-bold mb-6">
+      <h1 className="text-2xl font-bold mb-4">
         Résumé IA — {titreDossier || `dossier ${uid}`}
       </h1>
+
+      {/* Métadonnées du dossier */}
+      <div className="mb-6 space-y-3">
+        {/* Ligne 1 : badge statut + type procédure + auteur + groupe + date */}
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          {statutFinal && (
+            <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${BADGE_CLASSES[statutFinal] ?? "bg-gray-100 text-gray-700 border-gray-200"}`}>
+              {statutFinal}
+            </span>
+          )}
+          {procedureLibelle && (
+            DEFINITIONS[procedureLibelle]
+              ? <ProcedureTooltip label={procedureLibelle} description={DEFINITIONS[procedureLibelle]} />
+              : <span className="px-2 py-0.5 rounded-md bg-muted text-xs font-medium uppercase tracking-wide">{procedureLibelle}</span>
+          )}
+          {auteurNom && (
+            <>
+              <span className="text-border">·</span>
+              <span className="text-muted-foreground">{auteurNom}</span>
+            </>
+          )}
+          {auteurGroupe && (
+            <>
+              <span className="text-border">·</span>
+              <span className="px-2 py-0.5 rounded-md bg-muted text-xs">{auteurGroupe}</span>
+            </>
+          )}
+          {dateDepot && (
+            <>
+              <span className="text-border">·</span>
+              <span className="text-muted-foreground text-xs">
+                Déposé le {new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long', timeZone: 'Europe/Paris' }).format(new Date(dateDepot))}
+              </span>
+            </>
+          )}
+        </div>
+
+        {/* Ligne 2 : timeline */}
+        {timelineSteps.length > 0 && (() => {
+          const steps = ['Dépôt', ...timelineSteps];
+          const lastIdx = steps.length - 1;
+          const isRejected = statutFinal === 'Rejeté';
+          const lineColor = isRejected ? 'bg-red-400' : 'bg-primary';
+          return (
+            <div className="flex overflow-x-auto">
+              {steps.map((label, i) => (
+                <div key={i} className="w-12 sm:w-20 shrink-0 flex flex-col">
+                  <div className="flex items-center">
+                    <div className={`w-2.5 h-2.5 rounded-full border-2 shrink-0 ${isRejected && i === lastIdx ? 'bg-red-500 border-red-500' : 'bg-primary border-primary'}`} />
+                    {i < lastIdx && <div className={`flex-1 h-px ${lineColor}`} />}
+                  </div>
+                  <span className="text-[10px] leading-tight mt-1.5 text-foreground font-medium">{label}</span>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
+      </div>
 
       {/* Combobox de sélection du texte */}
       <div className="mb-2">
