@@ -4,6 +4,71 @@ LoiClair est un tableau de bord citoyen qui rend l'activité législative franç
 
 ---
 
+## Fil de la Semaine
+
+La page **Fil de la Semaine** présente l'activité législative sous forme de fil chronologique, semaine par semaine. C'est le point d'entrée principal pour suivre ce qui se passe au Parlement en temps réel.
+
+### Naviguer entre les semaines
+
+Des boutons « Précédente » et « Suivante » permettent de passer d'une semaine à l'autre. La semaine en cours est affichée par défaut.
+
+### Compteurs de la semaine
+
+Quatre compteurs en haut de page résument l'activité de la semaine :
+
+- **Événements** : le nombre total d'événements législatifs de la semaine.
+- **Scrutins** : le nombre de votes (décisions) ayant eu lieu.
+- **Textes** : le nombre de nouveaux textes déposés.
+- **Lois** : le nombre de lois promulguées.
+
+### Filtrer par type d'événement
+
+Une barre de filtres permet de n'afficher qu'un type d'événement :
+
+- **Dépôts** — nouveaux textes déposés au Parlement.
+- **Décisions** — votes sur l'ensemble d'un texte, avec résultats détaillés.
+- **Rapports** — rapports déposés par les commissions parlementaires.
+- **Navettes** — textes transmis d'une chambre à l'autre.
+- **CMP** — convocations de la Commission mixte paritaire.
+- **Cons. const.** — saisines du Conseil constitutionnel.
+- **Promulgations** — lois signées et publiées au Journal officiel.
+- **Motions** — motions de censure déposées contre le Gouvernement.
+
+### Lire une carte d'événement
+
+Chaque carte affiche :
+
+- Un **pictogramme coloré** indiquant le type d'événement.
+- Le **type** (Nouveau texte, Décision, Rapport, etc.) et la **date**.
+- L'**auteur** ou l'**institution** concernée.
+- Le **titre** du texte ou du dossier associé.
+
+Selon le type d'événement, des informations supplémentaires apparaissent :
+
+- **Décisions et motions** : un badge de statut (adopté, rejeté…) et une barre de vote montrant la répartition pour/contre/abstentions sur les 577 sièges. Survolez la barre pour voir le détail chiffré.
+- **Rapports** : le nom de la commission et la provenance du rapport.
+- **Promulgations** : une mention « Publiée au Journal officiel ».
+
+Quand plusieurs événements du même type concernent le même dossier à la même date, ils sont regroupés dans une seule carte avec un compteur (×2, ×3…).
+
+### Motions de censure
+
+Les motions de censure bénéficient d'un traitement particulier. Chaque carte affiche :
+
+- Le **titre** du dossier législatif concerné (par exemple, le projet de loi de finances).
+- Pour chaque motion déposée : le **titre du scrutin** (qui indique les auteurs de la motion), un **badge de résultat** (« Motion rejetée » ou « Motion adoptée »), et la **barre de vote** avec les résultats détaillés.
+- Un lien **Résumé IA** pour chaque motion, qui ouvre directement le résumé du texte de la motion concernée.
+
+### Mode dossier (timeline)
+
+En cliquant sur le titre d'un dossier depuis n'importe quelle carte, vous accédez à la **timeline complète** de ce dossier : toutes les étapes qu'il a franchies, du dépôt initial jusqu'à la promulgation (le cas échéant). Un lien « Retour au fil » permet de revenir au fil de la semaine.
+
+### Résumé IA
+
+Sur la plupart des cartes, un lien **Résumé IA** permet d'accéder au résumé automatique du texte concerné. Le lien pré-sélectionne le bon texte dans le menu déroulant de la page de résumé.
+
+---
+
 ## Indicateurs clés
 
 La page **Indicateurs clés** donne une vue d'ensemble chiffrée de l'activité du Parlement depuis le début de la 17ᵉ législature (en cours).
