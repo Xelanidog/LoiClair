@@ -229,7 +229,7 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
             </div>
           );
         })()}
-        <Link href={`/Week?dossier=${uid}`} className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-1">
+        <Link href={`/Month?dossier=${uid}`} className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-1">
           Voir la chronologie →
         </Link>
       </div>

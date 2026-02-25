@@ -1,5 +1,5 @@
-// src/app/(app)/Week/weekQueries.ts
-// Requêtes Supabase isolées pour la page "Fil de la Semaine"
+// src/app/(app)/Month/monthQueries.ts
+// Requêtes Supabase isolées pour la page "Fil du Mois"
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 

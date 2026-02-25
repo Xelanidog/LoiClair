@@ -55,7 +55,7 @@ export function SidebarNavContent({ onNavigation }: { onNavigation?: () => void 
 
       <nav className="px-3 py-6 space-y-7">
         <SidebarSection icon={BarChart3} title="Tableau de bord">
-          <SidebarLink href="/Week" label="Fil de la semaine" onNavigation={onNavigation} />
+          <SidebarLink href="/Month" label="Fil du mois" onNavigation={onNavigation} />
           <SidebarLink href="/KPIs" label="Indicateurs clés" onNavigation={onNavigation} />
           <SidebarLink href="/Composition" label="Composition" onNavigation={onNavigation} />
           <SidebarLink href="/dossiers-legislatifs" label="Tous les textes" onNavigation={onNavigation} />

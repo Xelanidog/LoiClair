@@ -8,7 +8,7 @@ const features = [
   { icon: BarChart2, title: "Statistiques parlementaires", desc: "Qui vote quoi, parité, présence en séance — tout en chiffres." },
   { icon: Search, title: "Trouver vos élus", desc: "Retrouvez et contactez votre député, sénateur ou ministre en secondes." },
   { icon: Vote, title: "Votez comme un parlementaire", desc: "Donnez votre avis et comparez vos votes à ceux du Parlement." },
-  { icon: Newspaper, title: "Fil d'actualité", desc: "Chaque semaine, l'essentiel de l'activité parlementaire résumé en un coup d'œil." },
+  { icon: Newspaper, title: "Fil d'actualité", desc: "Chaque mois, l'essentiel de l'activité parlementaire résumé en un coup d'œil." },
 ];
 
 const stats = [
@@ -35,7 +35,7 @@ export default function PourquoiPage() {
             Bêta privée — Gratuit · Indépendant · Neutre
           </div>
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight leading-tight">
-            Chaque semaine, des lois sont<br />
+            Chaque mois, des lois sont<br />
             votées{" "}
             <span className="text-primary">en votre nom.</span>
           </h1>
@@ -43,7 +43,7 @@ export default function PourquoiPage() {
             LoiClair traduit l'activité législative française en langage humain.
           </p>
           <div className="flex items-center justify-center gap-4 pt-2">
-            <Link href="/Week">
+            <Link href="/Month">
               <Button size="lg" className="rounded-full gap-2 hover:scale-105 hover:shadow-lg transition-all">
                 Découvrir LoiClair
                 <ArrowRight className="h-4 w-4" />

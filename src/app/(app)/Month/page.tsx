@@ -1,5 +1,5 @@
-// src/app/(app)/Week/page.tsx
-// Server Component — Fetch des donnees de la semaine (ou d'un dossier) et transformation en evenements enrichis
+// src/app/(app)/Month/page.tsx
+// Server Component — Fetch des donnees du mois (ou d'un dossier) et transformation en evenements enrichis
 
 import { supabase } from '@/lib/supabase';
 import {
@@ -14,13 +14,13 @@ import {
   getScrutinsByUids,
   getWeekMotionActes,
   getMotionDecisionActes,
-} from './weekQueries';
-import { WeekFeedClient } from './WeekFeedClient';
+} from './monthQueries';
+import { MonthFeedClient } from './MonthFeedClient';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Fil de la Semaine — LoiClair',
-  description: 'Les evenements legislatifs de la semaine : votes, depots, promulgations et plus encore.',
+  title: 'Fil du Mois — LoiClair',
+  description: 'Les evenements legislatifs du mois : votes, depots, promulgations et plus encore.',
 };
 
 // ---------------------------------------------------------------------------
@@ -132,45 +132,28 @@ function classifyByLibelle(libelle: string | null): FeedEventType {
 // Utilitaires de date
 // ---------------------------------------------------------------------------
 
-function getWeekBounds(isoWeek?: string): { weekStart: Date; weekEnd: Date; weekNumber: number; year: number } {
-  let date: Date;
+function getMonthBounds(isoMonth?: string): { monthStart: Date; monthEnd: Date; year: number; month: number } {
+  let year: number;
+  let month: number; // 0-indexed
 
-  if (isoWeek && /^\d{4}-W\d{2}$/.test(isoWeek)) {
-    const [yearStr, weekStr] = isoWeek.split('-W');
-    const year = parseInt(yearStr, 10);
-    const week = parseInt(weekStr, 10);
-    const jan4 = new Date(year, 0, 4);
-    const dayOfWeek = jan4.getDay() || 7;
-    date = new Date(jan4);
-    date.setDate(jan4.getDate() - dayOfWeek + 1 + (week - 1) * 7);
+  if (isoMonth && /^\d{4}-\d{2}$/.test(isoMonth)) {
+    const [y, m] = isoMonth.split('-');
+    year = parseInt(y, 10);
+    month = parseInt(m, 10) - 1;
   } else {
-    date = new Date();
-    const dayOfWeek = date.getDay() || 7;
-    date.setDate(date.getDate() - dayOfWeek + 1);
+    const now = new Date();
+    year = now.getFullYear();
+    month = now.getMonth();
   }
 
-  const weekStart = new Date(date);
-  weekStart.setHours(0, 0, 0, 0);
+  const monthStart = new Date(year, month, 1, 0, 0, 0, 0);
+  const monthEnd = new Date(year, month + 1, 0, 23, 59, 59, 999);
 
-  const weekEnd = new Date(weekStart);
-  weekEnd.setDate(weekStart.getDate() + 6);
-  weekEnd.setHours(23, 59, 59, 999);
-
-  const jan4 = new Date(weekStart.getFullYear(), 0, 4);
-  const dayOfYear = Math.floor((weekStart.getTime() - new Date(weekStart.getFullYear(), 0, 1).getTime()) / 86400000) + 1;
-  const dayOfWeekJan4 = jan4.getDay() || 7;
-  const weekNumber = Math.ceil((dayOfYear + dayOfWeekJan4 - 1) / 7);
-
-  return { weekStart, weekEnd, weekNumber, year: weekStart.getFullYear() };
+  return { monthStart, monthEnd, year, month };
 }
 
-function formatISOWeek(date: Date): string {
-  const year = date.getFullYear();
-  const jan4 = new Date(year, 0, 4);
-  const dayOfYear = Math.floor((date.getTime() - new Date(year, 0, 1).getTime()) / 86400000) + 1;
-  const dayOfWeekJan4 = jan4.getDay() || 7;
-  const weekNum = Math.ceil((dayOfYear + dayOfWeekJan4 - 1) / 7);
-  return `${year}-W${String(weekNum).padStart(2, '0')}`;
+function formatISOMonth(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -330,42 +313,40 @@ export default async function WeekPage({
     const groupedEvents = [...groupMap.values()].sort((a, b) => a.date.localeCompare(b.date));
 
     return (
-      <WeekFeedClient
+      <MonthFeedClient
         groupedEvents={groupedEvents}
         dossierMode={true}
         dossierTitre={dossierInfo?.titre ?? null}
         dayGroups={[]}
         kpis={{ totalEvents: feedEvents.length, scrutins: 0, nouveauxTextes: 0, promulgations: 0 }}
-        weekNumber={0}
         year={0}
-        weekStartFormatted=""
-        weekEndFormatted=""
-        weekRangeShort=""
-        prevWeek=""
-        nextWeek=""
-        isCurrentOrFutureWeek={true}
+        monthFormatted=""
+        monthRangeShort=""
+        prevMonth=""
+        nextMonth=""
+        isCurrentOrFutureMonth={true}
       />
     );
   }
 
   // =========================================================================
-  // MODE SEMAINE : fil hebdomadaire classique
+  // MODE MOIS : fil mensuel
   // =========================================================================
-  const semaineParam = typeof resolvedParams.semaine === 'string' ? resolvedParams.semaine : undefined;
-  const { weekStart, weekEnd, weekNumber, year } = getWeekBounds(semaineParam);
+  const moisParam = typeof resolvedParams.mois === 'string' ? resolvedParams.mois : undefined;
+  const { monthStart, monthEnd, year, month } = getMonthBounds(moisParam);
 
   // Elargir les bornes de +/-1 jour pour compenser les decalages de timezone
-  const queryStart = new Date(weekStart.getTime() - 86400000);
-  const queryEnd = new Date(weekEnd.getTime() + 86400000);
-  const weekStartISO = queryStart.toISOString();
-  const weekEndISO = queryEnd.toISOString();
+  const queryStart = new Date(monthStart.getTime() - 86400000);
+  const queryEnd = new Date(monthEnd.getTime() + 86400000);
+  const monthStartISO = queryStart.toISOString();
+  const monthEndISO = queryEnd.toISOString();
 
   // Fetch en parallele
   const [actes, scrutins, newDossiers, motionActes] = await Promise.all([
-    getWeekActes(supabase, weekStartISO, weekEndISO),
-    getWeekScrutins(supabase, weekStartISO, weekEndISO),
-    getWeekDossiers(supabase, weekStartISO, weekEndISO),
-    getWeekMotionActes(supabase, weekStartISO, weekEndISO),
+    getWeekActes(supabase, monthStartISO, monthEndISO),
+    getWeekScrutins(supabase, monthStartISO, monthEndISO),
+    getWeekDossiers(supabase, monthStartISO, monthEndISO),
+    getWeekMotionActes(supabase, monthStartISO, monthEndISO),
   ]);
 
   // Dédupliquer les motions par uid (la base peut contenir des doublons)
@@ -517,22 +498,21 @@ export default async function WeekPage({
   const allEvents = [...acteEvents, ...scrutinEvents, ...dossierEvents, ...motionEvents]
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  // Grouper par jour pour les KPIs (avant le groupement, pour filtrer les events hors semaine)
+  // Grouper par jour pour les KPIs (avant le groupement, pour filtrer les events hors mois)
   const dayFormatter = new Intl.DateTimeFormat('fr-FR', { weekday: 'long', timeZone: 'Europe/Paris' });
-  const monthFormatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', timeZone: 'Europe/Paris' });
+  const monthNameFormatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', timeZone: 'Europe/Paris' });
 
   const dayGroupsMap = new Map<string, DayGroup>();
+  const daysInMonth = monthEnd.getDate();
 
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(weekStart);
-    d.setDate(weekStart.getDate() + i);
+  for (let i = daysInMonth; i >= 1; i--) {
+    const d = new Date(year, month, i, 12, 0, 0);
     const iso = d.toLocaleDateString('sv-SE', { timeZone: 'Europe/Paris' });
-    const parisDate = new Date(d.toLocaleString('en-US', { timeZone: 'Europe/Paris' }));
     dayGroupsMap.set(iso, {
       date: iso,
       dayName: dayFormatter.format(d),
-      dayNumber: parisDate.getDate(),
-      monthName: monthFormatter.format(d),
+      dayNumber: i,
+      monthName: monthNameFormatter.format(d),
       events: [],
     });
   }
@@ -563,61 +543,43 @@ export default async function WeekPage({
   const groupMap = groupFeedEvents(distributedEvents);
   const groupedEvents = [...groupMap.values()].sort((a, b) => b.date.localeCompare(a.date));
 
-  // Navigation entre semaines
-  const prevWeekDate = new Date(weekStart);
-  prevWeekDate.setDate(prevWeekDate.getDate() - 7);
-  const nextWeekDate = new Date(weekStart);
-  nextWeekDate.setDate(nextWeekDate.getDate() + 7);
+  // Navigation entre mois
+  const prevMonthDate = new Date(year, month - 1, 1);
+  const nextMonthDate = new Date(year, month + 1, 1);
 
-  const prevWeek = formatISOWeek(prevWeekDate);
-  const nextWeek = formatISOWeek(nextWeekDate);
+  const prevMonth = formatISOMonth(prevMonthDate);
+  const nextMonth = formatISOMonth(nextMonthDate);
 
-  const isCurrentOrFutureWeek = weekEnd >= new Date();
+  const isCurrentOrFutureMonth = monthEnd >= new Date();
 
-  // Formatage des dates de la semaine
-  const weekStartNoon = new Date(weekStart);
-  weekStartNoon.setHours(12, 0, 0, 0);
-  const weekEndNoon = new Date(weekEnd);
-  weekEndNoon.setHours(12, 0, 0, 0);
-
-  const weekStartFormatted = new Intl.DateTimeFormat('fr-FR', {
-    day: 'numeric',
-    month: 'long',
-    timeZone: 'Europe/Paris',
-  }).format(weekStartNoon);
-
-  const weekEndFormatted = new Intl.DateTimeFormat('fr-FR', {
-    day: 'numeric',
+  // Formatage du mois : "février 2026"
+  const monthNoon = new Date(year, month, 15, 12, 0, 0);
+  const monthFormatted = new Intl.DateTimeFormat('fr-FR', {
     month: 'long',
     year: 'numeric',
     timeZone: 'Europe/Paris',
-  }).format(weekEndNoon);
+  }).format(monthNoon);
 
-  // Format court pour le pill de semaine : "10-16 fev."
-  const shortMonthFormatter = new Intl.DateTimeFormat('fr-FR', { month: 'short', timeZone: 'Europe/Paris' });
-  const startDay = weekStartNoon.getDate();
-  const endDay = weekEndNoon.getDate();
-  const startMonth = shortMonthFormatter.format(weekStartNoon);
-  const endMonth = shortMonthFormatter.format(weekEndNoon);
-  const weekRangeShort = startMonth === endMonth
-    ? `${startDay}–${endDay} ${startMonth}`
-    : `${startDay} ${startMonth} – ${endDay} ${endMonth}`;
+  // Format court pour le pill : "fév. 2026"
+  const monthRangeShort = new Intl.DateTimeFormat('fr-FR', {
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'Europe/Paris',
+  }).format(monthNoon);
 
   return (
-    <WeekFeedClient
+    <MonthFeedClient
       groupedEvents={groupedEvents}
       dossierMode={false}
       dossierTitre={null}
       dayGroups={dayGroups}
       kpis={kpis}
-      weekNumber={weekNumber}
       year={year}
-      weekStartFormatted={weekStartFormatted}
-      weekEndFormatted={weekEndFormatted}
-      weekRangeShort={weekRangeShort}
-      prevWeek={prevWeek}
-      nextWeek={nextWeek}
-      isCurrentOrFutureWeek={isCurrentOrFutureWeek}
+      monthFormatted={monthFormatted}
+      monthRangeShort={monthRangeShort}
+      prevMonth={prevMonth}
+      nextMonth={nextMonth}
+      isCurrentOrFutureMonth={isCurrentOrFutureMonth}
     />
   );
 }

@@ -439,7 +439,7 @@ function GroupedEventCard({ group, index }: { group: GroupedFeedEvent; index: nu
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.03, duration: 0.25 }}
-      className="flex gap-3 px-1 py-3 border-b hover:bg-muted/30 transition-colors cursor-default"
+      className="flex gap-3 px-4 sm:px-1 py-3 border-b hover:bg-muted/30 transition-colors cursor-default"
     >
       {/* Avatar */}
       <div className={cn("w-9 h-9 rounded-full flex items-center justify-center shrink-0 mt-0.5", config.iconBg)}>
@@ -452,7 +452,7 @@ function GroupedEventCard({ group, index }: { group: GroupedFeedEvent; index: nu
         <div className="flex items-baseline gap-1 text-xs text-muted-foreground mb-0.5 overflow-hidden">
           <span className={cn("font-semibold shrink-0", config.color)}>{(group.type === "CMP_CONVOCATION" || group.type === "CC_SAISINE") && e.libelleActe ? e.libelleActe : config.label}</span>
           {group.type !== "CC_SAISINE" && !(group.type === "DECISION" && !multi) && <span className="shrink-0">·</span>}
-          {context}
+          {context && <span className="truncate min-w-0">{context}</span>}
           {context && <span className="shrink-0">·</span>}
           <span className="shrink-0">{shortDate}</span>
           {multi && (
@@ -489,35 +489,31 @@ function GroupedEventCard({ group, index }: { group: GroupedFeedEvent; index: nu
 
 // ── Main component ──────────────────────────────────────────
 
-interface WeekFeedClientProps {
+interface MonthFeedClientProps {
   groupedEvents: GroupedFeedEvent[];
   dossierMode: boolean;
   dossierTitre: string | null;
   dayGroups: { date: string; events: unknown[] }[];
   kpis: WeekKpis;
-  weekNumber: number;
   year: number;
-  weekStartFormatted: string;
-  weekEndFormatted: string;
-  weekRangeShort: string;
-  prevWeek: string;
-  nextWeek: string;
-  isCurrentOrFutureWeek: boolean;
+  monthFormatted: string;
+  monthRangeShort: string;
+  prevMonth: string;
+  nextMonth: string;
+  isCurrentOrFutureMonth: boolean;
 }
 
-export function WeekFeedClient({
+export function MonthFeedClient({
   groupedEvents,
   dossierMode,
   dossierTitre,
   kpis,
-  weekNumber,
-  weekStartFormatted,
-  weekEndFormatted,
-  weekRangeShort,
-  prevWeek,
-  nextWeek,
-  isCurrentOrFutureWeek,
-}: WeekFeedClientProps) {
+  monthFormatted,
+  monthRangeShort,
+  prevMonth,
+  nextMonth,
+  isCurrentOrFutureMonth,
+}: MonthFeedClientProps) {
   const [activeFilter, setActiveFilter] = useState("tous");
   const filtered = groupedEvents.filter(g => matchesFilter(g.type, activeFilter));
 
@@ -525,9 +521,9 @@ export function WeekFeedClient({
   if (dossierMode) {
     return (
       <TooltipProvider>
-        <div className="max-w-xl mx-auto px-4 py-6">
-          <div className="mb-5">
-            <Link href="/Week" className="inline-flex items-center gap-1 text-xs text-primary hover:underline mb-2">
+        <div className="max-w-xl -mx-6 sm:mx-auto sm:px-4 py-6">
+          <div className="mb-5 px-4 sm:px-0">
+            <Link href="/Month" className="inline-flex items-center gap-1 text-xs text-primary hover:underline mb-2">
               <ArrowLeft className="w-3 h-3" />Retour au fil
             </Link>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
@@ -556,35 +552,35 @@ export function WeekFeedClient({
     );
   }
 
-  // ── Week mode ──
+  // ── Month mode ──
   return (
     <TooltipProvider>
-      <div className="max-w-xl mx-auto px-4 py-6">
+      <div className="max-w-xl -mx-6 sm:mx-auto sm:px-4 py-6">
         {/* Header */}
-        <div className="mb-5">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Fil de la Semaine</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">{weekStartFormatted} — {weekEndFormatted}</p>
+        <div className="mb-5 px-4 sm:px-0">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Fil du Mois</h1>
+          <p className="text-sm text-muted-foreground mt-0.5 capitalize">{monthFormatted}</p>
         </div>
 
         {/* Navigation */}
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center justify-between mb-5 px-4 sm:px-0">
           <Button variant="ghost" size="sm" asChild>
-            <Link href={`/Week?semaine=${prevWeek}`}>
+            <Link href={`/Month?mois=${prevMonth}`}>
               <ChevronLeft className="w-4 h-4 mr-1" />
-              <span className="hidden sm:inline">Précédente</span>
+              <span className="hidden sm:inline">Mois préc.</span>
               <span className="sm:hidden">Préc.</span>
             </Link>
           </Button>
-          <span className="text-xs font-medium text-muted-foreground">S{weekNumber} · {weekRangeShort}</span>
+          <span className="text-xs font-medium text-muted-foreground capitalize">{monthRangeShort}</span>
           <Button
             variant="ghost"
             size="sm"
             asChild
-            disabled={isCurrentOrFutureWeek}
-            className={isCurrentOrFutureWeek ? "pointer-events-none opacity-40" : ""}
+            disabled={isCurrentOrFutureMonth}
+            className={isCurrentOrFutureMonth ? "pointer-events-none opacity-40" : ""}
           >
-            <Link href={`/Week?semaine=${nextWeek}`}>
-              <span className="hidden sm:inline">Suivante</span>
+            <Link href={`/Month?mois=${nextMonth}`}>
+              <span className="hidden sm:inline">Mois suiv.</span>
               <span className="sm:hidden">Suiv.</span>
               <ChevronRight className="w-4 h-4 ml-1" />
             </Link>
@@ -592,7 +588,7 @@ export function WeekFeedClient({
         </div>
 
         {/* KPI pills */}
-        <div className="flex gap-2 overflow-x-auto pb-1 mb-4">
+        <div className="flex gap-2 overflow-x-auto pb-1 mb-4 px-4 sm:px-0">
           {[
             { icon: Activity, value: kpis.totalEvents, label: "événements", color: "text-primary" },
             { icon: BarChart3, value: kpis.scrutins, label: kpis.scrutins > 1 ? "scrutins" : "scrutin", color: "text-fuchsia-600 dark:text-fuchsia-400" },
@@ -631,7 +627,7 @@ export function WeekFeedClient({
 
 function FilterBar({ activeFilter, onFilter }: { activeFilter: string; onFilter: (v: string) => void }) {
   return (
-    <div className="flex gap-1.5 overflow-x-auto pb-1 mb-1 border-b">
+    <div className="flex gap-1.5 overflow-x-auto pb-1 mb-1 border-b px-4 sm:px-0">
       {FILTER_TABS.map(tab => (
         <button
           key={tab.value}
@@ -666,9 +662,9 @@ function EmptyState() {
   return (
     <div className="text-center py-20">
       <CalendarX className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-      <h2 className="text-base font-semibold mb-1">Semaine calme au Parlement</h2>
+      <h2 className="text-base font-semibold mb-1">Mois calme au Parlement</h2>
       <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-        Aucun événement législatif enregistré. Essayez une autre semaine.
+        Aucun événement législatif enregistré. Essayez un autre mois.
       </p>
     </div>
   );
