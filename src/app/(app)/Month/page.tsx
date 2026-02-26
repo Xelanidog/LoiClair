@@ -3,17 +3,18 @@
 
 import { supabase } from '@/lib/supabase';
 import {
-  getWeekActes,
-  getWeekScrutins,
-  getWeekDossiers,
+  getMonthActes,
+  getMonthScrutins,
+  getMonthDossiers,
   getDossierTitles,
   getScrutinActeMap,
   getDossierTimeline,
   getTextesByUids,
   getOrganesByUids,
   getScrutinsByUids,
-  getWeekMotionActes,
+  getMonthMotionActes,
   getMotionDecisionActes,
+  getMonthImportantSubActes,
 } from './monthQueries';
 import { MonthFeedClient } from './MonthFeedClient';
 import type { Metadata } from 'next';
@@ -342,11 +343,12 @@ export default async function WeekPage({
   const monthEndISO = queryEnd.toISOString();
 
   // Fetch en parallele
-  const [actes, scrutins, newDossiers, motionActes] = await Promise.all([
-    getWeekActes(supabase, monthStartISO, monthEndISO),
-    getWeekScrutins(supabase, monthStartISO, monthEndISO),
-    getWeekDossiers(supabase, monthStartISO, monthEndISO),
-    getWeekMotionActes(supabase, monthStartISO, monthEndISO),
+  const [actes, scrutins, newDossiers, motionActes, importantSubActes] = await Promise.all([
+    getMonthActes(supabase, monthStartISO, monthEndISO),
+    getMonthScrutins(supabase, monthStartISO, monthEndISO),
+    getMonthDossiers(supabase, monthStartISO, monthEndISO),
+    getMonthMotionActes(supabase, monthStartISO, monthEndISO),
+    getMonthImportantSubActes(supabase, monthStartISO, monthEndISO),
   ]);
 
   // Dédupliquer les motions par uid (la base peut contenir des doublons)
@@ -372,7 +374,7 @@ export default async function WeekPage({
   const scrutinUidsFromActes = new Set<string>();
   const dossierUidsSet = new Set<string>();
 
-  for (const a of [...actes, ...uniqueMotions]) {
+  for (const a of [...actes, ...uniqueMotions, ...importantSubActes]) {
     if (a.textes_associes) texteUids.add(a.textes_associes);
     if (a.texte_adopte) texteUids.add(a.texte_adopte);
     if (a.organe_ref) organeUids.add(a.organe_ref);
@@ -442,12 +444,21 @@ export default async function WeekPage({
     };
   });
 
+  // Transformer les sous-actes importants en FeedEvents enrichis
+  const importantSubActeEvents: FeedEvent[] = importantSubActes
+    .map(a => {
+      const dossier = a.dossier_uid ? dossierTitles.get(a.dossier_uid) : null;
+      return acteToFeedEvent(a, dossier ?? null, textes, organes, scrutinsMapFromActes);
+    })
+    .filter(e => e.type !== 'AUTRE');
+
   // Transformer les nouveaux dossiers en FeedEvents DEPOT_TEXTE
-  // (seulement ceux qui ne sont pas deja dans acteEvents)
+  // (seulement ceux qui ne sont pas deja dans acteEvents, motionEvents ou importantSubActeEvents)
   const acteDossierUids = new Set(acteEvents.filter(e => e.type === 'DEPOT_TEXTE').map(e => e.dossierUid));
   const motionDossierUids = new Set(uniqueMotions.map(a => a.dossier_uid).filter(Boolean));
+  const subActeDossierUids = new Set(importantSubActes.map(a => a.dossier_uid).filter(Boolean));
   const dossierEvents: FeedEvent[] = newDossiers
-    .filter(d => !acteDossierUids.has(d.uid) && !motionDossierUids.has(d.uid))
+    .filter(d => !acteDossierUids.has(d.uid) && !motionDossierUids.has(d.uid) && !subActeDossierUids.has(d.uid))
     .map(d => {
       const acteurRef = d.initiateur_acteur_ref as unknown as { nom: string; prenom: string } | null;
       const acteur = acteurRef ?? null;
@@ -496,7 +507,7 @@ export default async function WeekPage({
   });
 
   // Fusionner tous les evenements
-  const allEvents = [...acteEvents, ...scrutinEvents, ...dossierEvents, ...motionEvents]
+  const allEvents = [...acteEvents, ...scrutinEvents, ...dossierEvents, ...motionEvents, ...importantSubActeEvents]
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   // Grouper par jour pour les KPIs (avant le groupement, pour filtrer les events hors mois)

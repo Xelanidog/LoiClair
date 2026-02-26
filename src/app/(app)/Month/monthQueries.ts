@@ -3,7 +3,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-export async function getWeekActes(supabase: SupabaseClient, weekStart: string, weekEnd: string) {
+export async function getMonthActes(supabase: SupabaseClient, weekStart: string, weekEnd: string) {
   const { data, error } = await supabase
     .from('actes_legislatifs')
     .select('uid, code_acte, libelle_acte, date_acte, statut_conclusion, organe_ref, vote_refs, textes_associes, texte_adopte, dossier_uid')
@@ -19,7 +19,7 @@ export async function getWeekActes(supabase: SupabaseClient, weekStart: string, 
 
 // Motions de censure (ont un parent_uid, donc exclues de getWeekActes)
 // Filtre : seulement celles avec textes ET votes
-export async function getWeekMotionActes(supabase: SupabaseClient, weekStart: string, weekEnd: string) {
+export async function getMonthMotionActes(supabase: SupabaseClient, weekStart: string, weekEnd: string) {
   const { data, error } = await supabase
     .from('actes_legislatifs')
     .select('uid, code_acte, libelle_acte, date_acte, statut_conclusion, organe_ref, vote_refs, textes_associes, texte_adopte, dossier_uid')
@@ -55,7 +55,28 @@ export async function getMotionDecisionActes(supabase: SupabaseClient, parentUid
   return map;
 }
 
-export async function getWeekScrutins(supabase: SupabaseClient, weekStart: string, weekEnd: string) {
+// Sous-actes importants (toujours enfants, jamais renvoyés par getMonthActes)
+const IMPORTANT_SUB_LIBELLES = [
+  "Promulgation d'une loi",
+  "Saisine du conseil constitutionnel",
+  "Conclusion du conseil constitutionnel",
+  "Dépôt d'une déclaration du gouvernement",
+];
+
+export async function getMonthImportantSubActes(supabase: SupabaseClient, monthStart: string, monthEnd: string) {
+  const { data, error } = await supabase
+    .from('actes_legislatifs')
+    .select('uid, code_acte, libelle_acte, date_acte, statut_conclusion, organe_ref, vote_refs, textes_associes, texte_adopte, dossier_uid')
+    .gte('date_acte', monthStart)
+    .lte('date_acte', monthEnd)
+    .in('libelle_acte', IMPORTANT_SUB_LIBELLES)
+    .order('date_acte', { ascending: false });
+
+  if (error) console.error('Erreur sous-actes importants:', error);
+  return data ?? [];
+}
+
+export async function getMonthScrutins(supabase: SupabaseClient, weekStart: string, weekEnd: string) {
   const { data, error } = await supabase
     .from('scrutins')
     .select('uid, numero, date_scrutin, titre, sort_code, sort_libelle, synthese_pour, synthese_contre, synthese_abstentions, synthese_nombre_votants, synthese_non_votants, synthese_suffrages_requis, type_vote_libelle')
@@ -68,7 +89,7 @@ export async function getWeekScrutins(supabase: SupabaseClient, weekStart: strin
   return data ?? [];
 }
 
-export async function getWeekDossiers(supabase: SupabaseClient, weekStart: string, weekEnd: string) {
+export async function getMonthDossiers(supabase: SupabaseClient, weekStart: string, weekEnd: string) {
   const { data, error } = await supabase
     .from('dossiers_legislatifs')
     .select('uid, titre, procedure_libelle, statut_final, date_depot, initiateur_acteur_ref(nom, prenom), initiateur_groupe_libelle')
