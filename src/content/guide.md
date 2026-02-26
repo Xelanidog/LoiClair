@@ -10,6 +10,10 @@ La page **Fil du Mois** présente l'activité législative sous forme de fil chr
 
 Des boutons « Préc. » et « Suiv. » permettent de passer d'un mois à l'autre. Le mois en cours est affiché par défaut.
 
+Lorsque vous consultez un mois passé, un raccourci **« Revenir au mois en cours »** apparaît sous la barre de navigation pour retourner directement au mois actuel.
+
+En bas de la liste d'événements, un bouton **« Voir le mois précédent »** permet de continuer à remonter dans le temps sans avoir à revenir en haut de la page.
+
 ### Filtrer par type d'événement
 
 Une rangée de pastilles cliquables permet de filtrer les événements par catégorie. Chaque pastille affiche une icône colorée, un libellé et un compteur indiquant le nombre d'événements de ce type sur le mois :
