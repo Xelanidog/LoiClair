@@ -39,7 +39,7 @@ import type {
   FeedEvent,
   FeedEventType,
   GroupedFeedEvent,
-  WeekKpis,
+  MonthKpis,
 } from "./page";
 
 // ── Config 11 types + fallback ──────────────────────────────
@@ -494,8 +494,7 @@ interface MonthFeedClientProps {
   groupedEvents: GroupedFeedEvent[];
   dossierMode: boolean;
   dossierTitre: string | null;
-  dayGroups: { date: string; events: unknown[] }[];
-  kpis: WeekKpis;
+  kpis: MonthKpis;
   year: number;
   monthFormatted: string;
   monthRangeShort: string;

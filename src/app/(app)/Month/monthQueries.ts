@@ -3,49 +3,65 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-// Libellés d'actes significatifs pour le fil du mois (hors motions, traitées séparément)
-const FEED_TRACKED_LIBELLES = [
-  "1er dépôt d'une initiative.",
-  "1er depot d'une initiative.",
-  "Dépôt de rapport",
-  "Décision",
-  "Dépôt d'une initiative en navette",
-  "Convocation d'une CMP",
-  "Dépôt du rapport d'une CMP",
-  "Décision de la CMP",
-  "Dépôt d'une déclaration du gouvernement",
-  "Saisine du conseil constitutionnel",
-  "Conclusion du conseil constitutionnel",
-  "Promulgation d'une loi",
-];
+// ── Source unique : mapping libellé → type d'événement ──
+// Toutes les listes filtrées (feed, timeline) en dérivent automatiquement.
+export type FeedEventType =
+  | 'DEPOT_TEXTE' | 'DEPOT_RAPPORT' | 'DECISION' | 'NAVETTE'
+  | 'CMP_CONVOCATION' | 'CMP_RAPPORT' | 'MOTION_CENSURE' | 'DECL_GOUVERNEMENT'
+  | 'MOTION_VOTE' | 'CC_SAISINE' | 'PROMULGATION' | 'AUTRE';
 
-export async function getMonthActes(supabase: SupabaseClient, weekStart: string, weekEnd: string) {
+export const LIBELLE_TO_TYPE: Record<string, FeedEventType> = {
+  "1er depot d'une initiative.": 'DEPOT_TEXTE',
+  "1er dépôt d'une initiative.": 'DEPOT_TEXTE',
+  "Dépôt de rapport": 'DEPOT_RAPPORT',
+  "Décision": 'DECISION',
+  "Dépôt d'une initiative en navette": 'NAVETTE',
+  "Convocation d'une CMP": 'CMP_CONVOCATION',
+  "Dépôt du rapport d'une CMP": 'CMP_RAPPORT',
+  "Décision de la CMP": 'DECISION',
+  "Motion de censure": 'MOTION_CENSURE',
+  "Dépôt d'une déclaration du gouvernement": 'DECL_GOUVERNEMENT',
+  "Décision sur une motion de censure": 'MOTION_VOTE',
+  "Saisine du conseil constitutionnel": 'CC_SAISINE',
+  "Conclusion du conseil constitutionnel": 'DECISION',
+  "Promulgation d'une loi": 'PROMULGATION',
+};
+
+// Fil du mois : tous sauf motions (traitées séparément)
+const FEED_TRACKED_LIBELLES = Object.keys(LIBELLE_TO_TYPE).filter(
+  l => LIBELLE_TO_TYPE[l] !== 'MOTION_CENSURE' && LIBELLE_TO_TYPE[l] !== 'MOTION_VOTE',
+);
+
+// Timeline dossier : tous les libellés
+const TIMELINE_TRACKED_LIBELLES = Object.keys(LIBELLE_TO_TYPE);
+
+export async function getMonthActes(supabase: SupabaseClient, dateStart: string, dateEnd: string) {
   const { data, error } = await supabase
     .from('actes_legislatifs')
     .select('uid, code_acte, libelle_acte, date_acte, statut_conclusion, organe_ref, vote_refs, textes_associes, texte_adopte, dossier_uid')
-    .gte('date_acte', weekStart)
-    .lte('date_acte', weekEnd)
+    .gte('date_acte', dateStart)
+    .lte('date_acte', dateEnd)
     .not('date_acte', 'is', null)
     .in('libelle_acte', FEED_TRACKED_LIBELLES)
     .order('date_acte', { ascending: false });
 
-  if (error) console.error('Erreur actes semaine:', error);
+  if (error) console.error('Erreur actes mois:', error);
   return data ?? [];
 }
 
-// Motions de censure (ont un parent_uid, donc exclues de getWeekActes)
-// Filtre : seulement celles avec textes ET votes
-export async function getMonthMotionActes(supabase: SupabaseClient, weekStart: string, weekEnd: string) {
+// Motions de censure (traitées séparément de getMonthActes)
+// Filtre : seulement celles avec textes
+export async function getMonthMotionActes(supabase: SupabaseClient, dateStart: string, dateEnd: string) {
   const { data, error } = await supabase
     .from('actes_legislatifs')
     .select('uid, code_acte, libelle_acte, date_acte, statut_conclusion, organe_ref, vote_refs, textes_associes, texte_adopte, dossier_uid')
-    .gte('date_acte', weekStart)
-    .lte('date_acte', weekEnd)
+    .gte('date_acte', dateStart)
+    .lte('date_acte', dateEnd)
     .eq('libelle_acte', 'Motion de censure')
     .not('textes_associes', 'is', null)
     .order('date_acte', { ascending: false });
 
-  if (error) console.error('Erreur motions semaine:', error);
+  if (error) console.error('Erreur motions mois:', error);
   return data ?? [];
 }
 
@@ -72,29 +88,29 @@ export async function getMotionDecisionActes(supabase: SupabaseClient, parentUid
 }
 
 
-export async function getMonthScrutins(supabase: SupabaseClient, weekStart: string, weekEnd: string) {
+export async function getMonthScrutins(supabase: SupabaseClient, dateStart: string, dateEnd: string) {
   const { data, error } = await supabase
     .from('scrutins')
     .select('uid, numero, date_scrutin, titre, sort_code, sort_libelle, synthese_pour, synthese_contre, synthese_abstentions, synthese_nombre_votants, synthese_non_votants, synthese_suffrages_requis, type_vote_libelle')
-    .gte('date_scrutin', weekStart)
-    .lte('date_scrutin', weekEnd)
+    .gte('date_scrutin', dateStart)
+    .lte('date_scrutin', dateEnd)
     .not('date_scrutin', 'is', null)
     .order('date_scrutin', { ascending: false });
 
-  if (error) console.error('Erreur scrutins semaine:', error);
+  if (error) console.error('Erreur scrutins mois:', error);
   return data ?? [];
 }
 
-export async function getMonthDossiers(supabase: SupabaseClient, weekStart: string, weekEnd: string) {
+export async function getMonthDossiers(supabase: SupabaseClient, dateStart: string, dateEnd: string) {
   const { data, error } = await supabase
     .from('dossiers_legislatifs')
     .select('uid, titre, procedure_libelle, statut_final, date_depot, initiateur_acteur_ref(nom, prenom), initiateur_groupe_libelle')
-    .gte('date_depot', weekStart)
-    .lte('date_depot', weekEnd)
+    .gte('date_depot', dateStart)
+    .lte('date_depot', dateEnd)
     .not('date_depot', 'is', null)
     .order('date_depot', { ascending: false });
 
-  if (error) console.error('Erreur dossiers semaine:', error);
+  if (error) console.error('Erreur dossiers mois:', error);
   return data ?? [];
 }
 
@@ -150,28 +166,12 @@ export async function getDossierTitles(supabase: SupabaseClient, dossierUids: st
 }
 
 export async function getDossierTimeline(supabase: SupabaseClient, dossierUid: string) {
-  const TRACKED_LIBELLES = [
-    "1er dépôt d'une initiative.",
-    "Dépôt de rapport",
-    "Décision",
-    "Dépôt d'une initiative en navette",
-    "Convocation d'une CMP",
-    "Dépôt du rapport d'une CMP",
-    "Décision de la CMP",
-    "Motion de censure",
-    "Dépôt d'une déclaration du gouvernement",
-    "Décision sur une motion de censure",
-    "Saisine du conseil constitutionnel",
-    "Conclusion du conseil constitutionnel",
-    "Promulgation d'une loi",
-  ];
-
   const { data, error } = await supabase
     .from('actes_legislatifs')
     .select('uid, code_acte, libelle_acte, date_acte, organe_ref, vote_refs, textes_associes, texte_adopte, statut_conclusion, dossier_uid, parent_uid')
     .eq('dossier_uid', dossierUid)
     .not('date_acte', 'is', null)
-    .in('libelle_acte', TRACKED_LIBELLES)
+    .in('libelle_acte', TIMELINE_TRACKED_LIBELLES)
     .order('date_acte', { ascending: true });
 
   if (error) console.error('Erreur timeline dossier:', error);

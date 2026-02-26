@@ -14,6 +14,9 @@ import {
   getScrutinsByUids,
   getMonthMotionActes,
   getMotionDecisionActes,
+  LIBELLE_TO_TYPE,
+  type FeedEventType,
+  type ActeRow,
 } from './monthQueries';
 import { MonthFeedClient } from './MonthFeedClient';
 import type { Metadata } from 'next';
@@ -24,22 +27,10 @@ export const metadata: Metadata = {
 };
 
 // ---------------------------------------------------------------------------
-// Types exportes pour le client
+// Types exportes pour le client (FeedEventType importé depuis monthQueries)
 // ---------------------------------------------------------------------------
 
-export type FeedEventType =
-  | 'DEPOT_TEXTE'
-  | 'DEPOT_RAPPORT'
-  | 'DECISION'
-  | 'NAVETTE'
-  | 'CMP_CONVOCATION'
-  | 'CMP_RAPPORT'
-  | 'MOTION_CENSURE'
-  | 'DECL_GOUVERNEMENT'
-  | 'MOTION_VOTE'
-  | 'CC_SAISINE'
-  | 'PROMULGATION'
-  | 'AUTRE';
+export type { FeedEventType } from './monthQueries';
 
 export type FeedEvent = {
   id: string;
@@ -86,42 +77,16 @@ export type GroupedFeedEvent = {
   events: FeedEvent[];
 };
 
-export type WeekKpis = {
+export type MonthKpis = {
   totalEvents: number;
   scrutins: number;
   nouveauxTextes: number;
   promulgations: number;
 };
 
-// Type interne pour le calcul des KPIs semaine (non exporte)
-type DayGroup = {
-  date: string;
-  dayName: string;
-  dayNumber: number;
-  monthName: string;
-  events: FeedEvent[];
-};
-
 // ---------------------------------------------------------------------------
-// Classification par libelle
+// Classification par libelle (source unique : LIBELLE_TO_TYPE de monthQueries)
 // ---------------------------------------------------------------------------
-
-const LIBELLE_TO_TYPE: Record<string, FeedEventType> = {
-  "1er depot d'une initiative.": 'DEPOT_TEXTE',
-  "1er dépôt d'une initiative.": 'DEPOT_TEXTE',
-  "Dépôt de rapport": 'DEPOT_RAPPORT',
-  "Décision": 'DECISION',
-  "Dépôt d'une initiative en navette": 'NAVETTE',
-  "Convocation d'une CMP": 'CMP_CONVOCATION',
-  "Dépôt du rapport d'une CMP": 'CMP_RAPPORT',
-  "Décision de la CMP": 'DECISION',
-  "Motion de censure": 'MOTION_CENSURE',
-  "Dépôt d'une déclaration du gouvernement": 'DECL_GOUVERNEMENT',
-  "Décision sur une motion de censure": 'MOTION_VOTE',
-  "Saisine du conseil constitutionnel": 'CC_SAISINE',
-  "Conclusion du conseil constitutionnel": 'DECISION',
-  "Promulgation d'une loi": 'PROMULGATION',
-};
 
 function classifyByLibelle(libelle: string | null): FeedEventType {
   if (!libelle) return 'AUTRE';
@@ -160,9 +125,22 @@ function formatISOMonth(date: Date): string {
 // Helpers : groupement et enrichissement
 // ---------------------------------------------------------------------------
 
+/** Crée un FeedEvent avec tous les champs à null par défaut */
+function emptyFeedEvent(overrides: Partial<FeedEvent> & Pick<FeedEvent, 'id' | 'type' | 'date' | 'titre'>): FeedEvent {
+  return {
+    dossierUid: null, dossierTitre: null, libelleActe: null, codeActe: null,
+    organeName: null, texteUid: null, texteDenomination: null, texteTitre: null,
+    texteLien: null, texteAdopteUid: null, texteAdopteDenomination: null,
+    texteAdopteTitre: null, texteAdopteLien: null, scrutinUid: null,
+    scrutinTitre: null, statutConclusion: null, auteur: null, groupeAbrege: null,
+    texteProvenance: null, organeCodeType: null,
+    ...overrides,
+  };
+}
+
 /** Transforme un acte brut en FeedEvent enrichi */
 function acteToFeedEvent(
-  a: { uid: string; code_acte: string; libelle_acte: string | null; date_acte: string; statut_conclusion: string | null; organe_ref: string | null; vote_refs: string | null; textes_associes: string | null; texte_adopte: string | null; dossier_uid: string | null },
+  a: ActeRow,
   dossierInfo: { titre: string; auteur: string | null; groupeAbrege: string | null } | null,
   textes: Map<string, { uid: string; denomination: string | null; titre_principal: string | null; lien_texte: string | null; provenance: string | null }>,
   organes: Map<string, { name: string; codeType: string | null }>,
@@ -243,7 +221,7 @@ function groupFeedEvents(feedEvents: FeedEvent[]): Map<string, GroupedFeedEvent>
 // Page component
 // ---------------------------------------------------------------------------
 
-export default async function WeekPage({
+export default async function MonthPage({
   searchParams,
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -317,7 +295,6 @@ export default async function WeekPage({
         groupedEvents={groupedEvents}
         dossierMode={true}
         dossierTitre={dossierInfo?.titre ?? null}
-        dayGroups={[]}
         kpis={{ totalEvents: feedEvents.length, scrutins: 0, nouveauxTextes: 0, promulgations: 0 }}
         year={0}
         monthFormatted=""
@@ -431,21 +408,16 @@ export default async function WeekPage({
         return acteToFeedEvent(acte, dossier ?? null, textes, organes, scrutinsMapFromActes);
       }
       // Fallback : scrutin sans acte lié (rare, ex: motion de rejet sans dossier)
-      return {
+      return emptyFeedEvent({
         id: `scrutin-${s.uid}`,
-        type: 'DECISION' as FeedEventType,
+        type: 'DECISION',
         date: s.date_scrutin,
         titre: s.titre || `Scrutin n${s.numero}`,
-        dossierUid: null, dossierTitre: null, libelleActe: null, codeActe: null,
-        organeName: null, texteUid: null, texteDenomination: null, texteTitre: null,
-        texteLien: null, texteAdopteUid: null, texteAdopteDenomination: null,
-        texteAdopteTitre: null, texteAdopteLien: null,
         scrutinUid: s.uid, scrutinTitre: s.titre, statutConclusion: s.sort_libelle,
-        auteur: null, groupeAbrege: null, texteProvenance: null, organeCodeType: null,
         votePour: s.synthese_pour, voteContre: s.synthese_contre,
         voteAbstentions: s.synthese_abstentions, voteVotants: s.synthese_nombre_votants,
         voteNonVotants: s.synthese_non_votants, voteSuffragesRequis: s.synthese_suffrages_requis,
-      };
+      });
     });
 
   // Transformer les nouveaux dossiers en FeedEvents DEPOT_TEXTE
@@ -456,33 +428,17 @@ export default async function WeekPage({
     .filter(d => !acteDossierUids.has(d.uid) && !motionDossierUids.has(d.uid))
     .map(d => {
       const acteurRef = d.initiateur_acteur_ref as unknown as { nom: string; prenom: string } | null;
-      const acteur = acteurRef ?? null;
-      return {
+      return emptyFeedEvent({
         id: `dossier-${d.uid}`,
-        type: 'DEPOT_TEXTE' as const,
+        type: 'DEPOT_TEXTE',
         date: d.date_depot,
         titre: d.titre,
         dossierUid: d.uid,
         dossierTitre: d.titre,
         libelleActe: "1er dépôt d'une initiative.",
-        codeActe: null,
-        organeName: null,
-        texteUid: null,
-        texteDenomination: null,
-        texteTitre: null,
-        texteLien: null,
-        texteAdopteUid: null,
-        texteAdopteDenomination: null,
-        texteAdopteTitre: null,
-        texteAdopteLien: null,
-        scrutinUid: null,
-        scrutinTitre: null,
-        statutConclusion: null,
-        auteur: acteur ? `${acteur.prenom} ${acteur.nom}` : null,
+        auteur: acteurRef ? `${acteurRef.prenom} ${acteurRef.nom}` : null,
         groupeAbrege: d.initiateur_groupe_libelle ?? null,
-        texteProvenance: null,
-        organeCodeType: null,
-      };
+      });
     });
 
   // Construire les FeedEvents des motions de censure
@@ -512,49 +468,24 @@ export default async function WeekPage({
   }
   allEvents.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  // Grouper par jour pour les KPIs (avant le groupement, pour filtrer les events hors mois)
-  const dayFormatter = new Intl.DateTimeFormat('fr-FR', { weekday: 'long', timeZone: 'Europe/Paris' });
-  const monthNameFormatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', timeZone: 'Europe/Paris' });
+  // Filtrer les events du buffer ±1j qui tombent hors du mois (timezone Paris)
+  const monthStartISO_paris = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+  const monthEndISO_paris = `${year}-${String(month + 1).padStart(2, '0')}-${String(monthEnd.getDate()).padStart(2, '0')}`;
+  const monthEvents = allEvents.filter(event => {
+    const iso = toParisDateISO(event.date);
+    return iso >= monthStartISO_paris && iso <= monthEndISO_paris;
+  });
 
-  const dayGroupsMap = new Map<string, DayGroup>();
-  const daysInMonth = monthEnd.getDate();
-
-  for (let i = daysInMonth; i >= 1; i--) {
-    const d = new Date(year, month, i, 12, 0, 0);
-    const iso = d.toLocaleDateString('sv-SE', { timeZone: 'Europe/Paris' });
-    dayGroupsMap.set(iso, {
-      date: iso,
-      dayName: dayFormatter.format(d),
-      dayNumber: i,
-      monthName: monthNameFormatter.format(d),
-      events: [],
-    });
-  }
-
-  // Distribuer les evenements dans les jours
-  for (const event of allEvents) {
-    const eventDate = new Date(event.date);
-    const parisDate = new Date(eventDate.toLocaleString('en-US', { timeZone: 'Europe/Paris' }));
-    const iso = `${parisDate.getFullYear()}-${String(parisDate.getMonth() + 1).padStart(2, '0')}-${String(parisDate.getDate()).padStart(2, '0')}`;
-    const group = dayGroupsMap.get(iso);
-    if (group) {
-      group.events.push(event);
-    }
-  }
-
-  const dayGroups = [...dayGroupsMap.values()].sort((a, b) => b.date.localeCompare(a.date));
-
-  // KPIs calcules a partir des evenements distribues (post-timezone)
-  const distributedEvents = dayGroups.flatMap(d => d.events);
-  const kpis: WeekKpis = {
-    totalEvents: distributedEvents.length,
-    scrutins: distributedEvents.filter(e => e.type === 'DECISION').length,
-    nouveauxTextes: distributedEvents.filter(e => e.type === 'DEPOT_TEXTE').length,
-    promulgations: distributedEvents.filter(e => e.type === 'PROMULGATION').length,
+  // KPIs calculés à partir des événements du mois (post-timezone)
+  const kpis: MonthKpis = {
+    totalEvents: monthEvents.length,
+    scrutins: monthEvents.filter(e => e.type === 'DECISION').length,
+    nouveauxTextes: monthEvents.filter(e => e.type === 'DEPOT_TEXTE').length,
+    promulgations: monthEvents.filter(e => e.type === 'PROMULGATION').length,
   };
 
-  // Grouper uniquement les events distribues (pas ceux du buffer ±1j)
-  const groupMap = groupFeedEvents(distributedEvents);
+  // Grouper les événements filtrés
+  const groupMap = groupFeedEvents(monthEvents);
   const groupedEvents = [...groupMap.values()].sort((a, b) => b.date.localeCompare(a.date));
 
   // Navigation entre mois
@@ -586,7 +517,6 @@ export default async function WeekPage({
       groupedEvents={groupedEvents}
       dossierMode={false}
       dossierTitre={null}
-      dayGroups={dayGroups}
       kpis={kpis}
       year={year}
       monthFormatted={monthFormatted}
