@@ -52,11 +52,13 @@ export default async function MethodePage() {
   const sections = parseSections(raw)
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
-      <h1 className="text-3xl font-bold mb-4 text-center">Méthodologie</h1>
-      <p className="text-muted-foreground text-center mb-10">
-        Comment sont calculés les indicateurs, d&apos;où viennent les données et quelles sont leurs limites.
-      </p>
+    <div className="container mx-auto p-6 max-w-7xl">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold mb-3">Méthodologie</h1>
+        <p className="text-muted-foreground">
+          Comment sont calculés les indicateurs, d&apos;où viennent les données et quelles sont leurs limites.
+        </p>
+      </div>
       <MethodeTabs sections={sections} />
     </div>
   )

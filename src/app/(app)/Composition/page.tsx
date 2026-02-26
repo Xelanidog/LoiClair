@@ -21,12 +21,10 @@ export default async function CompositionPage() {
   ])
 
   return (
-    <div className="container mx-auto py-8 sm:py-12 px-4 max-w-7xl">
-          <div className="text-center mb-10">
-        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-3">
-          Composition des institutions
-        </h1>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+    <div className="container mx-auto p-6 max-w-7xl">
+          <div className="mb-8">
+        <h1 className="text-2xl font-bold mb-3">Composition des institutions</h1>
+        <p className="text-muted-foreground">
           Âge moyen, parité et profils des députés, sénateurs et membres du Gouvernement
         </p>
       </div>

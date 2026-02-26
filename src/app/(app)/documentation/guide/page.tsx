@@ -9,8 +9,13 @@ export default async function GuidePage() {
   )
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
-      <h1 className="text-3xl font-bold mb-8 text-center">Guide d&apos;utilisation</h1>
+    <div className="container mx-auto p-6 max-w-7xl">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold mb-3">Guide d&apos;utilisation</h1>
+        <p className="text-muted-foreground">
+          Comment lire et utiliser les tableaux de bord, indicateurs et dossiers législatifs de LoiClair.
+        </p>
+      </div>
       <MarkdownContent content={content} />
     </div>
   )

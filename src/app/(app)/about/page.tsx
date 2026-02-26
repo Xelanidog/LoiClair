@@ -19,12 +19,10 @@ import Link from "next/link"
 
 export default function AboutPage() {
   return (
-    // Conteneur principal : fond neutre, padding mobile-first
-    <div className="min-h-screen bg-background text-foreground px-4 py-12 md:px-8">
-      {/* Conteneur texte centré : largeur fixe 768px max pour parfaite lisibilité */}
-      <div className="mx-auto max-w-3xl">
-        {/* Titre principal : Gros, centré, espacé */}
-        <h1 className="text-3xl font-bold mb-10 text-center">À propos de LoiClair</h1>
+    <div className="container mx-auto p-6 max-w-7xl">
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold">À propos de LoiClair</h1>
+        </div>
 
         {/* Section 1 : Qu'est-ce que LoiClair ? (texte direct) */}
         <section className="mb-12">
@@ -127,6 +125,5 @@ export default function AboutPage() {
           </Button>
         </div>
       </div>
-    </div>
   )
 }

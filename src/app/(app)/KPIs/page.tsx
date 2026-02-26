@@ -350,12 +350,12 @@ const chartData = statsData.historique.slice(-24).map(({ mois, count }) => {
 
 
 return (
-  <div className="container mx-auto py-8 px-4">
+  <div className="container mx-auto p-6 max-w-7xl">
     {/* Titre + filtre en haut – même style que la page dossiers */}
     <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
       <div>
-        <h1 className="text-4xl font-bold mb-2">KPIs Parlement</h1>
-        <p className="text-lg md:text-xl text-muted-foreground">
+        <h1 className="text-2xl font-bold mb-3">KPIs Parlement</h1>
+        <p className="text-muted-foreground">
           Activité de la 17ᵉ législature en temps réel
           {procedure && <span className="ml-2 font-medium text-sm text-blue-600">[ {procedure} ]</span>}
           {groupe && <span className="ml-2 font-medium text-sm text-blue-600">[ {groupe} ]</span>}

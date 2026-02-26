@@ -48,11 +48,13 @@ export default async function GlossairePage() {
   ].filter(c => c.entries.length > 0)
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
-      <h1 className="text-3xl font-bold mb-4 text-center">Glossaire</h1>
-      <p className="text-lg text-muted-foreground mb-12 text-center">
-        Les termes du vocabulaire législatif utilisés sur LoiClair, expliqués simplement.
-      </p>
+    <div className="container mx-auto p-6 max-w-7xl">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold mb-3">Glossaire</h1>
+        <p className="text-muted-foreground">
+          Les termes du vocabulaire législatif utilisés sur LoiClair, expliqués simplement.
+        </p>
+      </div>
 
       <div className="space-y-12">
         {categories.map(({ label, entries }) => (

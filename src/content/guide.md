@@ -1,5 +1,3 @@
-# Guide d'utilisation de LoiClair
-
 LoiClair est un tableau de bord citoyen qui rend l'activité législative française lisible et accessible à tous, sans expertise préalable. Ce guide présente l'ensemble des pages du site et explique comment les utiliser.
 
 ---

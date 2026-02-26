@@ -18,6 +18,7 @@ import {
   ChevronLeft,
   ChevronRight,
   CalendarX,
+  CalendarCheck,
   Activity,
   ArrowLeft,
   ThumbsUp,
@@ -537,7 +538,7 @@ export function MonthFeedClient({
             <Link href="/Month" className="inline-flex items-center gap-1 text-xs text-primary hover:underline mb-2">
               <ArrowLeft className="w-3 h-3" />Retour au fil
             </Link>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            <h1 className="text-2xl font-bold">
               {dossierTitre || "Dossier législatif"}
             </h1>
             <p className="text-sm text-muted-foreground mt-0.5">
@@ -569,7 +570,7 @@ export function MonthFeedClient({
       <div className="max-w-xl -mx-6 sm:mx-auto sm:px-4 py-6">
         {/* Header */}
         <div className="mb-5 px-4 sm:px-0">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Fil du Mois</h1>
+          <h1 className="text-2xl font-bold">Fil du Mois</h1>
           <p className="text-sm text-muted-foreground mt-0.5 capitalize">{monthFormatted}</p>
         </div>
 
@@ -598,6 +599,18 @@ export function MonthFeedClient({
           </Button>
         </div>
 
+        {/* Raccourci mois en cours (visible uniquement quand on consulte un mois passé) */}
+        {!isCurrentOrFutureMonth && (
+          <div className="flex justify-center mb-4 px-4 sm:px-0">
+            <Button variant="ghost" size="sm" asChild className="text-primary">
+              <Link href="/Month">
+                <CalendarCheck className="w-3.5 h-3.5 mr-1.5" />
+                Revenir au mois en cours
+              </Link>
+            </Button>
+          </div>
+        )}
+
         <FilterPills activeFilter={activeFilter} onFilter={setActiveFilter} counts={filterCounts} />
 
         {groupedEvents.length === 0 ? (
@@ -609,6 +622,18 @@ export function MonthFeedClient({
             {filtered.map((g, i) => (
               <GroupedEventCard key={g.key} group={g} index={i} />
             ))}
+          </div>
+        )}
+
+        {/* Navigation vers le mois précédent en bas de la liste */}
+        {filtered.length > 0 && (
+          <div className="flex justify-center py-8">
+            <Button variant="outline" size="sm" asChild>
+              <Link href={`/Month?mois=${prevMonth}`}>
+                <ChevronLeft className="w-4 h-4 mr-1.5" />
+                Voir le mois précédent
+              </Link>
+            </Button>
           </div>
         )}
 

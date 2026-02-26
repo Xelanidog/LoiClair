@@ -8,16 +8,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 export default function ProcessusLegislatif() {
   return (
     // Conteneur principal : largeur raisonnable + centrage automatique
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      {/* Titre principal de la page */}
-      <h1 className="text-3xl font-bold mb-8 text-center">
-        Le Processus Législatif en France
-      </h1>
-
-      {/* Introduction courte */}
-      <p className="text-lg text-muted-foreground mb-12 text-center">
-        Comprendre comment naissent les lois : des organes impliqués au parcours complet d'un texte législatif.
-      </p>
+    <div className="container mx-auto p-6 max-w-7xl">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold mb-3">Le Processus Législatif en France</h1>
+        <p className="text-muted-foreground">
+          Comprendre comment naissent les lois : des organes impliqués au parcours complet d'un texte législatif.
+        </p>
+      </div>
 
 
 

@@ -27,15 +27,26 @@ function SidebarLink({ href, label, onNavigation }: { href: string; label: strin
   )
 }
 
-function SidebarSection({ icon: Icon, title, children }: { icon: LucideIcon; title: string; children: React.ReactNode }) {
+function SidebarSection({ icon: Icon, title, href, onNavigation, children }: { icon: LucideIcon; title: string; href?: string; onNavigation?: () => void; children: React.ReactNode }) {
+  const label = (
+    <>
+      <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+      <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        {title}
+      </span>
+    </>
+  )
   return (
     <div>
-      <div className="flex items-center gap-2 px-3 mb-2">
-        <Icon className="h-3.5 w-3.5 text-muted-foreground" />
-        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          {title}
-        </span>
-      </div>
+      {href ? (
+        <Link href={href} onClick={onNavigation} className="flex items-center gap-2 px-3 mb-2 hover:text-foreground transition-colors">
+          {label}
+        </Link>
+      ) : (
+        <div className="flex items-center gap-2 px-3 mb-2">
+          {label}
+        </div>
+      )}
       <div className="space-y-0.5 pl-5">{children}</div>
     </div>
   )
@@ -61,7 +72,7 @@ export function SidebarNavContent({ onNavigation }: { onNavigation?: () => void 
           <SidebarLink href="/dossiers-legislatifs" label="Tous les textes" onNavigation={onNavigation} />
         </SidebarSection>
 
-        <SidebarSection icon={BookOpen} title="Documentation">
+        <SidebarSection icon={BookOpen} title="Documentation" href="/documentation" onNavigation={onNavigation}>
           <SidebarLink href="/documentation/guide" label="Guide d'utilisation" onNavigation={onNavigation} />
           <SidebarLink href="/documentation/glossaire" label="Glossaire" onNavigation={onNavigation} />
           <SidebarLink href="/documentation/methode" label="Méthodologie" onNavigation={onNavigation} />
