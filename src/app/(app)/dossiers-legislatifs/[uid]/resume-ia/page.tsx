@@ -64,7 +64,6 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
     .from('actes_legislatifs')
     .select('textes_associes, vote_refs')
     .eq('dossier_uid', uid)
-    .not('textes_associes', 'is', null)
     .not('vote_refs', 'is', null);
 
   const voteRefsSet = new Set((actesAvecVote ?? []).map(a => a.vote_refs));
