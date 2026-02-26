@@ -3,6 +3,22 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+// Libellés d'actes significatifs pour le fil du mois (hors motions, traitées séparément)
+const FEED_TRACKED_LIBELLES = [
+  "1er dépôt d'une initiative.",
+  "1er depot d'une initiative.",
+  "Dépôt de rapport",
+  "Décision",
+  "Dépôt d'une initiative en navette",
+  "Convocation d'une CMP",
+  "Dépôt du rapport d'une CMP",
+  "Décision de la CMP",
+  "Dépôt d'une déclaration du gouvernement",
+  "Saisine du conseil constitutionnel",
+  "Conclusion du conseil constitutionnel",
+  "Promulgation d'une loi",
+];
+
 export async function getMonthActes(supabase: SupabaseClient, weekStart: string, weekEnd: string) {
   const { data, error } = await supabase
     .from('actes_legislatifs')
@@ -10,7 +26,7 @@ export async function getMonthActes(supabase: SupabaseClient, weekStart: string,
     .gte('date_acte', weekStart)
     .lte('date_acte', weekEnd)
     .not('date_acte', 'is', null)
-    .is('parent_uid', null) // Seulement les actes de premier niveau (pas les sous-actes)
+    .in('libelle_acte', FEED_TRACKED_LIBELLES)
     .order('date_acte', { ascending: false });
 
   if (error) console.error('Erreur actes semaine:', error);
@@ -55,26 +71,6 @@ export async function getMotionDecisionActes(supabase: SupabaseClient, parentUid
   return map;
 }
 
-// Sous-actes importants (toujours enfants, jamais renvoyés par getMonthActes)
-const IMPORTANT_SUB_LIBELLES = [
-  "Promulgation d'une loi",
-  "Saisine du conseil constitutionnel",
-  "Conclusion du conseil constitutionnel",
-  "Dépôt d'une déclaration du gouvernement",
-];
-
-export async function getMonthImportantSubActes(supabase: SupabaseClient, monthStart: string, monthEnd: string) {
-  const { data, error } = await supabase
-    .from('actes_legislatifs')
-    .select('uid, code_acte, libelle_acte, date_acte, statut_conclusion, organe_ref, vote_refs, textes_associes, texte_adopte, dossier_uid')
-    .gte('date_acte', monthStart)
-    .lte('date_acte', monthEnd)
-    .in('libelle_acte', IMPORTANT_SUB_LIBELLES)
-    .order('date_acte', { ascending: false });
-
-  if (error) console.error('Erreur sous-actes importants:', error);
-  return data ?? [];
-}
 
 export async function getMonthScrutins(supabase: SupabaseClient, weekStart: string, weekEnd: string) {
   const { data, error } = await supabase
