@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
@@ -61,16 +61,16 @@ const EVENT_CONFIG: Record<
   AUTRE: { icon: Activity, label: "Autre", color: "text-muted-foreground", iconBg: "bg-muted" },
 };
 
-const FILTER_TABS: { value: string; label: string }[] = [
-  { value: "tous", label: "Tous" },
-  { value: "DEPOT_TEXTE", label: "Dépôts" },
-  { value: "DECISION", label: "Décisions" },
-  { value: "DEPOT_RAPPORT", label: "Rapports" },
-  { value: "NAVETTE", label: "Navettes" },
-  { value: "CMP", label: "CMP" },
-  { value: "CC_SAISINE", label: "Cons. const." },
-  { value: "PROMULGATION", label: "Promulgations" },
-  { value: "MOTION", label: "Motions" },
+const FILTER_PILLS: { value: string; label: string; icon: typeof Activity; color: string }[] = [
+  { value: "tous", label: "Tous", icon: Activity, color: "text-primary" },
+  { value: "DEPOT_TEXTE", label: "Textes", icon: FileText, color: "text-blue-600 dark:text-blue-400" },
+  { value: "DECISION", label: "Décisions", icon: BarChart3, color: "text-fuchsia-600 dark:text-fuchsia-400" },
+  { value: "DEPOT_RAPPORT", label: "Rapports", icon: FileSearch, color: "text-teal-600 dark:text-teal-400" },
+  { value: "NAVETTE", label: "Navettes", icon: ArrowLeftRight, color: "text-indigo-600 dark:text-indigo-400" },
+  { value: "CMP", label: "CMP", icon: Handshake, color: "text-purple-600 dark:text-purple-400" },
+  { value: "CC_SAISINE", label: "Cons. const.", icon: Scale, color: "text-orange-600 dark:text-orange-400" },
+  { value: "PROMULGATION", label: "Promulgations", icon: CheckCircle2, color: "text-green-600 dark:text-green-400" },
+  { value: "MOTION", label: "Motions", icon: AlertTriangle, color: "text-red-600 dark:text-red-400" },
 ];
 
 function matchesFilter(type: FeedEventType, filter: string): boolean {
@@ -517,6 +517,17 @@ export function MonthFeedClient({
   const [activeFilter, setActiveFilter] = useState("tous");
   const filtered = groupedEvents.filter(g => matchesFilter(g.type, activeFilter));
 
+  // Count grouped events per filter
+  const filterCounts = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const pill of FILTER_PILLS) {
+      map[pill.value] = pill.value === "tous"
+        ? groupedEvents.length
+        : groupedEvents.filter(g => matchesFilter(g.type, pill.value)).length;
+    }
+    return map;
+  }, [groupedEvents]);
+
   // ── Dossier mode ──
   if (dossierMode) {
     return (
@@ -534,7 +545,7 @@ export function MonthFeedClient({
             </p>
           </div>
 
-          <FilterBar activeFilter={activeFilter} onFilter={setActiveFilter} />
+          <FilterPills activeFilter={activeFilter} onFilter={setActiveFilter} counts={filterCounts} />
 
           {filtered.length === 0 ? (
             <NoFilterResults onReset={() => setActiveFilter("tous")} />
@@ -587,23 +598,7 @@ export function MonthFeedClient({
           </Button>
         </div>
 
-        {/* KPI pills */}
-        <div className="flex gap-2 overflow-x-auto pb-1 mb-4 px-4 sm:px-0">
-          {[
-            { icon: Activity, value: kpis.totalEvents, label: "événements", color: "text-primary" },
-            { icon: BarChart3, value: kpis.scrutins, label: kpis.scrutins > 1 ? "scrutins" : "scrutin", color: "text-fuchsia-600 dark:text-fuchsia-400" },
-            { icon: FileText, value: kpis.nouveauxTextes, label: "textes", color: "text-blue-600 dark:text-blue-400" },
-            { icon: CheckCircle2, value: kpis.promulgations, label: kpis.promulgations > 1 ? "lois" : "loi", color: "text-green-600 dark:text-green-400" },
-          ].map(kpi => (
-            <div key={kpi.label} className="flex items-center gap-1.5 rounded-full border px-3 py-1.5 shrink-0">
-              <kpi.icon className={cn("w-3.5 h-3.5", kpi.color)} />
-              <span className="text-sm font-semibold tabular-nums"><AnimatedNumber value={kpi.value} duration={1.2} /></span>
-              <span className="text-xs text-muted-foreground">{kpi.label}</span>
-            </div>
-          ))}
-        </div>
-
-        <FilterBar activeFilter={activeFilter} onFilter={setActiveFilter} />
+        <FilterPills activeFilter={activeFilter} onFilter={setActiveFilter} counts={filterCounts} />
 
         {groupedEvents.length === 0 ? (
           <EmptyState />
@@ -625,24 +620,51 @@ export function MonthFeedClient({
 
 // ── Shared small components ─────────────────────────────────
 
-function FilterBar({ activeFilter, onFilter }: { activeFilter: string; onFilter: (v: string) => void }) {
+function FilterPills({ activeFilter, onFilter, counts }: { activeFilter: string; onFilter: (v: string) => void; counts?: Record<string, number> }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [hint, setHint] = useState(true);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const check = () => setHint(el.scrollWidth - el.scrollLeft - el.clientWidth > 8);
+    check();
+    el.addEventListener("scroll", check, { passive: true });
+    window.addEventListener("resize", check);
+    return () => { el.removeEventListener("scroll", check); window.removeEventListener("resize", check); };
+  }, []);
+
   return (
-    <div className="flex gap-1.5 overflow-x-auto pb-1 mb-1 border-b px-4 sm:px-0">
-      {FILTER_TABS.map(tab => (
-        <button
-          key={tab.value}
-          onClick={() => onFilter(tab.value)}
-          className={cn(
-            "px-3 py-2 text-xs font-medium whitespace-nowrap transition-colors relative",
-            activeFilter === tab.value ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-          )}
-        >
-          {tab.label}
-          {activeFilter === tab.value && (
-            <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-full" />
-          )}
-        </button>
-      ))}
+    <div className="px-4 sm:px-0 mb-4">
+      <div
+        ref={ref}
+        className="flex gap-2 overflow-x-auto pb-1"
+        style={hint ? { WebkitMaskImage: 'linear-gradient(to right, black calc(100% - 2rem), transparent)', maskImage: 'linear-gradient(to right, black calc(100% - 2rem), transparent)' } : undefined}
+      >
+        {FILTER_PILLS.map(pill => {
+          const count = counts?.[pill.value] ?? 0;
+          const isActive = activeFilter === pill.value;
+          const PillIcon = pill.icon;
+          return (
+            <button
+              key={pill.value}
+              onClick={() => onFilter(pill.value)}
+              className={cn(
+                "flex items-center gap-1.5 rounded-full border px-3 py-1.5 shrink-0 transition-colors text-sm",
+                isActive
+                  ? "border-foreground/30 bg-muted text-foreground font-semibold"
+                  : "border-border text-muted-foreground hover:border-foreground/20 hover:text-foreground"
+              )}
+            >
+              <PillIcon className={cn("w-3.5 h-3.5", pill.color)} />
+              <span>{pill.label}</span>
+              {counts && count > 0 && (
+                <span className="text-xs tabular-nums opacity-60">{count}</span>
+              )}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

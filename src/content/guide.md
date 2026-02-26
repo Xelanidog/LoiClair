@@ -4,28 +4,20 @@ LoiClair est un tableau de bord citoyen qui rend l'activité législative franç
 
 ---
 
-## Fil de la Semaine
+## Fil du Mois
 
-La page **Fil de la Semaine** présente l'activité législative sous forme de fil chronologique, semaine par semaine. C'est le point d'entrée principal pour suivre ce qui se passe au Parlement en temps réel.
+La page **Fil du Mois** présente l'activité législative sous forme de fil chronologique, mois par mois. C'est le point d'entrée principal pour suivre ce qui se passe au Parlement.
 
-### Naviguer entre les semaines
+### Naviguer entre les mois
 
-Des boutons « Précédente » et « Suivante » permettent de passer d'une semaine à l'autre. La semaine en cours est affichée par défaut.
-
-### Compteurs de la semaine
-
-Quatre compteurs en haut de page résument l'activité de la semaine :
-
-- **Événements** : le nombre total d'événements législatifs de la semaine.
-- **Scrutins** : le nombre de votes (décisions) ayant eu lieu.
-- **Textes** : le nombre de nouveaux textes déposés.
-- **Lois** : le nombre de lois promulguées.
+Des boutons « Préc. » et « Suiv. » permettent de passer d'un mois à l'autre. Le mois en cours est affiché par défaut.
 
 ### Filtrer par type d'événement
 
-Une barre de filtres permet de n'afficher qu'un type d'événement :
+Une rangée de pastilles cliquables permet de filtrer les événements par catégorie. Chaque pastille affiche une icône colorée, un libellé et un compteur indiquant le nombre d'événements de ce type sur le mois :
 
-- **Dépôts** — nouveaux textes déposés au Parlement.
+- **Tous** — tous les événements du mois (compteur total).
+- **Textes** — nouveaux textes déposés au Parlement.
 - **Décisions** — votes sur l'ensemble d'un texte, avec résultats détaillés.
 - **Rapports** — rapports déposés par les commissions parlementaires.
 - **Navettes** — textes transmis d'une chambre à l'autre.
@@ -33,6 +25,8 @@ Une barre de filtres permet de n'afficher qu'un type d'événement :
 - **Cons. const.** — saisines du Conseil constitutionnel.
 - **Promulgations** — lois signées et publiées au Journal officiel.
 - **Motions** — motions de censure déposées contre le Gouvernement.
+
+La pastille active est mise en évidence. Sur mobile, la rangée est scrollable horizontalement (un dégradé sur le bord droit indique qu'il y a d'autres filtres).
 
 ### Lire une carte d'événement
 
@@ -61,7 +55,7 @@ Les motions de censure bénéficient d'un traitement particulier. Chaque carte a
 
 ### Mode dossier (timeline)
 
-En cliquant sur le titre d'un dossier depuis n'importe quelle carte, vous accédez à la **timeline complète** de ce dossier : toutes les étapes qu'il a franchies, du dépôt initial jusqu'à la promulgation (le cas échéant). Un lien « Retour au fil » permet de revenir au fil de la semaine.
+En cliquant sur le titre d'un dossier depuis n'importe quelle carte, vous accédez à la **timeline complète** de ce dossier : toutes les étapes qu'il a franchies, du dépôt initial jusqu'à la promulgation (le cas échéant). Les mêmes pastilles de filtrage sont disponibles, avec les compteurs adaptés aux événements du dossier. Un lien « Retour au fil » permet de revenir au fil du mois.
 
 ### Résumé IA
 

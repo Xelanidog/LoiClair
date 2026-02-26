@@ -27,7 +27,6 @@ export async function getWeekMotionActes(supabase: SupabaseClient, weekStart: st
     .lte('date_acte', weekEnd)
     .eq('libelle_acte', 'Motion de censure')
     .not('textes_associes', 'is', null)
-    .not('vote_refs', 'is', null)
     .order('date_acte', { ascending: false });
 
   if (error) console.error('Erreur motions semaine:', error);

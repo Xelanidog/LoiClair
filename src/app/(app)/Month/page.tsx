@@ -445,8 +445,9 @@ export default async function WeekPage({
   // Transformer les nouveaux dossiers en FeedEvents DEPOT_TEXTE
   // (seulement ceux qui ne sont pas deja dans acteEvents)
   const acteDossierUids = new Set(acteEvents.filter(e => e.type === 'DEPOT_TEXTE').map(e => e.dossierUid));
+  const motionDossierUids = new Set(uniqueMotions.map(a => a.dossier_uid).filter(Boolean));
   const dossierEvents: FeedEvent[] = newDossiers
-    .filter(d => !acteDossierUids.has(d.uid))
+    .filter(d => !acteDossierUids.has(d.uid) && !motionDossierUids.has(d.uid))
     .map(d => {
       const acteurRef = d.initiateur_acteur_ref as unknown as { nom: string; prenom: string } | null;
       const acteur = acteurRef ?? null;
