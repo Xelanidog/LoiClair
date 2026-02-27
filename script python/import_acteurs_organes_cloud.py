@@ -9,6 +9,7 @@ import requests
 import io
 import zipfile
 import traceback
+from pathlib import Path
 from supabase import create_client, Client
 from dotenv import load_dotenv
 from tqdm import tqdm
@@ -147,6 +148,12 @@ def resolve_xsi_nil(value):
     return value
 
 
+def safe_text(value) -> str | None:
+    """Applique resolve_xsi_nil et garantit un str ou None (jamais un dict résiduel)."""
+    v = resolve_xsi_nil(value)
+    return v if isinstance(v, str) else None
+
+
 def clean_profession(value: str | None) -> str | None:
     """Supprime le préfixe '(XX) - ' et met en majuscule la première lettre."""
     if not isinstance(value, str):
@@ -192,13 +199,13 @@ def build_social_url(val_elec: str | None, prefix: str, strip_at: bool = False) 
 def download_zip(url: str) -> zipfile.ZipFile:
     """Télécharge le ZIP en mémoire depuis l'URL."""
     print(f"Téléchargement du ZIP depuis : {url}")
-    response = requests.get(url)
+    response = requests.get(url, timeout=120)
     response.raise_for_status()
     return zipfile.ZipFile(io.BytesIO(response.content))
 
 
-# Charger env vars de .env.local
-load_dotenv(dotenv_path="/Users/algodin/Documents/LoiClair website/loiclair/.env.local")
+# Charger env vars de .env.local (chemin relatif au script, portable sur toutes les machines)
+load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent / ".env.local")
 supabase_url = os.getenv("SUPABASE_URL")
 supabase_key = os.getenv("SUPABASE_KEY")
 if not supabase_url or not supabase_key:
@@ -237,19 +244,10 @@ def extract_birth_info(data: dict, file_name: str) -> dict:
     info_naissance = data["etatCivil"]["infoNaissance"]
 
     if isinstance(info_naissance, dict):
-        date_naissance = resolve_xsi_nil(info_naissance.get("dateNais"))
-        # resolve_xsi_nil peut retourner un dict entier si pas de #text — on veut un str ou None
-        if isinstance(date_naissance, dict):
-            date_naissance = None
-        ville_naissance = resolve_xsi_nil(info_naissance.get("villeNais"))
-        if isinstance(ville_naissance, dict):
-            ville_naissance = None
-        dep_naissance = resolve_xsi_nil(info_naissance.get("depNais"))
-        if isinstance(dep_naissance, dict):
-            dep_naissance = None
-        pays_naissance = resolve_xsi_nil(info_naissance.get("paysNais"))
-        if isinstance(pays_naissance, dict):
-            pays_naissance = None
+        date_naissance = safe_text(info_naissance.get("dateNais"))
+        ville_naissance = safe_text(info_naissance.get("villeNais"))
+        dep_naissance = safe_text(info_naissance.get("depNais"))
+        pays_naissance = safe_text(info_naissance.get("paysNais"))
     else:
         date_naissance = info_naissance if isinstance(info_naissance, str) else None
         ville_naissance = None
@@ -264,7 +262,7 @@ def extract_birth_info(data: dict, file_name: str) -> dict:
             today = date.today()
             age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
         except ValueError:
-            print(f"Date naissance invalide pour {file_name}: {date_naissance} - Age=None.")
+            tqdm.write(f"⚠️  Date naissance invalide pour {file_name}: {date_naissance} - Age=None.")
 
     # Date décès
     date_deces_raw = data["etatCivil"].get("dateDeces")
@@ -362,24 +360,19 @@ def extract_social_urls(adresse_list: list) -> dict:
             instagram_url = build_social_url(val_elec, "https://instagram.com/", strip_at=True)
         elif addr_type == "25":
             facebook_url = build_social_url(val_elec, "https://www.facebook.com/")
-
-    # Adresse circonscription (type '2')
-    for addr in adresse_list:
-        if isinstance(addr, dict) and addr.get("type") == "2":
+        elif addr_type == "2" and adresse_circonscription is None:
+            # Adresse de circonscription — traitée dans la même boucle
             numero_rue = addr.get("numeroRue", "")
             nom_rue = addr.get("nomRue", "")
-            complement = addr.get("complementAdresse", "") or ""
+            complement = (addr.get("complementAdresse", "") or "").strip()
             code_postal = addr.get("codePostal", "")
             ville = addr.get("ville", "")
-            adresse_parts = (
-                [f"{numero_rue} {nom_rue}".strip()] + [complement.strip()]
-                if complement
-                else [f"{numero_rue} {nom_rue}".strip()]
-            )
+            adresse_parts = [f"{numero_rue} {nom_rue}".strip()]
+            if complement:
+                adresse_parts.append(complement)
             adresse_circonscription = ", ".join(
                 filter(None, adresse_parts)
             ) + f", {code_postal} {ville}".strip(", ")
-            break
 
     return {
         "email": email, "telephone": telephone, "linkedin_url": linkedin_url,
@@ -436,8 +429,8 @@ def extract_mandate_info(all_mandats: list, file_name: str) -> dict:
                 if "ministre" in lib_qualite or "secrétaire d'état" in lib_qualite or "secrétaire d'etat" in lib_qualite:
                     est_ministre_actuel = True
 
-            # Groupe politique actif (GP/GROUPESENAT prioritaire, fallback GOUVERNEMENT)
-            if type_organe in ["GP", "GROUPESENAT", "GOUVERNEMENT"] and groupe_organe_ref is None:
+            # Groupe politique actif (GP ou GROUPESENAT uniquement — jamais GOUVERNEMENT)
+            if type_organe in ["GP", "GROUPESENAT"] and groupe_organe_ref is None:
                 groupe_organe_ref = mandat.get("organes", {}).get("organeRef")
 
             # Organes refs (tous mandats actifs)
@@ -535,45 +528,42 @@ def importer_acteur(acteur_data, file_name):
     try:
         data = acteur_data["acteur"]
 
-        # Parser mandats et adresses une seule fois
+        # Mandats : actifs (dateFin=None) toujours inclus + 25 historiques récents
+        # ⚠️ Ne PAS tronquer les actifs : un député peut avoir 30+ mandats plus récents
+        # que son mandat ASSEMBLEE → [:25] global exclurait le mandat principal
         all_mandats = normalize_mandats(data)
+        active = [m for m in all_mandats if m.get("dateFin") is None]
+        inactive = [m for m in all_mandats if m.get("dateFin") is not None]
+        try:
+            inactive.sort(key=lambda m: m.get("dateDebut") or "1900-01-01", reverse=True)
+        except Exception:
+            pass
+        all_mandats = active + inactive[:25]
+
         adresse_list = parse_adresse_list(data, file_name)
 
-        # Extraction par sous-fonctions
         identity = extract_identity(data)
         birth = extract_birth_info(data, file_name)
         profession = extract_profession(data)
         urls = extract_social_urls(adresse_list)
-        mandates = extract_mandate_info(all_mandats, file_name)
+        mandates = extract_mandate_info(all_mandats, file_name)  # calcul sur tous les mandats
 
-        # Adresses et mandats en JSONB (brut)
-        adresses_json = json.dumps(adresse_list) if adresse_list else None
-
-        # Tri mandats par date descendant, garder les 50 plus récents pour le JSONB
-        mandats_for_json = list(all_mandats)  # copie pour ne pas muter l'original
-        if mandats_for_json:
-            try:
-                mandats_for_json.sort(key=lambda m: m.get("dateDebut") or "1900-01-01", reverse=True)
-            except Exception:
-                pass
-            mandats_for_json = mandats_for_json[:50]
-        mandats_json = json.dumps(mandats_for_json) if mandats_for_json else None
-
-        # Assembler le payload
+        # Assembler le payload (Supabase sérialise les dicts/listes en JSONB automatiquement)
+        # mandats en DB = actifs seulement (réduit la taille du payload, les champs clés sont extraits)
         data_insert = {
             **identity,
             **birth,
             **profession,
             **urls,
             **mandates,
-            "adresses": adresses_json,
-            "mandats": mandats_json,
+            "adresses": adresse_list or None,
+            "mandats": active or None,
         }
 
         return data_insert
 
     except Exception as e:
-        print(f"Erreur générale pour {file_name}: {e}")
+        tqdm.write(f"❌ Erreur générale pour {file_name}: {e}")
         traceback.print_exc()
         return None
 
@@ -661,7 +651,7 @@ def importer_organe(organe_data, file_name):
         return data_insert
 
     except Exception as e:
-        print(f"Erreur générale pour {file_name}: {e}")
+        tqdm.write(f"❌ Erreur générale pour {file_name}: {e}")
         traceback.print_exc()
         return None
 
@@ -673,14 +663,14 @@ def upsert_batch(table_name: str, batch: list) -> tuple[int, int]:
     """Upsert un batch avec retry automatique en cas de timeout."""
     try:
         response = supabase.table(table_name).upsert(batch, on_conflict="uid").execute()
-        if response.data:
-            return len(batch), 0
-        print(f"Erreur batch {table_name} ({len(batch)} rows): pas de data retournée")
-        return 0, len(batch)
+        if getattr(response, "error", None):
+            print(f"Erreur batch {table_name} ({len(batch)} rows): {response.error}")
+            return 0, len(batch)
+        return len(batch), 0
     except Exception as e:
         error_msg = str(e)
-        # Si timeout, retry en découpant le batch en 2
-        if "timeout" in error_msg.lower() or "57014" in error_msg:
+        # Si timeout ou 504 gateway, retry en découpant le batch en 2
+        if "timeout" in error_msg.lower() or "time-out" in error_msg.lower() or "57014" in error_msg or '"code": 504' in error_msg or "'code': 504" in error_msg:
             if len(batch) > 50:
                 mid = len(batch) // 2
                 print(f"Timeout batch {table_name} ({len(batch)} rows) — retry en 2x{mid}")
@@ -692,7 +682,7 @@ def upsert_batch(table_name: str, batch: list) -> tuple[int, int]:
 
 
 def importer_acteurs_organes_from_zip(zip_ref: zipfile.ZipFile):
-    """Importe acteurs et organes du ZIP en batch + barre de progression."""
+    """Importe acteurs et organes du ZIP : parsing instantané (RAM) puis upload par batch."""
     json_files = [
         f for f in zip_ref.namelist()
         if f.endswith(".json")
@@ -705,62 +695,61 @@ def importer_acteurs_organes_from_zip(zip_ref: zipfile.ZipFile):
     print(f"   - Acteurs (PA*) : {acteurs_count}")
     print(f"   - Organes (PO*) : {organes_count}")
 
-    batch_size_acteurs = 300  # Retry automatique si timeout
-    batch_size_organes = 500
-    acteurs_batch = []
-    organes_batch = []
-    success_acteurs = 0
-    failed_acteurs = 0
-    success_organes = 0
-    failed_organes = 0
+    batch_size_acteurs = 300   # retry auto en 2x150 si timeout (AMO30 mandats JSONB volumineux)
+    batch_size_organes = 1000  # retry auto en 2x500 si timeout
 
-    for file_name in tqdm(json_files, desc="Import acteurs/organes", unit="fichier"):
+    # --- 1. Parsing (quasi-instantané : tout est en RAM) ---
+    acteurs_payloads = []
+    organes_payloads = []
+    failed_parse_acteurs = 0
+    failed_parse_organes = 0
+
+    for file_name in tqdm(json_files, desc="Parsing fichiers", unit="fichier"):
         try:
             with zip_ref.open(file_name) as f:
                 data = json.load(f)
-
             base_name = file_name.split("/")[-1]
             if base_name.startswith("PA"):
                 payload = importer_acteur(data, base_name)
                 if payload:
-                    acteurs_batch.append(payload)
+                    acteurs_payloads.append(payload)
+                else:
+                    failed_parse_acteurs += 1
             elif base_name.startswith("PO"):
                 payload = importer_organe(data, base_name)
                 if payload:
-                    organes_batch.append(payload)
-
-            # Envoi batches acteurs si plein
-            if len(acteurs_batch) >= batch_size_acteurs:
-                s, f_ = upsert_batch("acteurs", acteurs_batch)
-                success_acteurs += s
-                failed_acteurs += f_
-                acteurs_batch = []
-
-            # Envoi batches organes si plein
-            if len(organes_batch) >= batch_size_organes:
-                s, f_ = upsert_batch("organes", organes_batch)
-                success_organes += s
-                failed_organes += f_
-                organes_batch = []
-
+                    organes_payloads.append(payload)
+                else:
+                    failed_parse_organes += 1
         except Exception as e:
             base_name = file_name.split("/")[-1]
             if base_name.startswith("PA"):
-                failed_acteurs += 1
+                failed_parse_acteurs += 1
             else:
-                failed_organes += 1
-            print(f"Erreur fichier {file_name}: {e}")
+                failed_parse_organes += 1
+            tqdm.write(f"❌ Erreur fichier {file_name}: {e}")
 
-    # Derniers batches
-    if acteurs_batch:
-        s, f_ = upsert_batch("acteurs", acteurs_batch)
-        success_acteurs += s
-        failed_acteurs += f_
+    # --- 2. Upload séquentiel par batch avec barre de progression ---
+    all_batches = (
+        [("acteurs", acteurs_payloads[i:i + batch_size_acteurs])
+         for i in range(0, len(acteurs_payloads), batch_size_acteurs)]
+        + [("organes", organes_payloads[i:i + batch_size_organes])
+           for i in range(0, len(organes_payloads), batch_size_organes)]
+    )
 
-    if organes_batch:
-        s, f_ = upsert_batch("organes", organes_batch)
-        success_organes += s
-        failed_organes += f_
+    success_acteurs = 0
+    failed_acteurs = failed_parse_acteurs
+    success_organes = 0
+    failed_organes = failed_parse_organes
+
+    for table, batch in tqdm(all_batches, desc="Upload Supabase ", unit="batch"):
+        s, f_ = upsert_batch(table, batch)
+        if table == "acteurs":
+            success_acteurs += s
+            failed_acteurs += f_
+        else:
+            success_organes += s
+            failed_organes += f_
 
     print(f"\n{'='*60}")
     print(f"IMPORT ACTEURS/ORGANES TERMINÉ")
@@ -774,11 +763,11 @@ def importer_acteurs_organes_from_zip(zip_ref: zipfile.ZipFile):
 # Ordre des ZIPs : AMO50 d'abord (identité seule, pas de mandats), puis AMO30 (historique complet),
 # puis AMO20 en dernier (législature courante, données les plus à jour — écrase les précédents).
 URLS = [
-    # 1. Députés en exercice — format "divisé" : identité + organes, SANS mandats dans les PA*.json
+    # 1. Acteurs en exercice — format "divisé" : identité + organes de base
     "https://data.assemblee-nationale.fr/static/openData/repository/17/amo/acteurs_mandats_organes_divises/AMO50_acteurs_mandats_organes_divises.json.zip",
-    # 2. Historique complet (toutes législatures, tous mandats)
+    # 2. Historique complet (toutes législatures) — utile pour les 5 sénateurs référencés dans d'anciens textes
     "https://data.assemblee-nationale.fr/static/openData/repository/17/amo/tous_acteurs_mandats_organes_xi_legislature/AMO30_tous_acteurs_tous_mandats_tous_organes_historique.json.zip",
-    # 3. Législature courante avec mandats complets (le plus frais, importé en dernier)
+    # 3. Législature courante avec mandats complets (importé en dernier — écrase AMO50/AMO30)
     "https://data.assemblee-nationale.fr/static/openData/repository/17/amo/deputes_senateurs_ministres_legislature/AMO20_dep_sen_min_tous_mandats_et_organes.json.zip",
 ]
 

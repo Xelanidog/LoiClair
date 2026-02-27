@@ -12,6 +12,8 @@ import os
 import requests
 import io
 import zipfile
+import traceback
+from pathlib import Path
 from supabase import create_client, Client
 from dotenv import load_dotenv
 from datetime import datetime
@@ -24,19 +26,56 @@ from tqdm import tqdm
 def download_zip(url: str) -> zipfile.ZipFile:
     """Télécharge le ZIP en mémoire depuis l'URL."""
     print(f"Téléchargement du ZIP depuis : {url}")
-    response = requests.get(url)
+    response = requests.get(url, timeout=120)
     response.raise_for_status()  # erreur si lien mort
     return zipfile.ZipFile(io.BytesIO(response.content))
 
 
-# Charger env vars de .env.local
-load_dotenv(dotenv_path="/Users/algodin/Documents/LoiClair website/loiclair/.env.local")
+# Charger env vars de .env.local (chemin relatif au script, portable sur toutes les machines)
+load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent / ".env.local")
 supabase_url = os.getenv("SUPABASE_URL")
 supabase_key = os.getenv("SUPABASE_KEY")
 if not supabase_url or not supabase_key:
     raise ValueError("SUPABASE_URL ou SUPABASE_KEY manquant dans .env.local")
 
 supabase: Client = create_client(supabase_url, supabase_key)
+
+
+# ===================================================================
+# Utilitaires Supabase
+# ===================================================================
+def upsert_batch(table_name: str, batch: list) -> tuple[int, int]:
+    """Upsert un batch avec retry automatique en cas de timeout."""
+    try:
+        response = supabase.table(table_name).upsert(batch, on_conflict="uid").execute()
+        if getattr(response, "error", None):
+            tqdm.write(f"❌ Erreur batch {table_name} ({len(batch)} rows): {response.error}")
+            return 0, len(batch)
+        return len(batch), 0
+    except Exception as e:
+        error_msg = str(e)
+        if "timeout" in error_msg.lower() or "time-out" in error_msg.lower() or "57014" in error_msg or '"code": 504' in error_msg or "'code': 504" in error_msg:
+            if len(batch) > 50:
+                mid = len(batch) // 2
+                tqdm.write(f"⏱️  Timeout {table_name} ({len(batch)} rows) — retry en 2x{mid}")
+                s1, f1 = upsert_batch(table_name, batch[:mid])
+                s2, f2 = upsert_batch(table_name, batch[mid:])
+                return s1 + s2, f1 + f2
+        tqdm.write(f"❌ Erreur batch {table_name} ({len(batch)} rows): {e}")
+        return 0, len(batch)
+
+
+def deduire_chambre(uid: str) -> str | None:
+    """Déduit la chambre d'origine depuis le préfixe de l'UID."""
+    if not uid:
+        return None
+    if uid.startswith("LOI"):
+        return "Parlement"
+    if "ANR" in uid:
+        return "Assemblée Nationale"
+    if "SNR" in uid:
+        return "Sénat"
+    return None
 
 
 def reconstruire_liens_texte(
@@ -58,7 +97,7 @@ def reconstruire_liens_texte(
             num = parts[1]  # '2628'
             return f"https://www.assemblee-nationale.fr/dyn/{legislature}/textes/l{legislature}b{num}_etude-impact.pdf"
         else:
-            print(f"Format ETDIANR invalide pour {uid}, lien=None.")
+            tqdm.write(f"Format ETDIANR invalide pour {uid}, lien=None.")
             return None
 
     # Nouveau : Cas LETTANR : PDF avec extraction legislature et num, suffixe _lettre-rectificative.pdf
@@ -71,7 +110,7 @@ def reconstruire_liens_texte(
             num = parts[1]  # '1999'
             return f"https://www.assemblee-nationale.fr/dyn/{legislature}/textes/l{legislature}b{num}_lettre-rectificative.pdf"
         else:
-            print(f"Format LETTANR invalide pour {uid}, lien=None.")
+            tqdm.write(f"Format LETTANR invalide pour {uid}, lien=None.")
             return None
 
     # Cas ACINANR : PDF avec extraction legislature et num, suffixe _accord-international.pdf
@@ -84,7 +123,7 @@ def reconstruire_liens_texte(
             num = parts[1]  # '2347'
             return f"https://www.assemblee-nationale.fr/dyn/{legislature}/textes/l{legislature}b{num}_accord-international.pdf"
         else:
-            print(f"Format ACINANR invalide pour {uid}, lien=None.")
+            tqdm.write(f"Format ACINANR invalide pour {uid}, lien=None.")
             return None
 
     # Cas AVCEANR : PDF avec extraction legislature et num, suffixe _avis-conseil-etat.pdf
@@ -97,17 +136,17 @@ def reconstruire_liens_texte(
             num = parts[1]  # '0639'
             return f"https://www.assemblee-nationale.fr/dyn/{legislature}/textes/l{legislature}b{num}_avis-conseil-etat.pdf"
         else:
-            print(f"Format AVCEANR invalide pour {uid}, lien=None.")
+            tqdm.write(f"Format AVCEANR invalide pour {uid}, lien=None.")
             return None
 
     # Cas AVISSNR : PDF/html avec calcul session, padding num_notice à 3 digits, suffixe 1.pdf/html si <2006
     if uid.startswith("AVISSNR"):
         if not date_depot or not num_notice:
-            print(f"Manque date_depot ou num_notice pour AVISSNR {uid}, lien=None.")
+            tqdm.write(f"Manque date_depot ou num_notice pour AVISSNR {uid}, lien=None.")
             return None
         date = date_depot or date_publication or date_creation
         if not date:
-            print(f"Manque toute date pour AVISSNR {uid}, lien=None.")
+            tqdm.write(f"Manque toute date pour AVISSNR {uid}, lien=None.")
             return None
         try:
             dt = datetime.fromisoformat(date.replace("Z", "+00:00"))
@@ -119,7 +158,7 @@ def reconstruire_liens_texte(
             suffix = ".html" if year < 2006 else "1.pdf"
             return f"https://www.senat.fr/rap/{session_code}-{padded_num}/{session_code}-{padded_num}{suffix}"
         except Exception as e:
-            print(f"Erreur parsing date pour AVISSNR {uid}: {e}, lien=None.")
+            tqdm.write(f"Erreur parsing date pour AVISSNR {uid}: {e}, lien=None.")
             return None
 
     # Cas RAPPSNR sans BTA : PDF/html avec calcul session, padding num_notice à 3 digits, suffixe 1.pdf/html si <2006
@@ -134,12 +173,12 @@ def reconstruire_liens_texte(
                 if not num_notice:
                     raise ValueError("Aucun num_notice extractible")
             except Exception as e:
-                print(f"Erreur fallback num_notice pour {uid}: {e}, lien=None.")
+                tqdm.write(f"Erreur fallback num_notice pour {uid}: {e}, lien=None.")
                 return None
         # Fallback pour date : tester toutes les options ; si aucune, lien=None
         date = date_depot or date_publication or date_creation
         if not date:
-            print(f"Aucune date disponible pour RAPPSNR {uid}, lien=None.")
+            tqdm.write(f"Aucune date disponible pour RAPPSNR {uid}, lien=None.")
             return None
         try:
             dt = datetime.fromisoformat(date.replace("Z", "+00:00"))
@@ -155,7 +194,7 @@ def reconstruire_liens_texte(
             )  # Adaptation historique des formats Sénat
             return f"https://www.senat.fr/rap/{session_code}-{padded_num}/{session_code}-{padded_num}{suffix}"
         except Exception as e:
-            print(f"Erreur parsing pour RAPPSNR {uid}: {e}, lien=None.")
+            tqdm.write(f"Erreur parsing pour RAPPSNR {uid}: {e}, lien=None.")
             return None
 
     # Cas RAPPSNR avec BTA : PDF/html avec calcul session, padding num_notice à 3 digits, suffixe .pdf/html si <2006
@@ -171,12 +210,12 @@ def reconstruire_liens_texte(
                 if not num_notice:
                     raise ValueError("Aucun num_notice extractible")
             except Exception as e:
-                print(f"Erreur fallback num_notice pour {uid}: {e}, lien=None.")
+                tqdm.write(f"Erreur fallback num_notice pour {uid}: {e}, lien=None.")
                 return None
         # Fallback pour date : tester toutes les options ; si aucune, lien=None
         date = date_depot or date_publication or date_creation
         if not date:
-            print(f"Aucune date disponible pour RAPPSNR BTA {uid}, lien=None.")
+            tqdm.write(f"Aucune date disponible pour RAPPSNR BTA {uid}, lien=None.")
             return None
         try:
             dt = datetime.fromisoformat(date.replace("Z", "+00:00"))
@@ -192,17 +231,17 @@ def reconstruire_liens_texte(
             )  # Sans '1' pour tas (basé sur docs Sénat)
             return f"https://www.senat.fr/leg/tas{session_code}-{padded_num}{suffix}"
         except Exception as e:
-            print(f"Erreur parsing pour RAPPSNR BTA {uid}: {e}, lien=None.")
+            tqdm.write(f"Erreur parsing pour RAPPSNR BTA {uid}: {e}, lien=None.")
             return None
 
     # Cas PIONSNR : PDF/html avec calcul session, padding num_notice à 3 digits, suffixe .pdf/html si <2006
     if uid.startswith("PIONSNR") and "BTA" not in uid:
         if not num_notice:
-            print(f"Manque num_notice pour PIONSNR {uid}, lien=None.")
+            tqdm.write(f"Manque num_notice pour PIONSNR {uid}, lien=None.")
             return None
         date = date_depot or date_publication or date_creation
         if not date:
-            print(f"Manque toute date pour PIONSNR {uid}, lien=None.")
+            tqdm.write(f"Manque toute date pour PIONSNR {uid}, lien=None.")
             return None
         try:
             dt = datetime.fromisoformat(date.replace("Z", "+00:00"))
@@ -214,17 +253,17 @@ def reconstruire_liens_texte(
             suffix = ".html" if year < 2007 else ".pdf"
             return f"https://www.senat.fr/leg/ppl{session_code}-{padded_num}{suffix}"
         except Exception as e:
-            print(f"Erreur parsing date pour PIONSNR {uid}: {e}, lien=None.")
+            tqdm.write(f"Erreur parsing date pour PIONSNR {uid}: {e}, lien=None.")
             return None
 
     # Cas PIONSNR avec BTA : PDF/html avec calcul session, padding num_notice à 3 digits, suffixe .pdf/html si <2006
     if uid.startswith("PIONSNR") and "BTA" in uid:
         if not num_notice:
-            print(f"Manque num_notice pour PIONSNR BTA {uid}, lien=None.")
+            tqdm.write(f"Manque num_notice pour PIONSNR BTA {uid}, lien=None.")
             return None
         date = date_depot or date_publication or date_creation
         if not date:
-            print(f"Manque toute date pour PIONSNR BTA {uid}, lien=None.")
+            tqdm.write(f"Manque toute date pour PIONSNR BTA {uid}, lien=None.")
             return None
         try:
             dt = datetime.fromisoformat(date.replace("Z", "+00:00"))
@@ -236,7 +275,7 @@ def reconstruire_liens_texte(
             suffix = ".html" if year < 2007 else ".pdf"
             return f"https://www.senat.fr/leg/tas{session_code}-{padded_num}{suffix}"
         except Exception as e:
-            print(f"Erreur parsing date pour PIONSNR BTA {uid}: {e}, lien=None.")
+            tqdm.write(f"Erreur parsing date pour PIONSNR BTA {uid}: {e}, lien=None.")
             return None
 
     # Cas pour AN avant L15 : Liens ASP basés sur legislature < 15
@@ -251,7 +290,7 @@ def reconstruire_liens_texte(
                 # Extraire seulement les digits initiaux (ex. '16TAP' → '16')
                 leg_str = "".join([c for c in leg_str if c.isdigit()])
             except Exception as e:
-                print(
+                tqdm.write(
                     f"Erreur extraction legislature de UID pour {uid}: {e}, passe au cas standard."
                 )
                 leg_str = None
@@ -267,9 +306,9 @@ def reconstruire_liens_texte(
                     else:
                         return f"https://www.assemblee-nationale.fr/{leg_str}/propositions/pion{padded_num}.asp"
             except ValueError:
-                print(f"Legislature invalide pour {uid}, passe au cas standard.")
+                tqdm.write(f"Legislature invalide pour {uid}, passe au cas standard.")
         else:
-            print(f"Pas de legislature disponible pour {uid}, passe au cas standard.")
+            tqdm.write(f"Pas de legislature disponible pour {uid}, passe au cas standard.")
 
     # Cas PRJLSNR sans BTA/BTC : PDF/html avec calcul session, padding num_notice à 3 digits, suffixe .pdf/html si <2007
     if uid.startswith("PRJLSNR") and "BTA" not in uid and "BTC" not in uid:
@@ -283,12 +322,12 @@ def reconstruire_liens_texte(
                 if not num_notice:
                     raise ValueError("Aucun num_notice extractible")
             except Exception as e:
-                print(f"Erreur fallback num_notice pour {uid}: {e}, lien=None.")
+                tqdm.write(f"Erreur fallback num_notice pour {uid}: {e}, lien=None.")
                 return None
         # Fallback pour date : tester toutes les options ; si aucune, lien=None
         date = date_depot or date_publication or date_creation
         if not date:
-            print(f"Aucune date disponible pour PRJLSNR {uid}, lien=None.")
+            tqdm.write(f"Aucune date disponible pour PRJLSNR {uid}, lien=None.")
             return None
         try:
             dt = datetime.fromisoformat(date.replace("Z", "+00:00"))
@@ -302,7 +341,7 @@ def reconstruire_liens_texte(
             suffix = ".html" if year < 2007 else ".pdf"  # Adaptation historique Sénat
             return f"https://www.senat.fr/leg/pjl{session_code}-{padded_num}{suffix}"
         except Exception as e:
-            print(f"Erreur parsing pour PRJLSNR {uid}: {e}, lien=None.")
+            tqdm.write(f"Erreur parsing pour PRJLSNR {uid}: {e}, lien=None.")
             return None
 
     # Cas PRJLSNR avec BTC : Similaire à standard, utilise 'pjl' (pattern observé)
@@ -317,12 +356,12 @@ def reconstruire_liens_texte(
                 if not num_notice:
                     raise ValueError("Aucun num_notice extractible")
             except Exception as e:
-                print(f"Erreur fallback num_notice pour {uid}: {e}, lien=None.")
+                tqdm.write(f"Erreur fallback num_notice pour {uid}: {e}, lien=None.")
                 return None
         # Fallback pour date : tester toutes les options ; si aucune, lien=None
         date = date_depot or date_publication or date_creation
         if not date:
-            print(f"Aucune date disponible pour PRJLSNR BTC {uid}, lien=None.")
+            tqdm.write(f"Aucune date disponible pour PRJLSNR BTC {uid}, lien=None.")
             return None
         try:
             dt = datetime.fromisoformat(date.replace("Z", "+00:00"))
@@ -334,7 +373,7 @@ def reconstruire_liens_texte(
             suffix = ".html" if year < 2007 else ".pdf"
             return f"https://www.senat.fr/leg/pjl{session_code}-{padded_num}{suffix}"
         except Exception as e:
-            print(f"Erreur parsing pour PRJLSNR BTC {uid}: {e}, lien=None.")
+            tqdm.write(f"Erreur parsing pour PRJLSNR BTC {uid}: {e}, lien=None.")
             return None
 
     # Cas PRJLSNR avec BTA : PDF/html avec calcul session, padding num_notice à 3 digits, suffixe .pdf/html si <2007
@@ -349,12 +388,12 @@ def reconstruire_liens_texte(
                 if not num_notice:
                     raise ValueError("Aucun num_notice extractible")
             except Exception as e:
-                print(f"Erreur fallback num_notice pour {uid}: {e}, lien=None.")
+                tqdm.write(f"Erreur fallback num_notice pour {uid}: {e}, lien=None.")
                 return None
         # Fallback pour date : tester toutes les options ; si aucune, lien=None
         date = date_depot or date_publication or date_creation
         if not date:
-            print(f"Aucune date disponible pour PRJLSNR BTA {uid}, lien=None.")
+            tqdm.write(f"Aucune date disponible pour PRJLSNR BTA {uid}, lien=None.")
             return None
         try:
             dt = datetime.fromisoformat(date.replace("Z", "+00:00"))
@@ -366,7 +405,7 @@ def reconstruire_liens_texte(
             suffix = ".html" if year < 2007 else ".pdf"
             return f"https://www.senat.fr/leg/tas{session_code}-{padded_num}{suffix}"
         except Exception as e:
-            print(f"Erreur parsing pour PRJLSNR BTA {uid}: {e}, lien=None.")
+            tqdm.write(f"Erreur parsing pour PRJLSNR BTA {uid}: {e}, lien=None.")
             return None
 
     # Cas HTML standards (AN) - étendu comme avant
@@ -397,7 +436,7 @@ def importer_texte(texte_data: dict, file_name: str = "unknown.json") -> list:
 
         # Check préliminaire : s'assurer que data est un dict valide
         if not isinstance(data, dict):
-            print(f"Data non valide (pas un dict) pour {file_name}, skip.")
+            tqdm.write(f"Data non valide (pas un dict) pour {file_name}, skip.")
             return []
 
         # Nouvelle branche pour gérer les dossiers législatifs et extraire les textes promulgués
@@ -416,9 +455,6 @@ def importer_texte(texte_data: dict, file_name: str = "unknown.json") -> list:
                 acts_leg = dossier.get("actesLegislatifs")
                 if acts_leg is None or not isinstance(acts_leg, dict):
                     actes = []  # Fallback safe si absent ou invalide
-                    print(
-                        f"Debug: actesLegislatifs absent ou invalide pour {file_name}, set actes=[]"
-                    )
                 else:
                     actes = acts_leg.get(
                         "acteLegislatif", []
@@ -437,24 +473,15 @@ def importer_texte(texte_data: dict, file_name: str = "unknown.json") -> list:
                         # Extraction robuste de sub_acts : gère si actesLegislatifs est None ou non-dict
                         sub_acts = acte.get("actesLegislatifs")
                         if sub_acts is None or not isinstance(sub_acts, dict):
-                            print(
-                                f"Debug: sub_acts absent ou invalide pour PROM dans {file_name}, skip PROM."
-                            )
                             continue  # Skip ce PROM invalide
                         prom_acte = sub_acts.get("acteLegislatif")
 
                         if prom_acte is None:
-                            print(
-                                f"Debug: prom_acte is None pour PROM dans {file_name}, set to {{}}."
-                            )
                             prom_acte = {}
                         elif isinstance(prom_acte, list):
                             prom_acte = [p for p in prom_acte if p is not None]
                             prom_acte = prom_acte[0] if prom_acte else {}
                         elif not isinstance(prom_acte, dict):
-                            print(
-                                f"Debug: prom_acte inattendu (type={type(prom_acte)}) pour PROM dans {file_name}, set to {{}}."
-                            )
                             prom_acte = {}  # Fallback safe
 
                         if prom_acte.get("codeActe") == "PROM-PUB":
@@ -476,7 +503,7 @@ def importer_texte(texte_data: dict, file_name: str = "unknown.json") -> list:
                                         date_jo_str, "%Y-%m-%d"
                                     ).isoformat()
                                 except ValueError:
-                                    print(
+                                    tqdm.write(
                                         f"Erreur parsing date JO pour dossier {uid_dossier}: {date_jo_str}"
                                     )
 
@@ -486,7 +513,7 @@ def importer_texte(texte_data: dict, file_name: str = "unknown.json") -> list:
                             )
 
                             if not uid_texte or not url_legifrance:
-                                print(
+                                tqdm.write(
                                     f"Manque codeLoi ou urlLegifrance pour PROM dans {uid_dossier}, skip."
                                 )
                                 continue
@@ -528,6 +555,7 @@ def importer_texte(texte_data: dict, file_name: str = "unknown.json") -> list:
                                 "titre_principal_court": (
                                     titre_loi[:100] if titre_loi else None
                                 ),  # Court-circuit si long
+                                "chambre": deduire_chambre(uid_texte),
                             }
 
                             payloads.append(data_texte)
@@ -539,18 +567,19 @@ def importer_texte(texte_data: dict, file_name: str = "unknown.json") -> list:
                 return payloads
 
             except Exception as e:
-                print(f"Erreur traitement dossier {file_name}: {e}")
+                tqdm.write(f"Erreur traitement dossier {file_name}: {e}")
+                traceback.print_exc()
                 return []  # Skip le fichier en cas d'erreur
 
         texte = data.get("document", {})
         if not texte or not isinstance(texte, dict):
-            print(f"Fichier {file_name} invalide (pas de 'document' dict), skip.")
-            return
+            tqdm.write(f"Fichier {file_name} invalide (pas de 'document' dict), skip.")
+            return []
 
         uid = texte.get("uid")
         if not uid:
-            print(f"Fichier {file_name} sans uid, skip.")
-            return
+            tqdm.write(f"Fichier {file_name} sans uid, skip.")
+            return []
 
         # Section : Extraction des données communes (pour parent et tomes)
         lien_html = reconstruire_liens_texte(
@@ -708,15 +737,15 @@ def importer_texte(texte_data: dict, file_name: str = "unknown.json") -> list:
             ),  # Ajouté else None
             "depot_code": depot_code,
             "depot_libelle": depot_libelle,
-            "auteurs_refs": ",".join(auteurs_refs) if auteurs_refs else None,
+            "auteurs_refs": auteurs_refs if auteurs_refs else None,
             "type_code": type_code,
             "type_libelle": type_libelle,
-            "rapporteurs_refs": (
-                ",".join(rapporteurs_refs) if rapporteurs_refs else None
-            ),
+            "rapporteurs_refs": rapporteurs_refs if rapporteurs_refs else None,
             "titre_principal_court": (
                 titre_principal_court if titre_principal_court else None
             ),
+            "has_tomes": False,  # Mis à jour après traitement des divisions
+            "chambre": deduire_chambre(uid),
         }
         payloads.append(data)
 
@@ -744,7 +773,7 @@ def importer_texte(texte_data: dict, file_name: str = "unknown.json") -> list:
                 # Extraction uid du tome (obligatoire)
                 uid_tome = texte_tome.get("uid")
                 if not uid_tome:
-                    print(f"Tome sans uid dans {file_name}, skip.")
+                    tqdm.write(f"Tome sans uid dans {file_name}, skip.")
                     continue
                 # Lien pour le tome (utilise la même fonction)
                 lien_html_tome = reconstruire_liens_texte(
@@ -916,14 +945,14 @@ def importer_texte(texte_data: dict, file_name: str = "unknown.json") -> list:
                     ),
                     "depot_code": depot_code_tome,
                     "depot_libelle": depot_libelle_tome,
-                    "auteurs_refs": ",".join(auteurs_refs) if auteurs_refs else None,
+                    "auteurs_refs": auteurs_refs_tome if auteurs_refs_tome else None,
                     "type_code": type_code_tome,
                     "type_libelle": type_libelle_tome,
-                    "rapporteurs_refs": (
-                        ",".join(rapporteurs_refs) if rapporteurs_refs else None
-                    ),
+                    "rapporteurs_refs": rapporteurs_refs_tome if rapporteurs_refs_tome else None,
                     # Modification : Ajout du lien de parenté pour les tomes enfants
                     "parent_uid": uid,  # Référence au parent
+                    "has_tomes": False,
+                    "chambre": deduire_chambre(uid_tome),
                     "titre_principal_court": (
                         titre_principal_court_tome
                         if titre_principal_court_tome
@@ -933,10 +962,26 @@ def importer_texte(texte_data: dict, file_name: str = "unknown.json") -> list:
 
                 payloads.append(data_tome)
 
+        # Mise à jour du parent après traitement des tomes
+        has_tomes = len(divisions) > 0
+        payloads[0]["has_tomes"] = has_tomes
+
+        if has_tomes:
+            # Si vrais tomes numérotés (pas juste -COMPA qui est une annexe),
+            # remplacer le lien du parent par celui du premier vrai tome
+            # car le lien du parent peut ne pas fonctionner dans ces cas
+            vrais_tomes = [
+                p for p in payloads[1:]
+                if p.get("lien_texte") and "-COMPA" not in p["lien_texte"]
+            ]
+            if vrais_tomes:
+                payloads[0]["lien_texte"] = vrais_tomes[0]["lien_texte"]
+
         return payloads
 
     except Exception as e:
-        print(f"Erreur générale pour {file_name}: {e}")
+        tqdm.write(f"Erreur générale pour {file_name}: {e}")
+        traceback.print_exc()
         return []
 
 
@@ -960,8 +1005,9 @@ def importer_textes_from_zip(zip_ref: zipfile.ZipFile):
     print(f"   - Textes (document/) : {textes_count}")
     print(f"   - Dossiers (pour PROM) : {dossiers_count}")
 
-    batch_size = 500  # on envoie 100 textes à la fois à Supabase
+    batch_size = 500
     batch = []
+    parsed = 0
     success = 0
     failed = 0
 
@@ -973,46 +1019,35 @@ def importer_textes_from_zip(zip_ref: zipfile.ZipFile):
 
             payloads = importer_texte(texte_data, file_name)
 
-            batch.extend(payloads)
-            success += len(payloads)
+            if payloads:
+                batch.extend(payloads)
+                parsed += len(payloads)
 
             # Envoi par batch
             if len(batch) >= batch_size:
-                response = (
-                    supabase.table("textes").upsert(batch, on_conflict="uid").execute()
-                )
-                if (
-                    not response.data
-                ):  # ← Changement : vérifie si pas de data (erreur probable)
-                    print(
-                        f"Erreur batch : {getattr(response, 'error', 'Erreur inconnue')}"
-                    )
-                    failed += len(batch)  # Ajoute aux échecs
-                else:
-                    success += len(
-                        batch
-                    )  # ← Déplace ici : compte succès seulement si OK
+                s, f = upsert_batch("textes", batch)
+                success += s
+                failed += f
                 batch = []
 
         except Exception as e:
             failed += 1
-            print(f"Erreur fichier {file_name}: {e}")
+            tqdm.write(f"❌ Erreur fichier {file_name}: {e}")
+            traceback.print_exc()
 
     # Dernier batch restant
     if batch:
-        response = supabase.table("textes").upsert(batch, on_conflict="uid").execute()
-        if not response.data:
-            print(
-                f"Erreur batch final : {getattr(response, 'error', 'Erreur inconnue')}"
-            )
-            failed += len(batch)
-        else:
-            success += len(batch)
+        s, f = upsert_batch("textes", batch)
+        success += s
+        failed += f
 
     print(f"\n{'='*60}")
-    print(f"IMPORT TEXTES TERMINÉ")
-    print(f"   Succès  : {success}")
+    print(f"           IMPORT TEXTES TERMINÉ")
+    print(f"{'='*60}")
+    print(f"   Parsés  : {parsed}")
+    print(f"   Upserts : {success}")
     print(f"   Échecs  : {failed}")
+    print(f"   Total   : {parsed + failed} / {len(json_files)}")
     print(f"{'='*60}")
 
 

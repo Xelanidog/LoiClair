@@ -248,7 +248,7 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
     const acteurRefMap = new Map<string, string>(); // dossierUid → premier acteurRef
     for (const texte of textesWithAuthors ?? []) {
       if (!acteurRefMap.has(texte.dossier_ref) && texte.auteurs_refs) {
-        const firstRef = texte.auteurs_refs.split(',')[0]?.trim();
+        const firstRef = Array.isArray(texte.auteurs_refs) ? texte.auteurs_refs[0] : texte.auteurs_refs?.split(',')[0]?.trim();
         if (firstRef) acteurRefMap.set(texte.dossier_ref, firstRef);
       }
     }
@@ -475,8 +475,8 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
                       <ExternalLink className="w-3.5 h-3.5" /> Assemblée Nationale
                     </a>
                   )}
-                  {dossier.senat_chemin && (
-                    <a href={dossier.senat_chemin} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground hover:underline">
+                  {dossier.lien_senat && (
+                    <a href={dossier.lien_senat} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground hover:underline">
                       <ExternalLink className="w-3.5 h-3.5" /> Sénat
                     </a>
                   )}

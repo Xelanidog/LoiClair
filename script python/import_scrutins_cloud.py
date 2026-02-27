@@ -7,6 +7,7 @@
 
 import json
 import os
+import traceback
 from pathlib import Path
 from supabase import create_client, Client
 from dotenv import load_dotenv
@@ -35,6 +36,29 @@ def download_zip(url: str) -> zipfile.ZipFile:
     response.raise_for_status()
     print("Téléchargement terminé.")
     return zipfile.ZipFile(io.BytesIO(response.content))
+
+
+def upsert_batch(table: str, rows: list, conflict: str, batch_size: int = 500):
+    """Upsert une liste de dicts dans une table Supabase par batch de `batch_size`, avec retry sur timeout."""
+    for i in range(0, len(rows), batch_size):
+        batch = rows[i : i + batch_size]
+        _upsert_single_batch(table, batch, conflict)
+
+
+def _upsert_single_batch(table: str, batch: list, conflict: str) -> None:
+    """Upsert un seul batch avec retry automatique en cas de timeout."""
+    try:
+        supabase.table(table).upsert(batch, on_conflict=conflict).execute()
+    except Exception as e:
+        error_msg = str(e)
+        if "timeout" in error_msg.lower() or "time-out" in error_msg.lower() or "57014" in error_msg or '"code": 504' in error_msg or "'code': 504" in error_msg:
+            if len(batch) > 50:
+                mid = len(batch) // 2
+                tqdm.write(f"⏱️  Timeout {table} ({len(batch)} rows) — retry en 2x{mid}")
+                _upsert_single_batch(table, batch[:mid], conflict)
+                _upsert_single_batch(table, batch[mid:], conflict)
+                return
+        tqdm.write(f"❌ Erreur upsert {table} ({len(batch)} rows): {type(e).__name__}: {e}")
 
 
 def fetch_all_rows(table: str, columns: str) -> list:
@@ -157,7 +181,7 @@ def parser_scrutin(data: dict) -> tuple:
             continue
 
         organe_ref = groupe.get("organeRef")
-        if not organe_ref:
+        if not organe_ref or organe_ref == "PO0":
             continue
 
         nombre_membres = safe_int(groupe.get("nombreMembresGroupe"))
@@ -270,7 +294,8 @@ def importer_scrutins_from_zip(zip_ref: zipfile.ZipFile):
     #   cohesion_eligible_cumul           : somme des membres présents (éligibles à la cohésion)
     stats_organes = {}
 
-    payloads_scrutins = []
+    BATCH_SIZE = 500
+    pending_scrutins = []  # buffer pour le streaming d'upserts
     success = 0            # total de scrutins parsés avec succès
     success_importants = 0 # parmi eux : scrutins MOC (motion de censure) ou SPS (solennel)
     failed = 0
@@ -287,8 +312,13 @@ def importer_scrutins_from_zip(zip_ref: zipfile.ZipFile):
                 failed += 1
                 continue
 
-            payloads_scrutins.append(payload_scrutin)
+            pending_scrutins.append(payload_scrutin)
             success += 1
+
+            # Flush par batch pendant le parsing pour éviter l'accumulation mémoire
+            if len(pending_scrutins) >= BATCH_SIZE:
+                upsert_batch("scrutins", pending_scrutins, "uid", BATCH_SIZE)
+                pending_scrutins = []
 
             # Détection scrutin "important" (Motion de Censure ou Scrutin Public Solennel)
             is_scrutin_important = payload_scrutin.get("type_vote_code") in ("MOC", "SPS")
@@ -378,18 +408,17 @@ def importer_scrutins_from_zip(zip_ref: zipfile.ZipFile):
 
         except Exception as e:
             tqdm.write(f"❌ Erreur sur {file_path}: {type(e).__name__}: {e}")
+            traceback.print_exc()
             failed += 1
 
     # ===================================================================
-    # Upsert des scrutins bruts
+    # Upsert des scrutins bruts (flush du buffer restant)
     # ===================================================================
-    print(f"\nInsertion de {len(payloads_scrutins)} scrutins dans Supabase...")
-    batch_size = 500
-    for i in range(0, len(payloads_scrutins), batch_size):
-        batch = payloads_scrutins[i : i + batch_size]
-        resp = supabase.table("scrutins").upsert(batch, on_conflict="uid").execute()
-        if not resp.data:
-            print(f"❌ Erreur batch scrutins (offset {i}): {getattr(resp, 'error', 'inconnu')}")
+    if pending_scrutins:
+        print(f"\nInsertion des {len(pending_scrutins)} derniers scrutins dans Supabase...")
+        upsert_batch("scrutins", pending_scrutins, "uid", BATCH_SIZE)
+    else:
+        print("\nTous les scrutins ont déjà été streamés vers Supabase.")
 
     # ===================================================================
     # Mise à jour des stats acteurs
@@ -404,7 +433,6 @@ def importer_scrutins_from_zip(zip_ref: zipfile.ZipFile):
             skipped_acteurs += 1
             continue
 
-        vt = s["votes_total"]
         # taux_presence = scrutins où le député était activement présent (pour + contre + abstentions)
         # divisé par le TOTAL des scrutins de la législature (pas juste ceux où il apparaît)
         # Les absents de l'hémicycle ne figurent pas dans le JSON → il faut utiliser `success` comme dénominateur
@@ -422,7 +450,7 @@ def importer_scrutins_from_zip(zip_ref: zipfile.ZipFile):
 
         batch_acteurs.append({
             "uid": acteur_ref,
-            "votes_total": vt,
+            "votes_total": s["votes_total"],
             "votes_pour": s["votes_pour"],
             "votes_contre": s["votes_contre"],
             "votes_abstentions": s["votes_abstentions"],
@@ -432,12 +460,7 @@ def importer_scrutins_from_zip(zip_ref: zipfile.ZipFile):
             "taux_cohesion_groupe": taux_cohesion,
         })
 
-    for i in range(0, len(batch_acteurs), batch_size):
-        batch = batch_acteurs[i : i + batch_size]
-        resp = supabase.table("acteurs").upsert(batch, on_conflict="uid").execute()
-        if not resp.data:
-            print(f"❌ Erreur batch acteurs (offset {i}): {getattr(resp, 'error', 'inconnu')}")
-
+    upsert_batch("acteurs", batch_acteurs, "uid", BATCH_SIZE)
     print(f"  → {len(batch_acteurs)} acteurs mis à jour, {skipped_acteurs} ignorés (non trouvés en base).")
 
     # ===================================================================
@@ -450,6 +473,7 @@ def importer_scrutins_from_zip(zip_ref: zipfile.ZipFile):
     for organe_ref, s in stats_organes.items():
         # On ne met à jour que les organes déjà présents dans notre base
         if organe_ref not in known_organe_uids:
+            print(f"  ⚠️  Organe ignoré (non trouvé en base) : {organe_ref}")
             skipped_organes += 1
             continue
 
@@ -472,12 +496,7 @@ def importer_scrutins_from_zip(zip_ref: zipfile.ZipFile):
             "taux_cohesion_interne": taux_cohesion,
         })
 
-    for i in range(0, len(batch_organes), batch_size):
-        batch = batch_organes[i : i + batch_size]
-        resp = supabase.table("organes").upsert(batch, on_conflict="uid").execute()
-        if not resp.data:
-            print(f"❌ Erreur batch organes (offset {i}): {getattr(resp, 'error', 'inconnu')}")
-
+    upsert_batch("organes", batch_organes, "uid", BATCH_SIZE)
     print(f"  → {len(batch_organes)} organes mis à jour, {skipped_organes} ignorés (non trouvés en base).")
 
     # ===================================================================

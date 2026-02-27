@@ -6,6 +6,7 @@
 import json
 import os
 import sys
+import traceback
 from pathlib import Path
 from supabase import create_client, Client
 from dotenv import load_dotenv
@@ -15,8 +16,8 @@ import zipfile
 from tqdm import tqdm
 from datetime import datetime
 
-# Ajouter le dossier scripts/ au path pour importer classify_themes
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts/ python"))
+# Ajouter le dossier du script au path pour importer classify_themes (même dossier)
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 from classify_themes import classify_themes
 
 # Charger .env.local (chemin relatif au script, portable sur toutes les machines)
@@ -31,6 +32,17 @@ supabase: Client = create_client(supabase_url, supabase_key)
 # ===================================================================
 # Fonctions utilitaires
 # ===================================================================
+
+def parse_date_acte(s: str | None):
+    """Parse une date d'acte (YYYY-MM-DD ou ISO) en datetime. Retourne None si invalide."""
+    if not s:
+        return None
+    try:
+        return datetime.fromisoformat(s.replace("Z", "+00:00") if "T" in s else s + "T00:00:00")
+    except (ValueError, AttributeError):
+        return None
+
+
 def reconstruire_lien_an(legislature, titre_chemin):
     """Reconstruit le lien Assemblée nationale."""
     if legislature and titre_chemin:
@@ -165,19 +177,12 @@ def determiner_statut_final_precis(actes) -> str:
             is_rejete = "rejet" in libelle
 
             if is_decision and date_acte and (is_adopte or is_rejete):
-                try:
-                    # Normalise la date
-                    if "T" in date_acte:
-                        dt = datetime.fromisoformat(date_acte.replace("Z", "+00:00"))
-                    else:
-                        dt = datetime.fromisoformat(date_acte + "T00:00:00")
-                    
+                dt = parse_date_acte(date_acte)
+                if dt:
                     if "AN" in code_acte:
                         decisions_an.append((dt, is_adopte))
                     elif "SN" in code_acte:
                         decisions_sn.append((dt, is_adopte))
-                except (ValueError, AttributeError):
-                    pass  # date invalide → on ignore
 
             # Récursion
             sous = acte.get("actesLegislatifs")
@@ -238,14 +243,9 @@ def determiner_statut_final_chambre_unique(actes) -> str:
             is_adopte = "adopt" in libelle
             is_rejete = "rejet" in libelle
             if ("DEC" in code_acte or "VOTE" in code_acte) and date_acte and (is_adopte or is_rejete):
-                try:
-                    dt = datetime.fromisoformat(
-                        date_acte.replace("Z", "+00:00") if "T" in date_acte
-                        else date_acte + "T00:00:00"
-                    )
+                dt = parse_date_acte(date_acte)
+                if dt:
                     decisions.append((dt, is_adopte))
-                except (ValueError, AttributeError):
-                    pass
             sous = acte.get("actesLegislatifs")
             if sous:
                 if isinstance(sous, dict) and "acteLegislatif" in sous:
@@ -273,15 +273,9 @@ def extraire_date_depot_min(actes):
         if isinstance(obj, dict):
             date_str = obj.get("dateActe")
             if date_str and isinstance(date_str, str):
-                try:
-                    # Gère YYYY-MM-DD et YYYY-MM-DDTHH:MM:SS
-                    if "T" in date_str:
-                        dt = datetime.fromisoformat(date_str)
-                    else:
-                        dt = datetime.fromisoformat(date_str + "T00:00:00")
+                dt = parse_date_acte(date_str)
+                if dt:
                     dates.append(dt)
-                except (ValueError, TypeError, AttributeError):
-                    pass
             # Récursion sur toutes les sous-clés
             for v in obj.values():
                 recurse(v)
@@ -394,8 +388,10 @@ def importer_dossiers_from_zip(
     for g in (gvt_rows.data or []):
         if not g.get("date_debut"):
             continue
-        deb = datetime.fromisoformat(g["date_debut"].replace("Z", "+00:00"))
-        fin = datetime.fromisoformat(g["date_fin"].replace("Z", "+00:00")) if g.get("date_fin") else None
+        deb = parse_date_acte(g["date_debut"])
+        fin = parse_date_acte(g["date_fin"]) if g.get("date_fin") else None
+        if not deb:
+            continue
         gouvernements.append((deb, fin, g["uid"]))
         gouvernements_uids.add(g["uid"])
     gouvernements.sort(key=lambda x: x[0])
@@ -415,7 +411,33 @@ def importer_dossiers_from_zip(
     batch_size = 500
     batch = []
 
+    def flush_batch(b: list, idx: int = -1) -> tuple[int, int]:
+        """Envoie un batch avec retry automatique en cas de timeout."""
+        try:
+            resp = (
+                supabase.table("dossiers_legislatifs")
+                .upsert(b, on_conflict="uid")
+                .execute()
+            )
+            if getattr(resp, "error", None):
+                label = f"idx {idx}" if idx >= 0 else "final"
+                tqdm.write(f"❌ Erreur batch ({label}): {resp.error}")
+                return 0, len(b)
+            return len(b), 0
+        except Exception as e:
+            error_msg = str(e)
+            if "timeout" in error_msg.lower() or "time-out" in error_msg.lower() or "57014" in error_msg or '"code": 504' in error_msg or "'code': 504" in error_msg:
+                if len(b) > 50:
+                    mid = len(b) // 2
+                    tqdm.write(f"⏱️  Timeout dossiers ({len(b)} rows) — retry en 2x{mid}")
+                    s1, f1 = flush_batch(b[:mid], idx)
+                    s2, f2 = flush_batch(b[mid:], idx)
+                    return s1 + s2, f1 + f2
+            tqdm.write(f"❌ Erreur batch: {e}")
+            return 0, len(b)
+
     # Boucle principale
+    parsed = 0
     for idx, file_path in enumerate(
         tqdm(json_files, desc="Import dossiers législatifs", unit="dossier")
     ):
@@ -426,29 +448,21 @@ def importer_dossiers_from_zip(
 
             if payload is not None:
                 batch.append(payload)
-                success += 1
+                parsed += 1
             else:
                 failed += 1
 
             # Upsert par batch
             if len(batch) >= batch_size:
-                resp = (
-                    supabase.table("dossiers_legislatifs")
-                    .upsert(batch, on_conflict="uid")
-                    .execute()
-                )
-                if not resp.data:
-                    tqdm.write(f"❌ Erreur sur batch intermédiaire (idx {idx}): {getattr(resp, 'error', 'inconnu')}")
-                batch = []  # Reset batch
+                s, f = flush_batch(batch, idx)
+                success += s
+                failed += f
+                batch = []
 
     if batch:  # Envoi final du batch restant
-        resp = (
-            supabase.table("dossiers_legislatifs")
-            .upsert(batch, on_conflict="uid")
-            .execute()
-        )
-        if not resp.data:
-            print(f"❌ Erreur sur batch final : {getattr(resp, 'error', 'inconnu')}")
+        s, f = flush_batch(batch)
+        success += s
+        failed += f
 
     # ←══════════════════════════════════════════════════════════════
     #                  RAPPORT FINAL (Une seule fois !)
@@ -456,9 +470,10 @@ def importer_dossiers_from_zip(
     print(f"\n{'='*60}")
     print(f"                  IMPORT TERMINÉ")
     print(f"{'='*60}")
-    print(f"   Succès  : {success}")
+    print(f"   Parsés  : {parsed}")
+    print(f"   Upserts : {success}")
     print(f"   Échecs  : {failed}")
-    print(f"   Total   : {success + failed} / {len(json_files)}")
+    print(f"   Total   : {parsed + failed} / {len(json_files)}")
     print(f"{'='*60}")
 
 
@@ -470,12 +485,12 @@ def importer_dossier(data: dict, file_path: str = "unknown.json", acteur_to_grou
     try:
         dossier = data.get("dossierParlementaire", {})
         if not dossier:
-            print(f"⚠️  Format invalide → {file_path}")
+            tqdm.write(f"⚠️  Format invalide → {file_path}")
             return None
 
         uid = dossier.get("uid")
         if not uid:
-            print(f"⚠️  UID manquant → {file_path}")
+            tqdm.write(f"⚠️  UID manquant → {file_path}")
             return None
 
         legislature = (
@@ -501,16 +516,12 @@ def importer_dossier(data: dict, file_path: str = "unknown.json", acteur_to_grou
             premier = acteurs_list[0] if isinstance(acteurs_list[0], dict) else {}
             initiateur_acteur_ref = premier.get("acteurRef")
             initiateur_mandat_ref = premier.get("mandatRef")
-        # Reste comme co-auteurs (liste de dicts pour refs)
-        co_auteurs = []
-        for acteur in acteurs_list[1:]:  # Skip le premier
-            if isinstance(acteur, dict):
-                co_auteurs.append(
-                    {
-                        "acteurRef": acteur.get("acteurRef"),
-                        "mandatRef": acteur.get("mandatRef"),
-                    }
-                )
+        # Reste comme co-auteurs (liste d'UIDs acteurRef pour query facile via = ANY())
+        co_auteurs = [
+            a.get("acteurRef")
+            for a in acteurs_list[1:]
+            if isinstance(a, dict) and a.get("acteurRef")
+        ]
         # Organes (inchangé, par sécurité)
         organes_data = initiateur.get("organes") or {}
         organe = organes_data.get("organe") or {}
@@ -569,15 +580,13 @@ def importer_dossier(data: dict, file_path: str = "unknown.json", acteur_to_grou
 
         # 3. Fallback gouvernemental : pas de groupe trouvé, on cherche le gouvernement actif à la date de dépôt
         if not initiateur_groupe_uid and gouvernements and date_depot:
-            try:
-                dt = datetime.fromisoformat(date_depot)
+            dt = parse_date_acte(date_depot)
+            if dt:
                 for deb, fin, gvt_uid in gouvernements:
                     if deb <= dt and (fin is None or fin >= dt):
                         initiateur_groupe_uid = gvt_uid
                         initiateur_groupe_libelle = "Gouvernement"
                         break
-            except (ValueError, TypeError):
-                pass
 
         # Statut de base (promulgation + rejets simples via ancienne fonction)
         statut_base, date_promulgation, code_loi, titre_loi, url_legifrance = (
@@ -603,21 +612,15 @@ def importer_dossier(data: dict, file_path: str = "unknown.json", acteur_to_grou
             "legislature": legislature,
             "titre": titre,
             "titre_chemin": titre_chemin,
-            "senat_chemin": senat_chemin,
+            "lien_senat": senat_chemin,
             "procedure_code": procedure_code,
             "procedure_libelle": procedure_libelle,
             "initiateur_acteur_ref": initiateur_acteur_ref,
             "initiateur_mandat_ref": initiateur_mandat_ref,
             "initiateur_organe_ref": initiateur_organe_ref,
-            "co_auteurs": (
-                json.dumps(co_auteurs) if co_auteurs else None
-            ),  # JSONB pour co-auteurs
-            "actes_legislatifs": (
-                json.dumps(actes_legislatifs, ensure_ascii=False)
-                if actes_legislatifs
-                else "[]"
-            ),
-            "fusion_dossier": json.dumps(fusion_dossier) if fusion_dossier else None,
+            "co_auteurs": co_auteurs or None,  # text[] — queryable via = ANY()
+            "actes_legislatifs": actes_legislatifs or [],
+            "fusion_dossier": fusion_dossier or None,
             "statut_final": statut_final,
             "date_depot": date_depot,
             "date_promulgation": date_promulgation,
@@ -635,8 +638,9 @@ def importer_dossier(data: dict, file_path: str = "unknown.json", acteur_to_grou
         return payload
 
     except Exception as e:
-        print(f"🔥 ERREUR CRITIQUE dans {file_path}")
-        print(f"   → {type(e).__name__}: {e}")
+        tqdm.write(f"🔥 ERREUR CRITIQUE dans {file_path}")
+        tqdm.write(f"   → {type(e).__name__}: {e}")
+        traceback.print_exc()
         return None
 
 
