@@ -13,6 +13,12 @@ export interface ActeurRow {
   taux_presence: number | null;
   taux_presence_solennels: number | null;
   taux_cohesion_groupe: number | null;
+  votes_pour: number | null;
+  votes_contre: number | null;
+  votes_abstentions: number | null;
+  votes_actifs_solennels: number | null;
+  scrutins_pendant_mandat: number | null;
+  scrutins_pendant_mandat_solennels: number | null;
 }
 
 export interface GroupeRow {
@@ -162,17 +168,20 @@ export async function getKpiMetrics(
   groupeFilter?: string
 ): Promise<KpiMetrics> {
   const baseFilter = getInstitutionFilter(institution);
-  let query = supabase
-    .from('acteurs')
-    .select('age, civ, prenom, nom, groupe, mandats, departement_election, libelle_profession, taux_presence, taux_presence_solennels, taux_cohesion_groupe')
-    .eq('en_exercice', true)
-    .match(baseFilter);
+  const BASE_SELECT = 'age, civ, prenom, nom, groupe, mandats, departement_election, libelle_profession, taux_presence, taux_presence_solennels, taux_cohesion_groupe';
+  const EXTENDED_SELECT = BASE_SELECT + ', votes_pour, votes_contre, votes_abstentions, votes_actifs_solennels, scrutins_pendant_mandat, scrutins_pendant_mandat_solennels';
 
-  if (groupeFilter && groupeFilter !== 'tous') {
-    query = query.eq('groupe', groupeFilter);
+  const buildQuery = (select: string) => {
+    let q = supabase.from('acteurs').select(select).eq('en_exercice', true).match(baseFilter);
+    if (groupeFilter && groupeFilter !== 'tous') q = q.eq('groupe', groupeFilter);
+    return q;
+  };
+
+  // Tentative avec colonnes étendues (X/Y scrutins) ; fallback sur colonnes de base si elles n'existent pas encore
+  let { data, error }: PostgrestSingleResponse<any[]> = await buildQuery(EXTENDED_SELECT);
+  if (error) {
+    ({ data, error } = await buildQuery(BASE_SELECT));
   }
-
-  const { data, error }: PostgrestSingleResponse<any[]> = await query;
 
   if (error || !data) {
     console.error('Erreur KPI fetch:', error);
@@ -264,6 +273,12 @@ export async function getKpiMetrics(
       taux_presence: a.taux_presence ?? null,
       taux_presence_solennels: a.taux_presence_solennels ?? null,
       taux_cohesion_groupe: a.taux_cohesion_groupe ?? null,
+      votes_pour: a.votes_pour ?? null,
+      votes_contre: a.votes_contre ?? null,
+      votes_abstentions: a.votes_abstentions ?? null,
+      votes_actifs_solennels: a.votes_actifs_solennels ?? null,
+      scrutins_pendant_mandat: a.scrutins_pendant_mandat ?? null,
+      scrutins_pendant_mandat_solennels: a.scrutins_pendant_mandat_solennels ?? null,
     }))
     .sort((a, b) => a.nomComplet.localeCompare(b.nomComplet, 'fr'));
 

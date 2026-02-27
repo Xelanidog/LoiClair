@@ -210,26 +210,32 @@ Pour chaque scrutin public, LoiClair classe chaque parlementaire dans l'une de c
 - **Votant** : le membre a exprimé un vote (pour, contre, ou abstention).
 - **Non-participant** : le membre n'a pas voté. Cela regroupe deux cas : les « non-votants » (enregistrés comme présents mais n'ayant pas pris part au vote) et les « absents » (non enregistrés dans les données de l'Assemblée nationale pour ce scrutin). Ces deux cas sont additionnés.
 
-Le taux de participation individuel est ensuite :
+Le taux tient compte de la **période réelle d'exercice du mandat** :
 
-> Participation individuelle = Nombre de scrutins où le membre a voté ÷ Nombre total de scrutins
+> Participation individuelle = Votes exprimés pendant le mandat ÷ Scrutins tenus pendant le mandat
 
-Le taux moyen affiché sur la page est la moyenne de ces taux individuels :
+Cela signifie :
+- Si un député arrive en cours de législature (élection partielle), seuls les scrutins depuis son entrée en fonction sont comptabilisés.
+- Si un député quitte son siège (pour devenir ministre par exemple) puis revient, toute sa période d'activité cumulative est prise en compte, du premier jour de mandat jusqu'à aujourd'hui.
+- Si un député quitte définitivement son siège en cours de législature, seuls les scrutins de sa période d'exercice sont retenus.
 
-> Participation moyenne = Somme des taux de participation individuels ÷ Nombre de membres ayant des données de participation
+Le taux moyen d'un groupe est la moyenne de ces taux individuels corrigés :
 
-Exemple chiffré : si 3 députés ont des taux de 85 %, 60 % et 92 %, la participation moyenne est de (85 + 60 + 92) ÷ 3 = 79 %.
+> Participation du groupe = Somme des taux individuels ÷ Nombre de membres ayant des données
 
-Pour un groupe politique, le même calcul est fait sur les taux moyens du groupe (et non sur les individus).
+Exemple chiffré : si 3 députés ont des taux de 85 %, 60 % et 92 %, la participation du groupe est de (85 + 60 + 92) ÷ 3 = 79 %.
+
+Dans le tableau détaillé des députés, le taux est accompagné d'un détail « X / Y » : X votes exprimés sur Y scrutins tenus pendant son mandat.
 
 Variables **incluses** :
 - **Votes exprimés** : pour, contre, abstention — tous comptent comme participation.
 - **Non-votants et absents** : additionnés ensemble comme « non-participation ».
-- Seuls les membres ayant des données de participation sont pris en compte dans la moyenne.
+- Seuls les scrutins ayant eu lieu pendant la période de mandat effective du député sont pris en compte.
 
 Variables **exclues et pourquoi** :
 - Les membres sans aucune donnée de participation (cas rare, par exemple un député tout juste élu) sont exclus pour ne pas fausser la moyenne.
 - Le Gouvernement n'a pas de données de participation (les ministres ne votent pas au Parlement).
+- Les scrutins antérieurs à l'entrée en mandat ou postérieurs à la fin du mandat sont exclus.
 
 **D'où viennent les données**
 Les résultats de chaque scrutin public (qui a voté quoi, qui était non-votant) proviennent de l'open data de l'Assemblée nationale. LoiClair identifie les absents en comparant la liste des votants à la liste des membres en exercice. Mise à jour chaque nuit.

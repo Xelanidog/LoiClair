@@ -397,8 +397,11 @@ def extract_mandate_info(all_mandats: list, file_name: str) -> dict:
     cause_mandat = None
     qualite_actuelle = None
     date_debut_mandat = None
+    date_fin_mandat = None
     place_hemicycle = None
     premiere_election = None
+    _best_inactive_assemblee = None  # (dateDebut, dateFin) du mandat ASSEMBLEE le plus récent terminé
+    _earliest_assemblee_debut = None  # dateDebut le plus ancien parmi tous mandats ASSEMBLEE 17e lég.
 
     for mandat in all_mandats:
         type_organe = mandat.get("typeOrgane")
@@ -408,6 +411,15 @@ def extract_mandate_info(all_mandats: list, file_name: str) -> dict:
         # 1. roles_text → tous les mandats (historiques + actifs)
         if type_organe == "ASSEMBLEE":
             roles_set.add("Député")
+            d = mandat.get("dateDebut") or ""
+            # Suivre le plus ancien mandat ASSEMBLEE de la 17e législature (>= 2024-06-01)
+            if d >= "2024-06-01":
+                if _earliest_assemblee_debut is None or d < _earliest_assemblee_debut:
+                    _earliest_assemblee_debut = d
+            # Suivre le mandat ASSEMBLEE inactif le plus récent (fallback pour anciens députés)
+            if date_fin is not None:
+                if _best_inactive_assemblee is None or d > (_best_inactive_assemblee[0] or ""):
+                    _best_inactive_assemblee = (mandat.get("dateDebut"), date_fin)
         elif type_organe == "SENAT":
             roles_set.add("Sénateur")
         elif type_organe in ["MINISTERE", "GOUVERNEMENT"]:
@@ -479,6 +491,18 @@ def extract_mandate_info(all_mandats: list, file_name: str) -> dict:
                 if raw_qualite:
                     qualite_actuelle = raw_qualite
 
+    # Si aucun mandat ASSEMBLEE actif n'a fourni date_debut_mandat,
+    # utiliser le plus récent mandat ASSEMBLEE terminé comme fallback
+    if date_debut_mandat is None and _best_inactive_assemblee is not None:
+        date_debut_mandat = _earliest_assemblee_debut or _best_inactive_assemblee[0]
+        date_fin_mandat = _best_inactive_assemblee[1]
+    # Si mandat actif: corriger le début si un mandat antérieur de la 17e lég. existe
+    # (ex: député devenu ministre puis revenu — évite participation > 100%)
+    elif date_debut_mandat is not None and _earliest_assemblee_debut is not None:
+        if _earliest_assemblee_debut < date_debut_mandat:
+            date_debut_mandat = _earliest_assemblee_debut
+            # date_fin_mandat reste None (mandat actif en cours)
+
     # Construire roles_text avec priorité
     roles_text = None
     if roles_set:
@@ -514,6 +538,7 @@ def extract_mandate_info(all_mandats: list, file_name: str) -> dict:
         "cause_mandat": cause_mandat,
         "qualite_actuelle": qualite_actuelle,
         "date_debut_mandat": date_debut_mandat,
+        "date_fin_mandat": date_fin_mandat,
         "place_hemicycle": place_hemicycle,
         "premiere_election": premiere_election,
     }
@@ -531,6 +556,8 @@ def importer_acteur(acteur_data, file_name):
         # Mandats : actifs (dateFin=None) toujours inclus + 25 historiques récents
         # ⚠️ Ne PAS tronquer les actifs : un député peut avoir 30+ mandats plus récents
         # que son mandat ASSEMBLEE → [:25] global exclurait le mandat principal
+        # ⚠️ Toujours inclure les mandats ASSEMBLEE 17e lég. (>= 2024-06-01) même au-delà
+        # des 25 : un ex-ministre revenu aura son mandat d'origine exclu sinon (bug >100%)
         all_mandats = normalize_mandats(data)
         active = [m for m in all_mandats if m.get("dateFin") is None]
         inactive = [m for m in all_mandats if m.get("dateFin") is not None]
@@ -538,7 +565,12 @@ def importer_acteur(acteur_data, file_name):
             inactive.sort(key=lambda m: m.get("dateDebut") or "1900-01-01", reverse=True)
         except Exception:
             pass
-        all_mandats = active + inactive[:25]
+        assemblee_17 = [m for m in inactive
+                        if m.get("typeOrgane") == "ASSEMBLEE"
+                        and (m.get("dateDebut") or "") >= "2024-06-01"]
+        assemblee_17_ids = {id(m) for m in assemblee_17}
+        rest = [m for m in inactive if id(m) not in assemblee_17_ids]
+        all_mandats = active + assemblee_17 + rest[:25]
 
         adresse_list = parse_adresse_list(data, file_name)
 

@@ -406,15 +406,22 @@ function GroupPieChart({
 // Badge coloré pour les pourcentages
 // ────────────────────────────────────────────────
 
-function PctBadge({ value }: { value: number | null }) {
+function PctBadge({ value, votes, total }: { value: number | null; votes?: number | null; total?: number | null }) {
   if (value === null) return <span className="text-muted-foreground">—</span>;
   const colorClass =
     value >= 75 ? 'text-emerald-600 dark:text-emerald-400'
     : value >= 50 ? 'text-amber-600 dark:text-amber-400'
     : 'text-red-500 dark:text-red-400';
   return (
-    <span className={`font-semibold tabular-nums ${colorClass}`}>
-      {value.toFixed(1)} %
+    <span className="flex flex-col items-end gap-0.5">
+      <span className={`font-semibold tabular-nums ${colorClass}`}>
+        {value.toFixed(1)} %
+      </span>
+      {votes != null && total != null && (
+        <span className="text-[11px] text-muted-foreground tabular-nums">
+          {votes} / {total}
+        </span>
+      )}
     </span>
   );
 }
@@ -641,8 +648,20 @@ function ActeursTable({ acteurs, showVoteStats = false }: { acteurs: ActeurRow[]
                     <TableCell className="max-w-[200px] truncate" title={acteur.departement ?? undefined}>{acteur.departement ?? '—'}</TableCell>
                     {showVoteStats && (
                       <>
-                        <TableCell><PctBadge value={acteur.taux_presence} /></TableCell>
-                        <TableCell><PctBadge value={acteur.taux_presence_solennels} /></TableCell>
+                        <TableCell>
+                          <PctBadge
+                            value={acteur.taux_presence}
+                            votes={(acteur.votes_pour ?? 0) + (acteur.votes_contre ?? 0) + (acteur.votes_abstentions ?? 0)}
+                            total={acteur.scrutins_pendant_mandat}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <PctBadge
+                            value={acteur.taux_presence_solennels}
+                            votes={acteur.votes_actifs_solennels}
+                            total={acteur.scrutins_pendant_mandat_solennels}
+                          />
+                        </TableCell>
                         <TableCell><PctBadge value={acteur.taux_cohesion_groupe} /></TableCell>
                       </>
                     )}

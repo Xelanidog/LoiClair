@@ -148,6 +148,15 @@ Pour chaque institution, plusieurs indicateurs de composition sont affichés :
 
 Ces chiffres s'animent à l'ouverture de la page pour rendre la lecture plus agréable.
 
+### Tableau détaillé des députés
+
+L'onglet Assemblée nationale propose aussi un tableau listant chaque député avec ses indicateurs individuels :
+
+- Son **taux de participation** aux votes (tous votes et votes solennels), accompagné du détail **« X / Y »** : X votes exprimés sur Y scrutins tenus pendant son mandat.
+- Son **taux de cohésion** avec son groupe politique.
+
+Ces taux sont calculés sur la **période réelle de mandat** : un élu arrivé en cours de législature (élection partielle) ou ayant temporairement quitté son siège (pour un poste ministériel, par exemple) n'est évalué que sur les scrutins pendant lesquels il était effectivement en fonction.
+
 ---
 
 ## Dossiers législatifs

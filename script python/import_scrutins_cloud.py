@@ -246,9 +246,15 @@ def importer_scrutins_from_zip(zip_ref: zipfile.ZipFile):
 
     # --- Pré-chargement depuis Supabase pour éviter N+1 requêtes ---
     print("Chargement des données existantes depuis Supabase...")
-    acteurs_rows = fetch_all_rows("acteurs", "uid,groupe")
+    acteurs_rows = fetch_all_rows("acteurs", "uid,groupe,date_debut_mandat,date_fin_mandat")
     known_acteur_uids = {row["uid"] for row in acteurs_rows}
     acteur_to_groupe = {row["uid"]: row["groupe"] for row in acteurs_rows if row.get("groupe")}
+    # Fenêtre de mandat par acteur : (date_debut, date_fin) — date_fin = None si encore en exercice
+    acteur_mandate_range = {
+        row["uid"]: (row.get("date_debut_mandat"), row.get("date_fin_mandat"))
+        for row in acteurs_rows
+        if row.get("date_debut_mandat")
+    }
 
     organes_rows = fetch_all_rows("organes", "uid")
     known_organe_uids = {row["uid"] for row in organes_rows}
@@ -299,6 +305,9 @@ def importer_scrutins_from_zip(zip_ref: zipfile.ZipFile):
     success = 0            # total de scrutins parsés avec succès
     success_importants = 0 # parmi eux : scrutins MOC (motion de censure) ou SPS (solennel)
     failed = 0
+    # Collecte des dates de scrutins pour calculer les dénominateurs personnels par mandat
+    # Chaque entrée : (date_scrutin: str | None, is_important: bool)
+    scrutin_dates: list[tuple[str | None, bool]] = []
 
     # --- Boucle de parsing ---
     for file_path in tqdm(json_files, desc="Parsing scrutins", unit="scrutin"):
@@ -324,6 +333,9 @@ def importer_scrutins_from_zip(zip_ref: zipfile.ZipFile):
             is_scrutin_important = payload_scrutin.get("type_vote_code") in ("MOC", "SPS")
             if is_scrutin_important:
                 success_importants += 1
+
+            # Enregistrer la date pour calculer les dénominateurs personnels par mandat
+            scrutin_dates.append((payload_scrutin.get("date_scrutin"), is_scrutin_important))
 
             # Accumulation stats organes
             for organe_ref, stats in votes_par_organe.items():
@@ -378,6 +390,7 @@ def importer_scrutins_from_zip(zip_ref: zipfile.ZipFile):
                         "votes_actifs_solennels": 0,
                         "cohesion_eligible": 0,
                         "cohesion_accord": 0,
+                        "vote_dates": [],  # [(date, position, is_important)] — pour filtrage par mandat
                     }
                 s = stats_acteurs[acteur_ref]
                 position = vote_info["position"]
@@ -396,6 +409,10 @@ def importer_scrutins_from_zip(zip_ref: zipfile.ZipFile):
                 # Présence sur scrutins importants (MOC + SPS) : acteur présent et vote actif
                 if is_scrutin_important and position != "nonVotant":
                     s["votes_actifs_solennels"] += 1
+
+                # Enregistrer la date de vote pour filtrage par mandat (numérateur cohérent)
+                if position != "nonVotant":
+                    s["vote_dates"].append((payload_scrutin.get("date_scrutin"), position, is_scrutin_important))
 
                 # Cohésion : compare la position de l'acteur avec la position majoritaire de son groupe
                 # On n'inclut pas les absents dans le calcul de cohésion
@@ -433,17 +450,45 @@ def importer_scrutins_from_zip(zip_ref: zipfile.ZipFile):
             skipped_acteurs += 1
             continue
 
-        # taux_presence = scrutins où le député était activement présent (pour + contre + abstentions)
-        # divisé par le TOTAL des scrutins de la législature (pas juste ceux où il apparaît)
-        # Les absents de l'hémicycle ne figurent pas dans le JSON → il faut utiliser `success` comme dénominateur
-        votes_actifs = s["votes_pour"] + s["votes_contre"] + s["votes_abstentions"]
+        # Calcul du dénominateur personnalisé selon la fenêtre de mandat
+        # → on ne compte que les scrutins qui se sont déroulés pendant le mandat du député
+        debut, fin = acteur_mandate_range.get(acteur_ref, (None, None))
+        if debut:
+            scrutins_en_mandat = sum(
+                1 for d, _ in scrutin_dates
+                if d and d >= debut and (fin is None or d <= fin)
+            )
+            scrutins_solennels_en_mandat = sum(
+                1 for d, imp in scrutin_dates
+                if d and d >= debut and (fin is None or d <= fin) and imp
+            )
+        else:
+            # Pas de date de mandat connue → fallback sur le total global
+            scrutins_en_mandat = success
+            scrutins_solennels_en_mandat = success_importants
+
+        # Filtrer numérateur et dénominateur par la même fenêtre de mandat
+        # → garantit votes_actifs ≤ scrutins_pendant_mandat (évite taux > 100%)
+        if debut:
+            vd = [(d, p, imp) for d, p, imp in s["vote_dates"]
+                  if d and d >= debut and (fin is None or d <= fin)]
+            votes_pour_m = sum(1 for _, p, _ in vd if p == "pour")
+            votes_contre_m = sum(1 for _, p, _ in vd if p == "contre")
+            votes_abstentions_m = sum(1 for _, p, _ in vd if p == "abstention")
+            votes_actifs_solennels_m = sum(1 for _, _, imp in vd if imp)
+        else:
+            votes_pour_m = s["votes_pour"]
+            votes_contre_m = s["votes_contre"]
+            votes_abstentions_m = s["votes_abstentions"]
+            votes_actifs_solennels_m = s["votes_actifs_solennels"]
+
+        votes_actifs = votes_pour_m + votes_contre_m + votes_abstentions_m
         taux_presence = (
-            round(votes_actifs / success * 100, 2) if success > 0 else None
+            round(votes_actifs / scrutins_en_mandat * 100, 2) if scrutins_en_mandat > 0 else None
         )
-        # taux_presence_solennels = présence sur scrutins MOC + SPS uniquement
         taux_presence_solennels = (
-            round(s["votes_actifs_solennels"] / success_importants * 100, 2)
-            if success_importants > 0 else None
+            round(votes_actifs_solennels_m / scrutins_solennels_en_mandat * 100, 2)
+            if scrutins_solennels_en_mandat > 0 else None
         )
         ce = s["cohesion_eligible"]
         taux_cohesion = round(s["cohesion_accord"] / ce * 100, 2) if ce > 0 else None
@@ -451,10 +496,13 @@ def importer_scrutins_from_zip(zip_ref: zipfile.ZipFile):
         batch_acteurs.append({
             "uid": acteur_ref,
             "votes_total": s["votes_total"],
-            "votes_pour": s["votes_pour"],
-            "votes_contre": s["votes_contre"],
-            "votes_abstentions": s["votes_abstentions"],
+            "votes_pour": votes_pour_m,
+            "votes_contre": votes_contre_m,
+            "votes_abstentions": votes_abstentions_m,
             "votes_absent": s["votes_absent"],
+            "votes_actifs_solennels": votes_actifs_solennels_m,
+            "scrutins_pendant_mandat": scrutins_en_mandat,
+            "scrutins_pendant_mandat_solennels": scrutins_solennels_en_mandat,
             "taux_presence": taux_presence,
             "taux_presence_solennels": taux_presence_solennels,
             "taux_cohesion_groupe": taux_cohesion,
@@ -467,6 +515,21 @@ def importer_scrutins_from_zip(zip_ref: zipfile.ZipFile):
     # Mise à jour des stats organes
     # ===================================================================
     print(f"\nMise à jour des stats pour {len(stats_organes)} organes...")
+
+    # Calcul des moyennes de présence des groupes depuis les taux corrigés par mandat
+    # → cohérent avec les taux individuels affichés dans le tableau des députés
+    groupe_presence: dict[str, list[float]] = {}
+    groupe_presence_sol: dict[str, list[float]] = {}
+    for a in batch_acteurs:
+        groupe_uid = acteur_to_groupe.get(a["uid"])
+        if not groupe_uid:
+            continue
+        groupe_uid = GROUPE_ALIAS.get(groupe_uid, groupe_uid)
+        if a.get("taux_presence") is not None:
+            groupe_presence.setdefault(groupe_uid, []).append(a["taux_presence"])
+        if a.get("taux_presence_solennels") is not None:
+            groupe_presence_sol.setdefault(groupe_uid, []).append(a["taux_presence_solennels"])
+
     batch_organes = []
     skipped_organes = 0
 
@@ -477,14 +540,12 @@ def importer_scrutins_from_zip(zip_ref: zipfile.ZipFile):
             skipped_organes += 1
             continue
 
-        mt = s["membres_totaux_cumul"]
-        taux_presence_moyen = (
-            round(s["membres_presents_cumul"] / mt * 100, 2) if mt > 0 else None
-        )
-        mt_sol = s["membres_totaux_solennels_cumul"]
-        taux_presence_solennels_moyen = (
-            round(s["membres_presents_solennels_cumul"] / mt_sol * 100, 2) if mt_sol > 0 else None
-        )
+        # Moyennes de présence : calculées depuis les taux corrigés par mandat
+        vals = groupe_presence.get(organe_ref, [])
+        taux_presence_moyen = round(sum(vals) / len(vals), 2) if vals else None
+        vals_sol = groupe_presence_sol.get(organe_ref, [])
+        taux_presence_solennels_moyen = round(sum(vals_sol) / len(vals_sol), 2) if vals_sol else None
+
         ce = s["cohesion_eligible_cumul"]
         taux_cohesion = round(s["cohesion_votes_cumul"] / ce * 100, 2) if ce > 0 else None
 
