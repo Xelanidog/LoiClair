@@ -148,6 +148,15 @@ Pour chaque institution, plusieurs indicateurs de composition sont affichés :
 
 Ces chiffres s'animent à l'ouverture de la page pour rendre la lecture plus agréable.
 
+### Mobilisation de l'hémicycle lors des votes
+
+Pour l'Assemblée nationale, la page affiche combien de députés participent **en moyenne** à chaque type de scrutin :
+
+- **Scrutins ordinaires** (votes du quotidien : amendements, articles de loi…) : nombre moyen de votants et d'absents sur l'ensemble des scrutins de la législature.
+- **Scrutins solennels** (votes sur l'ensemble d'un texte de loi, motions de censure) : même lecture, sur ces votes considérés comme les plus importants.
+
+Le pourcentage affiché à côté du chiffre permet de situer immédiatement la mobilisation par rapport aux 577 sièges. En pratique, un scrutin ordinaire mobilise environ un tiers de l'hémicycle, tandis qu'un scrutin solennel en rassemble les deux tiers.
+
 ### Records individuels de participation et cohésion
 
 Pour l'Assemblée nationale, la page affiche aussi les **records individuels** : le député ayant la meilleure et la moins bonne participation aux votes (tous votes, puis votes solennels uniquement), ainsi que le député le plus et le moins aligné sur son groupe politique. Ces chiffres permettent de situer les extrêmes et de saisir l'étendue des différences de comportement de vote entre élus.

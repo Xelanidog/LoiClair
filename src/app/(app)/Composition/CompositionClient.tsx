@@ -10,7 +10,7 @@ import {
 } from "recharts"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Building2, Briefcase, Calendar, Scale, Users, Group, User, Search, ArrowUpDown, ArrowUp, ArrowDown, BarChart2, TrendingUp, TrendingDown } from "lucide-react"
+import { Building2, Briefcase, Calendar, Scale, Users, Group, User, Search, ArrowUpDown, ArrowUp, ArrowDown, BarChart2, TrendingUp, TrendingDown, UserX } from "lucide-react"
 import { AnimatedNumber } from "@/components/AnimatedNumber"
 import type { KpiMetrics, ActeurRow, GroupeRow } from './Compositionqueries'
 import {
@@ -171,7 +171,60 @@ function InstitutionCard({
             />
           </div>
         )}
-        {/* Ligne 4 : extremes individuels */}
+        {/* Ligne 4 : Participation aux scrutins (AN uniquement) */}
+        {data.scrutinStats && (() => {
+          const AN = 577;
+          const pct = (n: number | null) => n !== null
+            ? <AnimatedNumber value={Math.round(n / AN * 100)} decimals={0} suffix=" %" className="font-medium text-foreground" />
+            : undefined;
+          return (
+          <div className="flex flex-col gap-4 pb-4 mt-2">
+            <div className="flex flex-wrap justify-start items-start gap-6">
+              <KpiItem
+                icon={<Users className="h-5 w-5 text-muted-foreground" />}
+                title="Votants moy. (scrutins ordinaires)"
+                value={data.scrutinStats.ordinaire.avgVotants}
+                animate={true}
+                decimals={0}
+                extraContent={pct(data.scrutinStats.ordinaire.avgVotants)}
+              />
+              <KpiItem
+                icon={<UserX className="h-5 w-5 text-muted-foreground" />}
+                title="Absents moy. (scrutins ordinaires)"
+                value={data.scrutinStats.ordinaire.avgAbsents}
+                animate={true}
+                decimals={0}
+                extraContent={pct(data.scrutinStats.ordinaire.avgAbsents)}
+              />
+            </div>
+            <div className="flex flex-wrap justify-start items-start gap-6">
+              <KpiItem
+                icon={<Users className="h-5 w-5 text-muted-foreground" />}
+                title="Votants moy. (scrutins solennels)"
+                value={data.scrutinStats.solennel.avgVotants}
+                animate={true}
+                decimals={0}
+                extraContent={pct(data.scrutinStats.solennel.avgVotants)}
+              />
+              <KpiItem
+                icon={<UserX className="h-5 w-5 text-muted-foreground" />}
+                title="Absents moy. (scrutins solennels)"
+                value={data.scrutinStats.solennel.avgAbsents}
+                animate={true}
+                decimals={0}
+                extraContent={pct(data.scrutinStats.solennel.avgAbsents)}
+              />
+            </div>
+          </div>
+          );
+        })()}
+        {data.scrutinStats && (
+          <Link href="/documentation/methode#participation-moyenne-aux-scrutins" className="text-xs text-muted-foreground/60 hover:text-foreground transition-colors -mt-2 mb-4 inline-block">
+            Comment c'est calculé →
+          </Link>
+        )}
+
+        {/* Ligne 5 : extremes individuels */}
         {(data.meilleurePresence !== null || data.meilleureCohesion !== null) && (
           <div className="flex flex-wrap justify-start items-start pb-4 gap-6 mt-2">
             <KpiItem

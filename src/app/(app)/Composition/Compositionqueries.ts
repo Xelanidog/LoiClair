@@ -52,6 +52,10 @@ export interface KpiMetrics {
   pireCohesion: { nom: string; valeur: number } | null;
   acteursList: ActeurRow[];
   groupesList: GroupeRow[];
+  scrutinStats: {
+    ordinaire: { avgVotants: number | null; avgAbsents: number | null; count: number };
+    solennel:  { avgVotants: number | null; avgAbsents: number | null; count: number };
+  } | null;
 }
 
 // Infos d'un organe : libellé + stats de vote
@@ -207,7 +211,7 @@ export async function getKpiMetrics(
       meilleurePresence: null, pirePresence: null,
       meilleurePresenceSolennels: null, pirePresenceSolennels: null,
       meilleureCohesion: null, pireCohesion: null,
-      acteursList: [], groupesList: [],
+      acteursList: [], groupesList: [], scrutinStats: null,
     };
   }
 
@@ -305,6 +309,33 @@ export async function getKpiMetrics(
     }))
     .sort((a, b) => a.nomComplet.localeCompare(b.nomComplet, 'fr'));
 
+  // Statistiques de participation aux scrutins (AN uniquement)
+  let scrutinStats: KpiMetrics['scrutinStats'] = null;
+  if (institution === 'AN') {
+    const { data: scrutinsData } = await supabase
+      .from('scrutins')
+      .select('type_vote_code, synthese_nombre_votants')
+      .not('synthese_nombre_votants', 'is', null);
+
+    if (scrutinsData && scrutinsData.length > 0) {
+      const AN_TOTAL = 577;
+      const avgVotants = (arr: { synthese_nombre_votants: number }[]) =>
+        arr.length > 0
+          ? Math.round(arr.reduce((s, x) => s + x.synthese_nombre_votants, 0) / arr.length)
+          : null;
+
+      const ordinaire = scrutinsData.filter(s => !['MOC', 'SPS'].includes(s.type_vote_code ?? ''));
+      const solennel  = scrutinsData.filter(s =>  ['MOC', 'SPS'].includes(s.type_vote_code ?? ''));
+      const avgOrd = avgVotants(ordinaire);
+      const avgSol = avgVotants(solennel);
+
+      scrutinStats = {
+        ordinaire: { avgVotants: avgOrd, avgAbsents: avgOrd !== null ? AN_TOTAL - avgOrd : null, count: ordinaire.length },
+        solennel:  { avgVotants: avgSol, avgAbsents: avgSol !== null ? AN_TOTAL - avgSol : null, count: solennel.length },
+      };
+    }
+  }
+
   return {
     membres,
     ageMoyen: ageMoyen ? Math.round(ageMoyen) : null,
@@ -324,5 +355,6 @@ export async function getKpiMetrics(
     pireCohesion: cohesionExtremes.worst,
     acteursList,
     groupesList,
+    scrutinStats,
   };
 }

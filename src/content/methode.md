@@ -254,6 +254,46 @@ Un taux de participation global supérieur à 50 % est dans la moyenne. Au-dessu
 
 ---
 
+## Participation moyenne aux scrutins
+
+**Ce que ça mesure**
+Combien de députés participent en moyenne à un vote à l'Assemblée nationale ? Ces indicateurs répondent à cette question pour deux types de scrutins :
+- **Scrutins ordinaires** : les votes du quotidien parlementaire (amendements, articles, procédures).
+- **Scrutins solennels** : les votes sur l'ensemble d'un texte de loi et les motions de censure — les plus importants politiquement.
+
+Pour chaque type, deux chiffres sont affichés : le nombre moyen de **votants** (ceux qui ont exprimé un vote) et le nombre moyen d'**absents** (tous ceux qui n'ont pas voté, pour quelque raison que ce soit).
+
+**Comment c'est calculé**
+Pour chaque scrutin, le nombre de votants est relevé dans les résultats officiels. On en tire une moyenne sur l'ensemble des scrutins du type :
+
+> Votants moyens = Total des votants sur tous les scrutins du type ÷ Nombre de scrutins
+
+> Absents moyens = 577 − Votants moyens
+
+577 correspond au nombre total de sièges à l'Assemblée nationale. Les absents regroupent deux situations : les députés enregistrés dans le scrutin comme « non-votants » (présents en séance mais n'ayant pas pris part au vote) et les députés non mentionnés du tout dans le scrutin (absents de l'hémicycle).
+
+Exemple chiffré : sur un scrutin ordinaire avec 160 votants, les absents sont 577 − 160 = 417, soit 72 % de l'hémicycle non mobilisé. Sur un scrutin solennel avec 408 votants, les absents tombent à 169, soit 29 %.
+
+Variables **incluses** :
+- Tous les scrutins publics depuis le début de la législature en cours.
+- Pour les solennels : votes finaux sur l'ensemble d'un texte et motions de censure.
+
+Variables **exclues** :
+- Les scrutins pour lesquels le nombre de votants n'est pas renseigné dans les données sources.
+
+**D'où viennent les données**
+Les résultats détaillés de chaque scrutin (nombre de votants, de non-votants) proviennent de l'open data de l'Assemblée nationale. Mise à jour chaque nuit.
+
+**Ce que ça ne mesure pas**
+⚠ La moyenne lisse les variations entre scrutins : un vote très mobilisateur peut rassembler 500 députés, un autre seulement 80. La moyenne ne reflète pas ces extrêmes.
+
+⚠ Certains « absents » sont en réalité présents dans les couloirs et ont simplement délégué leur vote (procuration). Un député porteur d'une procuration vote pour deux mais les deux sont comptés séparément.
+
+**Comment interpréter**
+Les scrutins ordinaires mobilisent en moyenne environ 160 à 200 députés sur 577 — environ un tiers de l'hémicycle. Les scrutins solennels rassemblent davantage : généralement entre 350 et 450 députés (60 à 80 % de l'hémicycle). Un vote solennel avec moins de 300 participants serait inhabituellement faible.
+
+---
+
 ## Taux de cohésion
 
 **Ce que ça mesure**
