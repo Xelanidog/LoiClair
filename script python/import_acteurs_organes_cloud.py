@@ -402,6 +402,7 @@ def extract_mandate_info(all_mandats: list, file_name: str) -> dict:
     premiere_election = None
     _best_inactive_assemblee = None  # (dateDebut, dateFin) du mandat ASSEMBLEE le plus récent terminé
     _earliest_assemblee_debut = None  # dateDebut le plus ancien parmi tous mandats ASSEMBLEE 17e lég.
+    _assemblee_17_periods = []  # toutes les périodes ASSEMBLEE 17e lég. [(debut, fin)]
 
     for mandat in all_mandats:
         type_organe = mandat.get("typeOrgane")
@@ -412,8 +413,9 @@ def extract_mandate_info(all_mandats: list, file_name: str) -> dict:
         if type_organe == "ASSEMBLEE":
             roles_set.add("Député")
             d = mandat.get("dateDebut") or ""
-            # Suivre le plus ancien mandat ASSEMBLEE de la 17e législature (>= 2024-06-01)
+            # Suivre toutes les périodes ASSEMBLEE de la 17e législature (>= 2024-06-01)
             if d >= "2024-06-01":
+                _assemblee_17_periods.append((d, date_fin))
                 if _earliest_assemblee_debut is None or d < _earliest_assemblee_debut:
                     _earliest_assemblee_debut = d
             # Suivre le mandat ASSEMBLEE inactif le plus récent (fallback pour anciens députés)
@@ -493,15 +495,22 @@ def extract_mandate_info(all_mandats: list, file_name: str) -> dict:
 
     # Si aucun mandat ASSEMBLEE actif n'a fourni date_debut_mandat,
     # utiliser le plus récent mandat ASSEMBLEE terminé comme fallback
+    # (ex: député inactif, ancien ministre sans retour)
     if date_debut_mandat is None and _best_inactive_assemblee is not None:
         date_debut_mandat = _earliest_assemblee_debut or _best_inactive_assemblee[0]
         date_fin_mandat = _best_inactive_assemblee[1]
-    # Si mandat actif: corriger le début si un mandat antérieur de la 17e lég. existe
-    # (ex: député devenu ministre puis revenu — évite participation > 100%)
+    # Ex-ministres revenus : utiliser le plus ancien dateDebut ASSEMBLEE de la 17e lég.
+    # → dénominateur = toute la législature, numérateur = tous leurs votes AN (pré + post ministère)
+    # → évite un taux de 0% qui efface l'historique, même si le taux global sera naturellement bas
     elif date_debut_mandat is not None and _earliest_assemblee_debut is not None:
         if _earliest_assemblee_debut < date_debut_mandat:
             date_debut_mandat = _earliest_assemblee_debut
-            # date_fin_mandat reste None (mandat actif en cours)
+
+    # Périodes de mandat ASSEMBLEE 17e législature (multi-périodes pour ex-ministres)
+    periodes_mandat_assemblee = None
+    if _assemblee_17_periods:
+        _assemblee_17_periods.sort(key=lambda x: x[0])
+        periodes_mandat_assemblee = [{"debut": d, "fin": f} for d, f in _assemblee_17_periods]
 
     # Construire roles_text avec priorité
     roles_text = None
@@ -539,6 +548,7 @@ def extract_mandate_info(all_mandats: list, file_name: str) -> dict:
         "qualite_actuelle": qualite_actuelle,
         "date_debut_mandat": date_debut_mandat,
         "date_fin_mandat": date_fin_mandat,
+        "periodes_mandat_assemblee": periodes_mandat_assemblee,
         "place_hemicycle": place_hemicycle,
         "premiere_election": premiere_election,
     }

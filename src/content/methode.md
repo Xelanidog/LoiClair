@@ -216,7 +216,7 @@ Le taux tient compte de la **période réelle d'exercice du mandat** :
 
 Cela signifie :
 - Si un député arrive en cours de législature (élection partielle), seuls les scrutins depuis son entrée en fonction sont comptabilisés.
-- Si un député quitte son siège (pour devenir ministre par exemple) puis revient, toute sa période d'activité cumulative est prise en compte, du premier jour de mandat jusqu'à aujourd'hui.
+- Si un député quitte son siège (pour devenir ministre par exemple) puis revient, ses deux périodes de mandat sont additionnées séparément. La période passée au Gouvernement — pendant laquelle les ministres ne votent pas à l'Assemblée — est exclue des deux côtés du calcul (ni dans les votes, ni dans les scrutins comptabilisés). Exemple : un député ayant siégé de juillet 2024 à janvier 2025, puis à nouveau depuis janvier 2026, voit ses votes et scrutins des deux fenêtres additionnés — la période au Gouvernement entre les deux n'entre pas dans le calcul.
 - Si un député quitte définitivement son siège en cours de législature, seuls les scrutins de sa période d'exercice sont retenus.
 
 Le taux moyen d'un groupe est la moyenne de ces taux individuels corrigés :

@@ -246,7 +246,7 @@ def importer_scrutins_from_zip(zip_ref: zipfile.ZipFile):
 
     # --- Pré-chargement depuis Supabase pour éviter N+1 requêtes ---
     print("Chargement des données existantes depuis Supabase...")
-    acteurs_rows = fetch_all_rows("acteurs", "uid,groupe,date_debut_mandat,date_fin_mandat")
+    acteurs_rows = fetch_all_rows("acteurs", "uid,groupe,date_debut_mandat,date_fin_mandat,periodes_mandat_assemblee")
     known_acteur_uids = {row["uid"] for row in acteurs_rows}
     acteur_to_groupe = {row["uid"]: row["groupe"] for row in acteurs_rows if row.get("groupe")}
     # Fenêtre de mandat par acteur : (date_debut, date_fin) — date_fin = None si encore en exercice
@@ -254,6 +254,12 @@ def importer_scrutins_from_zip(zip_ref: zipfile.ZipFile):
         row["uid"]: (row.get("date_debut_mandat"), row.get("date_fin_mandat"))
         for row in acteurs_rows
         if row.get("date_debut_mandat")
+    }
+    # Périodes multi-mandat (ex-ministres revenus) — liste [{debut, fin}] ou None
+    acteur_periods_list = {
+        row["uid"]: row.get("periodes_mandat_assemblee")
+        for row in acteurs_rows
+        if row.get("periodes_mandat_assemblee")
     }
 
     organes_rows = fetch_all_rows("organes", "uid")
@@ -451,36 +457,34 @@ def importer_scrutins_from_zip(zip_ref: zipfile.ZipFile):
             continue
 
         # Calcul du dénominateur personnalisé selon la fenêtre de mandat
-        # → on ne compte que les scrutins qui se sont déroulés pendant le mandat du député
+        # → on ne compte que les scrutins qui se sont déroulés pendant le(s) mandat(s) du député
         debut, fin = acteur_mandate_range.get(acteur_ref, (None, None))
-        if debut:
-            scrutins_en_mandat = sum(
-                1 for d, _ in scrutin_dates
-                if d and d >= debut and (fin is None or d <= fin)
-            )
-            scrutins_solennels_en_mandat = sum(
-                1 for d, imp in scrutin_dates
-                if d and d >= debut and (fin is None or d <= fin) and imp
-            )
-        else:
-            # Pas de date de mandat connue → fallback sur le total global
-            scrutins_en_mandat = success
-            scrutins_solennels_en_mandat = success_importants
+        periods = acteur_periods_list.get(acteur_ref)  # [{debut, fin}] ou None (multi-périodes)
 
-        # Filtrer numérateur et dénominateur par la même fenêtre de mandat
-        # → garantit votes_actifs ≤ scrutins_pendant_mandat (évite taux > 100%)
-        if debut:
-            vd = [(d, p, imp) for d, p, imp in s["vote_dates"]
-                  if d and d >= debut and (fin is None or d <= fin)]
-            votes_pour_m = sum(1 for _, p, _ in vd if p == "pour")
-            votes_contre_m = sum(1 for _, p, _ in vd if p == "contre")
-            votes_abstentions_m = sum(1 for _, p, _ in vd if p == "abstention")
-            votes_actifs_solennels_m = sum(1 for _, _, imp in vd if imp)
+        # Fonction de test : la date tombe-t-elle dans un mandat actif ?
+        if periods:
+            # Multi-période : ex-ministre revenu (ex: Rist) — on additionne ses deux mandats ASSEMBLEE
+            in_period = lambda d: d and any(
+                d >= p["debut"] and (p["fin"] is None or d <= p["fin"])
+                for p in periods
+            )
+        elif debut:
+            # Période unique : fenêtre debut → fin (ou aujourd'hui)
+            in_period = lambda d: d and d >= debut and (fin is None or d <= fin)
         else:
-            votes_pour_m = s["votes_pour"]
-            votes_contre_m = s["votes_contre"]
-            votes_abstentions_m = s["votes_abstentions"]
-            votes_actifs_solennels_m = s["votes_actifs_solennels"]
+            # Pas de date de mandat connue → tout compter
+            in_period = lambda d: bool(d)
+
+        # Dénominateur : scrutins pendant le(s) mandat(s)
+        scrutins_en_mandat = sum(1 for d, _ in scrutin_dates if in_period(d))
+        scrutins_solennels_en_mandat = sum(1 for d, imp in scrutin_dates if in_period(d) and imp)
+
+        # Numérateur : votes pendant le(s) mandat(s) — garantit votes_actifs ≤ scrutins_pendant_mandat
+        vd = [(d, p, imp) for d, p, imp in s["vote_dates"] if in_period(d)]
+        votes_pour_m = sum(1 for _, p, _ in vd if p == "pour")
+        votes_contre_m = sum(1 for _, p, _ in vd if p == "contre")
+        votes_abstentions_m = sum(1 for _, p, _ in vd if p == "abstention")
+        votes_actifs_solennels_m = sum(1 for _, _, imp in vd if imp)
 
         votes_actifs = votes_pour_m + votes_contre_m + votes_abstentions_m
         taux_presence = (
