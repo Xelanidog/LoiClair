@@ -171,12 +171,6 @@ function InstitutionCard({
             />
           </div>
         )}
-        {(data.presenceMoyenne !== null || data.presenceSolennelsMoyenne !== null) && (
-          <Link href="/documentation/methode#taux-de-participation-aux-votes" className="text-xs text-muted-foreground/60 hover:text-foreground transition-colors -mt-2 mb-4 inline-block">
-            Comment c'est calculé →
-          </Link>
-        )}
-
         {/* Ligne 4 : extremes individuels */}
         {(data.meilleurePresence !== null || data.meilleureCohesion !== null) && (
           <div className="flex flex-wrap justify-start items-start pb-4 gap-6 mt-2">
@@ -236,7 +230,7 @@ function InstitutionCard({
             />
           </div>
         )}
-        {(data.meilleurePresence !== null || data.meilleureCohesion !== null) && (
+        {(data.presenceMoyenne !== null || data.meilleurePresence !== null || data.meilleureCohesion !== null) && (
           <span className="text-xs text-muted-foreground/60 -mt-2 mb-4 inline-flex gap-3">
             <Link href="/documentation/methode#taux-de-participation-aux-votes" className="hover:text-foreground transition-colors">
               Participation : comment c'est calculé →
