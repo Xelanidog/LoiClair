@@ -205,6 +205,8 @@ Le taux moyen de participation des membres d'une institution (ou d'un groupe pol
 - **Tous votes** : l'ensemble des scrutins publics en séance.
 - **Votes solennels** : uniquement les scrutins sur l'ensemble d'un texte (vote final), considérés comme les plus importants.
 
+La page Composition affiche également les **records individuels** : le député ayant le taux de participation le plus élevé et le plus bas de toute l'Assemblée, pour chacune des deux variantes.
+
 **Comment c'est calculé**
 Pour chaque scrutin public, LoiClair classe chaque parlementaire dans l'une de ces catégories :
 - **Votant** : le membre a exprimé un vote (pour, contre, ou abstention).
@@ -260,6 +262,8 @@ Le degré d'alignement des votes au sein d'un groupe politique. Un groupe dont t
 Deux niveaux sont affichés sur LoiClair :
 - **Cohésion du groupe** (tableau des groupes politiques) : à quelle fréquence les membres du groupe votent ensemble.
 - **Cohésion individuelle** (tableau des membres) : à quelle fréquence un parlementaire vote dans le même sens que la position majoritaire de son groupe.
+
+La page Composition affiche également les **records individuels de cohésion** : le parlementaire avec la cohésion individuelle la plus haute et la plus basse de l'institution.
 
 **Comment c'est calculé**
 L'Assemblée nationale publie, pour chaque scrutin, la position majoritaire de chaque groupe (pour, contre, abstention). LoiClair utilise cette information pour calculer la cohésion.

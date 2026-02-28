@@ -148,6 +148,10 @@ Pour chaque institution, plusieurs indicateurs de composition sont affichés :
 
 Ces chiffres s'animent à l'ouverture de la page pour rendre la lecture plus agréable.
 
+### Records individuels de participation et cohésion
+
+Pour l'Assemblée nationale, la page affiche aussi les **records individuels** : le député ayant la meilleure et la moins bonne participation aux votes (tous votes, puis votes solennels uniquement), ainsi que le député le plus et le moins aligné sur son groupe politique. Ces chiffres permettent de situer les extrêmes et de saisir l'étendue des différences de comportement de vote entre élus.
+
 ### Tableau détaillé des députés
 
 L'onglet Assemblée nationale propose aussi un tableau listant chaque député avec ses indicateurs individuels :

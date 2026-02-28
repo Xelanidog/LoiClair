@@ -10,7 +10,7 @@ import {
 } from "recharts"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Building2, Briefcase, Calendar, Scale, Users, Group, User, Search, ArrowUpDown, ArrowUp, ArrowDown, BarChart2 } from "lucide-react"
+import { Building2, Briefcase, Calendar, Scale, Users, Group, User, Search, ArrowUpDown, ArrowUp, ArrowDown, BarChart2, TrendingUp, TrendingDown } from "lucide-react"
 import { AnimatedNumber } from "@/components/AnimatedNumber"
 import type { KpiMetrics, ActeurRow, GroupeRow } from './Compositionqueries'
 import {
@@ -177,6 +177,66 @@ function InstitutionCard({
           </Link>
         )}
 
+        {/* Ligne 4 : extremes individuels */}
+        {(data.meilleurePresence !== null || data.meilleureCohesion !== null) && (
+          <div className="flex flex-wrap justify-start items-start pb-4 gap-6 mt-2">
+            <KpiItem
+              icon={<TrendingUp className="h-5 w-5 text-emerald-500" />}
+              title="Meilleure participation"
+              value={data.meilleurePresence?.valeur ?? null}
+              extraContent={data.meilleurePresence?.nom}
+              animate={true}
+              decimals={1}
+              suffix=" %"
+            />
+            <KpiItem
+              icon={<TrendingDown className="h-5 w-5 text-red-400" />}
+              title="Moindre participation"
+              value={data.pirePresence?.valeur ?? null}
+              extraContent={data.pirePresence?.nom}
+              animate={true}
+              decimals={1}
+              suffix=" %"
+            />
+            <KpiItem
+              icon={<TrendingUp className="h-5 w-5 text-emerald-500" />}
+              title="Meilleure part. solennelle"
+              value={data.meilleurePresenceSolennels?.valeur ?? null}
+              extraContent={data.meilleurePresenceSolennels?.nom}
+              animate={true}
+              decimals={1}
+              suffix=" %"
+            />
+            <KpiItem
+              icon={<TrendingDown className="h-5 w-5 text-red-400" />}
+              title="Moindre part. solennelle"
+              value={data.pirePresenceSolennels?.valeur ?? null}
+              extraContent={data.pirePresenceSolennels?.nom}
+              animate={true}
+              decimals={1}
+              suffix=" %"
+            />
+            <KpiItem
+              icon={<TrendingUp className="h-5 w-5 text-emerald-500" />}
+              title="Meilleure cohésion"
+              value={data.meilleureCohesion?.valeur ?? null}
+              extraContent={data.meilleureCohesion?.nom}
+              animate={true}
+              decimals={1}
+              suffix=" %"
+            />
+            <KpiItem
+              icon={<TrendingDown className="h-5 w-5 text-red-400" />}
+              title="Moindre cohésion"
+              value={data.pireCohesion?.valeur ?? null}
+              extraContent={data.pireCohesion?.nom}
+              animate={true}
+              decimals={1}
+              suffix=" %"
+            />
+          </div>
+        )}
+
         {/* Le pie chart – seulement pour AN et Sénat */}
 { (title === "Assemblée Nationale" || title === "Sénat")
   && data.groupes
@@ -215,7 +275,8 @@ function KpiItem({
   animate = false,
   decimals = 0,
   delay = 0.2,
-  extraContent,           // ← nouveau prop optionnel
+  extraContent,
+  suffix: suffixProp,
 }: {
   icon: React.ReactNode;
   title: string;
@@ -224,6 +285,7 @@ function KpiItem({
   decimals?: number;
   delay?: number;
   extraContent?: React.ReactNode;
+  suffix?: string;
 }) {
   if (value === null || value === '—') {
     return (
@@ -246,10 +308,10 @@ function KpiItem({
     numericValue = Number(value);
   }
 
-  // Détection suffix
+  // Détection suffix (suffixProp override l'auto-détection)
   const hasPercent = title.toLowerCase().includes('parité') || title.toLowerCase().includes('présence') || String(value).includes('%');
   const hasAns = title.toLowerCase().includes('âge') || title.includes('jeune') || title.includes('âgé');
-  const suffix = hasPercent ? ' %' : hasAns ? ' ans' : '';
+  const suffix = suffixProp ?? (hasPercent ? ' %' : hasAns ? ' ans' : '');
 
   return (
     <div className="text-left min-w-[140px] sm:min-w-[200px] space-y-1">

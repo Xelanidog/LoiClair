@@ -44,6 +44,12 @@ export interface KpiMetrics {
   nombreGroupes: number | null;
   presenceMoyenne: number | null;
   presenceSolennelsMoyenne: number | null;
+  meilleurePresence: { nom: string; valeur: number } | null;
+  pirePresence: { nom: string; valeur: number } | null;
+  meilleurePresenceSolennels: { nom: string; valeur: number } | null;
+  pirePresenceSolennels: { nom: string; valeur: number } | null;
+  meilleureCohesion: { nom: string; valeur: number } | null;
+  pireCohesion: { nom: string; valeur: number } | null;
   acteursList: ActeurRow[];
   groupesList: GroupeRow[];
 }
@@ -63,6 +69,15 @@ const GROUP_COLOR_PALETTE = [
   '#06B6D4', '#F97316', '#6366F1', '#14B8A6', '#A78BFA',
   '#F472B6', '#60A5FA', '#34D399', '#FBBF24', '#A3E635',
 ] as const;
+
+function computeExtremes(acteurs: any[], field: string) {
+  const valid = acteurs.filter(a => a[field] != null);
+  if (valid.length === 0) return { best: null, worst: null };
+  const best = valid.reduce((acc, a) => a[field] > acc[field] ? a : acc);
+  const worst = valid.reduce((acc, a) => a[field] < acc[field] ? a : acc);
+  const toEntry = (a: any) => ({ nom: `${a.prenom ?? ''} ${a.nom ?? ''}`.trim(), valeur: Math.round(a[field] * 10) / 10 });
+  return { best: toEntry(best), worst: toEntry(worst) };
+}
 
 function getInstitutionFilter(institution: Institution) {
   switch (institution) {
@@ -189,6 +204,9 @@ export async function getKpiMetrics(
       membres: 0, ageMoyen: null, plusJeune: null, plusAge: null,
       pariteFemmes: null, mandatsActifsMoyens: null, groupes: null, nombreGroupes: null,
       presenceMoyenne: null, presenceSolennelsMoyenne: null,
+      meilleurePresence: null, pirePresence: null,
+      meilleurePresenceSolennels: null, pirePresenceSolennels: null,
+      meilleureCohesion: null, pireCohesion: null,
       acteursList: [], groupesList: [],
     };
   }
@@ -247,6 +265,11 @@ export async function getKpiMetrics(
     ? Math.round(withPresenceSol.reduce((sum: number, a) => sum + a.taux_presence_solennels, 0) / withPresenceSol.length * 10) / 10
     : null;
 
+  // Extremes individuels de participation et cohésion
+  const presExtremes = computeExtremes(acteurs, 'taux_presence');
+  const presSolExtremes = computeExtremes(acteurs, 'taux_presence_solennels');
+  const cohesionExtremes = computeExtremes(acteurs, 'taux_cohesion_groupe');
+
   // Résolution des libellés et stats de vote des groupes (une seule requête Supabase)
   const organesMap = await buildOrganesMap(acteurs);
 
@@ -293,6 +316,12 @@ export async function getKpiMetrics(
     nombreGroupes: groupes ? groupes.length : null,
     presenceMoyenne,
     presenceSolennelsMoyenne,
+    meilleurePresence: presExtremes.best,
+    pirePresence: presExtremes.worst,
+    meilleurePresenceSolennels: presSolExtremes.best,
+    pirePresenceSolennels: presSolExtremes.worst,
+    meilleureCohesion: cohesionExtremes.best,
+    pireCohesion: cohesionExtremes.worst,
     acteursList,
     groupesList,
   };
