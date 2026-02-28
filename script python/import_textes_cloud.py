@@ -1058,15 +1058,24 @@ def verifier_urls_textes():
     print(f"       VÉRIFICATION URLS TEXTES")
     print(f"{'='*60}")
 
-    # Textes à vérifier : jamais vérifiés (NULL) ou précédemment inaccessibles (FALSE)
-    response = (
-        supabase.from_("textes")
-        .select("uid, lien_texte")
-        .or_("url_accessible.is.null,url_accessible.eq.false")
-        .not_.is_("lien_texte", "null")
-        .execute()
-    )
-    textes_a_verifier = response.data or []
+    # Récupération paginée (le serveur Supabase plafonne à 1000 lignes par requête)
+    textes_a_verifier = []
+    page_size = 1000
+    offset = 0
+    while True:
+        page = (
+            supabase.from_("textes")
+            .select("uid, lien_texte")
+            .or_("url_accessible.is.null,url_accessible.eq.false")
+            .not_.is_("lien_texte", "null")
+            .range(offset, offset + page_size - 1)
+            .execute()
+        )
+        rows = page.data or []
+        textes_a_verifier.extend(rows)
+        if len(rows) < page_size:
+            break
+        offset += page_size
     print(f"   Textes à vérifier : {len(textes_a_verifier)}")
 
     if not textes_a_verifier:
@@ -1075,6 +1084,13 @@ def verifier_urls_textes():
 
     accessibles = []
     inaccessibles = []
+    flush_size = 100  # Sauvegarde en DB toutes les 100 vérifications
+
+    def flush(acc, inacc):
+        if acc:
+            supabase.from_("textes").update({"url_accessible": True}).in_("uid", acc).execute()
+        if inacc:
+            supabase.from_("textes").update({"url_accessible": False}).in_("uid", inacc).execute()
 
     for texte in tqdm(textes_a_verifier, desc="Vérif URLs", unit="url"):
         try:
@@ -1087,12 +1103,13 @@ def verifier_urls_textes():
             inaccessibles.append(texte["uid"])
         time.sleep(0.2)
 
-    # Batch updates
-    batch_size = 500
-    for i in range(0, len(accessibles), batch_size):
-        supabase.from_("textes").update({"url_accessible": True}).in_("uid", accessibles[i:i+batch_size]).execute()
-    for i in range(0, len(inaccessibles), batch_size):
-        supabase.from_("textes").update({"url_accessible": False}).in_("uid", inaccessibles[i:i+batch_size]).execute()
+        # Flush progressif toutes les flush_size itérations
+        if (len(accessibles) + len(inaccessibles)) % flush_size == 0:
+            flush(accessibles, inaccessibles)
+            accessibles, inaccessibles = [], []
+
+    # Flush final pour le reste
+    flush(accessibles, inaccessibles)
 
     print(f"   Accessibles  : {len(accessibles)}")
     print(f"   Inaccessibles: {len(inaccessibles)}")
