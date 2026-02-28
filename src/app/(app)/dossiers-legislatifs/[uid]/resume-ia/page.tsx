@@ -66,7 +66,7 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
     .eq('dossier_uid', uid)
     .not('vote_refs', 'is', null);
 
-  const voteRefsSet = new Set((actesAvecVote ?? []).map(a => a.vote_refs));
+  const voteRefsSet = new Set((actesAvecVote ?? []).flatMap(a => a.vote_refs ?? []));
   const voteRefs = [...voteRefsSet];
 
   let scrutinsParTexte: Record<string, {
@@ -83,9 +83,11 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
     const scrutinsMap = new Map((scrutinsData ?? []).map(s => [s.uid, s]));
 
     for (const acte of actesAvecVote ?? []) {
-      const s = scrutinsMap.get(acte.vote_refs);
-      if (s && acte.textes_associes) {
-        scrutinsParTexte[acte.textes_associes] = {
+      const firstVoteRef = acte.vote_refs?.[0];
+      const firstTexteAssocie = acte.textes_associes?.[0];
+      const s = firstVoteRef ? scrutinsMap.get(firstVoteRef) : undefined;
+      if (s && firstTexteAssocie) {
+        scrutinsParTexte[firstTexteAssocie] = {
           sortLibelle: s.sort_libelle ?? '',
           type: s.type_vote_libelle ?? '',
           pour: s.synthese_pour ?? 0,

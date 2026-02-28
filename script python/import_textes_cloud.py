@@ -13,6 +13,7 @@ import requests
 import io
 import zipfile
 import traceback
+import time
 from pathlib import Path
 from supabase import create_client, Client
 from dotenv import load_dotenv
@@ -1051,6 +1052,53 @@ def importer_textes_from_zip(zip_ref: zipfile.ZipFile):
     print(f"{'='*60}")
 
 
+def verifier_urls_textes():
+    """Vérifie si les URLs des textes sont accessibles (HEAD request) et met à jour url_accessible."""
+    print(f"\n{'='*60}")
+    print(f"       VÉRIFICATION URLS TEXTES")
+    print(f"{'='*60}")
+
+    # Textes à vérifier : jamais vérifiés (NULL) ou précédemment inaccessibles (FALSE)
+    response = (
+        supabase.from_("textes")
+        .select("uid, lien_texte")
+        .or_("url_accessible.is.null,url_accessible.eq.false")
+        .not_.is_("lien_texte", "null")
+        .execute()
+    )
+    textes_a_verifier = response.data or []
+    print(f"   Textes à vérifier : {len(textes_a_verifier)}")
+
+    if not textes_a_verifier:
+        print("   Aucun texte à vérifier.")
+        return
+
+    accessibles = []
+    inaccessibles = []
+
+    for texte in tqdm(textes_a_verifier, desc="Vérif URLs", unit="url"):
+        try:
+            resp = requests.head(texte["lien_texte"], timeout=5, allow_redirects=True)
+            if resp.status_code < 400:
+                accessibles.append(texte["uid"])
+            else:
+                inaccessibles.append(texte["uid"])
+        except Exception:
+            inaccessibles.append(texte["uid"])
+        time.sleep(0.2)
+
+    # Batch updates
+    batch_size = 500
+    for i in range(0, len(accessibles), batch_size):
+        supabase.from_("textes").update({"url_accessible": True}).in_("uid", accessibles[i:i+batch_size]).execute()
+    for i in range(0, len(inaccessibles), batch_size):
+        supabase.from_("textes").update({"url_accessible": False}).in_("uid", inaccessibles[i:i+batch_size]).execute()
+
+    print(f"   Accessibles  : {len(accessibles)}")
+    print(f"   Inaccessibles: {len(inaccessibles)}")
+    print(f"{'='*60}")
+
+
 # Exécution
 if __name__ == "__main__":
     # URL exacte du ZIP (même que pour les dossiers)
@@ -1058,5 +1106,6 @@ if __name__ == "__main__":
 
     zip_ref = download_zip(URL)
     importer_textes_from_zip(zip_ref)
+    verifier_urls_textes()
 
     print("\nTout est terminé !")

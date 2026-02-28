@@ -116,7 +116,7 @@ export async function getMonthDossiers(supabase: SupabaseClient, dateStart: stri
 
 // Retrouve l'acte législatif associé à chaque scrutin via actes_legislatifs.vote_refs
 // Retourne un objet acte complet réutilisable par acteToFeedEvent
-export type ActeRow = { uid: string; code_acte: string; libelle_acte: string | null; date_acte: string; statut_conclusion: string | null; organe_ref: string | null; vote_refs: string | null; textes_associes: string | null; texte_adopte: string | null; dossier_uid: string | null };
+export type ActeRow = { uid: string; code_acte: string; libelle_acte: string | null; date_acte: string; statut_conclusion: string | null; organe_ref: string | null; vote_refs: string[] | null; textes_associes: string[] | null; texte_adopte: string | null; dossier_uid: string | null };
 
 export async function getScrutinActeMap(supabase: SupabaseClient, scrutinUids: string[]) {
   if (scrutinUids.length === 0) return new Map<string, ActeRow>();
@@ -124,17 +124,17 @@ export async function getScrutinActeMap(supabase: SupabaseClient, scrutinUids: s
   const { data, error } = await supabase
     .from('actes_legislatifs')
     .select('uid, code_acte, libelle_acte, date_acte, statut_conclusion, organe_ref, vote_refs, textes_associes, texte_adopte, dossier_uid')
-    .in('vote_refs', scrutinUids)
+    .overlaps('vote_refs', scrutinUids)
     .not('dossier_uid', 'is', null);
 
   if (error) console.error('Erreur scrutin-acte map:', error);
 
   const map = new Map<string, ActeRow>();
   for (const row of data ?? []) {
-    if (row.vote_refs) {
-      const existing = map.get(row.vote_refs);
-      if (!existing || (!existing.textes_associes && row.textes_associes)) {
-        map.set(row.vote_refs, row);
+    for (const ref of row.vote_refs ?? []) {
+      const existing = map.get(ref);
+      if (!existing || (!existing.textes_associes?.length && row.textes_associes?.length)) {
+        map.set(ref, row);
       }
     }
   }

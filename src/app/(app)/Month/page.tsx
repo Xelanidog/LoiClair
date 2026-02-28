@@ -147,10 +147,10 @@ function acteToFeedEvent(
   scrutinsMap: Map<string, { uid: string; titre: string | null; sort_libelle: string | null; synthese_pour: number | null; synthese_contre: number | null; synthese_abstentions: number | null; synthese_nombre_votants: number | null; synthese_non_votants: number | null; synthese_suffrages_requis: number | null }>,
 ): FeedEvent {
   const type = classifyByLibelle(a.libelle_acte);
-  const texte = a.textes_associes ? textes.get(a.textes_associes) : null;
+  const texte = a.textes_associes?.[0] ? textes.get(a.textes_associes[0]) : null;
   const texteAdopte = a.texte_adopte ? textes.get(a.texte_adopte) : null;
   const organeData = a.organe_ref ? organes.get(a.organe_ref) : null;
-  const scrutin = a.vote_refs ? scrutinsMap.get(a.vote_refs) : null;
+  const scrutin = a.vote_refs?.[0] ? scrutinsMap.get(a.vote_refs[0]) : null;
 
   return {
     id: `acte-${a.uid}`,
@@ -242,10 +242,10 @@ export default async function MonthPage({
     const scrutinUids = new Set<string>();
 
     for (const a of timelineActes) {
-      if (a.textes_associes) texteUids.add(a.textes_associes);
+      (a.textes_associes ?? []).forEach(t => texteUids.add(t));
       if (a.texte_adopte) texteUids.add(a.texte_adopte);
       if (a.organe_ref) organeUids.add(a.organe_ref);
-      if (a.vote_refs) scrutinUids.add(a.vote_refs);
+      (a.vote_refs ?? []).forEach(r => scrutinUids.add(r));
     }
 
     // 3. Batch resolve toutes les refs
@@ -273,8 +273,8 @@ export default async function MonthPage({
         const type = classifyByLibelle(a.libelle_acte);
         if (type === 'MOTION_CENSURE' && !a.statut_conclusion) {
           const childConclusion = motionConclusionMap.get(a.uid) ?? null;
-          const texteStatut = a.textes_associes ? textes.get(a.textes_associes)?.statut_adoption ?? null : null;
-          const scrutinFallback = a.vote_refs ? scrutinsMap.get(a.vote_refs)?.sort_libelle ?? null : null;
+          const texteStatut = a.textes_associes?.[0] ? textes.get(a.textes_associes[0])?.statut_adoption ?? null : null;
+          const scrutinFallback = a.vote_refs?.[0] ? scrutinsMap.get(a.vote_refs[0])?.sort_libelle ?? null : null;
           return acteToFeedEvent(
             { ...a, statut_conclusion: childConclusion ?? texteStatut ?? scrutinFallback },
             dossierInfo ?? null, textes, organes, scrutinsMap,
@@ -350,19 +350,19 @@ export default async function MonthPage({
   const dossierUidsSet = new Set<string>();
 
   for (const a of [...actes, ...uniqueMotions]) {
-    if (a.textes_associes) texteUids.add(a.textes_associes);
+    (a.textes_associes ?? []).forEach(t => texteUids.add(t));
     if (a.texte_adopte) texteUids.add(a.texte_adopte);
     if (a.organe_ref) organeUids.add(a.organe_ref);
-    if (a.vote_refs) scrutinUidsFromActes.add(a.vote_refs);
+    (a.vote_refs ?? []).forEach(r => scrutinUidsFromActes.add(r));
     if (a.dossier_uid) dossierUidsSet.add(a.dossier_uid);
   }
 
   for (const acte of scrutinActeMap.values()) {
     if (acte.dossier_uid) dossierUidsSet.add(acte.dossier_uid);
     if (acte.organe_ref) organeUids.add(acte.organe_ref);
-    if (acte.textes_associes) texteUids.add(acte.textes_associes);
+    (acte.textes_associes ?? []).forEach(t => texteUids.add(t));
     if (acte.texte_adopte) texteUids.add(acte.texte_adopte);
-    if (acte.vote_refs) scrutinUidsFromActes.add(acte.vote_refs);
+    (acte.vote_refs ?? []).forEach(r => scrutinUidsFromActes.add(r));
   }
 
   // ── Round 3 : résolution unique de toutes les refs (parallèle) ──
@@ -446,8 +446,8 @@ export default async function MonthPage({
   const motionEvents: FeedEvent[] = uniqueMotions.map(a => {
     const dossier = a.dossier_uid ? dossierTitles.get(a.dossier_uid) : null;
     const childConclusion = motionDecisionMap.get(a.uid) ?? null;
-    const texteStatut = a.textes_associes ? textes.get(a.textes_associes)?.statut_adoption ?? null : null;
-    const scrutinFallback = a.vote_refs ? scrutinsMapFromActes.get(a.vote_refs)?.sort_libelle ?? null : null;
+    const texteStatut = a.textes_associes?.[0] ? textes.get(a.textes_associes[0])?.statut_adoption ?? null : null;
+    const scrutinFallback = a.vote_refs?.[0] ? scrutinsMapFromActes.get(a.vote_refs[0])?.sort_libelle ?? null : null;
     return acteToFeedEvent(
       { ...a, statut_conclusion: childConclusion ?? texteStatut ?? scrutinFallback },
       dossier ?? null,
