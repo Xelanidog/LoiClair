@@ -236,6 +236,16 @@ function InstitutionCard({
             />
           </div>
         )}
+        {(data.meilleurePresence !== null || data.meilleureCohesion !== null) && (
+          <span className="text-xs text-muted-foreground/60 -mt-2 mb-4 inline-flex gap-3">
+            <Link href="/documentation/methode#taux-de-participation-aux-votes" className="hover:text-foreground transition-colors">
+              Participation : comment c'est calculé →
+            </Link>
+            <Link href="/documentation/methode#taux-de-cohesion" className="hover:text-foreground transition-colors">
+              Cohésion : comment c'est calculé →
+            </Link>
+          </span>
+        )}
 
         {/* Le pie chart – seulement pour AN et Sénat */}
 { (title === "Assemblée Nationale" || title === "Sénat")
