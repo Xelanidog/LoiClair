@@ -261,18 +261,22 @@ Combien de députés participent en moyenne à un vote à l'Assemblée nationale
 - **Scrutins ordinaires** : les votes du quotidien parlementaire (amendements, articles, procédures).
 - **Scrutins solennels** : les votes sur l'ensemble d'un texte de loi et les motions de censure — les plus importants politiquement.
 
-Pour chaque type, deux chiffres sont affichés : le nombre moyen de **votants** (ceux qui ont exprimé un vote) et le nombre moyen d'**absents** (tous ceux qui n'ont pas voté, pour quelque raison que ce soit).
+Pour chaque type, deux chiffres sont affichés : le nombre moyen de **votants** (ceux qui ont exprimé un vote) et le nombre moyen de **non-participants** (tous ceux qui n'ont pas voté, quelle qu'en soit la raison).
 
 **Comment c'est calculé**
 Pour chaque scrutin, le nombre de votants est relevé dans les résultats officiels. On en tire une moyenne sur l'ensemble des scrutins du type :
 
 > Votants moyens = Total des votants sur tous les scrutins du type ÷ Nombre de scrutins
 
-> Absents moyens = 577 − Votants moyens
+> Non-participants moyens = 577 − Votants moyens
 
-577 correspond au nombre total de sièges à l'Assemblée nationale. Les absents regroupent deux situations : les députés enregistrés dans le scrutin comme « non-votants » (présents en séance mais n'ayant pas pris part au vote) et les députés non mentionnés du tout dans le scrutin (absents de l'hémicycle).
+577 correspond au nombre total de sièges à l'Assemblée nationale. Les non-participants regroupent deux situations distinctes :
+- **Non-votants** : deputies présents en séance, enregistrés dans le scrutin, mais n'ayant pas pris part au vote (ils peuvent avoir délégué leur vote par procuration).
+- **Non-mentionnés** : députés absents de l'hémicycle, qui n'apparaissent pas du tout dans les données du scrutin.
 
-Exemple chiffré : sur un scrutin ordinaire avec 160 votants, les absents sont 577 − 160 = 417, soit 72 % de l'hémicycle non mobilisé. Sur un scrutin solennel avec 408 votants, les absents tombent à 169, soit 29 %.
+Les données officielles ne permettent pas toujours de distinguer ces deux cas au niveau des moyennes agrégées — c'est pourquoi ils sont présentés ensemble sous le terme « non-participants ».
+
+Exemple chiffré : sur un scrutin ordinaire avec 160 votants, les non-participants sont 577 − 160 = 417, soit 72 % de l'hémicycle. Sur un scrutin solennel avec 408 votants, ils tombent à 169, soit 29 %.
 
 Variables **incluses** :
 - Tous les scrutins publics depuis le début de la législature en cours.
@@ -287,7 +291,7 @@ Les résultats détaillés de chaque scrutin (nombre de votants, de non-votants)
 **Ce que ça ne mesure pas**
 ⚠ La moyenne lisse les variations entre scrutins : un vote très mobilisateur peut rassembler 500 députés, un autre seulement 80. La moyenne ne reflète pas ces extrêmes.
 
-⚠ Certains « absents » sont en réalité présents dans les couloirs et ont simplement délégué leur vote (procuration). Un député porteur d'une procuration vote pour deux mais les deux sont comptés séparément.
+⚠ Un « non-participant » n'est pas forcément absent de Paris : il peut être présent en séance mais avoir choisi de ne pas voter, ou avoir délégué sa voix par procuration à un collègue.
 
 **Comment interpréter**
 Les scrutins ordinaires mobilisent en moyenne environ 160 à 200 députés sur 577 — environ un tiers de l'hémicycle. Les scrutins solennels rassemblent davantage : généralement entre 350 et 450 députés (60 à 80 % de l'hémicycle). Un vote solennel avec moins de 300 participants serait inhabituellement faible.

@@ -190,7 +190,7 @@ function InstitutionCard({
               />
               <KpiItem
                 icon={<UserX className="h-5 w-5 text-muted-foreground" />}
-                title="Absents moy. (scrutins ordinaires)"
+                title="Non-participants moy. (scrutins ordinaires)"
                 value={data.scrutinStats.ordinaire.avgAbsents}
                 animate={true}
                 decimals={0}
@@ -208,7 +208,7 @@ function InstitutionCard({
               />
               <KpiItem
                 icon={<UserX className="h-5 w-5 text-muted-foreground" />}
-                title="Absents moy. (scrutins solennels)"
+                title="Non-participants moy. (scrutins solennels)"
                 value={data.scrutinStats.solennel.avgAbsents}
                 animate={true}
                 decimals={0}

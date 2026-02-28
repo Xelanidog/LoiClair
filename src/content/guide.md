@@ -152,10 +152,12 @@ Ces chiffres s'animent à l'ouverture de la page pour rendre la lecture plus agr
 
 Pour l'Assemblée nationale, la page affiche combien de députés participent **en moyenne** à chaque type de scrutin :
 
-- **Scrutins ordinaires** (votes du quotidien : amendements, articles de loi…) : nombre moyen de votants et d'absents sur l'ensemble des scrutins de la législature.
+- **Scrutins ordinaires** (votes du quotidien : amendements, articles de loi…) : nombre moyen de votants et de non-participants sur l'ensemble des scrutins de la législature.
 - **Scrutins solennels** (votes sur l'ensemble d'un texte de loi, motions de censure) : même lecture, sur ces votes considérés comme les plus importants.
 
 Le pourcentage affiché à côté du chiffre permet de situer immédiatement la mobilisation par rapport aux 577 sièges. En pratique, un scrutin ordinaire mobilise environ un tiers de l'hémicycle, tandis qu'un scrutin solennel en rassemble les deux tiers.
+
+> **Non-participants** regroupe deux cas : les députés présents en séance mais n'ayant pas pris part au vote, et ceux absents de l'hémicycle.
 
 ### Records individuels de participation et cohésion
 
