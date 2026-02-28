@@ -203,21 +203,28 @@ La loi impose depuis 2017 la parité stricte pour les élections législatives (
 **Ce que ça mesure**
 Le taux moyen de participation des membres d'une institution (ou d'un groupe politique) aux scrutins publics. Deux variantes sont affichées :
 - **Tous votes** : l'ensemble des scrutins publics en séance.
-- **Votes solennels** : uniquement les scrutins sur l'ensemble d'un texte (vote final), considérés comme les plus importants.
+- **Votes importants** : uniquement les scrutins publics solennels (vote final sur l'ensemble d'un texte) et les motions de censure — les plus importants politiquement.
 
 La page Composition affiche également les **records individuels** : le député ayant le taux de participation le plus élevé et le plus bas de toute l'Assemblée, pour chacune des deux variantes.
 
 **Comment c'est calculé**
 Pour chaque scrutin public, LoiClair classe chaque parlementaire dans l'une de ces catégories :
 - **Votant** : le membre a exprimé un vote (pour, contre, ou abstention).
-- **Non-participant** : le membre n'a pas voté. Cela regroupe deux cas : les « non-votants » (enregistrés comme présents mais n'ayant pas pris part au vote) et les « absents » (non enregistrés dans les données de l'Assemblée nationale pour ce scrutin). Ces deux cas sont additionnés.
+- **Non-participant** : le membre n'a pas voté alors qu'il était en mesure de le faire. Cela regroupe les absents de l'hémicycle (non enregistrés dans les données du scrutin) et les « non-votants volontaires » (enregistrés mais ayant choisi de ne pas voter).
+
+**Exclusion des non-votants institutionnels** : certains députés sont enregistrés comme « non-votants » dans un scrutin non pas par choix, mais en raison de leur fonction :
+- **PAN** (Président de l'Assemblée nationale) : ne vote pas pour garantir son impartialité.
+- **PSE** (Président de séance) : assure la présidence du débat et ne prend pas part au vote.
+- **MG** (Membre du Gouvernement) : les ministres ne votent pas à l'Assemblée.
+
+Ces trois cas sont **exclus du calcul** de participation : le scrutin concerné n'est compté ni au numérateur ni au dénominateur. Cela évite de pénaliser un député qui préside une séance ou qui est au Gouvernement.
 
 Le taux tient compte de la **période réelle d'exercice du mandat** :
 
 > Participation individuelle = Votes exprimés pendant le mandat ÷ Scrutins tenus pendant le mandat
 
 Cela signifie :
-- Si un député arrive en cours de législature (élection partielle), seuls les scrutins depuis son entrée en fonction sont comptabilisés.
+- Si un député arrive en cours de législature (élection partielle, remplacement d'un député nommé au Gouvernement, etc.), seuls les scrutins depuis sa **date de prise de fonction effective** sont comptabilisés — c'est-à-dire le jour où il commence réellement à siéger, et non la date légale de début de mandat (qui peut être antérieure de plusieurs semaines).
 - Si un député quitte son siège (pour devenir ministre par exemple) puis revient, ses deux périodes de mandat sont additionnées séparément. La période passée au Gouvernement — pendant laquelle les ministres ne votent pas à l'Assemblée — est exclue des deux côtés du calcul (ni dans les votes, ni dans les scrutins comptabilisés). Exemple : un député ayant siégé de juillet 2024 à janvier 2025, puis à nouveau depuis janvier 2026, voit ses votes et scrutins des deux fenêtres additionnés — la période au Gouvernement entre les deux n'entre pas dans le calcul.
 - Si un député quitte définitivement son siège en cours de législature, seuls les scrutins de sa période d'exercice sont retenus.
 
@@ -231,26 +238,28 @@ Dans le tableau détaillé des députés, le taux est accompagné d'un détail �
 
 Variables **incluses** :
 - **Votes exprimés** : pour, contre, abstention — tous comptent comme participation.
-- **Non-votants et absents** : additionnés ensemble comme « non-participation ».
+- **Non-votants volontaires et absents** : additionnés ensemble comme « non-participation ».
 - Seuls les scrutins ayant eu lieu pendant la période de mandat effective du député sont pris en compte.
+- Les **corrections de vote** (« mises au point ») publiées par l'AN sont intégrées : si un député signale une erreur de vote (mauvais bouton, dysfonctionnement technique), sa position corrigée est utilisée.
 
 Variables **exclues et pourquoi** :
-- Les membres sans aucune donnée de participation (cas rare, par exemple un député tout juste élu) sont exclus pour ne pas fausser la moyenne.
+- Les **non-votants institutionnels** (Président de l'AN, président de séance, membre du Gouvernement) sont exclus des deux côtés du calcul — le scrutin ne compte ni pour ni contre eux.
+- Les membres avec **trop peu de scrutins** pour afficher un taux fiable : si moins de 100 scrutins ordinaires (ou 10 scrutins importants) ont eu lieu depuis la prise de fonction, le taux n'est pas affiché et un badge « pas assez de scrutins » est montré à la place.
 - Le Gouvernement n'a pas de données de participation (les ministres ne votent pas au Parlement).
 - Les scrutins antérieurs à l'entrée en mandat ou postérieurs à la fin du mandat sont exclus.
 
 **D'où viennent les données**
-Les résultats de chaque scrutin public (qui a voté quoi, qui était non-votant) proviennent de l'open data de l'Assemblée nationale. LoiClair identifie les absents en comparant la liste des votants à la liste des membres en exercice. Mise à jour chaque nuit.
+Les résultats de chaque scrutin public (qui a voté quoi, qui était non-votant, et pour quelle raison) proviennent de l'open data de l'Assemblée nationale. Les éventuelles corrections de vote (« mises au point ») publiées après le scrutin sont également intégrées. Mise à jour chaque nuit.
 
 **Ce que ça ne mesure pas**
-⚠ La participation à un scrutin ne dit pas si le parlementaire était physiquement présent en séance. Le vote peut être délégué à un collègue (chaque député peut porter une procuration).
+⚠ La participation à un scrutin ne dit pas si le parlementaire était physiquement présent en séance. Le vote peut être délégué à un collègue (chaque député peut porter une procuration — environ 13 % des votes sont par délégation).
 
 ⚠ Un taux de participation faible ne signifie pas que le député ne travaille pas. Le travail parlementaire comprend aussi les commissions, les auditions, les missions, et le travail en circonscription — aucun de ces éléments n'est mesuré ici.
 
-⚠ Les votes solennels sont moins fréquents que les votes ordinaires. Un petit nombre de votes solennels peut rendre le taux plus volatile.
+⚠ Les votes importants sont moins fréquents que les votes ordinaires. Un petit nombre de votes importants peut rendre le taux plus volatile.
 
 **Comment interpréter**
-Un taux de participation global supérieur à 50 % est dans la moyenne. Au-dessus de 70 %, la participation est élevée. Pour les votes solennels, les taux sont généralement plus élevés car ces scrutins mobilisent davantage (entre 60 % et 90 % selon les groupes).
+Un taux de participation global supérieur à 50 % est dans la moyenne. Au-dessus de 70 %, la participation est élevée. Pour les votes importants, les taux sont généralement plus élevés car ces scrutins mobilisent davantage (entre 60 % et 90 % selon les groupes).
 
 ---
 
@@ -259,28 +268,32 @@ Un taux de participation global supérieur à 50 % est dans la moyenne. Au-dessu
 **Ce que ça mesure**
 Combien de députés participent en moyenne à un vote à l'Assemblée nationale ? Ces indicateurs répondent à cette question pour deux types de scrutins :
 - **Scrutins ordinaires** : les votes du quotidien parlementaire (amendements, articles, procédures).
-- **Scrutins solennels** : les votes sur l'ensemble d'un texte de loi et les motions de censure — les plus importants politiquement.
+- **Scrutins importants** : les votes sur l'ensemble d'un texte de loi et les motions de censure — les plus importants politiquement.
 
 Pour chaque type, deux chiffres sont affichés : le nombre moyen de **votants** (ceux qui ont exprimé un vote) et le nombre moyen de **non-participants** (tous ceux qui n'ont pas voté, quelle qu'en soit la raison).
 
 **Comment c'est calculé**
-Pour chaque scrutin, le nombre de votants est relevé dans les résultats officiels. On en tire une moyenne sur l'ensemble des scrutins du type :
+Pour chaque scrutin, le nombre de votants et de non-votants institutionnels est relevé dans les résultats officiels. On en tire une moyenne sur l'ensemble des scrutins du type :
 
 > Votants moyens = Total des votants sur tous les scrutins du type ÷ Nombre de scrutins
 
-> Non-participants moyens = 577 − Votants moyens
+> Éligibles = 577 − Non-votants institutionnels moyens (PAN, PSE, MG)
 
-577 correspond au nombre total de sièges à l'Assemblée nationale. Les non-participants regroupent deux situations distinctes :
-- **Non-votants** : deputies présents en séance, enregistrés dans le scrutin, mais n'ayant pas pris part au vote (ils peuvent avoir délégué leur vote par procuration).
+> Absents moyens = Éligibles − Votants moyens
+
+577 correspond au nombre total de sièges à l'Assemblée nationale. Les **non-votants institutionnels** (Président de l'AN, président de séance, membres du Gouvernement) sont retirés de la base car ils ne peuvent pas voter de par leur fonction. Seuls les députés qui auraient pu voter sont pris en compte comme base de calcul (« éligibles »).
+
+Les « absents » regroupent deux situations distinctes :
+- **Non-votants volontaires** (« Position personnelle ») : députés enregistrés dans le scrutin mais ayant choisi de ne pas voter — un cas très rare en pratique.
 - **Non-mentionnés** : députés absents de l'hémicycle, qui n'apparaissent pas du tout dans les données du scrutin.
 
-Les données officielles ne permettent pas toujours de distinguer ces deux cas au niveau des moyennes agrégées — c'est pourquoi ils sont présentés ensemble sous le terme « non-participants ».
+Les pourcentages affichés sont calculés par rapport à la base d'éligibles, pas par rapport aux 577 sièges.
 
-Exemple chiffré : sur un scrutin ordinaire avec 160 votants, les non-participants sont 577 − 160 = 417, soit 72 % de l'hémicycle. Sur un scrutin solennel avec 408 votants, ils tombent à 169, soit 29 %.
+Exemple chiffré : sur un scrutin ordinaire avec 160 votants et 3 non-votants institutionnels, les éligibles sont 577 − 3 = 574, et les absents sont 574 − 160 = 414, soit 72 % des éligibles.
 
 Variables **incluses** :
 - Tous les scrutins publics depuis le début de la législature en cours.
-- Pour les solennels : votes finaux sur l'ensemble d'un texte et motions de censure.
+- Pour les importants : votes finaux sur l'ensemble d'un texte et motions de censure.
 
 Variables **exclues** :
 - Les scrutins pour lesquels le nombre de votants n'est pas renseigné dans les données sources.
@@ -294,7 +307,7 @@ Les résultats détaillés de chaque scrutin (nombre de votants, de non-votants)
 ⚠ Un « non-participant » n'est pas forcément absent de Paris : il peut être présent en séance mais avoir choisi de ne pas voter, ou avoir délégué sa voix par procuration à un collègue.
 
 **Comment interpréter**
-Les scrutins ordinaires mobilisent en moyenne environ 160 à 200 députés sur 577 — environ un tiers de l'hémicycle. Les scrutins solennels rassemblent davantage : généralement entre 350 et 450 députés (60 à 80 % de l'hémicycle). Un vote solennel avec moins de 300 participants serait inhabituellement faible.
+Les scrutins ordinaires mobilisent en moyenne environ 160 à 200 députés sur 577 — environ un tiers de l'hémicycle. Les scrutins importants rassemblent davantage : généralement entre 350 et 450 députés (60 à 80 % de l'hémicycle). Un vote important avec moins de 300 participants serait inhabituellement faible.
 
 ---
 
@@ -348,6 +361,31 @@ Les positions majoritaires des groupes et les votes individuels proviennent de l
 La plupart des groupes politiques affichent une cohésion supérieure à 80 %, ce qui est normal dans le système parlementaire français où la discipline de groupe est forte. En dessous de 70 %, le groupe connaît des divisions significatives. Une cohésion de 95 % ou plus indique un groupe très discipliné ou un petit groupe où les divergences sont rares.
 
 Pour un parlementaire individuel, une cohésion au-dessus de 90 % est très alignée sur son groupe. Entre 70 % et 90 %, il y a des divergences occasionnelles. En dessous de 70 %, le membre vote régulièrement différemment de son groupe.
+
+---
+
+## Types de scrutins
+
+**Ce que ça mesure**
+L'Assemblée nationale utilise six modes de scrutin public, chacun avec ses propres règles de majorité. LoiClair les regroupe en deux catégories pour ses indicateurs de participation.
+
+**Les six types de scrutins**
+
+| Code | Nom complet | Voix nécessaires pour l'adoption | Catégorie LoiClair |
+|------|------------|----------------------------------|--------------------|
+| SPO | Scrutin public ordinaire | Majorité simple : 50 % + 1 des suffrages exprimés (les abstentions ne comptent pas) | Ordinaire |
+| SPS | Scrutin public solennel | Majorité simple : 50 % + 1 des suffrages exprimés | Important |
+| MOC | Motion de censure | Majorité absolue : 289 voix « pour » sur 577, quel que soit le nombre de votants | Important |
+| SNOM | Scrutin nominatif | Majorité simple : 50 % + 1 des suffrages exprimés | Ordinaire |
+| SAT | Scrutin à la tribune | Majorité simple : 50 % + 1 des suffrages exprimés | Ordinaire |
+| SCG | Scrutin du Congrès | Majorité qualifiée : 3/5 des suffrages exprimés (utilisée pour les révisions constitutionnelles) | Ordinaire |
+
+**Impact sur les indicateurs LoiClair**
+- Les indicateurs « tous votes » prennent en compte les 6 types.
+- Les indicateurs « votes importants » ne retiennent que les **SPS** (vote final sur l'ensemble d'un texte) et **MOC** (motion de censure) — les votes les plus politiquement significatifs.
+
+**Ce que ça ne mesure pas**
+⚠ Les votes à mains levées et les votes à bulletins secrets existent dans le règlement de l'Assemblée mais ne sont pas fournis par le système de vote électronique. Seuls les scrutins publics (avec enregistrement individuel des votes) sont disponibles.
 
 ---
 

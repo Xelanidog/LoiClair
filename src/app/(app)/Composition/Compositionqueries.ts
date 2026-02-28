@@ -11,14 +11,15 @@ export interface ActeurRow {
   groupe: string | null;
   departement: string | null;
   taux_presence: number | null;
-  taux_presence_solennels: number | null;
+  taux_presence_importants: number | null;
   taux_cohesion_groupe: number | null;
   votes_pour: number | null;
   votes_contre: number | null;
   votes_abstentions: number | null;
-  votes_actifs_solennels: number | null;
+  votes_actifs_importants: number | null;
   scrutins_pendant_mandat: number | null;
-  scrutins_pendant_mandat_solennels: number | null;
+  scrutins_pendant_mandat_importants: number | null;
+  date_debut_mandat: string | null;
 }
 
 export interface GroupeRow {
@@ -28,7 +29,7 @@ export interface GroupeRow {
   nb_deputes: number;
   pct_representation: number | null;
   taux_presence_moyen: number | null;
-  taux_presence_solennels_moyen: number | null;
+  taux_presence_importants_moyen: number | null;
   taux_cohesion_interne: number | null;
   fill: string;
 }
@@ -43,18 +44,18 @@ export interface KpiMetrics {
   groupes: Array<{ name: string; nameShort: string; value: number; fill: string }> | null;
   nombreGroupes: number | null;
   presenceMoyenne: number | null;
-  presenceSolennelsMoyenne: number | null;
+  presenceImportantsMoyenne: number | null;
   meilleurePresence: { nom: string; valeur: number } | null;
   pirePresence: { nom: string; valeur: number } | null;
-  meilleurePresenceSolennels: { nom: string; valeur: number } | null;
-  pirePresenceSolennels: { nom: string; valeur: number } | null;
+  meilleurePresenceImportants: { nom: string; valeur: number } | null;
+  pirePresenceImportants: { nom: string; valeur: number } | null;
   meilleureCohesion: { nom: string; valeur: number } | null;
   pireCohesion: { nom: string; valeur: number } | null;
   acteursList: ActeurRow[];
   groupesList: GroupeRow[];
   scrutinStats: {
-    ordinaire: { avgVotants: number | null; avgAbsents: number | null; count: number };
-    solennel:  { avgVotants: number | null; avgAbsents: number | null; count: number };
+    ordinaire: { avgVotants: number | null; avgAbsents: number | null; avgEligible: number | null; count: number };
+    important:  { avgVotants: number | null; avgAbsents: number | null; avgEligible: number | null; count: number };
   } | null;
 }
 
@@ -63,7 +64,7 @@ interface OrganeInfo {
   libelle: string;
   libelleAbrege: string;
   taux_presence_moyen: number | null;
-  taux_presence_solennels_moyen: number | null;
+  taux_presence_importants_moyen: number | null;
   taux_cohesion_interne: number | null;
 }
 
@@ -101,7 +102,7 @@ async function buildOrganesMap(acteurs: any[]): Promise<Map<string, OrganeInfo>>
 
   const { data: organesData } = await supabase
     .from('organes')
-    .select('uid, libelle, libelle_abrege, taux_presence_moyen, taux_presence_solennels_moyen, taux_cohesion_interne')
+    .select('uid, libelle, libelle_abrege, taux_presence_moyen, taux_presence_importants_moyen, taux_cohesion_interne')
     .in('uid', Array.from(uids));
 
   const organesMap = new Map<string, OrganeInfo>();
@@ -110,7 +111,7 @@ async function buildOrganesMap(acteurs: any[]): Promise<Map<string, OrganeInfo>>
       libelle: o.libelle || o.uid,
       libelleAbrege: o.libelle_abrege || o.libelle || o.uid,
       taux_presence_moyen: o.taux_presence_moyen ?? null,
-      taux_presence_solennels_moyen: o.taux_presence_solennels_moyen ?? null,
+      taux_presence_importants_moyen: o.taux_presence_importants_moyen ?? null,
       taux_cohesion_interne: o.taux_cohesion_interne ?? null,
     });
   });
@@ -175,7 +176,7 @@ function buildGroupesList(
           ? Math.round((nb / totalMembres) * 1000) / 10
           : null,
         taux_presence_moyen: info?.taux_presence_moyen ?? null,
-        taux_presence_solennels_moyen: info?.taux_presence_solennels_moyen ?? null,
+        taux_presence_importants_moyen: info?.taux_presence_importants_moyen ?? null,
         taux_cohesion_interne: info?.taux_cohesion_interne ?? null,
         fill: GROUP_COLOR_PALETTE[index % GROUP_COLOR_PALETTE.length],
       };
@@ -187,8 +188,8 @@ export async function getKpiMetrics(
   groupeFilter?: string
 ): Promise<KpiMetrics> {
   const baseFilter = getInstitutionFilter(institution);
-  const BASE_SELECT = 'age, civ, prenom, nom, groupe, mandats, departement_election, libelle_profession, taux_presence, taux_presence_solennels, taux_cohesion_groupe';
-  const EXTENDED_SELECT = BASE_SELECT + ', votes_pour, votes_contre, votes_abstentions, votes_actifs_solennels, scrutins_pendant_mandat, scrutins_pendant_mandat_solennels';
+  const BASE_SELECT = 'age, civ, prenom, nom, groupe, mandats, departement_election, libelle_profession, taux_presence, taux_presence_importants, taux_cohesion_groupe, date_debut_mandat';
+  const EXTENDED_SELECT = BASE_SELECT + ', votes_pour, votes_contre, votes_abstentions, votes_actifs_importants, scrutins_pendant_mandat, scrutins_pendant_mandat_importants';
 
   const buildQuery = (select: string) => {
     let q = supabase.from('acteurs').select(select).eq('en_exercice', true).match(baseFilter);
@@ -207,9 +208,9 @@ export async function getKpiMetrics(
     return {
       membres: 0, ageMoyen: null, plusJeune: null, plusAge: null,
       pariteFemmes: null, mandatsActifsMoyens: null, groupes: null, nombreGroupes: null,
-      presenceMoyenne: null, presenceSolennelsMoyenne: null,
+      presenceMoyenne: null, presenceImportantsMoyenne: null,
       meilleurePresence: null, pirePresence: null,
-      meilleurePresenceSolennels: null, pirePresenceSolennels: null,
+      meilleurePresenceImportants: null, pirePresenceImportants: null,
       meilleureCohesion: null, pireCohesion: null,
       acteursList: [], groupesList: [], scrutinStats: null,
     };
@@ -264,14 +265,14 @@ export async function getKpiMetrics(
     ? Math.round(withPresence.reduce((sum: number, a) => sum + a.taux_presence, 0) / withPresence.length * 10) / 10
     : null;
 
-  const withPresenceSol = acteurs.filter(a => a.taux_presence_solennels != null);
-  const presenceSolennelsMoyenne = withPresenceSol.length > 0
-    ? Math.round(withPresenceSol.reduce((sum: number, a) => sum + a.taux_presence_solennels, 0) / withPresenceSol.length * 10) / 10
+  const withPresenceImp = acteurs.filter(a => a.taux_presence_importants != null);
+  const presenceImportantsMoyenne = withPresenceImp.length > 0
+    ? Math.round(withPresenceImp.reduce((sum: number, a) => sum + a.taux_presence_importants, 0) / withPresenceImp.length * 10) / 10
     : null;
 
   // Extremes individuels de participation et cohésion
   const presExtremes = computeExtremes(acteurs, 'taux_presence');
-  const presSolExtremes = computeExtremes(acteurs, 'taux_presence_solennels');
+  const presImpExtremes = computeExtremes(acteurs, 'taux_presence_importants');
   const cohesionExtremes = computeExtremes(acteurs, 'taux_cohesion_groupe');
 
   // Résolution des libellés et stats de vote des groupes (une seule requête Supabase)
@@ -298,14 +299,15 @@ export async function getKpiMetrics(
       groupe: a.groupe ? (organesMap.get(a.groupe)?.libelle ?? null) : null,
       departement: a.departement_election ?? null,
       taux_presence: a.taux_presence ?? null,
-      taux_presence_solennels: a.taux_presence_solennels ?? null,
+      taux_presence_importants: a.taux_presence_importants ?? null,
       taux_cohesion_groupe: a.taux_cohesion_groupe ?? null,
       votes_pour: a.votes_pour ?? null,
       votes_contre: a.votes_contre ?? null,
       votes_abstentions: a.votes_abstentions ?? null,
-      votes_actifs_solennels: a.votes_actifs_solennels ?? null,
+      votes_actifs_importants: a.votes_actifs_importants ?? null,
       scrutins_pendant_mandat: a.scrutins_pendant_mandat ?? null,
-      scrutins_pendant_mandat_solennels: a.scrutins_pendant_mandat_solennels ?? null,
+      scrutins_pendant_mandat_importants: a.scrutins_pendant_mandat_importants ?? null,
+      date_debut_mandat: a.date_debut_mandat ?? null,
     }))
     .sort((a, b) => a.nomComplet.localeCompare(b.nomComplet, 'fr'));
 
@@ -314,24 +316,30 @@ export async function getKpiMetrics(
   if (institution === 'AN') {
     const { data: scrutinsData } = await supabase
       .from('scrutins')
-      .select('type_vote_code, synthese_nombre_votants')
+      .select('type_vote_code, synthese_nombre_votants, non_votants_institutionnels')
       .not('synthese_nombre_votants', 'is', null);
 
     if (scrutinsData && scrutinsData.length > 0) {
       const AN_TOTAL = 577;
-      const avgVotants = (arr: { synthese_nombre_votants: number }[]) =>
+      const avg = (arr: any[], field: string) =>
         arr.length > 0
-          ? Math.round(arr.reduce((s, x) => s + x.synthese_nombre_votants, 0) / arr.length)
+          ? Math.round(arr.reduce((s: number, x: any) => s + (x[field] ?? 0), 0) / arr.length)
           : null;
 
       const ordinaire = scrutinsData.filter(s => !['MOC', 'SPS'].includes(s.type_vote_code ?? ''));
-      const solennel  = scrutinsData.filter(s =>  ['MOC', 'SPS'].includes(s.type_vote_code ?? ''));
-      const avgOrd = avgVotants(ordinaire);
-      const avgSol = avgVotants(solennel);
+      const important  = scrutinsData.filter(s =>  ['MOC', 'SPS'].includes(s.type_vote_code ?? ''));
+
+      const avgOrd = avg(ordinaire, 'synthese_nombre_votants');
+      const avgImp = avg(important, 'synthese_nombre_votants');
+      // Non-votants institutionnels (PAN/PSE/MG) : exclus de la base d'éligibles
+      const nvOrd = avg(ordinaire, 'non_votants_institutionnels') ?? 0;
+      const nvImp = avg(important, 'non_votants_institutionnels') ?? 0;
+      const eligOrd = AN_TOTAL - nvOrd;
+      const eligImp = AN_TOTAL - nvImp;
 
       scrutinStats = {
-        ordinaire: { avgVotants: avgOrd, avgAbsents: avgOrd !== null ? AN_TOTAL - avgOrd : null, count: ordinaire.length },
-        solennel:  { avgVotants: avgSol, avgAbsents: avgSol !== null ? AN_TOTAL - avgSol : null, count: solennel.length },
+        ordinaire: { avgVotants: avgOrd, avgAbsents: avgOrd !== null ? eligOrd - avgOrd : null, avgEligible: eligOrd, count: ordinaire.length },
+        important:  { avgVotants: avgImp, avgAbsents: avgImp !== null ? eligImp - avgImp : null, avgEligible: eligImp, count: important.length },
       };
     }
   }
@@ -346,11 +354,11 @@ export async function getKpiMetrics(
     groupes,
     nombreGroupes: groupes ? groupes.length : null,
     presenceMoyenne,
-    presenceSolennelsMoyenne,
+    presenceImportantsMoyenne,
     meilleurePresence: presExtremes.best,
     pirePresence: presExtremes.worst,
-    meilleurePresenceSolennels: presSolExtremes.best,
-    pirePresenceSolennels: presSolExtremes.worst,
+    meilleurePresenceImportants: presImpExtremes.best,
+    pirePresenceImportants: presImpExtremes.worst,
     meilleureCohesion: cohesionExtremes.best,
     pireCohesion: cohesionExtremes.worst,
     acteursList,

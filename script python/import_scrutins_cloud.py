@@ -91,8 +91,7 @@ def safe_int(value, default=0) -> int:
 
 def extraire_acteur_refs(bucket) -> list:
     """
-    Extrait la liste des acteurRef depuis un bucket de vote.
-    Un bucket correspond à "pours", "contres", "abstentions" ou "nonVotants".
+    Extrait la liste des acteurRef depuis un bucket de vote (pours, contres, abstentions).
     Gère tous les formats possibles : null, dict unique, liste de dicts.
     """
     if bucket is None:
@@ -112,6 +111,66 @@ def extraire_acteur_refs(bucket) -> list:
     return []
 
 
+def extraire_nonvotants_avec_cause(bucket) -> list[tuple[str, str | None]]:
+    """
+    Extrait (acteurRef, causePositionVote) depuis le bucket nonVotants.
+
+    causePositionVote distingue les raisons institutionnelles des absences volontaires :
+    - 'MG' = Membre du Gouvernement (ministre — ne vote pas à l'AN)
+    - 'PAN' = Président de l'Assemblée nationale (ne vote pas par impartialité)
+    - 'PSE' = Président de séance (préside le débat, ne prend pas part au vote)
+    - 'PP'  = Position personnelle (choix volontaire de ne pas voter)
+    """
+    if bucket is None:
+        return []
+    votants = bucket.get("votant")
+    if votants is None:
+        return []
+    if isinstance(votants, dict):
+        ref = votants.get("acteurRef")
+        cause = votants.get("causePositionVote")
+        return [(ref, cause)] if ref else []
+    if isinstance(votants, list):
+        return [
+            (v.get("acteurRef"), v.get("causePositionVote"))
+            for v in votants
+            if isinstance(v, dict) and v.get("acteurRef")
+        ]
+    return []
+
+
+def extraire_votants_mise_au_point(bucket) -> list[str]:
+    """
+    Extrait les acteurRef depuis un bucket de miseAuPoint.
+
+    La structure miseAuPoint diffère du decompteNominatif : les votants sont
+    enveloppés dans {"votant": {"acteurRef": ..., "mandatRef": ...}} et
+    certaines entrées de la liste sont null.
+    """
+    if bucket is None:
+        return []
+    # Cas dict unique (une seule correction)
+    if isinstance(bucket, dict):
+        votant = bucket.get("votant")
+        if isinstance(votant, dict):
+            ref = votant.get("acteurRef")
+            return [ref] if ref else []
+        return []
+    # Cas liste (plusieurs corrections, avec des null possibles)
+    if isinstance(bucket, list):
+        refs = []
+        for entry in bucket:
+            if not isinstance(entry, dict):
+                continue
+            votant = entry.get("votant")
+            if isinstance(votant, dict):
+                ref = votant.get("acteurRef")
+                if ref:
+                    refs.append(ref)
+        return refs
+    return []
+
+
 # ===================================================================
 # Parsing d'un scrutin
 # ===================================================================
@@ -122,8 +181,11 @@ def parser_scrutin(data: dict) -> tuple:
 
     Retourne un tuple de 3 éléments :
     - payload_scrutin (dict)     : données à insérer dans la table `scrutins`
-    - votes_par_acteur (dict)    : {acteurRef: {"position": str, "groupe_ref": str}}
+    - votes_par_acteur (dict)    : {acteurRef: {"position": str, "groupe_ref": str, "cause": str|None}}
     - votes_par_organe (dict)    : {organeRef: {"positionMajoritaire": str, "pour": int, ...}}
+
+    Le champ "cause" n'est présent que pour les nonVotants (MG, PAN, PSE, PP).
+    Les corrections miseAuPoint sont appliquées avant le retour.
 
     Retourne (None, {}, {}) si le JSON est invalide.
     """
@@ -200,18 +262,47 @@ def parser_scrutin(data: dict) -> tuple:
 
         # Extraction des votes nominatifs (qui a voté quoi)
         nominatif = vote.get("decompteNominatif") or {}
-        buckets = [
-            ("pour", "pours"),
-            ("contre", "contres"),
-            ("abstention", "abstentions"),
-            ("nonVotant", "nonVotants"),
-        ]
-        for position, bucket_key in buckets:
+
+        # Buckets "actifs" : pour, contre, abstention
+        for position, bucket_key in [("pour", "pours"), ("contre", "contres"), ("abstention", "abstentions")]:
             for acteur_ref in extraire_acteur_refs(nominatif.get(bucket_key)):
                 votes_par_acteur[acteur_ref] = {
                     "position": position,
                     "groupe_ref": organe_ref,
                 }
+
+        # Bucket nonVotants : on conserve la cause (MG/PAN/PSE/PP) pour le calcul de participation
+        for acteur_ref, cause in extraire_nonvotants_avec_cause(nominatif.get("nonVotants")):
+            votes_par_acteur[acteur_ref] = {
+                "position": "nonVotant",
+                "groupe_ref": organe_ref,
+                "cause": cause,
+            }
+
+    # --- Corrections miseAuPoint ---
+    # Certains députés corrigent leur vote après le scrutin (erreur de bouton, etc.)
+    # La miseAuPoint remplace la position initiale par la position corrigée.
+    # Impact : ~400 corrections individuelles sur ~5 800 scrutins (17e lég.)
+    mise_au_point = scrutin.get("miseAuPoint") or {}
+    if not (isinstance(mise_au_point, dict) and mise_au_point.get("@xsi:nil")):
+        corrections_buckets = [
+            ("pour", "pours"),
+            ("contre", "contres"),
+            ("abstention", "abstentions"),
+            ("nonVotant", "nonVotants"),
+            ("nonVotant", "nonVotantsVolontaires"),
+        ]
+        for position, bucket_key in corrections_buckets:
+            for acteur_ref in extraire_votants_mise_au_point(mise_au_point.get(bucket_key)):
+                if acteur_ref in votes_par_acteur:
+                    votes_par_acteur[acteur_ref]["position"] = position
+
+    # Nombre de non-votants institutionnels (MG/PAN/PSE) dans ce scrutin
+    # → stocké pour calculer la base d'éligibles réels (577 − institutionnels) côté frontend
+    payload_scrutin["non_votants_institutionnels"] = sum(
+        1 for v in votes_par_acteur.values()
+        if v["position"] == "nonVotant" and v.get("cause") in CAUSES_INSTITUTIONNELLES
+    )
 
     return payload_scrutin, votes_par_acteur, votes_par_organe
 
@@ -228,6 +319,12 @@ def parser_scrutin(data: dict) -> tuple:
 GROUPE_ALIAS: dict[str, str] = {
     "PO847173": "PO872880",  # UDR → UDDPLR (renommé le 5 sept. 2025)
 }
+
+# Causes institutionnelles de non-vote (schéma XSD : causePositionVote)
+# Ces députés ne votent pas en raison de leur fonction, pas par choix personnel.
+# Ils ne doivent pas être pénalisés dans le calcul de participation :
+# le scrutin est exclu de leur numérateur ET de leur dénominateur.
+CAUSES_INSTITUTIONNELLES = {"MG", "PAN", "PSE"}
 
 
 # ===================================================================
@@ -282,34 +379,35 @@ def importer_scrutins_from_zip(zip_ref: zipfile.ZipFile):
 
     # --- Structures d'accumulation en mémoire ---
     # Par acteur :
-    #   votes_total                : nombre de scrutins où l'acteur apparaît (présent ou absent officiel)
+    #   votes_total                : scrutins où l'acteur apparaît (hors nonVotants institutionnels MG/PAN/PSE)
     #   votes_pour/contre/abstentions : votes effectifs (acteur = PRÉSENT)
-    #   votes_absent               : nonVotant (absent officiel : ministre, délégation…)
-    #   taux_presence              : (votes_pour + votes_contre + votes_abstentions) / total_scrutins × 100
-    #                                ↳ abstention = PRÉSENT (choix délibéré), nonVotant = ABSENT
+    #   votes_absent               : nonVotant volontaire (PP) ou cause inconnue — absence choisie
+    #   taux_presence              : (pour + contre + abstentions) / (scrutins_pendant_mandat) × 100
+    #                                ↳ abstention = PRÉSENT (choix délibéré)
+    #                                ↳ nonVotant institutionnel (MG/PAN/PSE) = EXCLU du calcul (ni num. ni dénom.)
     #                                ↳ les absents de l'hémicycle n'apparaissent pas du tout dans le JSON
-    #                                ↳ dénominateur = `success` (tous les scrutins parsés)
-    #   votes_actifs_solennels     : votes actifs (pour/contre/abstention) sur scrutins MOC ou SPS uniquement
-    #   taux_presence_solennels    : votes_actifs_solennels / success_importants × 100
-    #                                ↳ dénominateur = `success_importants` (scrutins MOC + SPS uniquement)
+    #   votes_actifs_importants    : votes actifs (pour/contre/abstention) sur scrutins MOC ou SPS uniquement
+    #   taux_presence_importants   : votes_actifs_importants / scrutins_importants_pendant_mandat × 100
     #   cohesion_eligible          : scrutins où l'acteur était présent et son groupe a une position connue
     #   cohesion_accord            : parmi les éligibles, ceux où il a voté comme la position majoritaire du groupe
+    #   scrutin_dates_exclues      : dates des scrutins institutionnels (pour ajuster le dénominateur)
     stats_acteurs = {}
 
     # Par organe (groupe politique) :
-    #   scrutins_total                    : nombre de scrutins où le groupe a participé
-    #   membres_presents_cumul            : somme des membres présents sur tous scrutins
-    #   membres_totaux_cumul              : somme du nombre de membres déclarés par scrutin
-    #   membres_presents_solennels_cumul  : idem, restreint aux scrutins MOC + SPS
-    #   membres_totaux_solennels_cumul    : idem, restreint aux scrutins MOC + SPS
-    #   cohesion_votes_cumul              : somme des membres ayant voté comme la position majoritaire
-    #   cohesion_eligible_cumul           : somme des membres présents (éligibles à la cohésion)
+    #   scrutins_total                      : nombre de scrutins où le groupe a participé
+    #   membres_presents_cumul              : somme des membres présents sur tous scrutins
+    #   membres_totaux_cumul                : somme du nombre de membres déclarés par scrutin
+    #   membres_presents_importants_cumul   : idem, restreint aux scrutins MOC + SPS
+    #   membres_totaux_importants_cumul     : idem, restreint aux scrutins MOC + SPS
+    #   cohesion_votes_cumul                : somme des membres ayant voté comme la position majoritaire
+    #   cohesion_eligible_cumul             : somme des membres présents (éligibles à la cohésion)
     stats_organes = {}
 
     BATCH_SIZE = 500
     pending_scrutins = []  # buffer pour le streaming d'upserts
     success = 0            # total de scrutins parsés avec succès
-    success_importants = 0 # parmi eux : scrutins MOC (motion de censure) ou SPS (solennel)
+    success_importants = 0 # parmi eux : scrutins « importants » (MOC + SPS)
+    total_corrections_map = 0  # corrections miseAuPoint appliquées
     failed = 0
     # Collecte des dates de scrutins pour calculer les dénominateurs personnels par mandat
     # Chaque entrée : (date_scrutin: str | None, is_important: bool)
@@ -352,8 +450,8 @@ def importer_scrutins_from_zip(zip_ref: zipfile.ZipFile):
                         "scrutins_total": 0,
                         "membres_presents_cumul": 0,
                         "membres_totaux_cumul": 0,
-                        "membres_presents_solennels_cumul": 0,
-                        "membres_totaux_solennels_cumul": 0,
+                        "membres_presents_importants_cumul": 0,
+                        "membres_totaux_importants_cumul": 0,
                         "cohesion_votes_cumul": 0,
                         "cohesion_eligible_cumul": 0,
                     }
@@ -365,10 +463,10 @@ def importer_scrutins_from_zip(zip_ref: zipfile.ZipFile):
                 membres_presents = stats["pour"] + stats["contre"] + stats["abstentions"]
                 s["membres_presents_cumul"] += membres_presents
 
-                # Présence sur scrutins importants (MOC + SPS) uniquement
+                # Présence sur scrutins importants (MOC + SPS)
                 if is_scrutin_important:
-                    s["membres_presents_solennels_cumul"] += membres_presents
-                    s["membres_totaux_solennels_cumul"] += stats["nombreMembres"]
+                    s["membres_presents_importants_cumul"] += membres_presents
+                    s["membres_totaux_importants_cumul"] += stats["nombreMembres"]
 
                 # Cohésion interne : % de membres qui votent comme la position majoritaire du groupe
                 pm = stats["positionMajoritaire"]
@@ -393,14 +491,22 @@ def importer_scrutins_from_zip(zip_ref: zipfile.ZipFile):
                         "votes_contre": 0,
                         "votes_abstentions": 0,
                         "votes_absent": 0,
-                        "votes_actifs_solennels": 0,
+                        "votes_actifs_importants": 0,
                         "cohesion_eligible": 0,
                         "cohesion_accord": 0,
                         "vote_dates": [],  # [(date, position, is_important)] — pour filtrage par mandat
+                        "scrutin_dates_exclues": [],  # dates des scrutins institutionnels (MG/PAN/PSE)
                     }
                 s = stats_acteurs[acteur_ref]
                 position = vote_info["position"]
                 groupe_ref_scrutin = vote_info["groupe_ref"]
+                cause = vote_info.get("cause")  # None pour pour/contre/abstention ; str pour nonVotants
+
+                # NonVotant institutionnel (MG, PAN, PSE) → ce scrutin ne compte pas pour ce député
+                # Ni au numérateur (il n'a pas voté) ni au dénominateur (il ne pouvait pas voter)
+                if position == "nonVotant" and cause in CAUSES_INSTITUTIONNELLES:
+                    s["scrutin_dates_exclues"].append((payload_scrutin.get("date_scrutin"), is_scrutin_important))
+                    continue
 
                 s["votes_total"] += 1
                 if position == "pour":
@@ -410,11 +516,12 @@ def importer_scrutins_from_zip(zip_ref: zipfile.ZipFile):
                 elif position == "abstention":
                     s["votes_abstentions"] += 1
                 elif position == "nonVotant":
+                    # PP (Position personnelle) ou cause inconnue → absence volontaire
                     s["votes_absent"] += 1
 
                 # Présence sur scrutins importants (MOC + SPS) : acteur présent et vote actif
                 if is_scrutin_important and position != "nonVotant":
-                    s["votes_actifs_solennels"] += 1
+                    s["votes_actifs_importants"] += 1
 
                 # Enregistrer la date de vote pour filtrage par mandat (numérateur cohérent)
                 if position != "nonVotant":
@@ -475,24 +582,33 @@ def importer_scrutins_from_zip(zip_ref: zipfile.ZipFile):
             # Pas de date de mandat connue → tout compter
             in_period = lambda d: bool(d)
 
-        # Dénominateur : scrutins pendant le(s) mandat(s)
-        scrutins_en_mandat = sum(1 for d, _ in scrutin_dates if in_period(d))
-        scrutins_solennels_en_mandat = sum(1 for d, imp in scrutin_dates if in_period(d) and imp)
+        # Dénominateur brut : scrutins pendant le(s) mandat(s)
+        scrutins_brut = sum(1 for d, _ in scrutin_dates if in_period(d))
+        scrutins_importants_brut = sum(1 for d, imp in scrutin_dates if in_period(d) and imp)
+
+        # Retirer les scrutins où le député était nonVotant institutionnel (MG/PAN/PSE)
+        # → ces scrutins ne doivent compter ni au numérateur ni au dénominateur
+        exclus = s.get("scrutin_dates_exclues", [])
+        exclus_en_mandat = sum(1 for d, _ in exclus if in_period(d))
+        exclus_importants = sum(1 for d, imp in exclus if in_period(d) and imp)
+
+        scrutins_en_mandat = scrutins_brut - exclus_en_mandat
+        scrutins_importants_en_mandat = scrutins_importants_brut - exclus_importants
 
         # Numérateur : votes pendant le(s) mandat(s) — garantit votes_actifs ≤ scrutins_pendant_mandat
         vd = [(d, p, imp) for d, p, imp in s["vote_dates"] if in_period(d)]
         votes_pour_m = sum(1 for _, p, _ in vd if p == "pour")
         votes_contre_m = sum(1 for _, p, _ in vd if p == "contre")
         votes_abstentions_m = sum(1 for _, p, _ in vd if p == "abstention")
-        votes_actifs_solennels_m = sum(1 for _, _, imp in vd if imp)
+        votes_actifs_importants_m = sum(1 for _, _, imp in vd if imp)
 
         votes_actifs = votes_pour_m + votes_contre_m + votes_abstentions_m
         taux_presence = (
             round(votes_actifs / scrutins_en_mandat * 100, 2) if scrutins_en_mandat > 0 else None
         )
-        taux_presence_solennels = (
-            round(votes_actifs_solennels_m / scrutins_solennels_en_mandat * 100, 2)
-            if scrutins_solennels_en_mandat > 0 else None
+        taux_presence_importants = (
+            round(votes_actifs_importants_m / scrutins_importants_en_mandat * 100, 2)
+            if scrutins_importants_en_mandat > 0 else None
         )
         ce = s["cohesion_eligible"]
         taux_cohesion = round(s["cohesion_accord"] / ce * 100, 2) if ce > 0 else None
@@ -504,11 +620,11 @@ def importer_scrutins_from_zip(zip_ref: zipfile.ZipFile):
             "votes_contre": votes_contre_m,
             "votes_abstentions": votes_abstentions_m,
             "votes_absent": s["votes_absent"],
-            "votes_actifs_solennels": votes_actifs_solennels_m,
+            "votes_actifs_importants": votes_actifs_importants_m,
             "scrutins_pendant_mandat": scrutins_en_mandat,
-            "scrutins_pendant_mandat_solennels": scrutins_solennels_en_mandat,
+            "scrutins_pendant_mandat_importants": scrutins_importants_en_mandat,
             "taux_presence": taux_presence,
-            "taux_presence_solennels": taux_presence_solennels,
+            "taux_presence_importants": taux_presence_importants,
             "taux_cohesion_groupe": taux_cohesion,
         })
 
@@ -523,7 +639,7 @@ def importer_scrutins_from_zip(zip_ref: zipfile.ZipFile):
     # Calcul des moyennes de présence des groupes depuis les taux corrigés par mandat
     # → cohérent avec les taux individuels affichés dans le tableau des députés
     groupe_presence: dict[str, list[float]] = {}
-    groupe_presence_sol: dict[str, list[float]] = {}
+    groupe_presence_imp: dict[str, list[float]] = {}
     for a in batch_acteurs:
         groupe_uid = acteur_to_groupe.get(a["uid"])
         if not groupe_uid:
@@ -531,8 +647,8 @@ def importer_scrutins_from_zip(zip_ref: zipfile.ZipFile):
         groupe_uid = GROUPE_ALIAS.get(groupe_uid, groupe_uid)
         if a.get("taux_presence") is not None:
             groupe_presence.setdefault(groupe_uid, []).append(a["taux_presence"])
-        if a.get("taux_presence_solennels") is not None:
-            groupe_presence_sol.setdefault(groupe_uid, []).append(a["taux_presence_solennels"])
+        if a.get("taux_presence_importants") is not None:
+            groupe_presence_imp.setdefault(groupe_uid, []).append(a["taux_presence_importants"])
 
     batch_organes = []
     skipped_organes = 0
@@ -547,8 +663,8 @@ def importer_scrutins_from_zip(zip_ref: zipfile.ZipFile):
         # Moyennes de présence : calculées depuis les taux corrigés par mandat
         vals = groupe_presence.get(organe_ref, [])
         taux_presence_moyen = round(sum(vals) / len(vals), 2) if vals else None
-        vals_sol = groupe_presence_sol.get(organe_ref, [])
-        taux_presence_solennels_moyen = round(sum(vals_sol) / len(vals_sol), 2) if vals_sol else None
+        vals_imp = groupe_presence_imp.get(organe_ref, [])
+        taux_presence_importants_moyen = round(sum(vals_imp) / len(vals_imp), 2) if vals_imp else None
 
         ce = s["cohesion_eligible_cumul"]
         taux_cohesion = round(s["cohesion_votes_cumul"] / ce * 100, 2) if ce > 0 else None
@@ -557,7 +673,7 @@ def importer_scrutins_from_zip(zip_ref: zipfile.ZipFile):
             "uid": organe_ref,
             "scrutins_total": s["scrutins_total"],
             "taux_presence_moyen": taux_presence_moyen,
-            "taux_presence_solennels_moyen": taux_presence_solennels_moyen,
+            "taux_presence_importants_moyen": taux_presence_importants_moyen,
             "taux_cohesion_interne": taux_cohesion,
         })
 
@@ -567,15 +683,19 @@ def importer_scrutins_from_zip(zip_ref: zipfile.ZipFile):
     # ===================================================================
     # Rapport final
     # ===================================================================
+    # Compteurs dérivés
+    total_exclus_institutionnels = sum(len(s.get("scrutin_dates_exclues", [])) for s in stats_acteurs.values())
+
     print(f"\n{'='*60}")
     print(f"           IMPORT SCRUTINS TERMINÉ")
     print(f"{'='*60}")
-    print(f"   Scrutins importés  : {success}")
-    print(f"   dont MOC + SPS     : {success_importants}")
-    print(f"   Scrutins en erreur : {failed}")
-    print(f"   Total traités      : {success + failed} / {len(json_files)}")
-    print(f"   Acteurs mis à jour : {len(batch_acteurs)}")
-    print(f"   Organes mis à jour : {len(batch_organes)}")
+    print(f"   Scrutins importés            : {success}")
+    print(f"   dont importants (MOC + SPS)  : {success_importants}")
+    print(f"   Scrutins en erreur           : {failed}")
+    print(f"   Total traités                : {success + failed} / {len(json_files)}")
+    print(f"   Acteurs mis à jour           : {len(batch_acteurs)}")
+    print(f"   Organes mis à jour           : {len(batch_organes)}")
+    print(f"   NonVotants institutionnels    : {total_exclus_institutionnels} (MG/PAN/PSE exclus du calcul)")
     print(f"{'='*60}")
 
 

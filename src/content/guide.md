@@ -153,21 +153,23 @@ Ces chiffres s'animent à l'ouverture de la page pour rendre la lecture plus agr
 Pour l'Assemblée nationale, la page affiche combien de députés participent **en moyenne** à chaque type de scrutin :
 
 - **Scrutins ordinaires** (votes du quotidien : amendements, articles de loi…) : nombre moyen de votants et de non-participants sur l'ensemble des scrutins de la législature.
-- **Scrutins solennels** (votes sur l'ensemble d'un texte de loi, motions de censure) : même lecture, sur ces votes considérés comme les plus importants.
+- **Scrutins importants** (votes sur l'ensemble d'un texte de loi, motions de censure) : même lecture, sur ces votes considérés comme les plus importants.
 
-Le pourcentage affiché à côté du chiffre permet de situer immédiatement la mobilisation par rapport aux 577 sièges. En pratique, un scrutin ordinaire mobilise environ un tiers de l'hémicycle, tandis qu'un scrutin solennel en rassemble les deux tiers.
+Le pourcentage affiché à côté du chiffre permet de situer immédiatement la mobilisation par rapport aux 577 sièges. En pratique, un scrutin ordinaire mobilise environ un tiers de l'hémicycle, tandis qu'un scrutin important en rassemble les deux tiers.
 
-> **Non-participants** regroupe deux cas : les députés présents en séance mais n'ayant pas pris part au vote, et ceux absents de l'hémicycle.
+> **Non-participants** regroupe les députés absents de l'hémicycle et ceux ayant choisi de ne pas voter. Les non-votants institutionnels (Président de l'AN, présidents de séance, membres du Gouvernement) sont exclus du calcul — ils ne sont pas comptés comme absents.
+
+Pour le détail des six types de scrutins et leurs règles de majorité, consultez la page [Méthodologie](/documentation/methode#types-de-scrutins).
 
 ### Records individuels de participation et cohésion
 
-Pour l'Assemblée nationale, la page affiche aussi les **records individuels** : le député ayant la meilleure et la moins bonne participation aux votes (tous votes, puis votes solennels uniquement), ainsi que le député le plus et le moins aligné sur son groupe politique. Ces chiffres permettent de situer les extrêmes et de saisir l'étendue des différences de comportement de vote entre élus.
+Pour l'Assemblée nationale, la page affiche aussi les **records individuels** : le député ayant la meilleure et la moins bonne participation aux votes (tous votes, puis votes importants uniquement), ainsi que le député le plus et le moins aligné sur son groupe politique. Ces chiffres permettent de situer les extrêmes et de saisir l'étendue des différences de comportement de vote entre élus.
 
 ### Tableau détaillé des députés
 
 L'onglet Assemblée nationale propose aussi un tableau listant chaque député avec ses indicateurs individuels :
 
-- Son **taux de participation** aux votes (tous votes et votes solennels), accompagné du détail **« X / Y »** : X votes exprimés sur Y scrutins tenus pendant son mandat.
+- Son **taux de participation** aux votes (tous votes et votes importants), accompagné du détail **« X / Y »** : X votes exprimés sur Y scrutins tenus pendant son mandat.
 - Son **taux de cohésion** avec son groupe politique.
 
 Ces taux sont calculés sur la **période réelle de mandat** : un élu arrivé en cours de législature (élection partielle) ou ayant temporairement quitté son siège (pour un poste ministériel, par exemple) n'est évalué que sur les scrutins pendant lesquels il était effectivement en fonction.

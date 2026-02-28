@@ -153,7 +153,7 @@ function InstitutionCard({
         </div>
 
         {/* Ligne 3 : Présence aux votes (affiché uniquement si données disponibles) */}
-        {(data.presenceMoyenne !== null || data.presenceSolennelsMoyenne !== null) && (
+        {(data.presenceMoyenne !== null || data.presenceImportantsMoyenne !== null) && (
           <div className="flex flex-wrap justify-start items-start pb-4 gap-6">
             <KpiItem
               icon={<BarChart2 className="h-5 w-5 text-muted-foreground" />}
@@ -164,8 +164,8 @@ function InstitutionCard({
             />
             <KpiItem
               icon={<BarChart2 className="h-5 w-5 text-muted-foreground" />}
-              title="Participation moyenne (votes solennels)"
-              value={data.presenceSolennelsMoyenne}
+              title="Participation moyenne (votes importants)"
+              value={data.presenceImportantsMoyenne}
               animate={true}
               decimals={1}
             />
@@ -173,10 +173,11 @@ function InstitutionCard({
         )}
         {/* Ligne 4 : Participation aux scrutins (AN uniquement) */}
         {data.scrutinStats && (() => {
-          const AN = 577;
-          const pct = (n: number | null) => n !== null
-            ? <AnimatedNumber value={Math.round(n / AN * 100)} decimals={0} suffix=" %" className="font-medium text-foreground" />
+          const pct = (n: number | null, eligible: number | null) => n !== null && eligible
+            ? <AnimatedNumber value={Math.round(n / eligible * 100)} decimals={0} suffix=" %" className="font-medium text-foreground" />
             : undefined;
+          const eligOrd = data.scrutinStats.ordinaire.avgEligible;
+          const eligImp = data.scrutinStats.important.avgEligible;
           return (
           <div className="flex flex-col gap-4 pb-4 mt-2">
             <div className="flex flex-wrap justify-start items-start gap-6">
@@ -186,33 +187,33 @@ function InstitutionCard({
                 value={data.scrutinStats.ordinaire.avgVotants}
                 animate={true}
                 decimals={0}
-                extraContent={pct(data.scrutinStats.ordinaire.avgVotants)}
+                extraContent={pct(data.scrutinStats.ordinaire.avgVotants, eligOrd)}
               />
               <KpiItem
                 icon={<UserX className="h-5 w-5 text-muted-foreground" />}
-                title="Non-participants moy. (scrutins ordinaires)"
+                title="Absents moy. (scrutins ordinaires)"
                 value={data.scrutinStats.ordinaire.avgAbsents}
                 animate={true}
                 decimals={0}
-                extraContent={pct(data.scrutinStats.ordinaire.avgAbsents)}
+                extraContent={pct(data.scrutinStats.ordinaire.avgAbsents, eligOrd)}
               />
             </div>
             <div className="flex flex-wrap justify-start items-start gap-6">
               <KpiItem
                 icon={<Users className="h-5 w-5 text-muted-foreground" />}
-                title="Votants moy. (scrutins solennels)"
-                value={data.scrutinStats.solennel.avgVotants}
+                title="Votants moy. (scrutins importants)"
+                value={data.scrutinStats.important.avgVotants}
                 animate={true}
                 decimals={0}
-                extraContent={pct(data.scrutinStats.solennel.avgVotants)}
+                extraContent={pct(data.scrutinStats.important.avgVotants, eligImp)}
               />
               <KpiItem
                 icon={<UserX className="h-5 w-5 text-muted-foreground" />}
-                title="Non-participants moy. (scrutins solennels)"
-                value={data.scrutinStats.solennel.avgAbsents}
+                title="Absents moy. (scrutins importants)"
+                value={data.scrutinStats.important.avgAbsents}
                 animate={true}
                 decimals={0}
-                extraContent={pct(data.scrutinStats.solennel.avgAbsents)}
+                extraContent={pct(data.scrutinStats.important.avgAbsents, eligImp)}
               />
             </div>
           </div>
@@ -247,18 +248,18 @@ function InstitutionCard({
             />
             <KpiItem
               icon={<TrendingUp className="h-5 w-5 text-emerald-500" />}
-              title="Meilleure part. solennelle"
-              value={data.meilleurePresenceSolennels?.valeur ?? null}
-              extraContent={data.meilleurePresenceSolennels?.nom}
+              title="Meilleure part. (importants)"
+              value={data.meilleurePresenceImportants?.valeur ?? null}
+              extraContent={data.meilleurePresenceImportants?.nom}
               animate={true}
               decimals={1}
               suffix=" %"
             />
             <KpiItem
               icon={<TrendingDown className="h-5 w-5 text-red-400" />}
-              title="Moindre part. solennelle"
-              value={data.pirePresenceSolennels?.valeur ?? null}
-              extraContent={data.pirePresenceSolennels?.nom}
+              title="Moindre part. (importants)"
+              value={data.pirePresenceImportants?.valeur ?? null}
+              extraContent={data.pirePresenceImportants?.nom}
               animate={true}
               decimals={1}
               suffix=" %"
@@ -532,7 +533,7 @@ function PctBadge({ value, votes, total }: { value: number | null; votes?: numbe
     : value >= 50 ? 'text-amber-600 dark:text-amber-400'
     : 'text-red-500 dark:text-red-400';
   return (
-    <span className="flex flex-col items-end gap-0.5">
+    <span className="flex flex-col items-start gap-0.5">
       <span className={`font-semibold tabular-nums ${colorClass}`}>
         {value.toFixed(1)} %
       </span>
@@ -545,11 +546,22 @@ function PctBadge({ value, votes, total }: { value: number | null; votes?: numbe
   );
 }
 
+// Badge affiché quand le nombre de scrutins est insuffisant pour afficher un taux fiable
+function InsufficientDataBadge() {
+  return (
+    <span className="text-[11px] text-muted-foreground italic leading-tight">
+      Pas assez de scrutins
+      <br />
+      depuis la prise de fonction
+    </span>
+  );
+}
+
 // ────────────────────────────────────────────────
 // Tableau récapitulatif des groupes politiques
 // ────────────────────────────────────────────────
 
-type GroupeSortKey = 'libelle' | 'nb_deputes' | 'pct_representation' | 'taux_presence_moyen' | 'taux_presence_solennels_moyen' | 'taux_cohesion_interne';
+type GroupeSortKey = 'libelle' | 'nb_deputes' | 'pct_representation' | 'taux_presence_moyen' | 'taux_presence_importants_moyen' | 'taux_cohesion_interne';
 
 function GroupesTable({ groupes }: { groupes: GroupeRow[] }) {
   const [sortKey, setSortKey] = useState<GroupeSortKey>('nb_deputes');
@@ -582,7 +594,7 @@ function GroupesTable({ groupes }: { groupes: GroupeRow[] }) {
     ['nb_deputes', 'Effectif', 'w-[90px]'],
     ['pct_representation', 'Représentation', 'w-[130px]'],
     ['taux_presence_moyen', 'Participation votes', 'w-[130px]'],
-    ['taux_presence_solennels_moyen', 'Participation votes solennels', 'w-[140px]'],
+    ['taux_presence_importants_moyen', 'Participation votes importants', 'w-[140px]'],
     ['taux_cohesion_interne', 'Cohésion interne', 'w-[130px]'],
   ];
 
@@ -602,10 +614,10 @@ function GroupesTable({ groupes }: { groupes: GroupeRow[] }) {
           <TableHeader className="bg-muted/80">
             <TableRow>
               {columns.map(([key, label, cls]) => (
-                <TableHead key={key} className={key !== 'libelle' ? `${cls} text-right` : cls}>
+                <TableHead key={key} className={cls}>
                   <button
                     onClick={() => handleSort(key)}
-                    className={`flex items-center gap-1 hover:text-foreground transition-colors ${key !== 'libelle' ? 'ml-auto' : ''}`}
+                    className="flex items-center gap-1 hover:text-foreground transition-colors"
                   >
                     {label}
                     {sortKey === key ? (
@@ -633,13 +645,13 @@ function GroupesTable({ groupes }: { groupes: GroupeRow[] }) {
                     )}
                   </div>
                 </TableCell>
-                <TableCell className="text-right tabular-nums">{g.nb_deputes}</TableCell>
-                <TableCell className="text-right tabular-nums">
+                <TableCell className="tabular-nums">{g.nb_deputes}</TableCell>
+                <TableCell className="tabular-nums">
                   {g.pct_representation != null ? `${g.pct_representation.toFixed(1)} %` : '—'}
                 </TableCell>
-                <TableCell className="text-right"><PctBadge value={g.taux_presence_moyen} /></TableCell>
-                <TableCell className="text-right"><PctBadge value={g.taux_presence_solennels_moyen} /></TableCell>
-                <TableCell className="text-right"><PctBadge value={g.taux_cohesion_interne} /></TableCell>
+                <TableCell><PctBadge value={g.taux_presence_moyen} /></TableCell>
+                <TableCell><PctBadge value={g.taux_presence_importants_moyen} /></TableCell>
+                <TableCell><PctBadge value={g.taux_cohesion_interne} /></TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -653,7 +665,7 @@ function GroupesTable({ groupes }: { groupes: GroupeRow[] }) {
 // Tableau des acteurs
 // ────────────────────────────────────────────────
 
-type SortKey = 'nomComplet' | 'age' | 'profession' | 'groupe' | 'departement' | 'taux_presence' | 'taux_presence_solennels' | 'taux_cohesion_groupe';
+type SortKey = 'nomComplet' | 'age' | 'profession' | 'groupe' | 'departement' | 'taux_presence' | 'taux_presence_importants' | 'taux_cohesion_groupe';
 type SortDir = 'asc' | 'desc';
 
 function ActeursTable({ acteurs, showVoteStats = false }: { acteurs: ActeurRow[]; showVoteStats?: boolean }) {
@@ -702,7 +714,7 @@ function ActeursTable({ acteurs, showVoteStats = false }: { acteurs: ActeurRow[]
   ];
   const voteColumns: [SortKey, string, string][] = [
     ['taux_presence', 'Participation votes', 'w-[95px]'],
-    ['taux_presence_solennels', 'Participation votes sol.', 'w-[115px]'],
+    ['taux_presence_importants', 'Participation votes imp.', 'w-[115px]'],
     ['taux_cohesion_groupe', 'Cohésion', 'w-[100px]'],
   ];
   const columns = showVoteStats ? [...baseColumns, ...voteColumns] : baseColumns;
@@ -768,18 +780,24 @@ function ActeursTable({ acteurs, showVoteStats = false }: { acteurs: ActeurRow[]
                     {showVoteStats && (
                       <>
                         <TableCell>
-                          <PctBadge
-                            value={acteur.taux_presence}
-                            votes={(acteur.votes_pour ?? 0) + (acteur.votes_contre ?? 0) + (acteur.votes_abstentions ?? 0)}
-                            total={acteur.scrutins_pendant_mandat}
-                          />
+                          {(acteur.scrutins_pendant_mandat ?? 0) < 100
+                            ? <InsufficientDataBadge />
+                            : <PctBadge
+                                value={acteur.taux_presence}
+                                votes={(acteur.votes_pour ?? 0) + (acteur.votes_contre ?? 0) + (acteur.votes_abstentions ?? 0)}
+                                total={acteur.scrutins_pendant_mandat}
+                              />
+                          }
                         </TableCell>
                         <TableCell>
-                          <PctBadge
-                            value={acteur.taux_presence_solennels}
-                            votes={acteur.votes_actifs_solennels}
-                            total={acteur.scrutins_pendant_mandat_solennels}
-                          />
+                          {(acteur.scrutins_pendant_mandat_importants ?? 0) < 10
+                            ? <InsufficientDataBadge />
+                            : <PctBadge
+                                value={acteur.taux_presence_importants}
+                                votes={acteur.votes_actifs_importants}
+                                total={acteur.scrutins_pendant_mandat_importants}
+                              />
+                          }
                         </TableCell>
                         <TableCell><PctBadge value={acteur.taux_cohesion_groupe} /></TableCell>
                       </>

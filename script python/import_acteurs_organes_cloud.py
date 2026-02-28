@@ -414,10 +414,15 @@ def extract_mandate_info(all_mandats: list, file_name: str) -> dict:
             roles_set.add("Député")
             d = mandat.get("dateDebut") or ""
             # Suivre toutes les périodes ASSEMBLEE de la 17e législature (>= 2024-06-01)
+            # On utilise datePriseFonction (date effective de prise de fonction) si disponible,
+            # car un député ne peut pas voter avant cette date (ex : suppléant en cours d'installation).
             if d >= "2024-06-01":
-                _assemblee_17_periods.append((d, date_fin))
-                if _earliest_assemblee_debut is None or d < _earliest_assemblee_debut:
-                    _earliest_assemblee_debut = d
+                mandature_inner = mandat.get("mandature", {}) or {}
+                dpf = mandature_inner.get("datePriseFonction")
+                effective_debut = dpf or d
+                _assemblee_17_periods.append((effective_debut, date_fin))
+                if _earliest_assemblee_debut is None or effective_debut < _earliest_assemblee_debut:
+                    _earliest_assemblee_debut = effective_debut
             # Suivre le mandat ASSEMBLEE inactif le plus récent (fallback pour anciens députés)
             if date_fin is not None:
                 if _best_inactive_assemblee is None or d > (_best_inactive_assemblee[0] or ""):
@@ -478,7 +483,7 @@ def extract_mandate_info(all_mandats: list, file_name: str) -> dict:
                 cause_mandat = mandat.get("election", {}).get("causeMandat")
                 # Nouvelles colonnes depuis mandature
                 mandature = mandat.get("mandature", {}) or {}
-                date_debut_mandat = mandat.get("dateDebut")
+                date_debut_mandat = mandature.get("datePriseFonction") or mandat.get("dateDebut")
                 place_hemicycle = mandature.get("placeHemicycle")
                 prem_elec = mandature.get("premiereElection")
                 premiere_election = (prem_elec == "1") if prem_elec in ["0", "1"] else None
