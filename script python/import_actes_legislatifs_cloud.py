@@ -109,7 +109,7 @@ def parser_acte(acte_data, dossier_uid, parent_uid=None):
 
         statut_conclusion = (acte_data.get("statutConclusion") or acte_data.get("decision") or {}).get("libelle")
 
-        # textes_associes : liste text[] — filtre TAP, exclut doublons
+        # textes_associes : liste text[] — inclut TAP et BTA, exclut doublons
         try:
             textes_raw = acte_data.get("textesAssocies") or acte_data.get("texteAssocie")
             refs = []
@@ -121,8 +121,6 @@ def parser_acte(acte_data, dossier_uid, parent_uid=None):
                 items = [textes_raw] if not isinstance(textes_raw, list) else textes_raw
                 for item in items:
                     if isinstance(item, dict):
-                        if item.get("typeTexte") == "TAP":
-                            continue
                         ref = item.get("refTexteAssocie") or item.get("texteAssocie")
                         if ref:
                             refs.append(ref.strip().replace("»", ""))

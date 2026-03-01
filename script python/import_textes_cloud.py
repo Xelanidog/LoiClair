@@ -9,6 +9,7 @@
 
 import json
 import os
+import re
 import requests
 import io
 import zipfile
@@ -79,6 +80,33 @@ def deduire_chambre(uid: str) -> str | None:
     return None
 
 
+# Mapping type_code → slug PDF pour les textes AN dont l'opendata HTML est absent.
+# Format URL : /dyn/{leg}/textes/l{leg}{num}_{slug}.pdf
+PDF_SLUG_MAP = {
+    "PION": "proposition-loi",       # Proposition de loi (confirmé)
+    "PNRE": "proposition-resolution", # Proposition de résolution
+    "RINF": "rapport-information",    # Rapport d'information
+    "RAPP": "rapport",                # Rapport
+    "AVIS": "avis",                   # Avis
+}
+
+
+def construire_url_pdf_fallback(uid: str, type_code: str):
+    """Construit l'URL PDF alternative pour les textes AN dont l'opendata HTML échoue.
+    Ex: PIONANR5L17B0371 → https://www.assemblee-nationale.fr/dyn/17/textes/l17b0371_proposition-loi.pdf
+    Retourne None si le type n'est pas dans PDF_SLUG_MAP ou si l'UID ne correspond pas au format attendu.
+    """
+    slug = PDF_SLUG_MAP.get(type_code)
+    if not slug:
+        return None
+    match = re.search(r'ANR\d+L(\d+)(.+)$', uid)
+    if not match:
+        return None
+    leg = match.group(1)
+    num_part = match.group(2).lower()
+    return f"https://www.assemblee-nationale.fr/dyn/{leg}/textes/l{leg}{num_part}_{slug}.pdf"
+
+
 def reconstruire_liens_texte(
     uid,
     date_depot=None,
@@ -88,6 +116,19 @@ def reconstruire_liens_texte(
     legislature=None,
 ):
     # Section : Gestion des cas spécifiques pour liens PDF/HTML basés sur UID et dates.
+
+    # Cas TAP (Texte Adopté Provisoire) — AN uniquement
+    # Exemple uid: PIONANR5L17TAP0140 → https://www.assemblee-nationale.fr/dyn/17/textes/l17t0140_texte-adopte-provisoire.pdf
+    if "ANR" in uid and "TAP" in uid:
+        parts = uid.split("L")[-1].split("TAP")
+        if len(parts) == 2:
+            legislature = parts[0]
+            num = parts[1]
+            return f"https://www.assemblee-nationale.fr/dyn/{legislature}/textes/l{legislature}t{num}_texte-adopte-provisoire.pdf"
+        else:
+            tqdm.write(f"Format TAP invalide pour {uid}, lien=None.")
+            return None
+
     # Cas ETDIANR : PDF avec extraction legislature et num
     if uid.startswith("ETDIANR"):
         # Exemple uid: ETDIANR5L16B2628
@@ -1065,7 +1106,7 @@ def verifier_urls_textes():
     while True:
         page = (
             supabase.from_("textes")
-            .select("uid, lien_texte")
+            .select("uid, lien_texte, type_code")
             .or_("url_accessible.is.null,url_accessible.eq.false")
             .not_.is_("lien_texte", "null")
             .range(offset, offset + page_size - 1)
@@ -1084,35 +1125,65 @@ def verifier_urls_textes():
 
     accessibles = []
     inaccessibles = []
+    fallbacks = []  # {"uid": ..., "lien_texte": ...} — URL corrigée vers PDF
     flush_size = 100  # Sauvegarde en DB toutes les 100 vérifications
+    total = {"accessibles": 0, "fallbacks": 0, "inaccessibles": 0}  # compteurs cumulatifs
 
-    def flush(acc, inacc):
+    def flush(acc, inacc, fallbs):
+        total["accessibles"] += len(acc)
+        total["fallbacks"] += len(fallbs)
+        total["inaccessibles"] += len(inacc)
         if acc:
             supabase.from_("textes").update({"url_accessible": True}).in_("uid", acc).execute()
         if inacc:
             supabase.from_("textes").update({"url_accessible": False}).in_("uid", inacc).execute()
+        for f in fallbs:
+            supabase.from_("textes").update({"lien_texte": f["lien_texte"], "url_accessible": True}).eq("uid", f["uid"]).execute()
 
     for texte in tqdm(textes_a_verifier, desc="Vérif URLs", unit="url"):
+        accessible = False
         try:
             resp = requests.head(texte["lien_texte"], timeout=5, allow_redirects=True)
-            if resp.status_code < 400:
-                accessibles.append(texte["uid"])
-            else:
-                inaccessibles.append(texte["uid"])
+            accessible = resp.status_code < 400
         except Exception:
-            inaccessibles.append(texte["uid"])
+            pass
         time.sleep(0.2)
 
+        if accessible:
+            accessibles.append(texte["uid"])
+        else:
+            # Tenter le fallback PDF si lien opendata AN échoue
+            fallback_url = None
+            if "/dyn/opendata/" in (texte["lien_texte"] or ""):
+                fallback_url = construire_url_pdf_fallback(texte["uid"], texte.get("type_code") or "")
+            if fallback_url:
+                try:
+                    resp2 = requests.head(fallback_url, timeout=5, allow_redirects=True)
+                    # Vérifier le Content-Type : l'AN renvoie parfois du HTML à une URL .pdf
+                    # (HTTP 200 avec text/html) — seul application/pdf confirme un vrai PDF
+                    content_type = resp2.headers.get("Content-Type", "")
+                    if resp2.status_code < 400 and "pdf" in content_type:
+                        fallbacks.append({"uid": texte["uid"], "lien_texte": fallback_url})
+                        tqdm.write(f"Fallback PDF : {texte['uid']} → {fallback_url}")
+                    else:
+                        inaccessibles.append(texte["uid"])
+                except Exception:
+                    inaccessibles.append(texte["uid"])
+                time.sleep(0.2)
+            else:
+                inaccessibles.append(texte["uid"])
+
         # Flush progressif toutes les flush_size itérations
-        if (len(accessibles) + len(inaccessibles)) % flush_size == 0:
-            flush(accessibles, inaccessibles)
-            accessibles, inaccessibles = [], []
+        if (len(accessibles) + len(inaccessibles) + len(fallbacks)) % flush_size == 0:
+            flush(accessibles, inaccessibles, fallbacks)
+            accessibles, inaccessibles, fallbacks = [], [], []
 
     # Flush final pour le reste
-    flush(accessibles, inaccessibles)
+    flush(accessibles, inaccessibles, fallbacks)
 
-    print(f"   Accessibles  : {len(accessibles)}")
-    print(f"   Inaccessibles: {len(inaccessibles)}")
+    print(f"   Accessibles  : {total['accessibles']}")
+    print(f"   Fallbacks PDF: {total['fallbacks']}")
+    print(f"   Inaccessibles: {total['inaccessibles']}")
     print(f"{'='*60}")
 
 
