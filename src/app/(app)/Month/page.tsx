@@ -242,10 +242,10 @@ export default async function MonthPage({
     const scrutinUids = new Set<string>();
 
     for (const a of timelineActes) {
-      (a.textes_associes ?? []).forEach(t => texteUids.add(t));
+      (a.textes_associes ?? []).forEach((t: string) => texteUids.add(t));
       if (a.texte_adopte) texteUids.add(a.texte_adopte);
       if (a.organe_ref) organeUids.add(a.organe_ref);
-      (a.vote_refs ?? []).forEach(r => scrutinUids.add(r));
+      (a.vote_refs ?? []).forEach((r: string) => scrutinUids.add(r));
     }
 
     // 3. Batch resolve toutes les refs
@@ -350,10 +350,10 @@ export default async function MonthPage({
   const dossierUidsSet = new Set<string>();
 
   for (const a of [...actes, ...uniqueMotions]) {
-    (a.textes_associes ?? []).forEach(t => texteUids.add(t));
+    (a.textes_associes ?? []).forEach((t: string) => texteUids.add(t));
     if (a.texte_adopte) texteUids.add(a.texte_adopte);
     if (a.organe_ref) organeUids.add(a.organe_ref);
-    (a.vote_refs ?? []).forEach(r => scrutinUidsFromActes.add(r));
+    (a.vote_refs ?? []).forEach((r: string) => scrutinUidsFromActes.add(r));
     if (a.dossier_uid) dossierUidsSet.add(a.dossier_uid);
   }
 
