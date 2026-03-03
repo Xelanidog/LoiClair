@@ -361,12 +361,14 @@ function CardTitle({ group, e }: { group: GroupedFeedEvent; e: FeedEvent }) {
       </p>
     );
   }
-  // NAVETTE : même format que DEPOT_TEXTE (organeName · libelleActe titre)
+  // NAVETTE : direction émettrice → réceptrice (déduite de organeCodeType = chambre réceptrice)
   if (t === "NAVETTE") {
+    const direction = e.organeCodeType === "SENAT" ? "Assemblée → Sénat"
+      : e.organeCodeType === "ASSEMBLEE" ? "Sénat → Assemblée"
+      : e.organeName;
     return (
       <p className="text-sm leading-snug mb-0.5">
-        {e.organeName && <span className="text-muted-foreground">{e.organeName} · </span>}
-        {e.libelleActe && <span className="text-muted-foreground">{e.libelleActe}. </span>}
+        {direction && <span className="text-muted-foreground">{direction} · </span>}
         <span>{e.texteTitre || e.texteDenomination || group.dossierTitre || e.titre}</span>
       </p>
     );

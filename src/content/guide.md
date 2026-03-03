@@ -22,7 +22,7 @@ Une rangée de pastilles cliquables permet de filtrer les événements par caté
 - **Textes** — nouveaux textes déposés au Parlement.
 - **Décisions** — votes sur l'ensemble d'un texte, avec résultats détaillés.
 - **Rapports** — rapports déposés par les commissions parlementaires.
-- **Navettes** — textes transmis d'une chambre à l'autre.
+- **Navettes** — textes transmis d'une chambre à l'autre. Chaque carte indique le sens du transfert (par exemple « Assemblée → Sénat »).
 - **CMP** — convocations de la Commission mixte paritaire.
 - **Cons. const.** — saisines du Conseil constitutionnel.
 - **Promulgations** — lois signées et publiées au Journal officiel.
