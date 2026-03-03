@@ -119,6 +119,15 @@ Cliquez sur les en-têtes de colonnes pour trier le tableau selon le critère de
 
 ⚠ Ce tableau doit être lu avec prudence : un groupe d'opposition a structurellement moins de textes adoptés qu'un groupe de la majorité. Un faible taux ne reflète pas la qualité du travail parlementaire, mais la réalité arithmétique du vote majoritaire.
 
+### Activité par groupe politique
+
+Deux graphiques à barres horizontales donnent une lecture immédiate de qui propose et qui réussit à faire passer des lois.
+
+- **Textes proposés** — le nombre de dossiers législatifs déposés par chaque groupe depuis le début de la législature. Un groupe d'opposition dépose souvent beaucoup de textes, même si peu d'entre eux sont adoptés : c'est une façon d'exister dans le débat public.
+- **Lois promulguées** — le nombre de lois effectivement signées par le Président qui émanent de chaque groupe. Le Gouvernement y domine logiquement : ses projets de loi bénéficient d'un soutien majoritaire quasi systématique.
+
+Mis côte à côte, ces deux graphiques permettent de distinguer qui *propose* beaucoup de qui *fait adopter* beaucoup — deux réalités très différentes selon que l'on est dans la majorité ou dans l'opposition.
+
 ### Filtres
 
 Deux menus déroulants en haut de page permettent d'affiner tous les indicateurs :

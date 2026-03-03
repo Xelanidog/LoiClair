@@ -9,6 +9,7 @@ import { MonthlyDossiersChart } from '@/components/ui/MonthlyDossiersChart';
 import GenericFilter from '@/components/GenericFilter';
 import ResetButton from '@/components/ResetButton';
 import { GroupeStatsTable } from '@/components/GroupeStatsTable';
+import { GroupeBarChart } from '@/components/ui/GroupeBarChart';
 
 export default async function KpisPage({ 
   searchParams 
@@ -242,6 +243,7 @@ try {
 // Calcul des délais par chambre (depuis actes_legislatifs)
 try {
   const actes = actesDelaisResult.data || [];
+  const filteredUids = new Set(dossiersData.map((d: any) => d.uid));
   const depotsAN = new Map<string, Date>();
   const decisionsAN = new Map<string, Date>();
   const depotsSN = new Map<string, Date>();
@@ -259,6 +261,7 @@ try {
     (code.startsWith('SN') || code === 'CMP-DEBATS-SN-DEC') && code.endsWith('DEBATS-DEC');
 
   for (const acte of actes) {
+    if (!filteredUids.has(acte.dossier_uid)) continue;
     const date = new Date(acte.date_acte);
     const { dossier_uid, code_acte, statut_conclusion } = acte;
     if (code_acte.startsWith('AN') && code_acte.endsWith('DEPOT')) {
@@ -624,6 +627,32 @@ return (
 
         </div>
       </div>
+
+      {/* Activité par groupe politique */}
+      {groupeStats.length > 0 && (
+        <div className="mt-8">
+          <h2 className="text-4xl font-semibold mb-6">Activité par groupe politique</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <GroupeBarChart
+              data={groupeStats.map(g => ({ groupe: g.groupe, value: g.total }))}
+              title="Textes proposés"
+              description="Nombre de dossiers législatifs déposés par groupe politique"
+              color="var(--chart-1)"
+              valueLabel="Dossiers"
+            />
+            <GroupeBarChart
+              data={groupeStats
+                .filter(g => g.promulgues > 0)
+                .sort((a, b) => b.promulgues - a.promulgues)
+                .map(g => ({ groupe: g.groupe, value: g.promulgues }))}
+              title="Lois promulguées"
+              description="Nombre de lois effectivement promulguées par groupe politique"
+              color="var(--chart-5)"
+              valueLabel="Promulguées"
+            />
+          </div>
+        </div>
+      )}
 
       {/* Taux de succès par groupe politique */}
       {groupeStats.length > 0 && (
