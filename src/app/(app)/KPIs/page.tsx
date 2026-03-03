@@ -639,6 +639,7 @@ return (
               description="Nombre de dossiers législatifs déposés par groupe politique"
               color="var(--chart-1)"
               valueLabel="Dossiers"
+              link="/documentation/methode#activite-par-groupe-politique"
             />
             <GroupeBarChart
               data={groupeStats
@@ -649,6 +650,7 @@ return (
               description="Nombre de lois effectivement promulguées par groupe politique"
               color="var(--chart-5)"
               valueLabel="Promulguées"
+              link="/documentation/methode#activite-par-groupe-politique"
             />
           </div>
         </div>

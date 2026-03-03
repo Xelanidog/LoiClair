@@ -1,10 +1,12 @@
 'use client';
 
+import Link from 'next/link';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -21,9 +23,10 @@ interface GroupeBarChartProps {
   description: string;
   color: string;
   valueLabel: string;
+  link?: string;
 }
 
-export function GroupeBarChart({ data, title, description, color, valueLabel }: GroupeBarChartProps) {
+export function GroupeBarChart({ data, title, description, color, valueLabel, link }: GroupeBarChartProps) {
   const chartConfig: ChartConfig = {
     value: { label: valueLabel, color },
   };
@@ -62,6 +65,13 @@ export function GroupeBarChart({ data, title, description, color, valueLabel }: 
           </BarChart>
         </ChartContainer>
       </CardContent>
+      {link && (
+        <CardFooter className="border-t pt-3">
+          <Link href={link} className="text-xs text-muted-foreground/60 hover:text-foreground transition-colors">
+            Comment c'est calculé →
+          </Link>
+        </CardFooter>
+      )}
     </Card>
   );
 }

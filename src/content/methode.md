@@ -421,3 +421,40 @@ Les titres des dossiers proviennent de l'open data de l'Assemblée nationale. Le
 
 **Comment interpréter**
 Le filtre par thème est utile pour explorer l'activité législative par domaine. Il se combine avec les autres filtres (statut, type de procédure, groupe politique, recherche) : chaque filtre restreint indépendamment la liste des résultats. Par exemple, filtrer par thème « Éducation » et statut « Promulgué » affichera uniquement les textes sur l'éducation qui ont été promulgués.
+
+---
+
+## Activité par groupe politique
+
+**Ce que ça mesure**
+Deux indicateurs bruts sur l'ensemble de la 17ᵉ législature : combien de dossiers législatifs chaque groupe a déposés, et combien ont abouti à une loi promulguée.
+
+**Comment c'est calculé**
+
+*Textes proposés*
+> Nombre de dossiers déposés = Nombre total de dossiers dont l'initiateur appartient au groupe
+
+*Lois promulguées*
+> Nombre de lois promulguées = Nombre de dossiers de ce groupe dont le statut final est "promulgué"
+
+Exemple : si un groupe a initié 150 dossiers et que 12 ont été promulgués, il apparaît avec 150 dans le premier graphique et 12 dans le second.
+
+Variables **incluses** :
+- Tous les dossiers législatifs ayant un initiateur identifié (groupe parlementaire ou Gouvernement).
+- Les dossiers du Gouvernement sont regroupés en une seule entrée "Gouvernement".
+- Seuls les groupes ayant initié au moins 10 dossiers sont affichés.
+
+Variables **exclues** :
+- Les dossiers sans initiateur identifié.
+- Les groupes avec moins de 10 dossiers (trop peu pour être significatifs).
+
+**D'où viennent les données**
+Les données proviennent de l'open data de l'Assemblée nationale, mises à jour chaque nuit.
+
+**Ce que ça ne mesure pas**
+⚠ Le nombre de textes déposés ne reflète pas la qualité du travail parlementaire. Un groupe d'opposition peut déposer beaucoup de textes sans en faire adopter : c'est une stratégie politique normale pour exister dans le débat public.
+
+⚠ Le nombre de lois promulguées est fortement corrélé à l'appartenance à la majorité. Le Gouvernement domine naturellement ce classement, car ses projets de loi bénéficient d'un soutien majoritaire quasi systématique.
+
+**Comment interpréter**
+Comparez les deux graphiques ensemble : un groupe qui propose beaucoup mais fait peu adopter est souvent dans l'opposition. Un groupe qui fait adopter une grande part de ses textes est dans la majorité ou gouvernementale.
