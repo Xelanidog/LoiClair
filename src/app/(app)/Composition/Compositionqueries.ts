@@ -43,8 +43,6 @@ export interface KpiMetrics {
   mandatsActifsMoyens: number | null;
   groupes: Array<{ name: string; nameShort: string; value: number; fill: string }> | null;
   nombreGroupes: number | null;
-  presenceMoyenne: number | null;
-  presenceImportantsMoyenne: number | null;
   meilleurePresence: { nom: string; valeur: number } | null;
   pirePresence: { nom: string; valeur: number } | null;
   meilleurePresenceImportants: { nom: string; valeur: number } | null;
@@ -208,7 +206,7 @@ export async function getKpiMetrics(
     return {
       membres: 0, ageMoyen: null, plusJeune: null, plusAge: null,
       pariteFemmes: null, mandatsActifsMoyens: null, groupes: null, nombreGroupes: null,
-      presenceMoyenne: null, presenceImportantsMoyenne: null,
+
       meilleurePresence: null, pirePresence: null,
       meilleurePresenceImportants: null, pirePresenceImportants: null,
       meilleureCohesion: null, pireCohesion: null,
@@ -258,17 +256,6 @@ export async function getKpiMetrics(
     }
   });
   const mandatsActifsMoyens = membres > 0 ? totalMandatsActifs / membres : null;
-
-  // Moyennes de présence aux votes (calculées sur les acteurs ayant des données)
-  const withPresence = acteurs.filter(a => a.taux_presence != null);
-  const presenceMoyenne = withPresence.length > 0
-    ? Math.round(withPresence.reduce((sum: number, a) => sum + a.taux_presence, 0) / withPresence.length * 10) / 10
-    : null;
-
-  const withPresenceImp = acteurs.filter(a => a.taux_presence_importants != null);
-  const presenceImportantsMoyenne = withPresenceImp.length > 0
-    ? Math.round(withPresenceImp.reduce((sum: number, a) => sum + a.taux_presence_importants, 0) / withPresenceImp.length * 10) / 10
-    : null;
 
   // Extremes individuels de participation et cohésion
   const presExtremes = computeExtremes(acteurs, 'taux_presence');
@@ -353,8 +340,6 @@ export async function getKpiMetrics(
     mandatsActifsMoyens: mandatsActifsMoyens ? Math.round(mandatsActifsMoyens * 10) / 10 : null,
     groupes,
     nombreGroupes: groupes ? groupes.length : null,
-    presenceMoyenne,
-    presenceImportantsMoyenne,
     meilleurePresence: presExtremes.best,
     pirePresence: presExtremes.worst,
     meilleurePresenceImportants: presImpExtremes.best,

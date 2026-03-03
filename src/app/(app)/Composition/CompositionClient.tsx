@@ -10,7 +10,7 @@ import {
 } from "recharts"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Building2, Briefcase, Calendar, Scale, Users, Group, User, Search, ArrowUpDown, ArrowUp, ArrowDown, BarChart2, TrendingUp, TrendingDown, UserX } from "lucide-react"
+import { Building2, Briefcase, Calendar, Scale, Users, Group, User, Search, ArrowUpDown, ArrowUp, ArrowDown, TrendingUp, TrendingDown, UserX } from "lucide-react"
 import { AnimatedNumber } from "@/components/AnimatedNumber"
 import type { KpiMetrics, ActeurRow, GroupeRow } from './Compositionqueries'
 import {
@@ -152,26 +152,7 @@ function InstitutionCard({
         
         </div>
 
-        {/* Ligne 3 : Présence aux votes (affiché uniquement si données disponibles) */}
-        {(data.presenceMoyenne !== null || data.presenceImportantsMoyenne !== null) && (
-          <div className="flex flex-wrap justify-start items-start pb-4 gap-6">
-            <KpiItem
-              icon={<BarChart2 className="h-5 w-5 text-muted-foreground" />}
-              title="Participation moyenne (tous votes)"
-              value={data.presenceMoyenne}
-              animate={true}
-              decimals={1}
-            />
-            <KpiItem
-              icon={<BarChart2 className="h-5 w-5 text-muted-foreground" />}
-              title="Participation moyenne (votes importants)"
-              value={data.presenceImportantsMoyenne}
-              animate={true}
-              decimals={1}
-            />
-          </div>
-        )}
-        {/* Ligne 4 : Participation aux scrutins (AN uniquement) */}
+        {/* Ligne 3 : Participation aux scrutins (AN uniquement) */}
         {data.scrutinStats && (() => {
           const pct = (n: number | null, eligible: number | null) => n !== null && eligible
             ? <AnimatedNumber value={Math.round(n / eligible * 100)} decimals={0} suffix=" %" className="font-medium text-foreground" />
@@ -284,7 +265,7 @@ function InstitutionCard({
             />
           </div>
         )}
-        {(data.presenceMoyenne !== null || data.meilleurePresence !== null || data.meilleureCohesion !== null) && (
+        {(data.meilleurePresence !== null || data.meilleureCohesion !== null) && (
           <span className="text-xs text-muted-foreground/60 -mt-2 mb-4 inline-flex gap-3">
             <Link href="/documentation/methode#taux-de-participation-aux-votes" className="hover:text-foreground transition-colors">
               Participation : comment c'est calculé →
