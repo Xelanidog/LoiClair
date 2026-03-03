@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
-import { Loader2, HelpCircle, ListChecks, TrendingUp, ExternalLink, Check, ChevronsUpDown, ChevronDown, Bot } from "lucide-react";
+import { HelpCircle, ListChecks, TrendingUp, ExternalLink, Check, ChevronsUpDown, ChevronDown, Bot } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
 import { SYSTEM_PROMPT_RESUME_LOI, PARAMS_RESUME_LOI, MODEL_RESUME_LOI, MAX_INPUT_CHARS_RESUME_LOI } from '@/lib/prompts';
 import { useCompletion } from '@ai-sdk/react';
@@ -296,15 +296,6 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
                 Voir le texte officiel
                 <ExternalLink className="h-3 w-3" />
               </a>
-            </>
-          )}
-          {liensStatus[selectedTexte.uid] === 'en_cours' && (
-            <>
-              <span>·</span>
-              <span className="flex items-center gap-1">
-                <Loader2 className="h-3 w-3 animate-spin" />
-                Vérification du lien...
-              </span>
             </>
           )}
         </div>
