@@ -59,9 +59,11 @@ Les motions de censure bénéficient d'un traitement particulier. Chaque carte a
 
 En cliquant sur le titre d'un dossier depuis n'importe quelle carte, vous accédez à la **timeline complète** de ce dossier : toutes les étapes qu'il a franchies, du dépôt initial jusqu'à la promulgation (le cas échéant). Les mêmes pastilles de filtrage sont disponibles, avec les compteurs adaptés aux événements du dossier. Un lien « Retour au fil » permet de revenir au fil du mois.
 
-### Résumé IA
+### Résumé IA et disponibilité du texte
 
 Sur la plupart des cartes, un lien **Résumé IA** permet d'accéder au résumé automatique du texte concerné. Le lien pré-sélectionne le bon texte dans le menu déroulant de la page de résumé.
+
+Lorsqu'un texte n'a pas encore été publié par l'Assemblée nationale, le lien Résumé IA est remplacé par un indicateur **« Non encore publié »** accompagné d'un lien **« Dossier complet »** qui permet tout de même d'accéder aux informations disponibles sur le dossier (métadonnées, votes, timeline).
 
 ---
 
@@ -189,6 +191,7 @@ Chaque dossier est présenté sous forme de carte avec :
 - Un **indicateur de progression** visuel montrant l'étape atteinte dans le parcours législatif
 - Le **statut actuel** (en traitement, adopté, promulgué, rejeté…)
 - La **date de dépôt**
+- Un **indicateur de publication** : un point vert et le nombre de textes publiés si au moins un texte est accessible, ou un point rouge avec la mention « Texte non encore publié » si le texte existe mais n'a pas encore été mis en ligne par l'Assemblée nationale
 
 ### Filtres et recherche
 
@@ -204,14 +207,15 @@ La pagination en bas de page permet de naviguer entre les résultats (10 dossier
 
 ### Résumé par intelligence artificielle
 
-Sur chaque carte, un bouton **Résumé IA** donne accès à une explication du texte générée automatiquement par intelligence artificielle, en langage courant et sans jargon juridique.
+Sur chaque carte, un bouton **Détails, votes & Résumé IA** donne accès à la page du dossier, qui comprend une explication du texte générée automatiquement par intelligence artificielle, en langage courant et sans jargon juridique, ainsi que les résultats de vote et les métadonnées du dossier. Ce bouton est toujours accessible, même lorsque le texte n'est pas encore publié.
 
 Sur la page de résumé :
 
 - Sous le titre, un **bandeau d'informations** reprend les données essentielles du dossier : son **statut** (en cours, adopté, promulgué, rejeté…), le **type de procédure**, le nom de l'**auteur** et son **groupe politique**, ainsi que la **date de dépôt**. Si le dossier a franchi plusieurs étapes, une **frise de progression** montre visuellement le parcours législatif accompli (Dépôt → Assemblée nationale → Sénat → Promulguée, etc.).
 - Un **menu déroulant** permet de choisir le texte à résumer parmi ceux rattachés au dossier (un dossier peut contenir plusieurs versions du texte).
 - Le résumé est structuré en **3 sections** : *Pourquoi cette loi ?*, *Changements clés*, et *Impact attendu*.
-- Un lien vers **le texte officiel** est disponible pour aller plus loin.
+- Un lien vers **le texte officiel** est disponible pour aller plus loin (ce lien n'apparaît que si le texte a été publié).
+- Si le texte sélectionné n'est pas encore publié, un message l'indique clairement et vous pouvez sélectionner un autre texte du même dossier via le menu déroulant.
 
 En bas de chaque page de résumé, une section **Transparence** indique que le contenu a été généré par une intelligence artificielle, avec un lien vers la page [Conformité AI Act](/documentation/conformite-ia). En dépliants les **Paramètres de génération**, vous pouvez consulter l'ensemble des réglages utilisés : le nom du modèle, le fournisseur, la température (qui contrôle la créativité de l'IA), le nombre maximum de tokens produits, et le prompt système — c'est-à-dire les instructions exactes données à l'IA pour produire le résumé.
 

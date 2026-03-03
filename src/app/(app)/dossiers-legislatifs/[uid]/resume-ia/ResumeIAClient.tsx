@@ -26,6 +26,7 @@ interface Texte {
   lien_texte: string | null;
   libelle_statut_adoption: string | null;
   provenance: string | null;
+  url_accessible: boolean | null;
   organe_auteur: { libelle: string } | null;
 }
 
@@ -89,8 +90,11 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
     if (initialTexteUid && initialTextes.some(t => t.uid === initialTexteUid)) return initialTexteUid;
     return initialTextes.length > 0 ? initialTextes[initialTextes.length - 1].uid : null;
   });
-  const [liensStatus, setLiensStatus] = useState<Record<string, 'valide' | 'invalide' | 'en_cours' | null>>(
-    initialTextes.reduce((acc, t) => ({ ...acc, [t.uid]: 'en_cours' as const }), {} as Record<string, 'en_cours'>)
+  const [liensStatus] = useState<Record<string, 'valide' | 'invalide' | null>>(
+    initialTextes.reduce((acc, t) => ({
+      ...acc,
+      [t.uid]: (t.url_accessible === true && t.lien_texte) ? 'valide' : 'invalide',
+    }), {} as Record<string, 'valide' | 'invalide'>)
   );
 
   const [open, setOpen] = useState(false);
@@ -109,36 +113,7 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
     window.open(perplexityUrl, '_blank', 'noopener,noreferrer');
   };
 
-  // Vérification des liens
-  useEffect(() => {
-    const verifierLiens = async () => {
-      for (const texte of textes) {
-        if (!texte.lien_texte) {
-          setLiensStatus(prev => ({ ...prev, [texte.uid]: 'invalide' }));
-          continue;
-        }
-        const isValidFormat = /^https?:\/\/[^\s$.?#].[^\s]*$/.test(texte.lien_texte);
-        if (!isValidFormat) {
-          setLiensStatus(prev => ({ ...prev, [texte.uid]: 'invalide' }));
-          continue;
-        }
-        try {
-          const response = await fetch('/api/verifier-lien', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url: texte.lien_texte }),
-          });
-          const data = await response.json();
-          setLiensStatus(prev => ({ ...prev, [texte.uid]: data.ok ? 'valide' : 'invalide' }));
-        } catch {
-          setLiensStatus(prev => ({ ...prev, [texte.uid]: 'invalide' }));
-        }
-      }
-    };
-    if (textes.length > 0) verifierLiens();
-  }, [textes]);
-
-  // Lancement du résumé IA uniquement quand le lien est confirmé valide
+  // Lancement du résumé IA uniquement quand le lien est confirmé valide (via url_accessible en DB)
   useEffect(() => {
     if (!selectedUid) return;
     if (liensStatus[selectedUid] !== 'valide') return;
@@ -309,7 +284,7 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
               <Badge variant="secondary">{selectedTexte.libelle_statut_adoption}</Badge>
             </>
           )}
-          {selectedTexte.lien_texte && (
+          {selectedTexte.lien_texte && liensStatus[selectedTexte.uid] === 'valide' && (
             <>
               <span>·</span>
               <a

@@ -51,6 +51,7 @@ export type FeedEvent = {
   texteAdopteDenomination: string | null;
   texteAdopteTitre: string | null;
   texteAdopteLien: string | null;
+  texteUrlAccessible: boolean | null;
   scrutinUid: string | null;
   scrutinTitre: string | null;
   statutConclusion: string | null;
@@ -131,9 +132,9 @@ function emptyFeedEvent(overrides: Partial<FeedEvent> & Pick<FeedEvent, 'id' | '
     dossierUid: null, dossierTitre: null, libelleActe: null, codeActe: null,
     organeName: null, texteUid: null, texteDenomination: null, texteTitre: null,
     texteLien: null, texteAdopteUid: null, texteAdopteDenomination: null,
-    texteAdopteTitre: null, texteAdopteLien: null, scrutinUid: null,
-    scrutinTitre: null, statutConclusion: null, auteur: null, groupeAbrege: null,
-    texteProvenance: null, organeCodeType: null,
+    texteAdopteTitre: null, texteAdopteLien: null, texteUrlAccessible: null,
+    scrutinUid: null, scrutinTitre: null, statutConclusion: null, auteur: null,
+    groupeAbrege: null, texteProvenance: null, organeCodeType: null,
     ...overrides,
   };
 }
@@ -142,7 +143,7 @@ function emptyFeedEvent(overrides: Partial<FeedEvent> & Pick<FeedEvent, 'id' | '
 function acteToFeedEvent(
   a: ActeRow,
   dossierInfo: { titre: string; auteur: string | null; groupeAbrege: string | null } | null,
-  textes: Map<string, { uid: string; denomination: string | null; titre_principal: string | null; lien_texte: string | null; provenance: string | null }>,
+  textes: Map<string, { uid: string; denomination: string | null; titre_principal: string | null; lien_texte: string | null; provenance: string | null; url_accessible: boolean | null }>,
   organes: Map<string, { name: string; codeType: string | null }>,
   scrutinsMap: Map<string, { uid: string; titre: string | null; sort_libelle: string | null; synthese_pour: number | null; synthese_contre: number | null; synthese_abstentions: number | null; synthese_nombre_votants: number | null; synthese_non_votants: number | null; synthese_suffrages_requis: number | null }>,
 ): FeedEvent {
@@ -170,6 +171,7 @@ function acteToFeedEvent(
     texteAdopteDenomination: texteAdopte?.denomination ?? null,
     texteAdopteTitre: texteAdopte?.titre_principal ?? null,
     texteAdopteLien: texteAdopte?.lien_texte ?? null,
+    texteUrlAccessible: texte?.url_accessible ?? null,
     scrutinUid: scrutin?.uid ?? null,
     scrutinTitre: scrutin?.titre ?? null,
     statutConclusion: a.statut_conclusion,

@@ -214,13 +214,24 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
  const sortedDossiers = dossiers || [];
 
 
-  // Requête batch des actes top-level pour les 10 dossiers affichés
-  const { data: actesData } = await supabase
-    .from('actes_legislatifs')
-    .select('dossier_uid, code_acte')
-    .in('dossier_uid', sortedDossiers.map(d => d.uid))
-    .is('parent_uid', null)
-    .in('code_acte', MILESTONE_CODES);
+  // Requêtes batch en parallèle pour les 10 dossiers affichés
+  const dossierUids = sortedDossiers.map(d => d.uid);
+  const [{ data: actesData }, { data: textesAccessibles }] = await Promise.all([
+    supabase
+      .from('actes_legislatifs')
+      .select('dossier_uid, code_acte')
+      .in('dossier_uid', dossierUids)
+      .is('parent_uid', null)
+      .in('code_acte', MILESTONE_CODES),
+    supabase
+      .from('textes')
+      .select('dossier_ref')
+      .in('dossier_ref', dossierUids)
+      .eq('url_accessible', true),
+  ]);
+
+  // Set des dossiers ayant au moins 1 texte accessible
+  const dossiersWithAccessibleTexte = new Set((textesAccessibles ?? []).map(t => t.dossier_ref));
 
   // Map dossierUid → Set des codes présents
   const actesByDossier = new Map<string, Set<string>>();
@@ -377,6 +388,7 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
           const depotDate = formatDepotDate(dossier.date_depot);
 
           const textesCount = (dossier.textes_count as { count: number }[] | null)?.[0]?.count ?? 0;
+          const hasAccessibleTexte = dossiersWithAccessibleTexte.has(dossier.uid);
 
           const badgeClass =
             dossier.statut_final === "Promulguée" ? "bg-green-100 text-green-800 border-green-200" :
@@ -468,7 +480,7 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
                 <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-border text-xs">
                   <Link href={`/dossiers-legislatifs/${dossier.uid}/resume-ia`} target="_blank" className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border border-primary/30 hover:border-primary/60 hover:scale-105 transition-all duration-200 group">
                     <Sparkles className="w-3.5 h-3.5 text-fuchsia-600 group-hover:rotate-12 transition-transform duration-200" />
-                    <ShimmerText>Résumé IA</ShimmerText>
+                    <ShimmerText>Détails, votes & Résumé IA</ShimmerText>
                   </Link>
                   {dossier.lien_an && (
                     <a href={dossier.lien_an} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground hover:underline">
@@ -486,9 +498,9 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
                     </a>
                   )}
                   <div className="ml-auto flex items-center gap-3">
-                    <span className={`inline-flex items-center gap-1 ${textesCount > 0 ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${textesCount > 0 ? 'bg-green-500' : 'bg-muted-foreground/40'}`} />
-                      {textesCount > 0 ? `${textesCount} texte${textesCount > 1 ? 's' : ''}` : 'Aucun texte publié'}
+                    <span className={`inline-flex items-center gap-1 ${hasAccessibleTexte ? 'text-green-600 dark:text-green-400' : textesCount > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-muted-foreground'}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${hasAccessibleTexte ? 'bg-green-500' : textesCount > 0 ? 'bg-red-500' : 'bg-muted-foreground/40'}`} />
+                      {hasAccessibleTexte ? `${textesCount} texte${textesCount > 1 ? 's' : ''} publié${textesCount > 1 ? 's' : ''}` : textesCount > 0 ? 'Texte non encore publié' : 'Aucun texte'}
                     </span>
                     <span className="font-mono text-[10px] text-muted-foreground/40 select-all">{dossier.uid}</span>
                   </div>

@@ -184,7 +184,7 @@ function EventBody({ group }: { group: GroupedFeedEvent }) {
                   <span className="text-muted-foreground">{ev.organeCodeType === "COMSENAT" ? "Sénat" : "Assemblée"} · </span>
                   {ev.libelleActe && <span className="text-muted-foreground">{ev.libelleActe}. </span>}
                   <span>{ev.texteTitre || ev.texteDenomination || ev.titre}</span>
-                  {dossierUid && <>{" "}<ResumeIALink dossierUid={dossierUid} texteUid={ev.texteUid} /></>}
+                  {dossierUid && <>{" "}<ResumeIALink dossierUid={dossierUid} texteUid={ev.texteUid} texteUrlAccessible={ev.texteUrlAccessible} /></>}
                 </p>
               </div>
             ))}
@@ -208,7 +208,7 @@ function EventBody({ group }: { group: GroupedFeedEvent }) {
                   <div className="ml-3 mt-0.5 space-y-1">
                     <StatusBadge statut={ev.statutConclusion} />
                     {ev.votePour != null && <VoteBar event={ev} />}
-                    {dossierUid && <ResumeIALink dossierUid={dossierUid} texteUid={ev.texteUid} />}
+                    {dossierUid && <ResumeIALink dossierUid={dossierUid} texteUid={ev.texteUid} texteUrlAccessible={ev.texteUrlAccessible} />}
                   </div>
                 </div>
               );
@@ -238,7 +238,7 @@ function EventBody({ group }: { group: GroupedFeedEvent }) {
                 {ev.scrutinTitre && <p className="text-xs text-muted-foreground">{ev.scrutinTitre}</p>}
                 <StatusBadge statut={ev.statutConclusion} />
                 <VoteBar event={ev} />
-                {ev.dossierUid && <ResumeIALink dossierUid={ev.dossierUid} texteUid={ev.texteUid} />}
+                {ev.dossierUid && <ResumeIALink dossierUid={ev.dossierUid} texteUid={ev.texteUid} texteUrlAccessible={ev.texteUrlAccessible} />}
               </div>
             ))}
           </div>
@@ -273,7 +273,25 @@ function EventBody({ group }: { group: GroupedFeedEvent }) {
 
 // ── Résumé IA link helper ────────────────────────────────────
 
-function ResumeIALink({ dossierUid, texteUid }: { dossierUid: string; texteUid?: string | null }) {
+function ResumeIALink({ dossierUid, texteUid, texteUrlAccessible }: { dossierUid: string; texteUid?: string | null; texteUrlAccessible?: boolean | null }) {
+  if (texteUrlAccessible === false || texteUrlAccessible === null) {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs mt-1 flex-wrap">
+        <span className="inline-flex items-center gap-1 text-orange-600 dark:text-orange-400">
+          <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
+          Non encore publié
+        </span>
+        <span className="text-muted-foreground">·</span>
+        <Link
+          href={`/dossiers-legislatifs/${dossierUid}/resume-ia`}
+          className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground hover:underline"
+        >
+          <FileText className="w-3 h-3" />
+          Dossier complet
+        </Link>
+      </span>
+    );
+  }
   return (
     <Link
       href={`/dossiers-legislatifs/${dossierUid}/resume-ia${texteUid ? `?texte=${texteUid}` : ""}`}
@@ -287,15 +305,15 @@ function ResumeIALink({ dossierUid, texteUid }: { dossierUid: string; texteUid?:
 
 // ── Card footer (social icons) ──────────────────────────────
 
-function CardFooter({ dossierUid, texteUid, showResumeIA = true }: { dossierUid?: string | null; texteUid?: string | null; showResumeIA?: boolean }) {
+function CardFooter({ dossierUid, texteUid, showResumeIA = true, texteUrlAccessible }: { dossierUid?: string | null; texteUid?: string | null; showResumeIA?: boolean; texteUrlAccessible?: boolean | null }) {
   return (
     <div style={{ display: "flex", alignItems: "center", paddingTop: 14, marginTop: 12, width: "100%" }}>
-      <div style={{ flexShrink: 0 }}>
+      <div style={{ flexShrink: 0, flexGrow: 1 }}>
         {showResumeIA && dossierUid ? (
-          <ResumeIALink dossierUid={dossierUid} texteUid={texteUid} />
-        ) : <span />}
+          <ResumeIALink dossierUid={dossierUid} texteUid={texteUid} texteUrlAccessible={texteUrlAccessible} />
+        ) : null}
       </div>
-      <div style={{ display: "flex", flexGrow: 1, flexBasis: 0, justifyContent: "space-around", alignItems: "center" }}>
+      <div style={{ display: "flex", flexShrink: 0, width: "35%", justifyContent: "space-around", alignItems: "center" }}>
         <motion.button type="button" whileHover={{ scale: 1.25 }} whileTap={{ scale: 0.95 }} className="p-2 rounded-full text-muted-foreground/30 hover:text-green-500 hover:bg-muted/50 transition-colors" aria-label="J'approuve">
           <ThumbsUp className="w-3.5 h-3.5" />
         </motion.button>
@@ -482,6 +500,7 @@ function GroupedEventCard({ group, index }: { group: GroupedFeedEvent; index: nu
           dossierUid={group.dossierUid}
           texteUid={e.texteUid}
           showResumeIA={!multi && group.type !== "CC_SAISINE" && group.type !== "CMP_CONVOCATION"}
+          texteUrlAccessible={e.texteUrlAccessible}
         />
       </div>
     </motion.article>
