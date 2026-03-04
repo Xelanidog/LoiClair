@@ -66,16 +66,10 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
   const dossier = dossierResult.data?.[0];
   const titreDossier = dossier?.titre || 'Titre indisponible';
 
-  // Timeline : codes des actes présents, triés par priorité
-  const actesCodes = new Set((actesResult.data ?? []).map((a: any) => a.code_acte));
-  const timelineSteps = MILESTONE_CODES
-    .filter(code => actesCodes.has(code))
-    .sort((a, b) => STEP_CONFIG[a].priority - STEP_CONFIG[b].priority)
-    .map(code => STEP_CONFIG[code].label);
-
   // Calcul des durées par chambre (aligné sur la logique de la page KPI)
   let depotAN: Date | null = null, decisionAN: Date | null = null;
   let depotSN: Date | null = null, decisionSN: Date | null = null;
+  const milestoneDateMap = new Map<string, Date>();
   for (const acte of actesKPIResult.data ?? []) {
     const d = new Date(acte.date_acte);
     const code: string = acte.code_acte;
@@ -91,14 +85,36 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
     if ((code.startsWith('SN') && code.endsWith('-DEBATS-DEC')) || code === 'CMP-DEBATS-SN-DEC') {
       if (!decisionSN || d > decisionSN) decisionSN = d;
     }
+    // Map milestone code → earliest date (pour tri chronologique)
+    for (const milestone of MILESTONE_CODES) {
+      if (code.startsWith(milestone + '-')) {
+        const existing = milestoneDateMap.get(milestone);
+        if (!existing || d < existing) milestoneDateMap.set(milestone, d);
+        break;
+      }
+    }
   }
   const toDays = (from: Date | null, to: Date | null) =>
     from && to && to >= from ? Math.round((to.getTime() - from.getTime()) / 86400000) : null;
+  const today = new Date();
   const dateDepotDate = dossier?.date_depot ? new Date(dossier.date_depot) : null;
   const datePromDate = dossier?.date_promulgation ? new Date(dossier.date_promulgation) : null;
-  const dureeTotal = toDays(dateDepotDate, datePromDate ?? new Date());
-  const dureeAN = toDays(depotAN, decisionAN);
-  const dureeSenat = toDays(depotSN, decisionSN);
+  const dureeTotal = toDays(dateDepotDate, datePromDate ?? today);
+  const dureeAN = toDays(depotAN, decisionAN ?? (depotAN ? today : null));
+  const dureeANEnCours = depotAN !== null && decisionAN === null;
+  const dureeSenat = toDays(depotSN, decisionSN ?? (depotSN ? today : null));
+  const dureeSNEnCours = depotSN !== null && decisionSN === null;
+
+  // Timeline : codes des actes présents, triés par date réelle (fallback : priority)
+  const actesCodes = new Set((actesResult.data ?? []).map((a: any) => a.code_acte));
+  const timelineSteps = MILESTONE_CODES
+    .filter(code => actesCodes.has(code))
+    .sort((a, b) => {
+      const da = milestoneDateMap.get(a)?.getTime() ?? STEP_CONFIG[a].priority * 1e10;
+      const db = milestoneDateMap.get(b)?.getTime() ?? STEP_CONFIG[b].priority * 1e10;
+      return da - db;
+    })
+    .map(code => STEP_CONFIG[code].label);
   const passageCMP = actesCodes.has('CMP');
 
   // Scrutins associés aux textes via actes_legislatifs
@@ -194,7 +210,9 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
       lienLegifrance={dossier?.url_legifrance ?? null}
       dureeTotal={dureeTotal}
       dureeAN={dureeAN}
+      dureeANEnCours={dureeANEnCours}
       dureeSenat={dureeSenat}
+      dureeSNEnCours={dureeSNEnCours}
       passageCMP={passageCMP}
       nbVotes={voteRefs.length}
       auteurNom={auteur ? `${auteur.prenom ?? ''} ${auteur.nom ?? ''}`.trim() : null}

@@ -361,15 +361,11 @@ function CardTitle({ group, e }: { group: GroupedFeedEvent; e: FeedEvent }) {
       </p>
     );
   }
-  // NAVETTE : direction émettrice → réceptrice (déduite de organeCodeType = chambre réceptrice)
+  // NAVETTE : direction en ligne 1, juste le titre ici
   if (t === "NAVETTE") {
-    const direction = e.organeCodeType === "SENAT" ? "Assemblée → Sénat"
-      : e.organeCodeType === "ASSEMBLEE" ? "Sénat → Assemblée"
-      : e.organeName;
     return (
       <p className="text-sm leading-snug mb-0.5">
-        {direction && <span className="text-muted-foreground">{direction} · </span>}
-        <span>{e.texteTitre || e.texteDenomination || group.dossierTitre || e.titre}</span>
+        <span>{e.texteTitre || group.dossierTitre || e.titre}</span>
       </p>
     );
   }
@@ -418,7 +414,7 @@ function CardTitle({ group, e }: { group: GroupedFeedEvent; e: FeedEvent }) {
 // ── Context info helper ─────────────────────────────────────
 
 function getContextInfo(type: FeedEventType, e: FeedEvent, multi: boolean) {
-  if (type === "DEPOT_TEXTE" || type === "NAVETTE") {
+  if (type === "DEPOT_TEXTE") {
     if (!e.auteur) return null;
     return <>
       <span className="font-bold text-foreground shrink-0">
@@ -427,6 +423,12 @@ function getContextInfo(type: FeedEventType, e: FeedEvent, multi: boolean) {
       </span>
       {e.groupeAbrege && <span className="font-normal shrink-0">/{e.groupeAbrege}</span>}
     </>;
+  }
+  if (type === "NAVETTE") {
+    const direction = e.organeCodeType === "SENAT" ? "Assemblée → Sénat"
+      : e.organeCodeType === "ASSEMBLEE" ? "Sénat → Assemblée"
+      : e.organeName;
+    return direction ? <span className="font-bold text-foreground shrink-0">{direction}</span> : null;
   }
   if (type === "DECISION") {
     if (multi) return null;

@@ -55,7 +55,9 @@ interface ResumeIAClientProps {
   lienLegifrance: string | null;
   dureeTotal: number | null;
   dureeAN: number | null;
+  dureeANEnCours: boolean;
   dureeSenat: number | null;
+  dureeSNEnCours: boolean;
   passageCMP: boolean;
   nbVotes: number;
   auteurNom: string | null;
@@ -92,7 +94,7 @@ const BADGE_CLASSES: Record<string, string> = {
   "Adopté par le Sénat": "bg-indigo-100 text-indigo-800 border-indigo-200",
 };
 
-export default function ResumeIAClient({ uid, titreDossier, initialTextes, statutFinal, procedureLibelle, dateDepot, datePromulgation, lienAN, lienSenat, lienLegifrance, dureeTotal, dureeAN, dureeSenat, passageCMP, nbVotes, auteurNom, auteurGroupe, timelineSteps, scrutinsParTexte, initialTexteUid }: ResumeIAClientProps) {
+export default function ResumeIAClient({ uid, titreDossier, initialTextes, statutFinal, procedureLibelle, dateDepot, datePromulgation, lienAN, lienSenat, lienLegifrance, dureeTotal, dureeAN, dureeANEnCours, dureeSenat, dureeSNEnCours, passageCMP, nbVotes, auteurNom, auteurGroupe, timelineSteps, scrutinsParTexte, initialTexteUid }: ResumeIAClientProps) {
   const [textes] = useState<Texte[]>(initialTextes);
   const [selectedUid, setSelectedUid] = useState<string | null>(() => {
     if (initialTexteUid && initialTextes.some(t => t.uid === initialTexteUid)) return initialTexteUid;
@@ -252,15 +254,15 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
             </span>
           )}
           {dureeAN !== null && (
-            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-100/70 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 text-sm">
+            <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-sm ${dureeANEnCours ? 'bg-yellow-100/70 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' : 'bg-blue-100/70 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'}`}>
               <Building2 className="h-3.5 w-3.5 shrink-0" />
-              AN : {dureeAN} j
+              AN : {dureeAN} j{dureeANEnCours ? ' · en cours' : ''}
             </span>
           )}
           {dureeSenat !== null && (
-            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-100/70 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300 text-sm">
+            <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-sm ${dureeSNEnCours ? 'bg-yellow-100/70 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' : 'bg-orange-100/70 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300'}`}>
               <Building2 className="h-3.5 w-3.5 shrink-0" />
-              Sénat : {dureeSenat} j
+              Sénat : {dureeSenat} j{dureeSNEnCours ? ' · en cours' : ''}
             </span>
           )}
           {passageCMP && (
