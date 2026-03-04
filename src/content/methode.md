@@ -458,3 +458,35 @@ Les données proviennent de l'open data de l'Assemblée nationale, mises à jour
 
 **Comment interpréter**
 Comparez les deux graphiques ensemble : un groupe qui propose beaucoup mais fait peu adopter est souvent dans l'opposition. Un groupe qui fait adopter une grande part de ses textes est dans la majorité ou gouvernementale.
+
+## Parlementaires les plus actifs
+
+**Ce que ça mesure**
+Le nombre de textes législatifs dans lesquels chaque député ou sénateur est impliqué, soit comme auteur ou co-auteur, soit comme rapporteur désigné. Le classement porte sur les parlementaires actuellement en fonction (17ᵉ législature pour l'Assemblée nationale, mandat en cours pour le Sénat).
+
+**Comment c'est calculé**
+
+> Score total = Nombre de textes où le parlementaire est auteur + Nombre de textes où il est rapporteur
+
+Un parlementaire peut apparaître dans les deux colonnes pour un même texte — il est alors compté une fois en "Auteur" et une fois en "Rapporteur".
+
+Variables **incluses** :
+- Tous les textes législatifs enregistrés dans LoiClair (propositions de loi, projets de loi, amendements déposés, etc.).
+- Parlementaires actuellement en fonction uniquement.
+
+Variables **exclues** :
+- Les parlementaires n'ayant aucune implication identifiée dans un texte.
+- Les anciens parlementaires qui ne siègent plus.
+
+**D'où viennent les données**
+Les données proviennent de l'open data de l'Assemblée nationale, mises à jour chaque nuit.
+
+**Ce que ça ne mesure pas**
+⚠ Ce classement mesure la quantité d'implication, pas la qualité du travail. Un parlementaire qui dépose beaucoup d'amendements ou de propositions de loi n'est pas forcément plus efficace qu'un autre.
+
+⚠ Le rôle de rapporteur est souvent attribué par les commissions permanentes selon des règles politiques (répartition entre groupes). Un parlementaire dans la majorité ou dans une grande commission sera mécaniquement plus souvent rapporteur.
+
+⚠ Les textes sans auteur ou rapporteur identifié dans les données sources ne sont pas comptabilisés — certains textes anciens ou issus du Sénat peuvent être sous-représentés.
+
+**Comment interpréter**
+Un score élevé indique une forte présence dans le processus législatif. Regardez séparément les colonnes "Auteur" et "Rapporteur" : un profil avec beaucoup d'auteurs est souvent un parlementaire très actif en dépôt de textes, tandis qu'un profil avec beaucoup de rapporteurs reflète une forte implication en commission.

@@ -132,6 +132,8 @@ Mis côte à côte, ces deux graphiques permettent de distinguer qui *propose* b
 
 Un tableau liste les 20 députés et sénateurs les plus impliqués dans les textes législatifs, en tant qu'auteur ou rapporteur d'un texte. Il est trié par implication totale (auteurs + rapporteurs confondus), et indique pour chacun la chambre d'appartenance, le groupe politique, et la répartition entre les rôles d'auteur et de rapporteur.
 
+**Rechercher un parlementaire** — Un champ de recherche au-dessus du tableau permet de retrouver n'importe quel député ou sénateur, même s'il ne figure pas dans le top 20. Tapez un nom (ou une partie du nom) : le tableau affiche instantanément tous les résultats correspondants avec leurs données complètes.
+
 > Ce classement mesure l'implication formelle dans les textes étudiés, pas nécessairement l'influence politique réelle. Un rapporteur est désigné par sa commission pour suivre techniquement un texte ; un auteur en est l'initiateur.
 
 ### Filtres

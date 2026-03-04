@@ -371,7 +371,7 @@ for (const t of (textesImplicationResult.data || [])) {
   for (const uid of (t.rapporteurs_refs || [])) rappCount.set(uid, (rappCount.get(uid) || 0) + 1);
 }
 
-const topParlementaires = (acteursParlemResult.data || [])
+const allParlementaires = (acteursParlemResult.data || [])
   .map(a => ({
     nom: `${a.prenom} ${a.nom}`,
     chambre: a.est_depute_actuel ? 'AN' : 'Sénat',
@@ -381,8 +381,7 @@ const topParlementaires = (acteursParlemResult.data || [])
     total: (auteurCount.get(a.uid) || 0) + (rappCount.get(a.uid) || 0),
   }))
   .filter(a => a.total > 0)
-  .sort((a, b) => b.total - a.total)
-  .slice(0, 20);
+  .sort((a, b) => b.total - a.total);
 
 // Données graphique
 const chartData = statsData.historique.slice(-24).map(({ mois, count }) => {
@@ -711,13 +710,16 @@ return (
       )}
 
       {/* Parlementaires les plus actifs */}
-      {topParlementaires.length > 0 && (
+      {allParlementaires.length > 0 && (
         <div className="mt-8">
           <h2 className="text-4xl font-semibold mb-2">Parlementaires les plus actifs</h2>
-          <p className="text-muted-foreground mb-6">
+          <p className="text-muted-foreground mb-2">
             Classement des 20 députés et sénateurs les plus impliqués dans les textes législatifs, en tant qu'auteur/co-auteur ou rapporteur.
           </p>
-          <ParlementairesTable data={topParlementaires} />
+          <Link href="/documentation/methode#parlementaires-les-plus-actifs" className="text-xs text-muted-foreground/60 hover:text-foreground transition-colors mb-6 inline-block">
+            → Comment c&apos;est calculé
+          </Link>
+          <ParlementairesTable data={allParlementaires} />
         </div>
       )}
     </div>
