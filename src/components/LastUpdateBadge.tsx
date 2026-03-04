@@ -19,22 +19,25 @@ async function getLastSuccessfulRun(): Promise<string | null> {
   }
 }
 
-function formatDate(iso: string): string {
+function formatDate(iso: string, short = false): string {
   const d = new Date(iso)
+  if (short) return d.toLocaleDateString("fr-FR", {
+    day: "numeric", month: "short", year: "numeric", timeZone: "Europe/Paris"
+  })
   return d.toLocaleDateString("fr-FR", {
     day: "numeric", month: "long", year: "numeric",
     hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris"
   })
 }
 
-export async function LastUpdateBadge({ className }: { className?: string }) {
+export async function LastUpdateBadge({ className, short }: { className?: string; short?: boolean }) {
   const updatedAt = await getLastSuccessfulRun()
   if (!updatedAt) return null
 
   return (
     <span className={`inline-flex items-center gap-1.5 text-xs text-muted-foreground ${className ?? ""}`}>
       <Clock className="h-3 w-3 flex-shrink-0" />
-      Dernière mise à jour des données le {formatDate(updatedAt)}
+      {short ? `Dernière MAJ le ${formatDate(updatedAt, true)}` : `Dernière mise à jour des données le ${formatDate(updatedAt)}`}
     </span>
   )
 }

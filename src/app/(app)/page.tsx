@@ -51,7 +51,6 @@ export default async function PourquoiPage() {
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
-            <LastUpdateBadge />
           </div>
           
         </section>
@@ -60,11 +59,12 @@ export default async function PourquoiPage() {
         <section className="space-y-6">
           <h2 className="text-xl font-semibold text-center">Votre boîte à outils citoyenne</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {features.map(({ icon: Icon, title, desc }) => (
+            {features.map(({ icon: Icon, title, desc }, index) => (
               <div key={title} className="flex flex-col gap-3 p-5 rounded-xl border bg-muted/20 hover:bg-muted/50 transition-colors">
                 <Icon className="h-4 w-4 text-muted-foreground" />
                 <h3 className="font-semibold text-sm">{title}</h3>
                 <p className="text-muted-foreground text-xs leading-relaxed">{desc}</p>
+                {index === 0 && <LastUpdateBadge short />}
               </div>
             ))}
           </div>
