@@ -60,6 +60,7 @@ export type FeedEvent = {
   groupeAbrege: string | null;
   auteurChambre: 'AN' | 'SENAT' | 'GOUV' | null;
   texteProvenance: string | null;
+  texteHasTomes: boolean | null;
   organeCodeType: string | null;
   // Vote details (optional)
   votePour?: number | null;
@@ -135,7 +136,7 @@ function emptyFeedEvent(overrides: Partial<FeedEvent> & Pick<FeedEvent, 'id' | '
     texteLien: null, texteAdopteUid: null, texteAdopteDenomination: null,
     texteAdopteTitre: null, texteAdopteLien: null, texteUrlAccessible: null,
     scrutinUid: null, scrutinTitre: null, statutConclusion: null, auteur: null,
-    groupeAbrege: null, auteurChambre: null, texteProvenance: null, organeCodeType: null,
+    groupeAbrege: null, auteurChambre: null, texteProvenance: null, texteHasTomes: null, organeCodeType: null,
     ...overrides,
   };
 }
@@ -224,8 +225,8 @@ function acteToFeedEvent(
     dossierTitre: dossierInfo?.titre ?? null,
     libelleActe: a.libelle_acte,
     codeActe: a.code_acte,
-    // DEPOT_TEXTE : libelle_abrege de la chambre ; autres types : nom complet
-    organeName: type === 'DEPOT_TEXTE' ? (organeData?.libelleAbrege ?? organeData?.name ?? null) : (organeData?.name ?? null),
+    // DEPOT_TEXTE + DEPOT_RAPPORT : libelle_abrege (version courte) ; autres types : nom complet
+    organeName: (type === 'DEPOT_TEXTE' || type === 'DEPOT_RAPPORT') ? (organeData?.libelleAbrege ?? organeData?.name ?? null) : (organeData?.name ?? null),
     texteUid: texte?.uid ?? null,
     texteDenomination: texte?.denomination ?? null,
     texteTitre: texte?.titre_principal ?? null,
@@ -242,6 +243,7 @@ function acteToFeedEvent(
     groupeAbrege,
     auteurChambre,
     texteProvenance: texte?.provenance ?? null,
+    texteHasTomes: texte?.has_tomes ?? null,
     organeCodeType: organeData?.codeType ?? null,
     votePour: scrutin?.synthese_pour ?? null,
     voteContre: scrutin?.synthese_contre ?? null,

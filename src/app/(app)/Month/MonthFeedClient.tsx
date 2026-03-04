@@ -53,7 +53,7 @@ const EVENT_CONFIG: Record<
   DECISION: { icon: BarChart3, label: "Décision", color: "text-fuchsia-600 dark:text-fuchsia-400", iconBg: "bg-fuchsia-100 dark:bg-fuchsia-900/50" },
   NAVETTE: { icon: ArrowLeftRight, label: "Navette", color: "text-indigo-600 dark:text-indigo-400", iconBg: "bg-indigo-100 dark:bg-indigo-900/50" },
   CMP_CONVOCATION: { icon: Handshake, label: "CMP", color: "text-purple-600 dark:text-purple-400", iconBg: "bg-purple-100 dark:bg-purple-900/50" },
-  CMP_RAPPORT: { icon: Handshake, label: "Rapport CMP", color: "text-purple-600 dark:text-purple-400", iconBg: "bg-purple-100 dark:bg-purple-900/50" },
+  CMP_RAPPORT: { icon: FileSearch, label: "Rapport commission mixte paritaire", color: "text-teal-600 dark:text-teal-400", iconBg: "bg-teal-100 dark:bg-teal-900/50" },
   MOTION_CENSURE: { icon: AlertTriangle, label: "Motion de censure", color: "text-red-600 dark:text-red-400", iconBg: "bg-red-100 dark:bg-red-900/50" },
   DECL_GOUVERNEMENT: { icon: Megaphone, label: "Déclaration gouv.", color: "text-amber-600 dark:text-amber-400", iconBg: "bg-amber-100 dark:bg-amber-900/50" },
   MOTION_VOTE: { icon: Gavel, label: "Vote motion", color: "text-red-600 dark:text-red-400", iconBg: "bg-red-100 dark:bg-red-900/50" },
@@ -170,28 +170,7 @@ function EventBody({ group }: { group: GroupedFeedEvent }) {
 
     case "DEPOT_RAPPORT":
     case "CMP_RAPPORT":
-      if (multi) {
-        return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 14 }}>
-            {events.map(ev => (
-              <div key={ev.id}>
-                <div className="flex items-baseline gap-1 text-xs text-muted-foreground overflow-hidden">
-                  <span className="shrink-0">·</span>
-                  {ev.texteProvenance && <span className="font-bold text-foreground shrink-0">{ev.texteProvenance}</span>}
-                  {ev.organeName && <span className="font-normal truncate">/{ev.organeName}</span>}
-                </div>
-                <p className="text-sm leading-snug ml-3 mt-0.5">
-                  <span className="text-muted-foreground">{ev.organeCodeType === "COMSENAT" ? "Sénat" : "Assemblée"} · </span>
-                  {ev.libelleActe && <span className="text-muted-foreground">{ev.libelleActe}. </span>}
-                  <span>{ev.texteTitre || ev.texteDenomination || ev.titre}</span>
-                  {dossierUid && <>{" "}<ResumeIALink dossierUid={dossierUid} texteUid={ev.texteUid} texteUrlAccessible={ev.texteUrlAccessible} /></>}
-                </p>
-              </div>
-            ))}
-          </div>
-        );
-      }
-      return null; // contenu dans CardTitle, Résumé IA dans footer
+      return null; // tout dans CardTitle + RapportFooterLinks
 
     case "DECISION":
       if (multi) {
@@ -303,7 +282,28 @@ function ResumeIALink({ dossierUid, texteUid, texteUrlAccessible }: { dossierUid
   );
 }
 
-// ── Card footer (social icons) ──────────────────────────────
+// ── Social icons (partagé entre CardFooter et RapportFooterLinks) ───────────
+
+function SocialIcons() {
+  return (
+    <div style={{ display: "flex", flexShrink: 0, width: "35%", justifyContent: "space-around", alignItems: "center" }}>
+      <motion.button type="button" whileHover={{ scale: 1.25 }} whileTap={{ scale: 0.95 }} className="p-2 rounded-full text-muted-foreground/30 hover:text-green-500 hover:bg-muted/50 transition-colors" aria-label="J'approuve">
+        <ThumbsUp className="w-3.5 h-3.5" />
+      </motion.button>
+      <motion.button type="button" whileHover={{ scale: 1.25 }} whileTap={{ scale: 0.95 }} className="p-2 rounded-full text-muted-foreground/30 hover:text-red-500 hover:bg-muted/50 transition-colors" aria-label="Je désapprouve">
+        <ThumbsDown className="w-3.5 h-3.5" />
+      </motion.button>
+      <motion.button type="button" whileHover={{ scale: 1.25 }} whileTap={{ scale: 0.95 }} className="p-2 rounded-full text-muted-foreground/30 hover:text-blue-500 hover:bg-muted/50 transition-colors" aria-label="Sauvegarder">
+        <Bookmark className="w-3.5 h-3.5" />
+      </motion.button>
+      <motion.button type="button" whileHover={{ scale: 1.25 }} whileTap={{ scale: 0.95 }} className="p-2 rounded-full text-muted-foreground/30 hover:text-blue-500 hover:bg-muted/50 transition-colors" aria-label="Partager">
+        <Share2 className="w-3.5 h-3.5" />
+      </motion.button>
+    </div>
+  );
+}
+
+// ── Card footer (standard) ───────────────────────────────────
 
 function CardFooter({ dossierUid, texteUid, showResumeIA = true, texteUrlAccessible }: { dossierUid?: string | null; texteUid?: string | null; showResumeIA?: boolean; texteUrlAccessible?: boolean | null }) {
   return (
@@ -313,20 +313,75 @@ function CardFooter({ dossierUid, texteUid, showResumeIA = true, texteUrlAccessi
           <ResumeIALink dossierUid={dossierUid} texteUid={texteUid} texteUrlAccessible={texteUrlAccessible} />
         ) : null}
       </div>
-      <div style={{ display: "flex", flexShrink: 0, width: "35%", justifyContent: "space-around", alignItems: "center" }}>
-        <motion.button type="button" whileHover={{ scale: 1.25 }} whileTap={{ scale: 0.95 }} className="p-2 rounded-full text-muted-foreground/30 hover:text-green-500 hover:bg-muted/50 transition-colors" aria-label="J'approuve">
-          <ThumbsUp className="w-3.5 h-3.5" />
-        </motion.button>
-        <motion.button type="button" whileHover={{ scale: 1.25 }} whileTap={{ scale: 0.95 }} className="p-2 rounded-full text-muted-foreground/30 hover:text-red-500 hover:bg-muted/50 transition-colors" aria-label="Je désapprouve">
-          <ThumbsDown className="w-3.5 h-3.5" />
-        </motion.button>
-        <motion.button type="button" whileHover={{ scale: 1.25 }} whileTap={{ scale: 0.95 }} className="p-2 rounded-full text-muted-foreground/30 hover:text-blue-500 hover:bg-muted/50 transition-colors" aria-label="Sauvegarder">
-          <Bookmark className="w-3.5 h-3.5" />
-        </motion.button>
-        <motion.button type="button" whileHover={{ scale: 1.25 }} whileTap={{ scale: 0.95 }} className="p-2 rounded-full text-muted-foreground/30 hover:text-blue-500 hover:bg-muted/50 transition-colors" aria-label="Partager">
-          <Share2 className="w-3.5 h-3.5" />
-        </motion.button>
+      <SocialIcons />
+    </div>
+  );
+}
+
+// ── Footer liens Résumé IA pour rapports ────────────────────
+
+function RapportFooterLinks({ group }: { group: GroupedFeedEvent }) {
+  const { type, events, dossierUid } = group;
+  const e = events[0];
+  const multi = events.length > 1;
+
+  if (!dossierUid) return null;
+
+  // CMP groupé même jour → Assemblée | Sénat | Texte adopté
+  if (type === "CMP_RAPPORT" && multi) {
+    const an = events.find(ev => ev.organeCodeType === "ASSEMBLEE");
+    const sn = events.find(ev => ev.organeCodeType === "SENAT");
+    const texteAdopteUid = (an ?? sn)?.texteAdopteUid ?? null;
+    return (
+      <div style={{ display: "flex", alignItems: "center", paddingTop: 14, marginTop: 12, width: "100%" }}>
+        <span className="inline-flex items-center gap-1.5 text-xs text-primary flex-wrap" style={{ flexGrow: 1 }}>
+          <Sparkles className="w-3 h-3 shrink-0" />
+          <span>Résumé IA :</span>
+          {an?.texteUid && (
+            <Link href={`/dossiers-legislatifs/${dossierUid}/resume-ia?texte=${an.texteUid}`} className="hover:underline">
+              Assemblée
+            </Link>
+          )}
+          {an?.texteUid && sn?.texteUid && <span className="text-muted-foreground">|</span>}
+          {sn?.texteUid && (
+            <Link href={`/dossiers-legislatifs/${dossierUid}/resume-ia?texte=${sn.texteUid}`} className="hover:underline">
+              Sénat
+            </Link>
+          )}
+          {texteAdopteUid && <>
+            <span className="text-muted-foreground">|</span>
+            <Link href={`/dossiers-legislatifs/${dossierUid}/resume-ia?texte=${texteAdopteUid}`} className="hover:underline text-muted-foreground">
+              Texte adopté
+            </Link>
+          </>}
+        </span>
+        <SocialIcons />
       </div>
+    );
+  }
+
+  // DEPOT_RAPPORT ou CMP_RAPPORT single
+  const isCmp = type === "CMP_RAPPORT";
+  return (
+    <div style={{ display: "flex", alignItems: "center", paddingTop: 14, marginTop: 12, width: "100%" }}>
+      <span className="inline-flex items-center gap-1.5 text-xs text-primary flex-wrap" style={{ flexGrow: 1 }}>
+        <Sparkles className="w-3 h-3 shrink-0" />
+        <span>Résumé IA :</span>
+        {e.texteUid ? (
+          <Link href={`/dossiers-legislatifs/${dossierUid}/resume-ia?texte=${e.texteUid}`} className="hover:underline">
+            Rapport{!isCmp && e.texteHasTomes && <span className="text-muted-foreground"> (+ tomes)</span>}
+          </Link>
+        ) : (
+          <span className="text-muted-foreground">Rapport</span>
+        )}
+        {e.texteAdopteUid && <>
+          <span className="text-muted-foreground">|</span>
+          <Link href={`/dossiers-legislatifs/${dossierUid}/resume-ia?texte=${e.texteAdopteUid}`} className="hover:underline text-muted-foreground">
+            {isCmp ? "Texte adopté" : "Texte modifié"}
+          </Link>
+        </>}
+      </span>
+      <SocialIcons />
     </div>
   );
 }
@@ -369,23 +424,12 @@ function CardTitle({ group, e }: { group: GroupedFeedEvent; e: FeedEvent }) {
       </p>
     );
   }
-  // DEPOT_RAPPORT / CMP_RAPPORT : single → chambre · libelleActe titre, multi → dossierTitre
+  // DEPOT_RAPPORT / CMP_RAPPORT : single → titre du rapport, multi → titre du dossier
   if (t === "DEPOT_RAPPORT" || t === "CMP_RAPPORT") {
-    if (group.events.length > 1) {
-      return (
-        <p className="text-sm leading-snug mb-0.5">
-          {group.dossierTitre || e.titre}
-        </p>
-      );
-    }
-    const chambre = e.organeCodeType === "COMSENAT" ? "Sénat" : "Assemblée";
-    return (
-      <p className="text-sm leading-snug mb-0.5">
-        <span className="text-muted-foreground">{chambre} · </span>
-        {e.libelleActe && <span className="text-muted-foreground">{e.libelleActe}. </span>}
-        <span>{e.texteTitre || e.texteDenomination || group.dossierTitre || e.titre}</span>
-      </p>
-    );
+    const titre = group.events.length > 1
+      ? (group.dossierTitre || e.titre)
+      : (e.texteTitre || e.texteDenomination || group.dossierTitre || e.titre);
+    return <p className="text-sm leading-snug mb-0.5">{titre}</p>;
   }
   // DECISION : juste le titre du texte
   if (t === "DECISION") {
@@ -435,12 +479,19 @@ function getContextInfo(type: FeedEventType, e: FeedEvent, multi: boolean) {
     const inst = institutionName(e.organeCodeType, e.organeName);
     return inst ? <span className="shrink-0">/{inst}</span> : null;
   }
-  if (type === "DEPOT_RAPPORT" || type === "CMP_RAPPORT") {
-    if (multi || !e.texteProvenance) return null;
+  if (type === "DEPOT_RAPPORT") {
+    const chambre = e.organeCodeType === "COMSENAT" ? "Sénat" : "Assemblée";
     return <>
-      <span className="font-bold text-foreground shrink-0">{e.texteProvenance}</span>
-      {e.organeName && <span className="font-normal truncate">/{e.organeName}</span>}
+      <span className="font-bold text-foreground shrink-0">{chambre}</span>
+      {e.organeName && <span className="font-normal shrink-0">/{e.organeName}</span>}
     </>;
+  }
+  if (type === "CMP_RAPPORT") {
+    if (multi) return null;
+    const chambre = e.organeCodeType === "ASSEMBLEE" ? "Assemblée"
+      : e.organeCodeType === "SENAT" ? "Sénat"
+      : null;
+    return chambre ? <span className="font-bold text-foreground shrink-0">{chambre}</span> : null;
   }
   if (type === "CMP_CONVOCATION") return null;
   if (type === "CC_SAISINE") {
@@ -524,13 +575,17 @@ function GroupedEventCard({ group, index }: { group: GroupedFeedEvent; index: nu
         {/* Contenu spécifique au type (VoteBar, StatusBadge, etc.) */}
         <EventBody group={group} />
 
-        {/* Footer : Résumé IA (single) + icônes */}
-        <CardFooter
-          dossierUid={group.dossierUid}
-          texteUid={e.texteUid}
-          showResumeIA={!multi && group.type !== "CC_SAISINE" && group.type !== "CMP_CONVOCATION"}
-          texteUrlAccessible={e.texteUrlAccessible}
-        />
+        {/* Footer : Résumé IA + icônes */}
+        {(group.type === "DEPOT_RAPPORT" || group.type === "CMP_RAPPORT") ? (
+          <RapportFooterLinks group={group} />
+        ) : (
+          <CardFooter
+            dossierUid={group.dossierUid}
+            texteUid={e.texteUid}
+            showResumeIA={!multi && group.type !== "CC_SAISINE" && group.type !== "CMP_CONVOCATION"}
+            texteUrlAccessible={e.texteUrlAccessible}
+          />
+        )}
 
         <DebugAccordion group={group} />
       </div>
