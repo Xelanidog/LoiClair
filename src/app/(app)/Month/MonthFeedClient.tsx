@@ -53,7 +53,7 @@ const EVENT_CONFIG: Record<
   DECISION: { icon: BarChart3, label: "Décision", color: "text-fuchsia-600 dark:text-fuchsia-400", iconBg: "bg-fuchsia-100 dark:bg-fuchsia-900/50" },
   NAVETTE: { icon: ArrowLeftRight, label: "Navette", color: "text-indigo-600 dark:text-indigo-400", iconBg: "bg-indigo-100 dark:bg-indigo-900/50" },
   CMP_CONVOCATION: { icon: Handshake, label: "CMP", color: "text-purple-600 dark:text-purple-400", iconBg: "bg-purple-100 dark:bg-purple-900/50" },
-  CMP_RAPPORT: { icon: FileSearch, label: "Rapport commission mixte paritaire", color: "text-teal-600 dark:text-teal-400", iconBg: "bg-teal-100 dark:bg-teal-900/50" },
+  CMP_RAPPORT: { icon: FileSearch, label: "Rapport", color: "text-teal-600 dark:text-teal-400", iconBg: "bg-teal-100 dark:bg-teal-900/50" },
   MOTION_CENSURE: { icon: AlertTriangle, label: "Motion de censure", color: "text-red-600 dark:text-red-400", iconBg: "bg-red-100 dark:bg-red-900/50" },
   DECL_GOUVERNEMENT: { icon: Megaphone, label: "Déclaration gouv.", color: "text-amber-600 dark:text-amber-400", iconBg: "bg-amber-100 dark:bg-amber-900/50" },
   MOTION_VOTE: { icon: Gavel, label: "Vote motion", color: "text-red-600 dark:text-red-400", iconBg: "bg-red-100 dark:bg-red-900/50" },
@@ -487,11 +487,7 @@ function getContextInfo(type: FeedEventType, e: FeedEvent, multi: boolean) {
     </>;
   }
   if (type === "CMP_RAPPORT") {
-    if (multi) return null;
-    const chambre = e.organeCodeType === "ASSEMBLEE" ? "Assemblée"
-      : e.organeCodeType === "SENAT" ? "Sénat"
-      : null;
-    return chambre ? <span className="font-bold text-foreground shrink-0">{chambre}</span> : null;
+    return <span className="font-bold text-foreground shrink-0">Commission mixte paritaire</span>;
   }
   if (type === "CMP_CONVOCATION") return null;
   if (type === "CC_SAISINE") {
