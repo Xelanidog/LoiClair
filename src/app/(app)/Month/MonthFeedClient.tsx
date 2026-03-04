@@ -415,31 +415,17 @@ function CardTitle({ group, e }: { group: GroupedFeedEvent; e: FeedEvent }) {
   );
 }
 
-// ── Chambre badge ────────────────────────────────────────────
-
-function ChambreBadge({ chambre }: { chambre: 'AN' | 'SENAT' | 'GOUV' }) {
-  const styles = {
-    AN:    "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
-    SENAT: "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300",
-    GOUV:  "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
-  };
-  const labels = { AN: "AN", SENAT: "Sénat", GOUV: "Gouv." };
-  return (
-    <span className={cn("text-[9px] font-semibold px-1 py-0.5 rounded uppercase leading-none shrink-0", styles[chambre])}>
-      {labels[chambre]}
-    </span>
-  );
-}
-
 // ── Context info helper ─────────────────────────────────────
 
 function getContextInfo(type: FeedEventType, e: FeedEvent, multi: boolean) {
   if (type === "DEPOT_TEXTE" || type === "NAVETTE") {
     if (!e.auteur) return null;
     return <>
-      <span className="font-bold text-foreground shrink-0">{e.auteur}</span>
+      <span className="font-bold text-foreground shrink-0">
+        { e.auteurChambre === 'AN' ? 'Dep. ' : e.auteurChambre === 'SENAT' ? 'Sén. ' : e.auteurChambre === 'GOUV' ? 'Min. ' : '' }
+        {e.auteur}
+      </span>
       {e.groupeAbrege && <span className="font-normal shrink-0">/{e.groupeAbrege}</span>}
-      {e.auteurChambre && <ChambreBadge chambre={e.auteurChambre} />}
     </>;
   }
   if (type === "DECISION") {

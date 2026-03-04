@@ -36,7 +36,7 @@ Chaque carte affiche :
 
 - Un **pictogramme coloré** indiquant le type d'événement.
 - Le **type** (Nouveau texte, Décision, Rapport, etc.) et la **date**.
-- L'**auteur** ou l'**institution** concernée, accompagné d'un badge coloré indiquant sa chambre d'appartenance : bleu pour l'Assemblée nationale, orange pour le Sénat, gris pour le Gouvernement.
+- L'**auteur** ou l'**institution** concernée, précédé d'un indicateur de rôle — **Dep.** pour un député, **Sén.** pour un sénateur, **Min.** pour un ministre — suivi de son groupe politique abrégé.
 - Le **titre** du texte ou du dossier associé.
 
 Selon le type d'événement, des informations supplémentaires apparaissent :

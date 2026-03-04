@@ -625,6 +625,9 @@ def importer_organe(organe_data, file_name):
         libelle = data.get("libelle")
         libelle_edition = data.get("libelleEdition")
         libelle_abrege = data.get("libelleAbrege")
+        # Si libelle_abrege est absent ou identique au libelle complet, générer un acronyme
+        if libelle and (not libelle_abrege or libelle_abrege == libelle):
+            libelle_abrege = "".join(w[0].upper() for w in libelle.split() if w)
         libelle_abrev = data.get("libelleAbrev")
 
         # Null safety : `or {}` gère le cas où la valeur est explicitement null
