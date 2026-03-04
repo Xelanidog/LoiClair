@@ -26,6 +26,7 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
     'AN1-DEBATS-DEC', 'AN2-DEBATS-DEC', 'ANLDEF-DEBATS-DEC', 'ANLUNI-DEBATS-DEC', 'ANNLEC-DEBATS-DEC',
     'CMP-DEBATS-AN-DEC',
     'SN1-DEPOT', 'SN2-DEPOT', 'SNNLEC-DEPOT',
+    'PROM-PUB',
     'SN1-DEBATS-DEC', 'SN2-DEBATS-DEC', 'SNNLEC-DEBATS-DEC',
     'CMP-DEBATS-SN-DEC',
   ];
@@ -110,8 +111,8 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
   const timelineSteps = MILESTONE_CODES
     .filter(code => actesCodes.has(code))
     .sort((a, b) => {
-      const da = milestoneDateMap.get(a)?.getTime() ?? STEP_CONFIG[a].priority * 1e10;
-      const db = milestoneDateMap.get(b)?.getTime() ?? STEP_CONFIG[b].priority * 1e10;
+      const da = milestoneDateMap.get(a)?.getTime() ?? (1e15 + STEP_CONFIG[a].priority);
+      const db = milestoneDateMap.get(b)?.getTime() ?? (1e15 + STEP_CONFIG[b].priority);
       return da - db;
     })
     .map(code => STEP_CONFIG[code].label);
