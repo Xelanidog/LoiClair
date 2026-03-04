@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
-import { HelpCircle, ListChecks, TrendingUp, ExternalLink, Check, ChevronsUpDown, ChevronDown, Bot } from "lucide-react";
+import { HelpCircle, ListChecks, TrendingUp, ExternalLink, Check, ChevronsUpDown, ChevronDown, Bot, Clock, Building2, Scale, Vote } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
 import { SYSTEM_PROMPT_RESUME_LOI, PARAMS_RESUME_LOI, MODEL_RESUME_LOI, MAX_INPUT_CHARS_RESUME_LOI } from '@/lib/prompts';
 import { useCompletion } from '@ai-sdk/react';
@@ -50,6 +50,14 @@ interface ResumeIAClientProps {
   procedureLibelle: string | null;
   dateDepot: string | null;
   datePromulgation: string | null;
+  lienAN: string | null;
+  lienSenat: string | null;
+  lienLegifrance: string | null;
+  dureeTotal: number | null;
+  dureeAN: number | null;
+  dureeSenat: number | null;
+  passageCMP: boolean;
+  nbVotes: number;
   auteurNom: string | null;
   auteurGroupe: string | null;
   timelineSteps: string[];
@@ -84,7 +92,7 @@ const BADGE_CLASSES: Record<string, string> = {
   "Adopté par le Sénat": "bg-indigo-100 text-indigo-800 border-indigo-200",
 };
 
-export default function ResumeIAClient({ uid, titreDossier, initialTextes, statutFinal, procedureLibelle, dateDepot, datePromulgation, auteurNom, auteurGroupe, timelineSteps, scrutinsParTexte, initialTexteUid }: ResumeIAClientProps) {
+export default function ResumeIAClient({ uid, titreDossier, initialTextes, statutFinal, procedureLibelle, dateDepot, datePromulgation, lienAN, lienSenat, lienLegifrance, dureeTotal, dureeAN, dureeSenat, passageCMP, nbVotes, auteurNom, auteurGroupe, timelineSteps, scrutinsParTexte, initialTexteUid }: ResumeIAClientProps) {
   const [textes] = useState<Texte[]>(initialTextes);
   const [selectedUid, setSelectedUid] = useState<string | null>(() => {
     if (initialTexteUid && initialTextes.some(t => t.uid === initialTexteUid)) return initialTexteUid;
@@ -184,7 +192,31 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
           )}
         </div>
 
-        {/* Ligne 2 : timeline */}
+        {/* Ligne 2 : liens externes */}
+        {(lienAN || lienSenat || lienLegifrance) && (
+          <div className="flex flex-wrap items-center gap-3 text-xs">
+            {lienAN && (
+              <a href={lienAN} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors">
+                <ExternalLink className="h-3 w-3" />
+                Assemblée nationale
+              </a>
+            )}
+            {lienSenat && (
+              <a href={lienSenat} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors">
+                <ExternalLink className="h-3 w-3" />
+                Sénat
+              </a>
+            )}
+            {lienLegifrance && (
+              <a href={lienLegifrance} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors">
+                <ExternalLink className="h-3 w-3" />
+                Légifrance
+              </a>
+            )}
+          </div>
+        )}
+
+        {/* Ligne 3 : timeline */}
         {timelineSteps.length > 0 && (() => {
           const steps = ['Dépôt', ...timelineSteps];
           const lastIdx = steps.length - 1;
@@ -208,6 +240,45 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
           Voir la chronologie →
         </Link>
       </div>
+
+      {/* KPIs du dossier */}
+      {(dureeTotal !== null || dureeAN !== null || dureeSenat !== null || passageCMP || nbVotes > 0) && (
+        <div className="flex flex-wrap items-center gap-2 mb-6">
+          {dureeTotal !== null && (
+            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted/60 text-sm">
+              <Clock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              {dureeTotal} j{datePromulgation ? '' : ' (en cours)'}
+            </span>
+          )}
+          {dureeAN !== null && (
+            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-100/70 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 text-sm">
+              <Building2 className="h-3.5 w-3.5 shrink-0" />
+              AN : {dureeAN} j
+            </span>
+          )}
+          {dureeSenat !== null && (
+            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-100/70 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300 text-sm">
+              <Building2 className="h-3.5 w-3.5 shrink-0" />
+              Sénat : {dureeSenat} j
+            </span>
+          )}
+          {passageCMP && (
+            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-100/70 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 text-sm">
+              <Scale className="h-3.5 w-3.5 shrink-0" />
+              CMP
+            </span>
+          )}
+          {nbVotes > 0 && (
+            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted/60 text-sm">
+              <Vote className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              {nbVotes} vote{nbVotes > 1 ? 's' : ''}
+            </span>
+          )}
+          <Link href="/documentation/methode#delai-moyen-de-promulgation" className="text-xs text-muted-foreground/60 hover:text-foreground transition-colors ml-1">
+            Comment c'est calculé →
+          </Link>
+        </div>
+      )}
 
       {/* Combobox de sélection du texte */}
       <div className="mb-2">

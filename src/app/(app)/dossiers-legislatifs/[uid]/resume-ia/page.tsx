@@ -21,8 +21,17 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
   const resolvedSearchParams = await searchParams;
   const initialTexteUid = typeof resolvedSearchParams.texte === 'string' ? resolvedSearchParams.texte : null;
 
-  // Fetch textes, dossier complet, et actes législatifs en parallèle
-  const [textesResult, dossierResult, actesResult] = await Promise.all([
+  const KPI_ACTE_CODES = [
+    'AN1-DEPOT', 'AN2-DEPOT', 'ANLDEF-DEPOT', 'ANLUNI-DEPOT', 'ANNLEC-DEPOT',
+    'AN1-DEBATS-DEC', 'AN2-DEBATS-DEC', 'ANLDEF-DEBATS-DEC', 'ANLUNI-DEBATS-DEC', 'ANNLEC-DEBATS-DEC',
+    'CMP-DEBATS-AN-DEC',
+    'SN1-DEPOT', 'SN2-DEPOT', 'SNNLEC-DEPOT',
+    'SN1-DEBATS-DEC', 'SN2-DEBATS-DEC', 'SNNLEC-DEBATS-DEC',
+    'CMP-DEBATS-SN-DEC',
+  ];
+
+  // Fetch textes, dossier complet, actes législatifs et actes KPI en parallèle
+  const [textesResult, dossierResult, actesResult, actesKPIResult] = await Promise.all([
     supabase
       .from('textes')
       .select('uid, date_creation, date_publication, denomination, titre_principal_court, lien_texte, libelle_statut_adoption, provenance, url_accessible, organe_auteur:organe_auteur_ref(libelle)')
@@ -31,7 +40,7 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
       .order('date_creation', { ascending: true }),
     supabase
       .from('dossiers_legislatifs')
-      .select('titre, statut_final, procedure_libelle, date_depot, date_promulgation, initiateur_acteur_ref(uid, nom, prenom, groupe:organes(uid, libelle))')
+      .select('titre, statut_final, procedure_libelle, date_depot, date_promulgation, lien_an, lien_senat, url_legifrance, initiateur_acteur_ref(uid, nom, prenom, groupe:organes(uid, libelle))')
       .eq('uid', uid)
       .limit(1),
     supabase
@@ -40,6 +49,12 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
       .eq('dossier_uid', uid)
       .is('parent_uid', null)
       .in('code_acte', MILESTONE_CODES),
+    supabase
+      .from('actes_legislatifs')
+      .select('code_acte, date_acte')
+      .eq('dossier_uid', uid)
+      .in('code_acte', KPI_ACTE_CODES)
+      .not('date_acte', 'is', null),
   ]);
 
   // Normalise organe_auteur : Supabase renvoie un array pour les joins, on prend le premier élément
@@ -57,6 +72,34 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
     .filter(code => actesCodes.has(code))
     .sort((a, b) => STEP_CONFIG[a].priority - STEP_CONFIG[b].priority)
     .map(code => STEP_CONFIG[code].label);
+
+  // Calcul des durées par chambre (aligné sur la logique de la page KPI)
+  let depotAN: Date | null = null, decisionAN: Date | null = null;
+  let depotSN: Date | null = null, decisionSN: Date | null = null;
+  for (const acte of actesKPIResult.data ?? []) {
+    const d = new Date(acte.date_acte);
+    const code: string = acte.code_acte;
+    if (code.startsWith('AN') && code.endsWith('-DEPOT')) {
+      if (!depotAN || d < depotAN) depotAN = d;
+    }
+    if ((code.startsWith('AN') && code.endsWith('-DEBATS-DEC')) || code === 'CMP-DEBATS-AN-DEC') {
+      if (!decisionAN || d > decisionAN) decisionAN = d;
+    }
+    if (code.startsWith('SN') && code.endsWith('-DEPOT')) {
+      if (!depotSN || d < depotSN) depotSN = d;
+    }
+    if ((code.startsWith('SN') && code.endsWith('-DEBATS-DEC')) || code === 'CMP-DEBATS-SN-DEC') {
+      if (!decisionSN || d > decisionSN) decisionSN = d;
+    }
+  }
+  const toDays = (from: Date | null, to: Date | null) =>
+    from && to && to > from ? Math.round((to.getTime() - from.getTime()) / 86400000) : null;
+  const dateDepotDate = dossier?.date_depot ? new Date(dossier.date_depot) : null;
+  const datePromDate = dossier?.date_promulgation ? new Date(dossier.date_promulgation) : null;
+  const dureeTotal = toDays(dateDepotDate, datePromDate ?? new Date());
+  const dureeAN = toDays(depotAN, decisionAN);
+  const dureeSenat = toDays(depotSN, decisionSN);
+  const passageCMP = actesCodes.has('CMP');
 
   // Scrutins associés aux textes via actes_legislatifs
   // Un acte peut avoir textes_associes (→ texte uid) ET vote_refs (→ scrutin uid)
@@ -146,6 +189,14 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
       procedureLibelle={dossier?.procedure_libelle ?? null}
       dateDepot={dossier?.date_depot ?? null}
       datePromulgation={dossier?.date_promulgation ?? null}
+      lienAN={dossier?.lien_an ?? null}
+      lienSenat={dossier?.lien_senat ?? null}
+      lienLegifrance={dossier?.url_legifrance ?? null}
+      dureeTotal={dureeTotal}
+      dureeAN={dureeAN}
+      dureeSenat={dureeSenat}
+      passageCMP={passageCMP}
+      nbVotes={voteRefs.length}
       auteurNom={auteur ? `${auteur.prenom ?? ''} ${auteur.nom ?? ''}`.trim() : null}
       auteurGroupe={auteur?.groupe?.libelle ?? null}
       timelineSteps={timelineSteps}
