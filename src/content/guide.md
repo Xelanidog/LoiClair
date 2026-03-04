@@ -36,7 +36,7 @@ Chaque carte affiche :
 
 - Un **pictogramme coloré** indiquant le type d'événement.
 - Le **type** (Nouveau texte, Décision, Rapport, etc.) et la **date**.
-- L'**auteur** ou l'**institution** concernée.
+- L'**auteur** ou l'**institution** concernée, accompagné d'un badge coloré indiquant sa chambre d'appartenance : bleu pour l'Assemblée nationale, orange pour le Sénat, gris pour le Gouvernement.
 - Le **titre** du texte ou du dossier associé.
 
 Selon le type d'événement, des informations supplémentaires apparaissent :
@@ -127,6 +127,12 @@ Deux graphiques à barres horizontales donnent une lecture immédiate de qui pro
 - **Lois promulguées** — le nombre de lois effectivement signées par le Président qui émanent de chaque groupe. Le Gouvernement y domine logiquement : ses projets de loi bénéficient d'un soutien majoritaire quasi systématique.
 
 Mis côte à côte, ces deux graphiques permettent de distinguer qui *propose* beaucoup de qui *fait adopter* beaucoup — deux réalités très différentes selon que l'on est dans la majorité ou dans l'opposition.
+
+### Parlementaires les plus actifs
+
+Un tableau liste les 20 députés et sénateurs les plus impliqués dans les textes législatifs, en tant qu'auteur ou rapporteur d'un texte. Il est trié par implication totale (auteurs + rapporteurs confondus), et indique pour chacun la chambre d'appartenance, le groupe politique, et la répartition entre les rôles d'auteur et de rapporteur.
+
+> Ce classement mesure l'implication formelle dans les textes étudiés, pas nécessairement l'influence politique réelle. Un rapporteur est désigné par sa commission pour suivre techniquement un texte ; un auteur en est l'initiateur.
 
 ### Filtres
 
@@ -220,7 +226,10 @@ Sur chaque carte, un bouton **Détails, votes & Résumé IA** donne accès à la
 
 Sur la page de résumé :
 
-- Sous le titre, un **bandeau d'informations** reprend les données essentielles du dossier : son **statut** (en cours, adopté, promulgué, rejeté…), le **type de procédure**, le nom de l'**auteur** et son **groupe politique**, ainsi que la **date de dépôt**. Si le dossier a franchi plusieurs étapes, une **frise de progression** montre visuellement le parcours législatif accompli (Dépôt → Assemblée nationale → Sénat → Promulguée, etc.).
+- Sous le titre, un **bandeau d'informations** reprend les données essentielles du dossier : son **statut** (en cours, adopté, promulgué, rejeté…), le **type de procédure**, le nom de l'**auteur** et son **groupe politique**, ainsi que la **date de dépôt**.
+- Des **liens vers les sources officielles** permettent d'accéder directement à la page du dossier sur le site de l'Assemblée nationale, du Sénat, et — si la loi a été promulguée — à son texte sur Légifrance.
+- Si le dossier a franchi plusieurs étapes, une **frise de progression** montre visuellement le parcours législatif accompli (Dépôt → Assemblée nationale → Sénat → Promulguée, etc.).
+- Des **indicateurs de chronologie** résument le déroulement du dossier : la durée totale depuis le dépôt (avec la mention « en cours » si le texte n'est pas encore promulgué), le temps passé à l'Assemblée nationale et au Sénat, la tenue d'une Commission mixte paritaire si applicable, et le nombre de scrutins organisés. Ces indicateurs n'apparaissent que lorsque la donnée est disponible — un dossier traité uniquement à l'AN n'aura pas d'indicateur Sénat, et un texte non encore voté n'aura pas de compteur de scrutins.
 - Un **menu déroulant** permet de choisir le texte à résumer parmi ceux rattachés au dossier (un dossier peut contenir plusieurs versions du texte).
 - Le résumé est structuré en **3 sections** : *Pourquoi cette loi ?*, *Changements clés*, et *Impact attendu*.
 - Un lien vers **le texte officiel** est disponible pour aller plus loin (ce lien n'apparaît que si le texte a été publié).
