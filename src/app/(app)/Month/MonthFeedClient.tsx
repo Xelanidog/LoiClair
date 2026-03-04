@@ -362,19 +362,21 @@ function RapportFooterLinks({ group }: { group: GroupedFeedEvent }) {
 
   // DEPOT_RAPPORT ou CMP_RAPPORT single
   const isCmp = type === "CMP_RAPPORT";
+  const hasSecondLink = !!e.texteAdopteUid;
+  const tomes = !isCmp && e.texteHasTomes;
   return (
     <div style={{ display: "flex", alignItems: "center", paddingTop: 14, marginTop: 12, width: "100%" }}>
       <span className="inline-flex items-center gap-1.5 text-xs text-primary flex-wrap" style={{ flexGrow: 1 }}>
         <Sparkles className="w-3 h-3 shrink-0" />
-        <span>Résumé IA :</span>
+        {hasSecondLink ? <span>Résumé IA :</span> : null}
         {e.texteUid ? (
           <Link href={`/dossiers-legislatifs/${dossierUid}/resume-ia?texte=${e.texteUid}`} className="hover:underline">
-            Rapport{!isCmp && e.texteHasTomes && <span className="text-muted-foreground"> (+ tomes)</span>}
+            {hasSecondLink ? <>Rapport{tomes && <span className="text-muted-foreground"> (+ tomes)</span>}</> : <>Résumé IA{tomes && <span className="text-muted-foreground"> (+ tomes)</span>}</>}
           </Link>
         ) : (
-          <span className="text-muted-foreground">Rapport</span>
+          <span className="text-muted-foreground">{hasSecondLink ? "Rapport" : "Résumé IA"}</span>
         )}
-        {e.texteAdopteUid && <>
+        {hasSecondLink && <>
           <span className="text-muted-foreground">|</span>
           <Link href={`/dossiers-legislatifs/${dossierUid}/resume-ia?texte=${e.texteAdopteUid}`} className="hover:underline text-muted-foreground">
             {isCmp ? "Texte adopté" : "Texte modifié"}
