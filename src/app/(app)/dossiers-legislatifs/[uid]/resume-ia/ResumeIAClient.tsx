@@ -152,9 +152,10 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
 
   return (
     <div className="container mx-auto p-6 max-w-7xl">
-      <h1 className="text-2xl font-bold mb-4">
+      <h1 className="text-2xl font-bold mb-1">
         Résumé IA — {titreDossier || `dossier ${uid}`}
       </h1>
+      <p className="text-xs font-mono text-muted-foreground/50 mb-4">{uid}</p>
 
       {/* Métadonnées du dossier */}
       <div className="mb-6 space-y-3">
@@ -245,9 +246,9 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
       {(dureeTotal !== null || dureeAN !== null || dureeSenat !== null || passageCMP || nbVotes > 0) && (
         <div className="flex flex-wrap items-center gap-2 mb-6">
           {dureeTotal !== null && (
-            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted/60 text-sm">
-              <Clock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-              {dureeTotal} j{datePromulgation ? '' : ' (en cours)'}
+            <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${datePromulgation ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700' : 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-700'}`}>
+              <Clock className="h-3 w-3 shrink-0" />
+              {datePromulgation ? `Promulgué en ${dureeTotal} j` : `En cours depuis ${dureeTotal} j`}
             </span>
           )}
           {dureeAN !== null && (

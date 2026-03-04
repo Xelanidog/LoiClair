@@ -93,7 +93,7 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
     }
   }
   const toDays = (from: Date | null, to: Date | null) =>
-    from && to && to > from ? Math.round((to.getTime() - from.getTime()) / 86400000) : null;
+    from && to && to >= from ? Math.round((to.getTime() - from.getTime()) / 86400000) : null;
   const dateDepotDate = dossier?.date_depot ? new Date(dossier.date_depot) : null;
   const datePromDate = dossier?.date_promulgation ? new Date(dossier.date_promulgation) : null;
   const dureeTotal = toDays(dateDepotDate, datePromDate ?? new Date());
