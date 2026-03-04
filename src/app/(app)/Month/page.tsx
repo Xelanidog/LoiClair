@@ -5,12 +5,12 @@ import { supabase } from '@/lib/supabase';
 import {
   getMonthActes,
   getMonthScrutins,
-  getMonthDossiers,
   getDossierTitles,
   getScrutinActeMap,
   getDossierTimeline,
   getTextesByUids,
   getOrganesByUids,
+  getActeursByUids,
   getScrutinsByUids,
   getMonthMotionActes,
   getMotionDecisionActes,
@@ -58,6 +58,7 @@ export type FeedEvent = {
   // Auteur (pour DEPOT_TEXTE) / Provenance (pour DEPOT_RAPPORT)
   auteur: string | null;
   groupeAbrege: string | null;
+  auteurChambre: 'AN' | 'SENAT' | 'GOUV' | null;
   texteProvenance: string | null;
   organeCodeType: string | null;
   // Vote details (optional)
@@ -134,24 +135,85 @@ function emptyFeedEvent(overrides: Partial<FeedEvent> & Pick<FeedEvent, 'id' | '
     texteLien: null, texteAdopteUid: null, texteAdopteDenomination: null,
     texteAdopteTitre: null, texteAdopteLien: null, texteUrlAccessible: null,
     scrutinUid: null, scrutinTitre: null, statutConclusion: null, auteur: null,
-    groupeAbrege: null, texteProvenance: null, organeCodeType: null,
+    groupeAbrege: null, auteurChambre: null, texteProvenance: null, organeCodeType: null,
     ...overrides,
   };
+}
+
+/** Résout le groupe d'un acteur via acteur.groupe → organe, ou organes_refs en fallback */
+function resolveGroupeAbrege(
+  acteur: { groupe: string | null; organes_refs: string[] | null } | null | undefined,
+  organes: Map<string, { name: string; libelleAbrege: string | null; codeType: string | null }>,
+): string | null {
+  if (!acteur) return null;
+  if (acteur.groupe) return organes.get(acteur.groupe)?.libelleAbrege ?? null;
+  if (acteur.organes_refs?.length) {
+    for (const code of ['GP', 'GOUVERNEMENT'] as const) {
+      for (const ref of acteur.organes_refs) {
+        const org = organes.get(ref);
+        if (org?.codeType === code) return org.libelleAbrege;
+      }
+    }
+    return organes.get(acteur.organes_refs[0])?.libelleAbrege ?? null;
+  }
+  return null;
+}
+
+/** Résout la chambre d'origine d'un acteur (pour le badge AN/Sénat/Gouv) */
+function resolveAuteurChambre(
+  acteur: { groupe: string | null; organes_refs: string[] | null } | null | undefined,
+  organes: Map<string, { name: string; libelleAbrege: string | null; codeType: string | null }>,
+): 'AN' | 'SENAT' | 'GOUV' | null {
+  if (!acteur) return null;
+  for (const ref of acteur.organes_refs ?? []) {
+    if (organes.get(ref)?.codeType === 'GOUVERNEMENT') return 'GOUV';
+  }
+  for (const ref of acteur.organes_refs ?? []) {
+    const c = organes.get(ref)?.codeType;
+    if (c === 'ASSEMBLEE') return 'AN';
+    if (c === 'SENAT') return 'SENAT';
+  }
+  if (acteur.groupe && organes.get(acteur.groupe)?.codeType === 'GP') return 'AN';
+  return null;
 }
 
 /** Transforme un acte brut en FeedEvent enrichi */
 function acteToFeedEvent(
   a: ActeRow,
-  dossierInfo: { titre: string; auteur: string | null; groupeAbrege: string | null } | null,
-  textes: Map<string, { uid: string; denomination: string | null; titre_principal: string | null; lien_texte: string | null; provenance: string | null; url_accessible: boolean | null }>,
-  organes: Map<string, { name: string; codeType: string | null }>,
+  dossierInfo: { titre: string; initiateurActeurRef: string | null; groupeAbrege: string | null } | null,
+  textes: Map<string, { uid: string; denomination: string | null; titre_principal: string | null; lien_texte: string | null; provenance: string | null; statut_adoption: string | null; url_accessible: boolean | null; auteurs_refs: string[] | null }>,
+  organes: Map<string, { name: string; libelleAbrege: string | null; codeType: string | null }>,
   scrutinsMap: Map<string, { uid: string; titre: string | null; sort_libelle: string | null; synthese_pour: number | null; synthese_contre: number | null; synthese_abstentions: number | null; synthese_nombre_votants: number | null; synthese_non_votants: number | null; synthese_suffrages_requis: number | null }>,
+  acteurs: Map<string, { prenom: string; nom: string; groupe: string | null; organes_refs: string[] | null }>,
 ): FeedEvent {
   const type = classifyByLibelle(a.libelle_acte);
   const texte = a.textes_associes?.[0] ? textes.get(a.textes_associes[0]) : null;
   const texteAdopte = a.texte_adopte ? textes.get(a.texte_adopte) : null;
   const organeData = a.organe_ref ? organes.get(a.organe_ref) : null;
   const scrutin = a.vote_refs?.[0] ? scrutinsMap.get(a.vote_refs[0]) : null;
+
+  // ── Auteur & groupe ──────────────────────────────────────────────────────
+  const WITH_AUTEUR = new Set<FeedEventType>(['DEPOT_TEXTE', 'DECISION', 'NAVETTE', 'CMP_CONVOCATION', 'CMP_RAPPORT']);
+  let auteur: string | null = null;
+  let groupeAbrege: string | null = null;
+  let auteurChambre: 'AN' | 'SENAT' | 'GOUV' | null = null;
+
+  if (WITH_AUTEUR.has(type)) {
+    if (type === 'DEPOT_TEXTE') {
+      // Source principale : auteurs_refs du texte ; fallback : initiateur du dossier
+      const auteurUid = texte?.auteurs_refs?.[0] ?? dossierInfo?.initiateurActeurRef ?? null;
+      const acteurData = auteurUid ? acteurs.get(auteurUid) : null;
+      auteur = acteurData ? `${acteurData.prenom} ${acteurData.nom}`.trim() : null;
+      groupeAbrege = resolveGroupeAbrege(acteurData, organes);
+      auteurChambre = resolveAuteurChambre(acteurData, organes);
+    } else {
+      const auteurUid = dossierInfo?.initiateurActeurRef ?? null;
+      const acteurData = auteurUid ? acteurs.get(auteurUid) : null;
+      auteur = acteurData ? `${acteurData.prenom} ${acteurData.nom}`.trim() : null;
+      groupeAbrege = dossierInfo?.groupeAbrege ?? null;
+      auteurChambre = resolveAuteurChambre(acteurData, organes);
+    }
+  }
 
   return {
     id: `acte-${a.uid}`,
@@ -162,7 +224,8 @@ function acteToFeedEvent(
     dossierTitre: dossierInfo?.titre ?? null,
     libelleActe: a.libelle_acte,
     codeActe: a.code_acte,
-    organeName: organeData?.name ?? null,
+    // DEPOT_TEXTE : libelle_abrege de la chambre ; autres types : nom complet
+    organeName: type === 'DEPOT_TEXTE' ? (organeData?.libelleAbrege ?? organeData?.name ?? null) : (organeData?.name ?? null),
     texteUid: texte?.uid ?? null,
     texteDenomination: texte?.denomination ?? null,
     texteTitre: texte?.titre_principal ?? null,
@@ -175,8 +238,9 @@ function acteToFeedEvent(
     scrutinUid: scrutin?.uid ?? null,
     scrutinTitre: scrutin?.titre ?? null,
     statutConclusion: a.statut_conclusion,
-    auteur: (type === 'DEPOT_TEXTE' || type === 'DECISION' || type === 'NAVETTE' || type === 'CMP_CONVOCATION' || type === 'CMP_RAPPORT') ? (dossierInfo?.auteur ?? null) : null,
-    groupeAbrege: (type === 'DEPOT_TEXTE' || type === 'DECISION' || type === 'NAVETTE' || type === 'CMP_CONVOCATION' || type === 'CMP_RAPPORT') ? (dossierInfo?.groupeAbrege ?? null) : null,
+    auteur,
+    groupeAbrege,
+    auteurChambre,
     texteProvenance: texte?.provenance ?? null,
     organeCodeType: organeData?.codeType ?? null,
     votePour: scrutin?.synthese_pour ?? null,
@@ -250,18 +314,31 @@ export default async function MonthPage({
       (a.vote_refs ?? []).forEach((r: string) => scrutinUids.add(r));
     }
 
-    // 3. Batch resolve toutes les refs
-    const [textes, organes, scrutinsMap, dossierTitlesMap] = await Promise.all([
+    // 3. Batch resolve textes, scrutins, dossier
+    const [textes, scrutinsMap, dossierTitlesMap] = await Promise.all([
       getTextesByUids(supabase, [...texteUids]),
-      getOrganesByUids(supabase, [...organeUids]),
       getScrutinsByUids(supabase, [...scrutinUids]),
       getDossierTitles(supabase, [dossierParam]),
     ]);
 
     const dossierInfo = dossierTitlesMap.get(dossierParam);
 
-    // 4. Construire une map parent_uid → statut_conclusion pour les motions
-    // Les actes "Décision sur une motion de censure" (MOTION_VOTE) ont le statut ; on l'injecte dans leurs parents (MOTION_CENSURE)
+    // 4. Collecter les UIDs d'acteurs (auteurs des textes + initiateur du dossier)
+    const acteurUids = new Set<string>();
+    for (const texte of textes.values()) {
+      if (texte.auteurs_refs?.[0]) acteurUids.add(texte.auteurs_refs[0]);
+    }
+    if (dossierInfo?.initiateurActeurRef) acteurUids.add(dossierInfo.initiateurActeurRef);
+
+    // 5. Fetch acteurs, puis leurs organes de groupe
+    const acteurs = await getActeursByUids(supabase, [...acteurUids]);
+    for (const a of acteurs.values()) {
+      if (a.groupe) organeUids.add(a.groupe);
+      (a.organes_refs ?? []).forEach(r => organeUids.add(r));
+    }
+    const organes = await getOrganesByUids(supabase, [...organeUids]);
+
+    // 6. Construire une map parent_uid → statut_conclusion pour les motions
     const motionConclusionMap = new Map<string, string>();
     for (const a of timelineActes) {
       if (a.parent_uid && a.statut_conclusion && classifyByLibelle(a.libelle_acte) === 'MOTION_VOTE') {
@@ -269,7 +346,7 @@ export default async function MonthPage({
       }
     }
 
-    // 5. Transformer actes en FeedEvents (injecter les conclusions pour MOTION_CENSURE)
+    // 7. Transformer actes en FeedEvents
     const feedEvents: FeedEvent[] = timelineActes
       .map(a => {
         const type = classifyByLibelle(a.libelle_acte);
@@ -279,10 +356,10 @@ export default async function MonthPage({
           const scrutinFallback = a.vote_refs?.[0] ? scrutinsMap.get(a.vote_refs[0])?.sort_libelle ?? null : null;
           return acteToFeedEvent(
             { ...a, statut_conclusion: childConclusion ?? texteStatut ?? scrutinFallback },
-            dossierInfo ?? null, textes, organes, scrutinsMap,
+            dossierInfo ?? null, textes, organes, scrutinsMap, acteurs,
           );
         }
-        return acteToFeedEvent(a, dossierInfo ?? null, textes, organes, scrutinsMap);
+        return acteToFeedEvent(a, dossierInfo ?? null, textes, organes, scrutinsMap, acteurs);
       })
       .filter(e => e.type !== 'AUTRE' && e.type !== 'MOTION_VOTE');
 
@@ -320,24 +397,20 @@ export default async function MonthPage({
   const monthStartISO = queryStart.toISOString();
   const monthEndISO = queryEnd.toISOString();
 
-  // Fetch en parallele
-  const [actes, scrutins, newDossiers, motionActes] = await Promise.all([
+  // ── Round 1 : actes du mois ──
+  const [actes, scrutins, motionActes] = await Promise.all([
     getMonthActes(supabase, monthStartISO, monthEndISO),
     getMonthScrutins(supabase, monthStartISO, monthEndISO),
-    getMonthDossiers(supabase, monthStartISO, monthEndISO),
     getMonthMotionActes(supabase, monthStartISO, monthEndISO),
   ]);
 
-  // Dédupliquer les motions par uid (la base peut contenir des doublons)
   const uniqueMotions = [...new Map(motionActes.map(a => [a.uid, a])).values()];
-
-  // Filtrer les scrutins significatifs (JS seulement, pas de requête)
   const filteredScrutins = scrutins.filter(s => {
     const titre = (s.titre || '').toLowerCase();
     return titre.includes('ensemble') || titre.includes('motion de rejet');
   });
 
-  // ── Round 2 : résolutions intermédiaires (parallèle) ──
+  // ── Round 2 : résolutions intermédiaires ──
   const motionUids = uniqueMotions.map(a => a.uid);
   const scrutinUidsForMap = filteredScrutins.map(s => s.uid);
   const [motionDecisionMap, scrutinActeMap] = await Promise.all([
@@ -345,7 +418,7 @@ export default async function MonthPage({
     getScrutinActeMap(supabase, scrutinUidsForMap),
   ]);
 
-  // Collecter TOUS les UIDs depuis actes + motions + scrutinActeMap
+  // Collecter UIDs depuis actes + motions + scrutinActeMap
   const texteUids = new Set<string>();
   const organeUids = new Set<string>();
   const scrutinUidsFromActes = new Set<string>();
@@ -358,7 +431,6 @@ export default async function MonthPage({
     (a.vote_refs ?? []).forEach((r: string) => scrutinUidsFromActes.add(r));
     if (a.dossier_uid) dossierUidsSet.add(a.dossier_uid);
   }
-
   for (const acte of scrutinActeMap.values()) {
     if (acte.dossier_uid) dossierUidsSet.add(acte.dossier_uid);
     if (acte.organe_ref) organeUids.add(acte.organe_ref);
@@ -367,36 +439,42 @@ export default async function MonthPage({
     (acte.vote_refs ?? []).forEach(r => scrutinUidsFromActes.add(r));
   }
 
-  // ── Round 3 : résolution unique de toutes les refs (parallèle) ──
-  const [dossierTitles, textes, organes, scrutinsMapFromActes] = await Promise.all([
+  // ── Round 3 : textes, scrutins, dossiers ──
+  const [dossierTitles, textes, scrutinsMapFromActes] = await Promise.all([
     getDossierTitles(supabase, [...dossierUidsSet]),
     getTextesByUids(supabase, [...texteUids]),
-    getOrganesByUids(supabase, [...organeUids]),
     getScrutinsByUids(supabase, [...scrutinUidsFromActes]),
   ]);
 
-  // Injecter les scrutins filtrés (données déjà disponibles depuis round 1)
   for (const s of filteredScrutins) {
-    if (!scrutinsMapFromActes.has(s.uid)) {
-      scrutinsMapFromActes.set(s.uid, s);
-    }
+    if (!scrutinsMapFromActes.has(s.uid)) scrutinsMapFromActes.set(s.uid, s);
   }
 
-  // Transformer les actes en FeedEvents enrichis (filtrer AUTRE)
+  // ── Round 4 : acteurs (auteurs des textes + initiateurs des dossiers) ──
+  const acteurUids = new Set<string>();
+  for (const texte of textes.values()) {
+    if (texte.auteurs_refs?.[0]) acteurUids.add(texte.auteurs_refs[0]);
+  }
+  for (const d of dossierTitles.values()) {
+    if (d.initiateurActeurRef) acteurUids.add(d.initiateurActeurRef);
+  }
+  const acteurs = await getActeursByUids(supabase, [...acteurUids]);
+
+  // Ajouter les organes de groupe des acteurs au batch organes
+  for (const a of acteurs.values()) {
+    if (a.groupe) organeUids.add(a.groupe);
+    (a.organes_refs ?? []).forEach(r => organeUids.add(r));
+  }
+  const organes = await getOrganesByUids(supabase, [...organeUids]);
+
+  // ── Transformation en FeedEvents ──
   const acteEvents: FeedEvent[] = actes
     .map(a => {
       const dossier = a.dossier_uid ? dossierTitles.get(a.dossier_uid) : null;
-      return acteToFeedEvent(
-        a,
-        dossier ?? null,
-        textes,
-        organes,
-        scrutinsMapFromActes,
-      );
+      return acteToFeedEvent(a, dossier ?? null, textes, organes, scrutinsMapFromActes, acteurs);
     })
     .filter(e => e.type !== 'AUTRE');
 
-  // Scrutins dont l'acte lié n'est PAS déjà dans acteEvents (évite les doublons)
   const acteUidSet = new Set(actes.map(a => a.uid));
   const scrutinEvents: FeedEvent[] = filteredScrutins
     .filter(s => {
@@ -407,9 +485,8 @@ export default async function MonthPage({
       const acte = scrutinActeMap.get(s.uid);
       if (acte) {
         const dossier = acte.dossier_uid ? dossierTitles.get(acte.dossier_uid) : null;
-        return acteToFeedEvent(acte, dossier ?? null, textes, organes, scrutinsMapFromActes);
+        return acteToFeedEvent(acte, dossier ?? null, textes, organes, scrutinsMapFromActes, acteurs);
       }
-      // Fallback : scrutin sans acte lié (rare, ex: motion de rejet sans dossier)
       return emptyFeedEvent({
         id: `scrutin-${s.uid}`,
         type: 'DECISION',
@@ -422,29 +499,6 @@ export default async function MonthPage({
       });
     });
 
-  // Transformer les nouveaux dossiers en FeedEvents DEPOT_TEXTE
-  // (seulement ceux qui ne sont pas deja dans acteEvents ou motionEvents)
-  const acteDossierUids = new Set(acteEvents.map(e => e.dossierUid).filter(Boolean));
-  const motionDossierUids = new Set(uniqueMotions.map(a => a.dossier_uid).filter(Boolean));
-  const dossierEvents: FeedEvent[] = newDossiers
-    .filter(d => !acteDossierUids.has(d.uid) && !motionDossierUids.has(d.uid))
-    .map(d => {
-      const acteurRef = d.initiateur_acteur_ref as unknown as { nom: string; prenom: string } | null;
-      return emptyFeedEvent({
-        id: `dossier-${d.uid}`,
-        type: 'DEPOT_TEXTE',
-        date: d.date_depot,
-        titre: d.titre,
-        dossierUid: d.uid,
-        dossierTitre: d.titre,
-        libelleActe: "1er dépôt d'une initiative.",
-        auteur: acteurRef ? `${acteurRef.prenom} ${acteurRef.nom}` : null,
-        groupeAbrege: d.initiateur_groupe_libelle ?? null,
-      });
-    });
-
-  // Construire les FeedEvents des motions de censure
-  // Chaîne de fallback pour le statut : enfant statut_conclusion → texte statut_adoption → scrutin sort_libelle
   const motionEvents: FeedEvent[] = uniqueMotions.map(a => {
     const dossier = a.dossier_uid ? dossierTitles.get(a.dossier_uid) : null;
     const childConclusion = motionDecisionMap.get(a.uid) ?? null;
@@ -452,17 +506,14 @@ export default async function MonthPage({
     const scrutinFallback = a.vote_refs?.[0] ? scrutinsMapFromActes.get(a.vote_refs[0])?.sort_libelle ?? null : null;
     return acteToFeedEvent(
       { ...a, statut_conclusion: childConclusion ?? texteStatut ?? scrutinFallback },
-      dossier ?? null,
-      textes,
-      organes,
-      scrutinsMapFromActes,
+      dossier ?? null, textes, organes, scrutinsMapFromActes, acteurs,
     );
   });
 
-  // Fusionner tous les evenements (dédupliquer par id, priorité : actes > scrutins > dossiers > motions)
+  // Fusionner (priorité : actes > scrutins > motions)
   const seenIds = new Set<string>();
   const allEvents: FeedEvent[] = [];
-  for (const event of [...acteEvents, ...scrutinEvents, ...dossierEvents, ...motionEvents]) {
+  for (const event of [...acteEvents, ...scrutinEvents, ...motionEvents]) {
     if (!seenIds.has(event.id)) {
       seenIds.add(event.id);
       allEvents.push(event);

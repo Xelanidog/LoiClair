@@ -10,6 +10,7 @@ import GenericFilter from '@/components/GenericFilter';
 import ResetButton from '@/components/ResetButton';
 import { GroupeStatsTable } from '@/components/GroupeStatsTable';
 import { GroupeBarChart } from '@/components/ui/GroupeBarChart';
+import { ParlementairesTable } from '@/components/ParlementairesTable';
 
 export default async function KpisPage({ 
   searchParams 
@@ -62,11 +63,23 @@ const actesDelaisPromise = supabase
 // 4. Promesse pour le type de chambre des organes (groupes politiques)
 const organesChambrePromise = supabase
   .from('organes')
-  .select('uid, code_type')
+  .select('uid, code_type, libelle_abrege, libelle')
   .in('code_type', ['GP', 'GROUPESENAT', 'GOUVERNEMENT']);
 
-// 5. On attend les QUATRE en parallèle
-const [typesResult, groupesResult, actesDelaisResult, organesChambreResult] = await Promise.all([typesPromise, groupesPromise, actesDelaisPromise, organesChambrePromise]);
+// 5. Textes avec auteurs/rapporteurs pour le classement des parlementaires
+const textesImplicationPromise = supabase
+  .from('textes')
+  .select('auteurs_refs, rapporteurs_refs')
+  .or('auteurs_refs.not.is.null,rapporteurs_refs.not.is.null');
+
+// 6. Acteurs parlementaires actuels
+const acteursParlemPromise = supabase
+  .from('acteurs')
+  .select('uid, prenom, nom, groupe, est_depute_actuel, est_senateur_actuel')
+  .or('est_depute_actuel.eq.true,est_senateur_actuel.eq.true');
+
+// On attend les SIX en parallèle
+const [typesResult, groupesResult, actesDelaisResult, organesChambreResult, textesImplicationResult, acteursParlemResult] = await Promise.all([typesPromise, groupesPromise, actesDelaisPromise, organesChambrePromise, textesImplicationPromise, acteursParlemPromise]);
 
 
 // ────────────────────────────────────────────────
@@ -343,6 +356,33 @@ try {
 } catch (error) {
   console.error('❌ Erreur calcul délais chambre :', error);
 }
+
+// ────────────────────────────────────────────────────────────────
+// Classement des parlementaires les plus actifs (auteurs + rapporteurs)
+// ────────────────────────────────────────────────────────────────
+const organesNomMap = new Map<string, string>(
+  (organesChambreResult.data || []).map(o => [o.uid, o.libelle || o.libelle_abrege || ''])
+);
+
+const auteurCount = new Map<string, number>();
+const rappCount = new Map<string, number>();
+for (const t of (textesImplicationResult.data || [])) {
+  for (const uid of (t.auteurs_refs || [])) auteurCount.set(uid, (auteurCount.get(uid) || 0) + 1);
+  for (const uid of (t.rapporteurs_refs || [])) rappCount.set(uid, (rappCount.get(uid) || 0) + 1);
+}
+
+const topParlementaires = (acteursParlemResult.data || [])
+  .map(a => ({
+    nom: `${a.prenom} ${a.nom}`,
+    chambre: a.est_depute_actuel ? 'AN' : 'Sénat',
+    groupe: organesNomMap.get(a.groupe) || '',
+    nb_auteur: auteurCount.get(a.uid) || 0,
+    nb_rapporteur: rappCount.get(a.uid) || 0,
+    total: (auteurCount.get(a.uid) || 0) + (rappCount.get(a.uid) || 0),
+  }))
+  .filter(a => a.total > 0)
+  .sort((a, b) => b.total - a.total)
+  .slice(0, 20);
 
 // Données graphique
 const chartData = statsData.historique.slice(-24).map(({ mois, count }) => {
@@ -667,6 +707,17 @@ return (
             Comment c'est calculé →
           </Link>
           <GroupeStatsTable data={groupeStats} />
+        </div>
+      )}
+
+      {/* Parlementaires les plus actifs */}
+      {topParlementaires.length > 0 && (
+        <div className="mt-8">
+          <h2 className="text-4xl font-semibold mb-2">Parlementaires les plus actifs</h2>
+          <p className="text-muted-foreground mb-6">
+            Classement des 20 députés et sénateurs les plus impliqués dans les textes législatifs, en tant qu'auteur/co-auteur ou rapporteur.
+          </p>
+          <ParlementairesTable data={topParlementaires} />
         </div>
       )}
     </div>

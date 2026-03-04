@@ -143,22 +143,23 @@ export async function getScrutinActeMap(supabase: SupabaseClient, scrutinUids: s
 
 // Récupère les titres des dossiers liés aux actes (batch) + initiateur
 export async function getDossierTitles(supabase: SupabaseClient, dossierUids: string[]) {
-  if (dossierUids.length === 0) return new Map<string, { titre: string; uid: string; statut_final: string | null; procedure_libelle: string | null; auteur: string | null; groupeAbrege: string | null }>();
+  if (dossierUids.length === 0) return new Map<string, { titre: string; uid: string; statut_final: string | null; procedure_libelle: string | null; initiateurActeurRef: string | null; groupeAbrege: string | null }>();
 
   const { data, error } = await supabase
     .from('dossiers_legislatifs')
-    .select('uid, titre, statut_final, procedure_libelle, initiateur_acteur_ref(nom, prenom), initiateur_groupe_libelle')
+    .select('uid, titre, statut_final, procedure_libelle, initiateur_acteur_ref, initiateur_groupe_libelle')
     .in('uid', dossierUids);
 
   if (error) console.error('Erreur titres dossiers:', error);
 
-  const map = new Map<string, { titre: string; uid: string; statut_final: string | null; procedure_libelle: string | null; auteur: string | null; groupeAbrege: string | null }>();
+  const map = new Map<string, { titre: string; uid: string; statut_final: string | null; procedure_libelle: string | null; initiateurActeurRef: string | null; groupeAbrege: string | null }>();
   for (const d of data ?? []) {
-    const acteurRef = d.initiateur_acteur_ref as unknown as { nom: string; prenom: string } | null;
-    const acteur = acteurRef ?? null;
     map.set(d.uid, {
-      ...d,
-      auteur: acteur ? `${acteur.prenom} ${acteur.nom}` : null,
+      titre: d.titre,
+      uid: d.uid,
+      statut_final: d.statut_final,
+      procedure_libelle: d.procedure_libelle,
+      initiateurActeurRef: d.initiateur_acteur_ref ?? null,
       groupeAbrege: d.initiateur_groupe_libelle ?? null,
     });
   }
@@ -179,16 +180,16 @@ export async function getDossierTimeline(supabase: SupabaseClient, dossierUid: s
 }
 
 export async function getTextesByUids(supabase: SupabaseClient, uids: string[]) {
-  if (uids.length === 0) return new Map<string, { uid: string; denomination: string | null; titre_principal: string | null; lien_texte: string | null; provenance: string | null; statut_adoption: string | null; url_accessible: boolean | null }>();
+  if (uids.length === 0) return new Map<string, { uid: string; denomination: string | null; titre_principal: string | null; lien_texte: string | null; provenance: string | null; statut_adoption: string | null; url_accessible: boolean | null; auteurs_refs: string[] | null }>();
 
   const { data, error } = await supabase
     .from('textes')
-    .select('uid, denomination, titre_principal, lien_texte, provenance, statut_adoption, url_accessible')
+    .select('uid, denomination, titre_principal, lien_texte, provenance, statut_adoption, url_accessible, auteurs_refs')
     .in('uid', uids);
 
   if (error) console.error('Erreur textes batch:', error);
 
-  const map = new Map<string, { uid: string; denomination: string | null; titre_principal: string | null; lien_texte: string | null; provenance: string | null; statut_adoption: string | null; url_accessible: boolean | null }>();
+  const map = new Map<string, { uid: string; denomination: string | null; titre_principal: string | null; lien_texte: string | null; provenance: string | null; statut_adoption: string | null; url_accessible: boolean | null; auteurs_refs: string[] | null }>();
   for (const t of data ?? []) {
     map.set(t.uid, t);
   }
@@ -196,7 +197,7 @@ export async function getTextesByUids(supabase: SupabaseClient, uids: string[]) 
 }
 
 export async function getOrganesByUids(supabase: SupabaseClient, uids: string[]) {
-  if (uids.length === 0) return new Map<string, { name: string; codeType: string | null }>();
+  if (uids.length === 0) return new Map<string, { name: string; libelleAbrege: string | null; codeType: string | null }>();
 
   const { data, error } = await supabase
     .from('organes')
@@ -205,10 +206,27 @@ export async function getOrganesByUids(supabase: SupabaseClient, uids: string[])
 
   if (error) console.error('Erreur organes batch:', error);
 
-  const map = new Map<string, { name: string; codeType: string | null }>();
+  const map = new Map<string, { name: string; libelleAbrege: string | null; codeType: string | null }>();
   for (const o of data ?? []) {
     const name = o.libelle || o.libelle_abrege;
-    if (name) map.set(o.uid, { name, codeType: o.code_type ?? null });
+    if (name) map.set(o.uid, { name, libelleAbrege: o.libelle_abrege ?? null, codeType: o.code_type ?? null });
+  }
+  return map;
+}
+
+export async function getActeursByUids(supabase: SupabaseClient, uids: string[]) {
+  if (uids.length === 0) return new Map<string, { prenom: string; nom: string; groupe: string | null; organes_refs: string[] | null }>();
+
+  const { data, error } = await supabase
+    .from('acteurs')
+    .select('uid, prenom, nom, groupe, organes_refs')
+    .in('uid', uids);
+
+  if (error) console.error('Erreur acteurs batch:', error);
+
+  const map = new Map<string, { prenom: string; nom: string; groupe: string | null; organes_refs: string[] | null }>();
+  for (const a of data ?? []) {
+    map.set(a.uid, { prenom: a.prenom ?? '', nom: a.nom ?? '', groupe: a.groupe ?? null, organes_refs: a.organes_refs ?? null });
   }
   return map;
 }

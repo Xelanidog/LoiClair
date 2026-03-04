@@ -415,6 +415,22 @@ function CardTitle({ group, e }: { group: GroupedFeedEvent; e: FeedEvent }) {
   );
 }
 
+// ── Chambre badge ────────────────────────────────────────────
+
+function ChambreBadge({ chambre }: { chambre: 'AN' | 'SENAT' | 'GOUV' }) {
+  const styles = {
+    AN:    "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
+    SENAT: "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300",
+    GOUV:  "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
+  };
+  const labels = { AN: "AN", SENAT: "Sénat", GOUV: "Gouv." };
+  return (
+    <span className={cn("text-[9px] font-semibold px-1 py-0.5 rounded uppercase leading-none shrink-0", styles[chambre])}>
+      {labels[chambre]}
+    </span>
+  );
+}
+
 // ── Context info helper ─────────────────────────────────────
 
 function getContextInfo(type: FeedEventType, e: FeedEvent, multi: boolean) {
@@ -423,6 +439,7 @@ function getContextInfo(type: FeedEventType, e: FeedEvent, multi: boolean) {
     return <>
       <span className="font-bold text-foreground shrink-0">{e.auteur}</span>
       {e.groupeAbrege && <span className="font-normal shrink-0">/{e.groupeAbrege}</span>}
+      {e.auteurChambre && <ChambreBadge chambre={e.auteurChambre} />}
     </>;
   }
   if (type === "DECISION") {
@@ -443,6 +460,28 @@ function getContextInfo(type: FeedEventType, e: FeedEvent, multi: boolean) {
     return inst ? <span className="shrink-0">/{inst}</span> : null;
   }
   return e.organeName ? <span className="truncate">{e.organeName}</span> : null;
+}
+
+// ── Debug accordion ─────────────────────────────────────────
+
+function DebugAccordion({ group }: { group: GroupedFeedEvent }) {
+  const acteUids = group.events.map(e => e.id.replace(/^(acte|scrutin)-/, ''));
+  const texteUids = [...new Set(group.events.map(e => e.texteUid).filter(Boolean))];
+  const scrutinUids = [...new Set(group.events.map(e => e.scrutinUid).filter(Boolean))];
+  const codeActes = [...new Set(group.events.map(e => e.codeActe).filter(Boolean))];
+
+  return (
+    <details className="mt-2 text-[10px] text-muted-foreground border border-dashed border-muted-foreground/30 rounded px-2 py-1">
+      <summary className="cursor-pointer select-none font-mono opacity-50 hover:opacity-100">🐛 debug</summary>
+      <div className="mt-1 space-y-0.5 font-mono">
+        <div><span className="opacity-50">dossier: </span>{group.dossierUid ?? '—'}</div>
+        <div><span className="opacity-50">actes:   </span>{acteUids.join(', ') || '—'}</div>
+        {codeActes.length > 0 && <div><span className="opacity-50">codes:   </span>{codeActes.join(', ')}</div>}
+        {texteUids.length > 0 && <div><span className="opacity-50">textes:  </span>{texteUids.join(', ')}</div>}
+        {scrutinUids.length > 0 && <div><span className="opacity-50">scrutins:</span>{scrutinUids.join(', ')}</div>}
+      </div>
+    </details>
+  );
 }
 
 // ── Grouped event card (unifié style X) ─────────────────────
@@ -504,6 +543,8 @@ function GroupedEventCard({ group, index }: { group: GroupedFeedEvent; index: nu
           showResumeIA={!multi && group.type !== "CC_SAISINE" && group.type !== "CMP_CONVOCATION"}
           texteUrlAccessible={e.texteUrlAccessible}
         />
+
+        <DebugAccordion group={group} />
       </div>
     </motion.article>
   );
