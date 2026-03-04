@@ -1,15 +1,17 @@
 import Link from "next/link";
-import { ArrowRight, RefreshCw, Sparkles, BarChart2, Search, Vote, BookOpen, MessageSquare, TrendingDown, Newspaper } from "lucide-react";
+import { ArrowRight, RefreshCw, Sparkles, BarChart2, Search, Vote, BookOpen, MessageSquare, TrendingDown, Newspaper, Bell, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LastUpdateBadge } from "@/components/LastUpdateBadge";
 
 const features = [
-  { icon: RefreshCw, title: "Données en temps réel", desc: "Mise à jour quotidienne depuis les données officielles de l'Assemblée nationale." },
+  { icon: RefreshCw, title: "Données en temps réel", desc: "Mise à jour quotidienne depuis les sources officielles : Assemblée nationale, Sénat et Légifrance." },
   { icon: Sparkles, title: "Résumés par l'IA", desc: "Chaque texte législatif traduit en langage courant, sans jargon juridique." },
   { icon: BarChart2, title: "Statistiques parlementaires", desc: "Qui vote quoi, parité, présence en séance — tout en chiffres." },
   { icon: Search, title: "Trouver vos élus", desc: "Retrouvez et contactez votre député, sénateur ou ministre en secondes." },
   { icon: Vote, title: "Votez comme un parlementaire", desc: "Donnez votre avis et comparez vos votes à ceux du Parlement." },
   { icon: Newspaper, title: "Fil d'actualité", desc: "Chaque mois, l'essentiel de l'activité parlementaire résumé en un coup d'œil." },
+  { icon: Bell, title: "Alertes personnalisées", desc: "Suivez un texte ou un élu et recevez une alerte dès qu'il y a du nouveau." },
+  { icon: Mail, title: "Newsletter hebdomadaire IA", desc: "Chaque semaine, une newsletter générée par IA pour déchiffrer toute l'activité parlementaire en un email." },
 ];
 
 const stats = [
@@ -45,7 +47,7 @@ export default async function PourquoiPage() {
           <div className="flex flex-col items-center gap-3 pt-2">
             <Link href="/Month">
               <Button size="lg" className="rounded-full gap-2 hover:scale-105 hover:shadow-lg transition-all">
-                Explorer l&apos;actualité parlementaire
+                Fil d&apos;actualité parlementaire
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
@@ -56,10 +58,10 @@ export default async function PourquoiPage() {
 
         {/* Features */}
         <section className="space-y-6">
-          <h2 className="text-xl font-semibold text-center">Ce que vous pouvez faire</h2>
-          <div className="grid grid-cols-1 divide-y md:grid-cols-3 md:divide-y-0 md:divide-x border rounded-xl overflow-hidden">
+          <h2 className="text-xl font-semibold text-center">Votre boîte à outils citoyenne</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {features.map(({ icon: Icon, title, desc }) => (
-              <div key={title} className="flex flex-col gap-3 p-6 bg-muted/20 hover:bg-muted/50 transition-colors">
+              <div key={title} className="flex flex-col gap-3 p-5 rounded-xl border bg-muted/20 hover:bg-muted/50 transition-colors">
                 <Icon className="h-4 w-4 text-muted-foreground" />
                 <h3 className="font-semibold text-sm">{title}</h3>
                 <p className="text-muted-foreground text-xs leading-relaxed">{desc}</p>
