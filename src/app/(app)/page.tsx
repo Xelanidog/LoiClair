@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, RefreshCw, Sparkles, BarChart2, Search, Vote, BookOpen, MessageSquare, TrendingDown, Newspaper } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { LastUpdateBadge } from "@/components/LastUpdateBadge";
 
 const features = [
   { icon: RefreshCw, title: "Données en temps réel", desc: "Mise à jour quotidienne depuis les données officielles de l'Assemblée nationale." },
@@ -23,10 +24,9 @@ const obstacles = [
   { icon: TrendingDown, num: "03", title: "Crise de confiance", desc: "Quand on ne comprend rien, on finit par ne plus croire. Et on arrête de voter." },
 ];
 
-export default function PourquoiPage() {
+export default async function PourquoiPage() {
   return (
-    <div className="max-h-[calc(100vh-theme(spacing.16))] overflow-y-auto">
-      <div className="max-w-7xl mx-auto px-6 py-12 space-y-20">
+    <div className="max-w-7xl mx-auto px-6 py-12 space-y-20">
 
         {/* Hero */}
         <section className="text-center space-y-6">
@@ -42,13 +42,14 @@ export default function PourquoiPage() {
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto leading-relaxed">
             LoiClair traduit l'activité législative française en langage humain.
           </p>
-          <div className="flex items-center justify-center gap-4 pt-2">
+          <div className="flex flex-col items-center gap-3 pt-2">
             <Link href="/Month">
               <Button size="lg" className="rounded-full gap-2 hover:scale-105 hover:shadow-lg transition-all">
-                Découvrir LoiClair
+                Explorer l&apos;actualité parlementaire
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
+            <LastUpdateBadge />
           </div>
           
         </section>
@@ -122,7 +123,6 @@ export default function PourquoiPage() {
           </Link>
         </section>
 
-      </div>
     </div>
   );
 }

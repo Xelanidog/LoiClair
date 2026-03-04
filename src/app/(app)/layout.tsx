@@ -2,8 +2,9 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import Sidebar from "@/components/Sidebar"
 import MobileNav from "@/components/MobileNav"
+import { LastUpdateBadge } from "@/components/LastUpdateBadge"
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+export default async function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex flex-col min-h-screen">
       <MobileNav />
@@ -18,11 +19,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </main>
       </div>
       <footer className="border-t py-5 text-center text-xs text-muted-foreground bg-muted/40">
-        <div className="container mx-auto flex items-center justify-center gap-2">
+        <div className="container mx-auto flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
           <Link href="/about">
             <Button variant="ghost" className="text-xs">À propos de LoiClair</Button>
           </Link>
           <span>Données publiques officielles • © {new Date().getFullYear()}</span>
+          <span>•</span>
+          <LastUpdateBadge />
         </div>
       </footer>
     </div>
