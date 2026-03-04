@@ -62,6 +62,9 @@ export type FeedEvent = {
   texteProvenance: string | null;
   texteHasTomes: boolean | null;
   organeCodeType: string | null;
+  rapporteurName: string | null;
+  rapporteurGroupe: string | null;
+  rapporteurIsMultiple: boolean | null;
   // Vote details (optional)
   votePour?: number | null;
   voteContre?: number | null;
@@ -137,6 +140,7 @@ function emptyFeedEvent(overrides: Partial<FeedEvent> & Pick<FeedEvent, 'id' | '
     texteAdopteTitre: null, texteAdopteLien: null, texteUrlAccessible: null,
     scrutinUid: null, scrutinTitre: null, statutConclusion: null, auteur: null,
     groupeAbrege: null, auteurChambre: null, texteProvenance: null, texteHasTomes: null, organeCodeType: null,
+    rapporteurName: null, rapporteurGroupe: null, rapporteurIsMultiple: null,
     ...overrides,
   };
 }
@@ -182,7 +186,7 @@ function resolveAuteurChambre(
 function acteToFeedEvent(
   a: ActeRow,
   dossierInfo: { titre: string; initiateurActeurRef: string | null; groupeAbrege: string | null } | null,
-  textes: Map<string, { uid: string; denomination: string | null; titre_principal: string | null; lien_texte: string | null; provenance: string | null; statut_adoption: string | null; url_accessible: boolean | null; auteurs_refs: string[] | null }>,
+  textes: Map<string, { uid: string; denomination: string | null; titre_principal: string | null; lien_texte: string | null; provenance: string | null; statut_adoption: string | null; url_accessible: boolean | null; auteurs_refs: string[] | null; has_tomes: boolean | null; rapporteurs_refs: string[] | null }>,
   organes: Map<string, { name: string; libelleAbrege: string | null; codeType: string | null }>,
   scrutinsMap: Map<string, { uid: string; titre: string | null; sort_libelle: string | null; synthese_pour: number | null; synthese_contre: number | null; synthese_abstentions: number | null; synthese_nombre_votants: number | null; synthese_non_votants: number | null; synthese_suffrages_requis: number | null }>,
   acteurs: Map<string, { prenom: string; nom: string; groupe: string | null; organes_refs: string[] | null }>,
@@ -198,6 +202,9 @@ function acteToFeedEvent(
   let auteur: string | null = null;
   let groupeAbrege: string | null = null;
   let auteurChambre: 'AN' | 'SENAT' | 'GOUV' | null = null;
+  let rapporteurName: string | null = null;
+  let rapporteurGroupe: string | null = null;
+  let rapporteurIsMultiple: boolean | null = null;
 
   if (WITH_AUTEUR.has(type)) {
     if (type === 'DEPOT_TEXTE') {
@@ -213,6 +220,17 @@ function acteToFeedEvent(
       auteur = acteurData ? `${acteurData.prenom} ${acteurData.nom}`.trim() : null;
       groupeAbrege = dossierInfo?.groupeAbrege ?? null;
       auteurChambre = resolveAuteurChambre(acteurData, organes);
+    }
+  }
+
+  // ── Rapporteur (DEPOT_RAPPORT + CMP_RAPPORT) ────────────────────────────
+  if (type === 'DEPOT_RAPPORT' || type === 'CMP_RAPPORT') {
+    const rapporteurUid = texte?.rapporteurs_refs?.[0] ?? null;
+    const rapporteurData = rapporteurUid ? acteurs.get(rapporteurUid) : null;
+    if (rapporteurData) {
+      rapporteurName = `${rapporteurData.prenom} ${rapporteurData.nom}`.trim();
+      rapporteurGroupe = resolveGroupeAbrege(rapporteurData, organes);
+      rapporteurIsMultiple = (texte?.rapporteurs_refs?.length ?? 0) > 1;
     }
   }
 
@@ -245,6 +263,9 @@ function acteToFeedEvent(
     texteProvenance: texte?.provenance ?? null,
     texteHasTomes: texte?.has_tomes ?? null,
     organeCodeType: organeData?.codeType ?? null,
+    rapporteurName,
+    rapporteurGroupe,
+    rapporteurIsMultiple,
     votePour: scrutin?.synthese_pour ?? null,
     voteContre: scrutin?.synthese_contre ?? null,
     voteAbstentions: scrutin?.synthese_abstentions ?? null,
@@ -325,10 +346,11 @@ export default async function MonthPage({
 
     const dossierInfo = dossierTitlesMap.get(dossierParam);
 
-    // 4. Collecter les UIDs d'acteurs (auteurs des textes + initiateur du dossier)
+    // 4. Collecter les UIDs d'acteurs (auteurs + rapporteurs des textes + initiateur du dossier)
     const acteurUids = new Set<string>();
     for (const texte of textes.values()) {
       if (texte.auteurs_refs?.[0]) acteurUids.add(texte.auteurs_refs[0]);
+      if (texte.rapporteurs_refs?.[0]) acteurUids.add(texte.rapporteurs_refs[0]);
     }
     if (dossierInfo?.initiateurActeurRef) acteurUids.add(dossierInfo.initiateurActeurRef);
 
@@ -452,10 +474,11 @@ export default async function MonthPage({
     if (!scrutinsMapFromActes.has(s.uid)) scrutinsMapFromActes.set(s.uid, s);
   }
 
-  // ── Round 4 : acteurs (auteurs des textes + initiateurs des dossiers) ──
+  // ── Round 4 : acteurs (auteurs + rapporteurs des textes + initiateurs des dossiers) ──
   const acteurUids = new Set<string>();
   for (const texte of textes.values()) {
     if (texte.auteurs_refs?.[0]) acteurUids.add(texte.auteurs_refs[0]);
+    if (texte.rapporteurs_refs?.[0]) acteurUids.add(texte.rapporteurs_refs[0]);
   }
   for (const d of dossierTitles.values()) {
     if (d.initiateurActeurRef) acteurUids.add(d.initiateurActeurRef);

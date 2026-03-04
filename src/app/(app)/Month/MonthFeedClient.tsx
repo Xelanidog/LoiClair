@@ -428,10 +428,53 @@ function CardTitle({ group, e }: { group: GroupedFeedEvent; e: FeedEvent }) {
   }
   // DEPOT_RAPPORT / CMP_RAPPORT : single → titre du rapport, multi → titre du dossier
   if (t === "DEPOT_RAPPORT" || t === "CMP_RAPPORT") {
-    const titre = group.events.length > 1
-      ? (group.dossierTitre || e.titre)
-      : (e.texteTitre || e.texteDenomination || group.dossierTitre || e.titre);
-    return <p className="text-sm leading-snug mb-0.5">{titre}</p>;
+    const isSingle = group.events.length === 1;
+    const titre = isSingle
+      ? (e.texteTitre || e.texteDenomination || group.dossierTitre || e.titre)
+      : (group.dossierTitre || e.titre);
+
+    // Ligne rapporteur(s)
+    let rapporteurLine: React.ReactNode = null;
+    if (isSingle && e.rapporteurName) {
+      rapporteurLine = (
+        <p className="text-xs text-muted-foreground mt-2">
+          <span>Rapporteur(s) : </span>
+          <span className="font-bold text-foreground">{e.rapporteurName}</span>
+          {e.rapporteurGroupe && <span>/{e.rapporteurGroupe}</span>}
+          {e.rapporteurIsMultiple && <span> (et collègues)</span>}
+        </p>
+      );
+    } else if (!isSingle && t === "CMP_RAPPORT") {
+      const an = group.events.find(ev => ev.organeCodeType === "ASSEMBLEE");
+      const sn = group.events.find(ev => ev.organeCodeType === "SENAT");
+      if (an?.rapporteurName || sn?.rapporteurName) {
+        rapporteurLine = (
+          <p className="text-xs text-muted-foreground mt-2 flex flex-wrap gap-x-3">
+            {an?.rapporteurName && (
+              <span>
+                Assemblée : <span className="font-bold text-foreground">{an.rapporteurName}</span>
+                {an.rapporteurGroupe && <span>/{an.rapporteurGroupe}</span>}
+                {an.rapporteurIsMultiple && <span> (et collègues)</span>}
+              </span>
+            )}
+            {sn?.rapporteurName && (
+              <span>
+                Sénat : <span className="font-bold text-foreground">{sn.rapporteurName}</span>
+                {sn.rapporteurGroupe && <span>/{sn.rapporteurGroupe}</span>}
+                {sn.rapporteurIsMultiple && <span> (et collègues)</span>}
+              </span>
+            )}
+          </p>
+        );
+      }
+    }
+
+    return (
+      <>
+        <p className="text-sm leading-snug mb-0.5">{titre}</p>
+        {rapporteurLine}
+      </>
+    );
   }
   // DECISION : juste le titre du texte
   if (t === "DECISION") {

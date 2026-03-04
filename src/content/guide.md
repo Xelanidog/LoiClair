@@ -42,7 +42,7 @@ Chaque carte affiche :
 Selon le type d'événement, des informations supplémentaires apparaissent :
 
 - **Décisions et motions** : un badge de statut (adopté, rejeté…) et une barre de vote montrant la répartition pour/contre/abstentions sur les 577 sièges. Survolez la barre pour voir le détail chiffré.
-- **Rapports** : le nom de la commission et la provenance du rapport.
+- **Rapports** : le nom de la commission et la provenance du rapport. Lorsque l'information est disponible, le **nom du rapporteur principal** et son groupe politique sont affichés sous le titre. Si plusieurs rapporteurs ont signé le rapport, la mention « (et collègues) » est ajoutée. Pour les rapports de Commission mixte paritaire (CMP) regroupant un rapport de chaque chambre, les rapporteurs de l'**Assemblée** et du **Sénat** sont indiqués séparément.
 - **Promulgations** : une mention « Publiée au Journal officiel ».
 
 Quand plusieurs événements du même type concernent le même dossier à la même date, ils sont regroupés dans une seule carte avec un compteur (×2, ×3…).
