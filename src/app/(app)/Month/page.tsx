@@ -160,7 +160,7 @@ function resolveGroupeAbrege(
     for (const code of ['GP', 'GOUVERNEMENT'] as const) {
       for (const ref of acteur.organes_refs) {
         const org = organes.get(ref);
-        if (org?.codeType === code) return org.libelleAbrege;
+        if (org?.codeType === code) return code === 'GOUVERNEMENT' ? 'Gouvernement' : org.libelleAbrege;
       }
     }
     return organes.get(acteur.organes_refs[0])?.libelleAbrege ?? null;
@@ -310,7 +310,7 @@ function groupFeedEvents(feedEvents: FeedEvent[]): Map<string, GroupedFeedEvent>
   const groupMap = new Map<string, GroupedFeedEvent>();
   for (const event of feedEvents) {
     const dateISO = event.date ? toParisDateISO(event.date) : 'unknown';
-    const key = event.type === 'DECISION'
+    const key = (event.type === 'DECISION' || event.type === 'CC_SAISINE')
       ? `${event.id}-${dateISO}-${event.type}`
       : `${event.dossierUid}-${dateISO}-${event.type}`;
     const existing = groupMap.get(key);

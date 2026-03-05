@@ -53,7 +53,7 @@ const EVENT_CONFIG: Record<
   DEPOT_RAPPORT: { icon: FileSearch, label: "Rapport", color: "text-teal-600 dark:text-teal-400", iconBg: "bg-teal-100 dark:bg-teal-900/50" },
   DECISION: { icon: BarChart3, label: "Décision", color: "text-fuchsia-600 dark:text-fuchsia-400", iconBg: "bg-fuchsia-100 dark:bg-fuchsia-900/50" },
   NAVETTE: { icon: ArrowLeftRight, label: "Navette", color: "text-indigo-600 dark:text-indigo-400", iconBg: "bg-indigo-100 dark:bg-indigo-900/50" },
-  CMP_CONVOCATION: { icon: Handshake, label: "CMP", color: "text-purple-600 dark:text-purple-400", iconBg: "bg-purple-100 dark:bg-purple-900/50" },
+  CMP_CONVOCATION: { icon: Handshake, label: "Convocation d'une Commission Mixte Paritaire", color: "text-purple-600 dark:text-purple-400", iconBg: "bg-purple-100 dark:bg-purple-900/50" },
   CMP_RAPPORT: { icon: FileSearch, label: "Rapport", color: "text-teal-600 dark:text-teal-400", iconBg: "bg-teal-100 dark:bg-teal-900/50" },
   MOTION_CENSURE: { icon: AlertTriangle, label: "Motion de censure", color: "text-red-600 dark:text-red-400", iconBg: "bg-red-100 dark:bg-red-900/50" },
   DECL_GOUVERNEMENT: { icon: Megaphone, label: "Déclaration gouv.", color: "text-amber-600 dark:text-amber-400", iconBg: "bg-amber-100 dark:bg-amber-900/50" },
@@ -176,6 +176,16 @@ function VoteBlock({ scrutin }: { scrutin: ScrutinItem }) {
   );
 }
 
+function ccSaisineLabel(codeActe: string | null): string | null {
+  switch (codeActe) {
+    case 'CC-SAISIE-AN': return '60 députés ou plus ont saisi le Conseil constitutionnel.';
+    case 'CC-SAISIE-SN': return '60 sénateurs ou plus ont saisi le Conseil constitutionnel.';
+    case 'CC-SAISIE-PM': return 'Le Premier ministre a saisi le Conseil constitutionnel.';
+    case 'CC-SAISIE-DROIT': return 'Saisine automatique (loi organique ou loi de finances).';
+    default: return null;
+  }
+}
+
 // ── Type-specific card body ─────────────────────────────────
 
 function EventBody({ group }: { group: GroupedFeedEvent }) {
@@ -233,8 +243,10 @@ function EventBody({ group }: { group: GroupedFeedEvent }) {
     case "DECL_GOUVERNEMENT":
       return null;
 
-    case "CC_SAISINE":
-      return null;
+    case "CC_SAISINE": {
+      const label = ccSaisineLabel(e.codeActe);
+      return label ? <p className="text-xs text-muted-foreground mt-1">{label}</p> : null;
+    }
 
     case "PROMULGATION":
       return (
@@ -608,7 +620,7 @@ function GroupedEventCard({ group, index }: { group: GroupedFeedEvent; index: nu
       <div className="flex-1 min-w-0">
         {/* Ligne 1 : label · contexte · date */}
         <div className="flex items-baseline gap-1 text-xs text-muted-foreground mb-0.5 overflow-hidden">
-          <span className={cn("font-semibold shrink-0", config.color)}>{(group.type === "CMP_CONVOCATION" || group.type === "CC_SAISINE") && e.libelleActe ? e.libelleActe : config.label}</span>
+          <span className={cn("font-semibold shrink-0", config.color)}>{group.type === "CC_SAISINE" && e.libelleActe ? e.libelleActe : config.label}</span>
           {group.type !== "CC_SAISINE" && <span className="shrink-0">·</span>}
           {context && <span className="truncate min-w-0">{context}</span>}
           {context && <span className="shrink-0">·</span>}
@@ -641,7 +653,7 @@ function GroupedEventCard({ group, index }: { group: GroupedFeedEvent; index: nu
           <CardFooter
             dossierUid={group.dossierUid}
             texteUid={e.texteUid}
-            showResumeIA={!multi && group.type !== "CC_SAISINE" && group.type !== "CMP_CONVOCATION"}
+            showResumeIA={!multi && group.type !== "CMP_CONVOCATION"}
             texteUrlAccessible={e.texteUrlAccessible}
           />
         )}

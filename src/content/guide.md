@@ -273,6 +273,9 @@ Une frise chronologique présente les 7 étapes que traverse un texte législati
 
 > En moyenne, une loi ordinaire prend entre 6 et 12 mois pour parcourir ce chemin.
 
+**Pourquoi plusieurs saisines du Conseil constitutionnel pour la même loi ?**
+L'article 61 de la Constitution permet à 60 députés *ou* 60 sénateurs de saisir le Conseil constitutionnel avant la promulgation d'une loi. Plusieurs groupes politiques peuvent déposer des saisines séparées le même jour — ou à quelques jours d'intervalle — pour des raisons pratiques et politiques : chaque groupe rédige ses propres arguments juridiques, conteste parfois des articles différents, et peut préférer ne pas signer le même document que ses adversaires politiques, même s'ils s'opposent au même texte. Dans le fil du mois, chaque saisine apparaît donc comme une carte distincte.
+
 ---
 
 ## Types de textes législatifs
