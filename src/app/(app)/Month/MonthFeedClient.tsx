@@ -40,6 +40,7 @@ import type {
   FeedEventType,
   GroupedFeedEvent,
   MonthKpis,
+  ScrutinItem,
 } from "./page";
 
 // ── Config 11 types + fallback ──────────────────────────────
@@ -98,7 +99,8 @@ function formatShortDate(dateStr: string): string {
 
 // ── VoteBar ─────────────────────────────────────────────────
 
-function VoteBar({ event }: { event: FeedEvent }) {
+type VoteData = { votePour?: number | null; voteContre?: number | null; voteAbstentions?: number | null; voteVotants?: number | null; voteNonVotants?: number | null; voteSuffragesRequis?: number | null };
+function VoteBar({ event }: { event: VoteData }) {
   if (event.votePour == null) return null;
   const T = 577;
   const nv = event.voteNonVotants ?? 0;
@@ -159,17 +161,17 @@ function StatusBadge({ statut }: { statut: string | null }) {
 
 // ── VoteBlock (type + objet + badge + barre) ────────────────
 
-function VoteBlock({ ev }: { ev: FeedEvent }) {
+function VoteBlock({ scrutin }: { scrutin: ScrutinItem }) {
   const parts = [
-    ev.typeVoteLibelle ? ev.typeVoteLibelle.charAt(0).toUpperCase() + ev.typeVoteLibelle.slice(1) : null,
-    ev.typeMajorite,
+    scrutin.typeVoteLibelle ? scrutin.typeVoteLibelle.charAt(0).toUpperCase() + scrutin.typeVoteLibelle.slice(1) : null,
+    scrutin.typeMajorite,
   ].filter(Boolean);
   const typeLabel = parts.length > 0 ? parts.join(' · ') : null;
   return (
     <div className="space-y-1">
       {typeLabel && <p className="text-xs text-muted-foreground">{typeLabel}</p>}
-      {ev.votePour != null && <VoteBar event={ev} />}
-      <StatusBadge statut={ev.statutConclusion} />
+      {scrutin.votePour != null && <VoteBar event={scrutin} />}
+      <StatusBadge statut={scrutin.statutConclusion} />
     </div>
   );
 }
@@ -189,12 +191,15 @@ function EventBody({ group }: { group: GroupedFeedEvent }) {
     case "CMP_RAPPORT":
       return null; // tout dans CardTitle + RapportFooterLinks
 
-    case "DECISION":
-      return (
-        <div className="space-y-1.5 mt-1.5">
-          <VoteBlock ev={e} />
-        </div>
-      );
+    case "DECISION": {
+      const scrutin = e.scrutins[0] ?? null;
+      if (!scrutin) {
+        return e.statutConclusion
+          ? <div className="mt-1.5"><StatusBadge statut={e.statutConclusion} /></div>
+          : null;
+      }
+      return <div className="mt-1.5 space-y-1.5"><VoteBlock scrutin={scrutin} /></div>;
+    }
 
     case "NAVETTE":
       return null; // contenu dans CardTitle
@@ -482,10 +487,11 @@ function CardTitle({ group, e }: { group: GroupedFeedEvent; e: FeedEvent }) {
       </>
     );
   }
-  // DECISION : titre du scrutin (nettoyé) ou fallback sur titre du texte
+  // DECISION : single → titre du scrutin nettoyé ; multi → titre du texte/dossier
   if (t === "DECISION") {
-    const scrutinTitre = e.scrutinTitre
-      ? (t => t.charAt(0).toUpperCase() + t.slice(1))(e.scrutinTitre.replace(/^sur\s+/i, ''))
+    const isMulti = e.scrutins.length > 1;
+    const scrutinTitre = !isMulti && e.scrutinTitre
+      ? e.scrutinTitre.replace(/^sur\s+/i, '').replace(/^(.)/, c => c.toUpperCase())
       : null;
     return (
       <p className="text-sm leading-snug mb-0.5">

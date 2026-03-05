@@ -4,9 +4,7 @@
 import { supabase } from '@/lib/supabase';
 import {
   getMonthActes,
-  getMonthScrutins,
   getDossierTitles,
-  getScrutinActeMap,
   getDossierTimeline,
   getTextesByUids,
   getOrganesByUids,
@@ -31,6 +29,21 @@ export const metadata: Metadata = {
 // ---------------------------------------------------------------------------
 
 export type { FeedEventType } from './monthQueries';
+
+export type ScrutinItem = {
+  uid: string;
+  titre: string | null;
+  typeVoteCode: string | null;
+  typeVoteLibelle: string | null;
+  typeMajorite: string | null;
+  votePour: number | null;
+  voteContre: number | null;
+  voteAbstentions: number | null;
+  voteVotants: number | null;
+  voteNonVotants: number | null;
+  voteSuffragesRequis: number | null;
+  statutConclusion: string | null;
+};
 
 export type FeedEvent = {
   id: string;
@@ -68,13 +81,15 @@ export type FeedEvent = {
   rapporteurName: string | null;
   rapporteurGroupe: string | null;
   rapporteurIsMultiple: boolean | null;
-  // Vote details (optional)
+  // Vote details (optional) — premier scrutin, pour backward compat
   votePour?: number | null;
   voteContre?: number | null;
   voteAbstentions?: number | null;
   voteVotants?: number | null;
   voteNonVotants?: number | null;
   voteSuffragesRequis?: number | null;
+  // Tous les scrutins liés (1 pour vote simple, N pour multi-votes)
+  scrutins: ScrutinItem[];
 };
 
 export type GroupedFeedEvent = {
@@ -134,20 +149,6 @@ function formatISOMonth(date: Date): string {
 // Helpers : groupement et enrichissement
 // ---------------------------------------------------------------------------
 
-/** Crée un FeedEvent avec tous les champs à null par défaut */
-function emptyFeedEvent(overrides: Partial<FeedEvent> & Pick<FeedEvent, 'id' | 'type' | 'date' | 'titre'>): FeedEvent {
-  return {
-    dossierUid: null, dossierTitre: null, libelleActe: null, codeActe: null,
-    organeName: null, texteUid: null, texteDenomination: null, texteTitre: null,
-    texteLien: null, texteAdopteUid: null, texteAdopteDenomination: null,
-    texteAdopteTitre: null, texteAdopteLien: null, texteUrlAccessible: null,
-    scrutinUid: null, scrutinTitre: null, typeVoteCode: null, typeVoteLibelle: null, typeMajorite: null, statutConclusion: null, auteur: null,
-    groupeAbrege: null, auteurChambre: null, texteProvenance: null, texteHasTomes: null, organeCodeType: null,
-    rapporteurName: null, rapporteurGroupe: null, rapporteurIsMultiple: null,
-    ...overrides,
-  };
-}
-
 /** Résout le groupe d'un acteur via acteur.groupe → organe, ou organes_refs en fallback */
 function resolveGroupeAbrege(
   acteur: { groupe: string | null; organes_refs: string[] | null } | null | undefined,
@@ -198,7 +199,8 @@ function acteToFeedEvent(
   const texte = a.textes_associes?.[0] ? textes.get(a.textes_associes[0]) : null;
   const texteAdopte = a.texte_adopte ? textes.get(a.texte_adopte) : null;
   const organeData = a.organe_ref ? organes.get(a.organe_ref) : null;
-  const scrutin = a.vote_refs?.[0] ? scrutinsMap.get(a.vote_refs[0]) : null;
+  const scrutinsList = (a.vote_refs ?? []).map(ref => scrutinsMap.get(ref)).filter(Boolean) as NonNullable<ReturnType<typeof scrutinsMap.get>>[];
+  const scrutin = scrutinsList[0] ?? null;
 
   // ── Auteur & groupe ──────────────────────────────────────────────────────
   const WITH_AUTEUR = new Set<FeedEventType>(['DEPOT_TEXTE', 'DECISION', 'NAVETTE', 'CMP_CONVOCATION', 'CMP_RAPPORT']);
@@ -278,6 +280,20 @@ function acteToFeedEvent(
     voteVotants: scrutin?.synthese_nombre_votants ?? null,
     voteNonVotants: scrutin?.synthese_non_votants ?? null,
     voteSuffragesRequis: scrutin?.synthese_suffrages_requis ?? null,
+    scrutins: scrutinsList.map(s => ({
+      uid: s.uid,
+      titre: s.titre,
+      typeVoteCode: s.type_vote_code,
+      typeVoteLibelle: s.type_vote_libelle,
+      typeMajorite: s.type_majorite,
+      votePour: s.synthese_pour,
+      voteContre: s.synthese_contre,
+      voteAbstentions: s.synthese_abstentions,
+      voteVotants: s.synthese_nombre_votants,
+      voteNonVotants: s.synthese_non_votants,
+      voteSuffragesRequis: s.synthese_suffrages_requis,
+      statutConclusion: a.statut_conclusion,
+    })),
   };
 }
 
@@ -430,27 +446,18 @@ export default async function MonthPage({
   const monthEndISO = queryEnd.toISOString();
 
   // ── Round 1 : actes du mois ──
-  const [actes, scrutins, motionActes] = await Promise.all([
+  const [actes, motionActes] = await Promise.all([
     getMonthActes(supabase, monthStartISO, monthEndISO),
-    getMonthScrutins(supabase, monthStartISO, monthEndISO),
     getMonthMotionActes(supabase, monthStartISO, monthEndISO),
   ]);
 
   const uniqueMotions = [...new Map(motionActes.map(a => [a.uid, a])).values()];
-  const filteredScrutins = scrutins.filter(s => {
-    const titre = (s.titre || '').toLowerCase();
-    return titre.includes('ensemble') || titre.includes('motion de rejet');
-  });
 
   // ── Round 2 : résolutions intermédiaires ──
   const motionUids = uniqueMotions.map(a => a.uid);
-  const scrutinUidsForMap = filteredScrutins.map(s => s.uid);
-  const [motionDecisionMap, scrutinActeMap] = await Promise.all([
-    getMotionDecisionActes(supabase, motionUids),
-    getScrutinActeMap(supabase, scrutinUidsForMap),
-  ]);
+  const motionDecisionMap = await getMotionDecisionActes(supabase, motionUids);
 
-  // Collecter UIDs depuis actes + motions + scrutinActeMap
+  // Collecter UIDs depuis actes + motions
   const texteUids = new Set<string>();
   const organeUids = new Set<string>();
   const scrutinUidsFromActes = new Set<string>();
@@ -463,27 +470,12 @@ export default async function MonthPage({
     (a.vote_refs ?? []).forEach((r: string) => scrutinUidsFromActes.add(r));
     if (a.dossier_uid) dossierUidsSet.add(a.dossier_uid);
   }
-  for (const s of filteredScrutins) {
-    if (s.organe_ref) organeUids.add(s.organe_ref);
-  }
-  for (const acte of scrutinActeMap.values()) {
-    if (acte.dossier_uid) dossierUidsSet.add(acte.dossier_uid);
-    if (acte.organe_ref) organeUids.add(acte.organe_ref);
-    (acte.textes_associes ?? []).forEach(t => texteUids.add(t));
-    if (acte.texte_adopte) texteUids.add(acte.texte_adopte);
-    (acte.vote_refs ?? []).forEach(r => scrutinUidsFromActes.add(r));
-  }
-
   // ── Round 3 : textes, scrutins, dossiers ──
   const [dossierTitles, textes, scrutinsMapFromActes] = await Promise.all([
     getDossierTitles(supabase, [...dossierUidsSet]),
     getTextesByUids(supabase, [...texteUids]),
     getScrutinsByUids(supabase, [...scrutinUidsFromActes]),
   ]);
-
-  for (const s of filteredScrutins) {
-    if (!scrutinsMapFromActes.has(s.uid)) scrutinsMapFromActes.set(s.uid, s);
-  }
 
   // ── Round 4 : acteurs (auteurs + rapporteurs des textes + initiateurs des dossiers) ──
   const acteurUids = new Set<string>();
@@ -511,31 +503,6 @@ export default async function MonthPage({
     })
     .filter(e => e.type !== 'AUTRE');
 
-  const acteUidSet = new Set(actes.map(a => a.uid));
-  const scrutinEvents: FeedEvent[] = filteredScrutins
-    .filter(s => {
-      const acte = scrutinActeMap.get(s.uid);
-      return !acte || !acteUidSet.has(acte.uid);
-    })
-    .map(s => {
-      const acte = scrutinActeMap.get(s.uid);
-      if (acte) {
-        const dossier = acte.dossier_uid ? dossierTitles.get(acte.dossier_uid) : null;
-        return acteToFeedEvent(acte, dossier ?? null, textes, organes, scrutinsMapFromActes, acteurs);
-      }
-      return emptyFeedEvent({
-        id: `scrutin-${s.uid}`,
-        type: 'DECISION',
-        date: s.date_scrutin,
-        titre: s.titre || `Scrutin n${s.numero}`,
-        scrutinUid: s.uid, scrutinTitre: s.titre, typeVoteCode: s.type_vote_code ?? null, typeVoteLibelle: s.type_vote_libelle ?? null, typeMajorite: s.type_majorite ?? null, statutConclusion: s.sort_libelle,
-        votePour: s.synthese_pour, voteContre: s.synthese_contre,
-        voteAbstentions: s.synthese_abstentions, voteVotants: s.synthese_nombre_votants,
-        voteNonVotants: s.synthese_non_votants, voteSuffragesRequis: s.synthese_suffrages_requis,
-        organeCodeType: s.organe_ref ? (organes.get(s.organe_ref)?.codeType ?? null) : null,
-      });
-    });
-
   const motionEvents: FeedEvent[] = uniqueMotions.map(a => {
     const dossier = a.dossier_uid ? dossierTitles.get(a.dossier_uid) : null;
     const childConclusion = motionDecisionMap.get(a.uid) ?? null;
@@ -547,16 +514,8 @@ export default async function MonthPage({
     );
   });
 
-  // Fusionner (priorité : actes > scrutins > motions)
-  const seenIds = new Set<string>();
-  const allEvents: FeedEvent[] = [];
-  for (const event of [...acteEvents, ...scrutinEvents, ...motionEvents]) {
-    if (!seenIds.has(event.id)) {
-      seenIds.add(event.id);
-      allEvents.push(event);
-    }
-  }
-  allEvents.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const allEvents: FeedEvent[] = [...acteEvents, ...motionEvents]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   // Filtrer les events du buffer ±1j qui tombent hors du mois (timezone Paris)
   const monthStartISO_paris = `${year}-${String(month + 1).padStart(2, '0')}-01`;

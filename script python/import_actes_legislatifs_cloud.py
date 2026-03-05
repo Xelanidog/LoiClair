@@ -5,6 +5,7 @@
 
 import json
 import os
+import re
 from datetime import datetime
 from pathlib import Path
 from supabase import create_client, Client
@@ -37,6 +38,19 @@ def batch_insert_organes(organe_uids: set):
 def chunk_list(lst, size=1000):
     for i in range(0, len(lst), size):
         yield lst[i : i + size]
+
+
+def fetch_all_paginated(query_fn, page_size: int = 1000) -> list:
+    """Récupère toutes les lignes d'une requête Supabase via pagination (contourne la limite de 1000)."""
+    result = []
+    offset = 0
+    while True:
+        page = query_fn(offset, offset + page_size - 1)
+        result.extend(page)
+        if len(page) < page_size:
+            break
+        offset += page_size
+    return result
 
 
 def download_zip(url: str) -> zipfile.ZipFile:
@@ -211,25 +225,29 @@ def upsert_avec_retry(chunks: list) -> tuple:
     success = 0
     failed = 0
     i = 0
-    while i < len(chunks):
-        chunk = chunks[i]
-        try:
-            supabase.table("actes_legislatifs").upsert(
-                chunk, on_conflict="uid,dossier_uid"
-            ).execute()
-            success += len(chunk)
-            print(f"✅ Batch {i+1}/{len(chunks)} : {len(chunk)} actes")
-            i += 1
-        except Exception as e:
-            err_str = str(e)
-            if len(chunk) > 1 and ("57014" in err_str or "504" in err_str or "timeout" in err_str.lower()):
-                mid = len(chunk) // 2
-                chunks[i:i+1] = [chunk[:mid], chunk[mid:]]
-                print(f"⚠️ Timeout, split batch en {mid} + {len(chunk)-mid}")
-            else:
-                failed += len(chunk)
-                print(f"❌ Erreur batch {i+1} ({len(chunk)} actes) : {e}")
+    with tqdm(total=sum(len(c) for c in chunks), desc="Upsert actes", unit="acte") as pbar:
+        while i < len(chunks):
+            chunk = chunks[i]
+            try:
+                supabase.table("actes_legislatifs").upsert(
+                    chunk, on_conflict="uid,dossier_uid"
+                ).execute()
+                success += len(chunk)
+                pbar.update(len(chunk))
                 i += 1
+            except Exception as e:
+                err_str = str(e)
+                if len(chunk) > 1 and ("57014" in err_str or "504" in err_str or "timeout" in err_str.lower()):
+                    mid = len(chunk) // 2
+                    chunks[i:i+1] = [chunk[:mid], chunk[mid:]]
+                    pbar.total = sum(len(c) for c in chunks)
+                    pbar.refresh()
+                    tqdm.write(f"⚠️ Timeout, split batch en {mid} + {len(chunk)-mid}")
+                else:
+                    failed += len(chunk)
+                    pbar.update(len(chunk))
+                    tqdm.write(f"❌ Erreur batch {i+1} ({len(chunk)} actes) : {e}")
+                    i += 1
     return success, failed
 
 
@@ -297,10 +315,158 @@ def importer_actes_from_zip(zip_ref: zipfile.ZipFile):
     print(f"{'='*60}")
 
 
+# ==================== ENRICHISSEMENT vote_refs via reunion_ref ====================
+
+# Motifs de titre qui identifient un vote final (et non un vote d'amendement)
+DECISION_TITRE_PATTERNS = [
+    "l'ensemble",
+    "l'article unique",
+    "commission mixte paritaire",
+    "motion de rejet",
+    "motion de renvoi",
+]
+
+# Libellés d'actes auxquels on veut relier des scrutins
+DECISION_LIBELLES = [
+    "Décision",
+    "Décision de la CMP",
+    "Conclusion du conseil constitutionnel",
+]
+
+
+_STOPWORDS = {
+    "le", "la", "les", "de", "du", "des", "un", "une", "au", "aux",
+    "en", "sur", "par", "pour", "et", "ou", "à", "l", "d", "que",
+    "qui", "dans", "avec", "ce", "se", "est", "son", "sa", "ses",
+    "sur", "une", "dont", "cette", "leur", "leurs", "tout", "plus",
+}
+
+
+def est_vote_decision(titre: str | None) -> bool:
+    """Retourne True si le titre du scrutin correspond à un vote final (pas un amendement)."""
+    if not titre:
+        return False
+    t = titre.lower()
+    return any(p in t for p in DECISION_TITRE_PATTERNS)
+
+
+def _tokenize(text: str) -> set[str]:
+    """Extrait les mots significatifs d'un texte (≥4 chars, hors stopwords)."""
+    mots = re.findall(r"[a-zàâäéèêëîïôùûüçœ]+", text.lower())
+    return {m for m in mots if len(m) >= 4 and m not in _STOPWORDS}
+
+
+def _score(titre_scrutin: str, titre_ref: str) -> int:
+    """Nombre de tokens communs entre deux titres."""
+    return len(_tokenize(titre_scrutin) & _tokenize(titre_ref))
+
+
+def enrichir_vote_refs_via_reunion_ref():
+    """Pour les actes DECISION sans vote_refs, peuple vote_refs via seance_ref = reunion_ref.
+    - Séance avec 1 seul vote final → lien direct
+    - Séance ambiguë (N votes finaux) → comparaison de titres pour trouver le bon scrutin"""
+    print("\nEnrichissement vote_refs via reunion_ref (votes finaux uniquement)...")
+
+    # 1. Charge tous les scrutins avec seance_ref + titre (pagination complète)
+    scrutins_data = fetch_all_paginated(
+        lambda s, e: supabase.table("scrutins")
+        .select("uid, seance_ref, titre")
+        .not_.is_("seance_ref", "null")
+        .range(s, e)
+        .execute()
+        .data
+    )
+    # Carte uid → titre pour la comparaison
+    scrutin_titre_map: dict[str, str] = {s["uid"]: (s.get("titre") or "") for s in scrutins_data}
+
+    # Carte seance → liste des uids de votes finaux
+    scrutin_by_seance: dict[str, list[str]] = {}
+    for s in scrutins_data:
+        if est_vote_decision(s.get("titre")):
+            scrutin_by_seance.setdefault(s["seance_ref"], []).append(s["uid"])
+
+    seances_uniques = {k for k, v in scrutin_by_seance.items() if len(v) == 1}
+    seances_ambigues = {k: v for k, v in scrutin_by_seance.items() if len(v) > 1}
+    print(f"  {len(scrutins_data)} scrutins chargés, {len(seances_uniques)} séances claires, {len(seances_ambigues)} ambiguës")
+
+    # 2. Charge les actes DECISION sans vote_refs
+    actes_data = (
+        supabase.table("actes_legislatifs")
+        .select("uid, dossier_uid, reunion_ref")
+        .not_.is_("reunion_ref", "null")
+        .is_("vote_refs", "null")
+        .not_.is_("dossier_uid", "null")
+        .in_("libelle_acte", DECISION_LIBELLES)
+        .execute()
+        .data
+    )
+    print(f"  {len(actes_data)} actes DECISION sans vote_refs avec reunion_ref")
+
+    # 3. Charge les titres des dossiers pour les actes en séance ambiguë
+    dossiers_uids_ambigus = list({
+        a["dossier_uid"] for a in actes_data
+        if a["reunion_ref"] in seances_ambigues
+    })
+    dossier_titre_map: dict[str, str] = {}
+    for chunk in chunk_list(dossiers_uids_ambigus, 100):
+        rows = supabase.table("dossiers_legislatifs").select("uid, titre").in_("uid", chunk).execute().data
+        for d in rows:
+            if d.get("titre"):
+                dossier_titre_map[d["uid"]] = d["titre"]
+    print(f"  {len(dossier_titre_map)} titres de dossiers chargés pour résolution des ambiguïtés")
+
+    # 4. Construit les updates
+    updates = []
+    non_resolus = 0
+    for a in actes_data:
+        refs = scrutin_by_seance.get(a["reunion_ref"])
+        if not refs:
+            continue
+
+        if len(refs) == 1:
+            # Séance claire : lien direct
+            updates.append({"uid": a["uid"], "dossier_uid": a["dossier_uid"], "vote_refs": refs})
+            continue
+
+        # Séance ambiguë : comparaison par titre
+        titre_dossier = dossier_titre_map.get(a["dossier_uid"], "")
+        if not titre_dossier:
+            non_resolus += 1
+            continue
+
+        scores = sorted(
+            [(ref, _score(scrutin_titre_map.get(ref, ""), titre_dossier)) for ref in refs],
+            key=lambda x: x[1], reverse=True,
+        )
+        best_ref, best_score = scores[0]
+        second_score = scores[1][1] if len(scores) > 1 else 0
+
+        # Match retenu si score ≥ 3 mots en commun ET clairement meilleur que le suivant
+        if best_score >= 3 and best_score > second_score:
+            updates.append({"uid": a["uid"], "dossier_uid": a["dossier_uid"], "vote_refs": [best_ref]})
+        else:
+            non_resolus += 1
+
+    print(f"  {len(updates)} actes enrichissables, {non_resolus} non résolus (ambiguïté persistante)")
+
+    # 5. Update
+    if updates:
+        with tqdm(total=len(updates), desc="Enrichissement vote_refs", unit="acte") as pbar:
+            for upd in updates:
+                supabase.table("actes_legislatifs").update(
+                    {"vote_refs": upd["vote_refs"]}
+                ).eq("uid", upd["uid"]).eq("dossier_uid", upd["dossier_uid"]).execute()
+                pbar.update(1)
+        print(f"✅ {len(updates)} actes enrichis avec vote_refs via reunion_ref")
+    else:
+        print("  Aucun acte à enrichir")
+
+
 # ==================== EXÉCUTION ====================
 
 if __name__ == "__main__":
     URL = "https://data.assemblee-nationale.fr/static/openData/repository/17/loi/dossiers_legislatifs/Dossiers_Legislatifs.json.zip"
     zip_ref = download_zip(URL)
     importer_actes_from_zip(zip_ref)
+    enrichir_vote_refs_via_reunion_ref()
     print("\nTout est terminé !")
