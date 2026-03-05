@@ -91,7 +91,7 @@ export async function getMotionDecisionActes(supabase: SupabaseClient, parentUid
 export async function getMonthScrutins(supabase: SupabaseClient, dateStart: string, dateEnd: string) {
   const { data, error } = await supabase
     .from('scrutins')
-    .select('uid, numero, date_scrutin, titre, sort_code, sort_libelle, synthese_pour, synthese_contre, synthese_abstentions, synthese_nombre_votants, synthese_non_votants, synthese_suffrages_requis, type_vote_libelle')
+    .select('uid, numero, date_scrutin, titre, sort_code, sort_libelle, synthese_pour, synthese_contre, synthese_abstentions, synthese_nombre_votants, synthese_non_votants, synthese_suffrages_requis, type_vote_libelle, type_vote_code, type_majorite, organe_ref')
     .gte('date_scrutin', dateStart)
     .lte('date_scrutin', dateEnd)
     .not('date_scrutin', 'is', null)
@@ -232,16 +232,16 @@ export async function getActeursByUids(supabase: SupabaseClient, uids: string[])
 }
 
 export async function getScrutinsByUids(supabase: SupabaseClient, uids: string[]) {
-  if (uids.length === 0) return new Map<string, { uid: string; titre: string | null; sort_libelle: string | null; type_vote_libelle: string | null; synthese_pour: number | null; synthese_contre: number | null; synthese_abstentions: number | null; synthese_nombre_votants: number | null; synthese_non_votants: number | null; synthese_suffrages_requis: number | null }>();
+  if (uids.length === 0) return new Map<string, { uid: string; titre: string | null; sort_libelle: string | null; type_vote_libelle: string | null; type_vote_code: string | null; type_majorite: string | null; synthese_pour: number | null; synthese_contre: number | null; synthese_abstentions: number | null; synthese_nombre_votants: number | null; synthese_non_votants: number | null; synthese_suffrages_requis: number | null }>();
 
   const { data, error } = await supabase
     .from('scrutins')
-    .select('uid, titre, sort_libelle, type_vote_libelle, synthese_pour, synthese_contre, synthese_abstentions, synthese_nombre_votants, synthese_non_votants, synthese_suffrages_requis')
+    .select('uid, titre, sort_libelle, type_vote_libelle, type_vote_code, type_majorite, synthese_pour, synthese_contre, synthese_abstentions, synthese_nombre_votants, synthese_non_votants, synthese_suffrages_requis')
     .in('uid', uids);
 
   if (error) console.error('Erreur scrutins batch:', error);
 
-  const map = new Map<string, { uid: string; titre: string | null; sort_libelle: string | null; type_vote_libelle: string | null; synthese_pour: number | null; synthese_contre: number | null; synthese_abstentions: number | null; synthese_nombre_votants: number | null; synthese_non_votants: number | null; synthese_suffrages_requis: number | null }>();
+  const map = new Map<string, { uid: string; titre: string | null; sort_libelle: string | null; type_vote_libelle: string | null; type_vote_code: string | null; type_majorite: string | null; synthese_pour: number | null; synthese_contre: number | null; synthese_abstentions: number | null; synthese_nombre_votants: number | null; synthese_non_votants: number | null; synthese_suffrages_requis: number | null }>();
   for (const s of data ?? []) {
     map.set(s.uid, s);
   }

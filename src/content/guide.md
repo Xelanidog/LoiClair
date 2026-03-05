@@ -41,7 +41,7 @@ Chaque carte affiche :
 
 Selon le type d'événement, des informations supplémentaires apparaissent :
 
-- **Décisions et motions** : un badge de statut (adopté, rejeté…) et une barre de vote montrant la répartition pour/contre/abstentions sur les 577 sièges. Survolez la barre pour voir le détail chiffré.
+- **Décisions** : le titre de la carte indique l'**objet exact du vote** (par exemple : « La motion de rejet préalable » ou « L'ensemble du texte »). En dessous, le **type de procédure** (ex. : « Scrutin public ordinaire ») et la **règle de majorité applicable** (ex. : « Majorité absolue des suffrages exprimés ») sont précisés. Lorsque les données sont disponibles, une **barre de vote** montre la répartition pour/contre/abstentions — survolez-la pour le détail chiffré. Un **badge de résultat** (adopté, rejeté…) apparaît sous la barre.
 - **Rapports** : le nom de la commission et la provenance du rapport. Lorsque l'information est disponible, le **nom du rapporteur principal** et son groupe politique sont affichés sous le titre. Si plusieurs rapporteurs ont signé le rapport, la mention « (et collègues) » est ajoutée. Pour les rapports de Commission mixte paritaire (CMP) regroupant un rapport de chaque chambre, les rapporteurs de l'**Assemblée** et du **Sénat** sont indiqués séparément.
 - **Promulgations** : une mention « Publiée au Journal officiel ».
 
@@ -64,6 +64,8 @@ En cliquant sur le titre d'un dossier depuis n'importe quelle carte, vous accéd
 Sur la plupart des cartes, un lien **Résumé IA** permet d'accéder au résumé automatique du texte concerné. Le lien pré-sélectionne le bon texte dans le menu déroulant de la page de résumé.
 
 Lorsqu'un texte n'a pas encore été publié par l'Assemblée nationale, le lien Résumé IA est remplacé par un indicateur **« Non encore publié »** accompagné d'un lien **« Dossier complet »** qui permet tout de même d'accéder aux informations disponibles sur le dossier (métadonnées, votes, timeline).
+
+Certaines cartes — notamment les votes du Conseil constitutionnel ou les décisions sans texte directement associé — affichent uniquement un lien **« Dossier complet »**, sans mention « Non encore publié » (le texte n'est simplement pas lié à cette étape, non indisponible).
 
 ---
 

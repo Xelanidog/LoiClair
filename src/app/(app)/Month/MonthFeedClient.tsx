@@ -157,6 +157,23 @@ function StatusBadge({ statut }: { statut: string | null }) {
   );
 }
 
+// ── VoteBlock (type + objet + badge + barre) ────────────────
+
+function VoteBlock({ ev }: { ev: FeedEvent }) {
+  const parts = [
+    ev.typeVoteLibelle ? ev.typeVoteLibelle.charAt(0).toUpperCase() + ev.typeVoteLibelle.slice(1) : null,
+    ev.typeMajorite,
+  ].filter(Boolean);
+  const typeLabel = parts.length > 0 ? parts.join(' · ') : null;
+  return (
+    <div className="space-y-1">
+      {typeLabel && <p className="text-xs text-muted-foreground">{typeLabel}</p>}
+      {ev.votePour != null && <VoteBar event={ev} />}
+      <StatusBadge statut={ev.statutConclusion} />
+    </div>
+  );
+}
+
 // ── Type-specific card body ─────────────────────────────────
 
 function EventBody({ group }: { group: GroupedFeedEvent }) {
@@ -173,32 +190,9 @@ function EventBody({ group }: { group: GroupedFeedEvent }) {
       return null; // tout dans CardTitle + RapportFooterLinks
 
     case "DECISION":
-      if (multi) {
-        return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 14 }}>
-            {events.map(ev => {
-              const inst = institutionName(ev.organeCodeType, ev.organeName);
-              return (
-                <div key={ev.id}>
-                  <div className="flex items-baseline gap-1 text-xs text-muted-foreground overflow-hidden">
-                    <span className="shrink-0">·</span>
-                    {inst && <span className="font-bold text-foreground shrink-0">{inst}</span>}
-                  </div>
-                  <div className="ml-3 mt-0.5 space-y-1">
-                    <StatusBadge statut={ev.statutConclusion} />
-                    {ev.votePour != null && <VoteBar event={ev} />}
-                    {dossierUid && <ResumeIALink dossierUid={dossierUid} texteUid={ev.texteUid} texteUrlAccessible={ev.texteUrlAccessible} />}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        );
-      }
       return (
-        <div className="space-y-1.5" style={{ marginTop: 6 }}>
-          <StatusBadge statut={e.statutConclusion} />
-          {e.votePour != null && <VoteBar event={e} />}
+        <div className="space-y-1.5 mt-1.5">
+          <VoteBlock ev={e} />
         </div>
       );
 
@@ -253,7 +247,19 @@ function EventBody({ group }: { group: GroupedFeedEvent }) {
 // ── Résumé IA link helper ────────────────────────────────────
 
 function ResumeIALink({ dossierUid, texteUid, texteUrlAccessible }: { dossierUid: string; texteUid?: string | null; texteUrlAccessible?: boolean | null }) {
-  if (texteUrlAccessible === false || texteUrlAccessible === null) {
+  if (texteUrlAccessible === null) {
+    // Pas de texte associé → lien dossier seul, sans "Non encore publié"
+    return (
+      <Link
+        href={`/dossiers-legislatifs/${dossierUid}/resume-ia`}
+        className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground hover:underline mt-1"
+      >
+        <FileText className="w-3 h-3" />
+        Dossier complet
+      </Link>
+    );
+  }
+  if (texteUrlAccessible === false) {
     return (
       <span className="inline-flex items-center gap-1.5 text-xs mt-1 flex-wrap">
         <span className="inline-flex items-center gap-1 text-orange-600 dark:text-orange-400">
@@ -476,11 +482,14 @@ function CardTitle({ group, e }: { group: GroupedFeedEvent; e: FeedEvent }) {
       </>
     );
   }
-  // DECISION : juste le titre du texte
+  // DECISION : titre du scrutin (nettoyé) ou fallback sur titre du texte
   if (t === "DECISION") {
+    const scrutinTitre = e.scrutinTitre
+      ? (t => t.charAt(0).toUpperCase() + t.slice(1))(e.scrutinTitre.replace(/^sur\s+/i, ''))
+      : null;
     return (
       <p className="text-sm leading-snug mb-0.5">
-        {e.texteTitre || e.texteDenomination || group.dossierTitre || e.titre}
+        {scrutinTitre || e.texteTitre || e.texteDenomination || group.dossierTitre || e.titre}
       </p>
     );
   }
@@ -502,7 +511,7 @@ function CardTitle({ group, e }: { group: GroupedFeedEvent; e: FeedEvent }) {
 
 // ── Context info helper ─────────────────────────────────────
 
-function getContextInfo(type: FeedEventType, e: FeedEvent, multi: boolean) {
+function getContextInfo(type: FeedEventType, e: FeedEvent, multi: boolean, events: FeedEvent[]) {
   if (type === "DEPOT_TEXTE") {
     if (!e.auteur) return null;
     return <>
@@ -520,9 +529,12 @@ function getContextInfo(type: FeedEventType, e: FeedEvent, multi: boolean) {
     return direction ? <span className="font-bold text-foreground shrink-0">{direction}</span> : null;
   }
   if (type === "DECISION") {
-    if (multi) return null;
+    if (multi) {
+      const insts = [...new Set(events.map(ev => institutionName(ev.organeCodeType, ev.organeName)).filter((v): v is string => v !== null))];
+      return insts.length > 0 ? <span className="font-bold text-foreground shrink-0">{insts.join(' + ')}</span> : null;
+    }
     const inst = institutionName(e.organeCodeType, e.organeName);
-    return inst ? <span className="shrink-0">/{inst}</span> : null;
+    return inst ? <span className="font-bold text-foreground shrink-0">{inst}</span> : null;
   }
   if (type === "DEPOT_RAPPORT") {
     const chambre = e.organeCodeType === "COMSENAT" ? "Sénat" : "Assemblée";
@@ -572,7 +584,7 @@ function GroupedEventCard({ group, index }: { group: GroupedFeedEvent; index: nu
   const e = group.events[0];
   const multi = group.events.length > 1;
   const shortDate = formatShortDate(group.date);
-  const context = getContextInfo(group.type, e, multi);
+  const context = getContextInfo(group.type, e, multi, group.events);
 
   return (
     <motion.article
@@ -591,7 +603,7 @@ function GroupedEventCard({ group, index }: { group: GroupedFeedEvent; index: nu
         {/* Ligne 1 : label · contexte · date */}
         <div className="flex items-baseline gap-1 text-xs text-muted-foreground mb-0.5 overflow-hidden">
           <span className={cn("font-semibold shrink-0", config.color)}>{(group.type === "CMP_CONVOCATION" || group.type === "CC_SAISINE") && e.libelleActe ? e.libelleActe : config.label}</span>
-          {group.type !== "CC_SAISINE" && !(group.type === "DECISION" && !multi) && <span className="shrink-0">·</span>}
+          {group.type !== "CC_SAISINE" && <span className="shrink-0">·</span>}
           {context && <span className="truncate min-w-0">{context}</span>}
           {context && <span className="shrink-0">·</span>}
           <span className="shrink-0">{shortDate}</span>

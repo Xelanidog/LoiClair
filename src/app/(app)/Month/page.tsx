@@ -54,6 +54,9 @@ export type FeedEvent = {
   texteUrlAccessible: boolean | null;
   scrutinUid: string | null;
   scrutinTitre: string | null;
+  typeVoteCode: string | null;
+  typeVoteLibelle: string | null;
+  typeMajorite: string | null;
   statutConclusion: string | null;
   // Auteur (pour DEPOT_TEXTE) / Provenance (pour DEPOT_RAPPORT)
   auteur: string | null;
@@ -138,7 +141,7 @@ function emptyFeedEvent(overrides: Partial<FeedEvent> & Pick<FeedEvent, 'id' | '
     organeName: null, texteUid: null, texteDenomination: null, texteTitre: null,
     texteLien: null, texteAdopteUid: null, texteAdopteDenomination: null,
     texteAdopteTitre: null, texteAdopteLien: null, texteUrlAccessible: null,
-    scrutinUid: null, scrutinTitre: null, statutConclusion: null, auteur: null,
+    scrutinUid: null, scrutinTitre: null, typeVoteCode: null, typeVoteLibelle: null, typeMajorite: null, statutConclusion: null, auteur: null,
     groupeAbrege: null, auteurChambre: null, texteProvenance: null, texteHasTomes: null, organeCodeType: null,
     rapporteurName: null, rapporteurGroupe: null, rapporteurIsMultiple: null,
     ...overrides,
@@ -188,7 +191,7 @@ function acteToFeedEvent(
   dossierInfo: { titre: string; initiateurActeurRef: string | null; groupeAbrege: string | null } | null,
   textes: Map<string, { uid: string; denomination: string | null; titre_principal: string | null; lien_texte: string | null; provenance: string | null; statut_adoption: string | null; url_accessible: boolean | null; auteurs_refs: string[] | null; has_tomes: boolean | null; rapporteurs_refs: string[] | null }>,
   organes: Map<string, { name: string; libelleAbrege: string | null; codeType: string | null }>,
-  scrutinsMap: Map<string, { uid: string; titre: string | null; sort_libelle: string | null; synthese_pour: number | null; synthese_contre: number | null; synthese_abstentions: number | null; synthese_nombre_votants: number | null; synthese_non_votants: number | null; synthese_suffrages_requis: number | null }>,
+  scrutinsMap: Map<string, { uid: string; titre: string | null; sort_libelle: string | null; type_vote_code: string | null; type_vote_libelle: string | null; type_majorite: string | null; synthese_pour: number | null; synthese_contre: number | null; synthese_abstentions: number | null; synthese_nombre_votants: number | null; synthese_non_votants: number | null; synthese_suffrages_requis: number | null }>,
   acteurs: Map<string, { prenom: string; nom: string; groupe: string | null; organes_refs: string[] | null }>,
 ): FeedEvent {
   const type = classifyByLibelle(a.libelle_acte);
@@ -256,6 +259,9 @@ function acteToFeedEvent(
     texteUrlAccessible: texte?.url_accessible ?? null,
     scrutinUid: scrutin?.uid ?? null,
     scrutinTitre: scrutin?.titre ?? null,
+    typeVoteCode: scrutin?.type_vote_code ?? null,
+    typeVoteLibelle: scrutin?.type_vote_libelle ?? null,
+    typeMajorite: scrutin?.type_majorite ?? null,
     statutConclusion: a.statut_conclusion,
     auteur,
     groupeAbrege,
@@ -288,7 +294,9 @@ function groupFeedEvents(feedEvents: FeedEvent[]): Map<string, GroupedFeedEvent>
   const groupMap = new Map<string, GroupedFeedEvent>();
   for (const event of feedEvents) {
     const dateISO = event.date ? toParisDateISO(event.date) : 'unknown';
-    const key = `${event.dossierUid}-${dateISO}-${event.type}`;
+    const key = event.type === 'DECISION'
+      ? `${event.id}-${dateISO}-${event.type}`
+      : `${event.dossierUid}-${dateISO}-${event.type}`;
     const existing = groupMap.get(key);
     if (existing) {
       existing.events.push(event);
@@ -455,6 +463,9 @@ export default async function MonthPage({
     (a.vote_refs ?? []).forEach((r: string) => scrutinUidsFromActes.add(r));
     if (a.dossier_uid) dossierUidsSet.add(a.dossier_uid);
   }
+  for (const s of filteredScrutins) {
+    if (s.organe_ref) organeUids.add(s.organe_ref);
+  }
   for (const acte of scrutinActeMap.values()) {
     if (acte.dossier_uid) dossierUidsSet.add(acte.dossier_uid);
     if (acte.organe_ref) organeUids.add(acte.organe_ref);
@@ -517,10 +528,11 @@ export default async function MonthPage({
         type: 'DECISION',
         date: s.date_scrutin,
         titre: s.titre || `Scrutin n${s.numero}`,
-        scrutinUid: s.uid, scrutinTitre: s.titre, statutConclusion: s.sort_libelle,
+        scrutinUid: s.uid, scrutinTitre: s.titre, typeVoteCode: s.type_vote_code ?? null, typeVoteLibelle: s.type_vote_libelle ?? null, typeMajorite: s.type_majorite ?? null, statutConclusion: s.sort_libelle,
         votePour: s.synthese_pour, voteContre: s.synthese_contre,
         voteAbstentions: s.synthese_abstentions, voteVotants: s.synthese_nombre_votants,
         voteNonVotants: s.synthese_non_votants, voteSuffragesRequis: s.synthese_suffrages_requis,
+        organeCodeType: s.organe_ref ? (organes.get(s.organe_ref)?.codeType ?? null) : null,
       });
     });
 
