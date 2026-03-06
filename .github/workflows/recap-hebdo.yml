@@ -1,0 +1,101 @@
+name: Récap hebdomadaire signalements
+
+on:
+  schedule:
+    - cron: "0 8 * * 1" # Chaque lundi à 8h UTC (9h/10h heure française)
+  workflow_dispatch: # Permet de lancer manuellement pour tester
+
+jobs:
+  recap:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Collecter les issues et envoyer le récap
+        uses: actions/github-script@v7
+        id: build-recap
+        with:
+          script: |
+            const oneWeekAgo = new Date();
+            oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+            const since = oneWeekAgo.toISOString();
+
+            // 1. Issues créées cette semaine (label signalement)
+            const newIssues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'signalement',
+              state: 'all',
+              since: since,
+              per_page: 100,
+            });
+            const createdThisWeek = newIssues.data.filter(
+              i => new Date(i.created_at) >= oneWeekAgo
+            );
+
+            // Numéros des issues créées cette semaine (pour exclure de la section 2)
+            const newIds = new Set(createdThisWeek.map(i => i.number));
+
+            // 2. Issues toujours ouvertes HORS celles créées cette semaine
+            const openIssues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'signalement',
+              state: 'open',
+              per_page: 100,
+            });
+            const olderOpen = openIssues.data.filter(i => !newIds.has(i.number));
+
+            // 3. Issues fermées cette semaine (label signalement)
+            const closedIssues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'signalement',
+              state: 'closed',
+              since: since,
+              per_page: 100,
+            });
+            const closedThisWeek = closedIssues.data.filter(
+              i => i.closed_at && new Date(i.closed_at) >= oneWeekAgo
+            );
+
+            // KPI total ouvert = nouveaux ouverts + anciens ouverts
+            const totalOpen = openIssues.data.length;
+
+            // Construire l'email
+            function formatList(issues) {
+              if (issues.length === 0) return 'Aucun.\n';
+              return issues.map(i => {
+                const labels = i.labels
+                  .map(l => l.name)
+                  .filter(n => n !== 'signalement')
+                  .join(', ');
+                return `• #${i.number} — ${i.title}${labels ? ' [' + labels + ']' : ''}\n  ${i.html_url}`;
+              }).join('\n') + '\n';
+            }
+
+            const body = `Récap hebdomadaire des signalements LoiClair\n` +
+              `Semaine du ${oneWeekAgo.toLocaleDateString('fr-FR')} au ${new Date().toLocaleDateString('fr-FR')}\n\n` +
+              `📌 TOTAL OUVERT : ${totalOpen}\n\n` +
+              `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
+              `🆕 NOUVEAUX SIGNALEMENTS (${createdThisWeek.length})\n\n` +
+              formatList(createdThisWeek) + '\n' +
+              `📂 TOUJOURS OUVERTS (${olderOpen.length})\n\n` +
+              formatList(olderOpen) + '\n' +
+              `✅ RÉSOLUS CETTE SEMAINE (${closedThisWeek.length})\n\n` +
+              formatList(closedThisWeek);
+
+            core.setOutput('body', body);
+            core.setOutput('total_new', createdThisWeek.length);
+            core.setOutput('total_open', totalOpen);
+            core.setOutput('total_closed', closedThisWeek.length);
+
+      - name: Envoyer l'email
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.GMAIL_ADDRESS }}
+          password: ${{ secrets.GMAIL_APP_PASSWORD }}
+          subject: "📊 LoiClair — Récap signalements : ${{ steps.build-recap.outputs.total_new }} nouveaux, ${{ steps.build-recap.outputs.total_open }} ouverts, ${{ steps.build-recap.outputs.total_closed }} résolus"
+          to: ${{ secrets.GMAIL_ADDRESS }}
+          from: LoiClair <${{ secrets.GMAIL_ADDRESS }}>
+          body: ${{ steps.build-recap.outputs.body }}
