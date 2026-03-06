@@ -314,7 +314,7 @@ function groupFeedEvents(feedEvents: FeedEvent[]): Map<string, GroupedFeedEvent>
   const groupMap = new Map<string, GroupedFeedEvent>();
   for (const event of feedEvents) {
     const dateISO = event.date ? toParisDateISO(event.date) : 'unknown';
-    const key = (event.type === 'DECISION' || event.type === 'CC_SAISINE')
+    const key = (event.type === 'DECISION' || event.type === 'CC_SAISINE' || event.type === 'MOTION_CENSURE')
       ? `${event.id}-${dateISO}-${event.type}`
       : `${event.dossierUid}-${dateISO}-${event.type}`;
     const existing = groupMap.get(key);

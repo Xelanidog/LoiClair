@@ -173,7 +173,8 @@ export async function getDossierTimeline(supabase: SupabaseClient, dossierUid: s
     .eq('dossier_uid', dossierUid)
     .not('date_acte', 'is', null)
     .in('libelle_acte', TIMELINE_TRACKED_LIBELLES)
-    .order('date_acte', { ascending: true });
+    .order('date_acte', { ascending: true })
+    .order('uid', { ascending: true });
 
   if (error) console.error('Erreur timeline dossier:', error);
   return data ?? [];

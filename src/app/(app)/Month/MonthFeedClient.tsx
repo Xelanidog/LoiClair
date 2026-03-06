@@ -218,28 +218,15 @@ function EventBody({ group }: { group: GroupedFeedEvent }) {
     case "CMP_CONVOCATION":
       return null; // contenu dans CardTitle
 
-    case "MOTION_CENSURE":
-      if (multi) {
-        return (
-          <div className="space-y-3">
-            {events.map(ev => (
-              <div key={ev.id} className="space-y-1">
-                {ev.scrutinTitre && <p className="text-xs text-muted-foreground">{ev.scrutinTitre}</p>}
-                <StatusBadge statut={ev.statutConclusion} />
-                <VoteBar event={ev} />
-                {ev.dossierUid && <ResumeIALink dossierUid={ev.dossierUid} texteUid={ev.texteUid} texteUrlAccessible={ev.texteUrlAccessible} />}
-              </div>
-            ))}
-          </div>
-        );
+    case "MOTION_CENSURE": {
+      const scrutin = e.scrutins[0] ?? null;
+      if (!scrutin) {
+        return e.statutConclusion
+          ? <div className="mt-1.5"><StatusBadge statut={e.statutConclusion} /></div>
+          : null;
       }
-      return (
-        <div className="space-y-1">
-          {e.scrutinTitre && <p className="text-xs text-muted-foreground">{e.scrutinTitre}</p>}
-          <StatusBadge statut={e.statutConclusion} />
-          <VoteBar event={e} />
-        </div>
-      );
+      return <div className="mt-1.5 space-y-1.5"><VoteBlock scrutin={scrutin} /></div>;
+    }
 
     case "DECL_GOUVERNEMENT":
       return null;
@@ -565,6 +552,9 @@ function getContextInfo(type: FeedEventType, e: FeedEvent, multi: boolean, event
   }
   if (type === "CMP_RAPPORT") {
     return <span className="font-bold text-foreground shrink-0">Commission mixte paritaire</span>;
+  }
+  if (type === "MOTION_CENSURE") {
+    return <span className="font-bold text-foreground shrink-0">Assemblée</span>;
   }
   if (type === "CMP_CONVOCATION") return null;
   if (type === "CC_SAISINE") {

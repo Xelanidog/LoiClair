@@ -186,7 +186,8 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
       .not('auteurs_refs', 'is', null)
       .limit(1);
 
-    const firstRef = textesWithAuthors?.[0]?.auteurs_refs?.split(',')?.[0]?.trim();
+    const auteursRefs = textesWithAuthors?.[0]?.auteurs_refs;
+    const firstRef = Array.isArray(auteursRefs) ? auteursRefs[0] : auteursRefs?.split(',')?.[0]?.trim();
     if (firstRef) {
       const { data: acteurData } = await supabase
         .from('acteurs')
