@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button"
 import Sidebar from "@/components/Sidebar"
 import MobileNav from "@/components/MobileNav"
 import { LastUpdateBadge } from "@/components/LastUpdateBadge"
+import SignalerProbleme from "@/components/SignalerProbleme"
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -28,6 +29,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <LastUpdateBadge />
         </div>
       </footer>
+      <SignalerProbleme />
     </div>
   )
 }

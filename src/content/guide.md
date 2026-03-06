@@ -297,6 +297,18 @@ La page **Types de textes** explique les différentes catégories de textes qui 
 
 ---
 
+## Signaler un problème
+
+Un bouton **Signaler** est visible en bas à droite de chaque page. Il permet à tout visiteur de remonter :
+
+- une **donnée incorrecte** (chiffre, nom, date, etc.),
+- un **problème d'affichage** (mise en page cassée, élément manquant),
+- un **lien cassé**,
+- un **résumé IA incorrect** (erreur factuelle dans un résumé généré),
+- ou **tout autre souci**.
+
+Après envoi, un ticket est automatiquement créé sur le dépôt GitHub public de LoiClair. Un lien vous est fourni pour suivre l'avancement du traitement. L'adresse email est facultative — elle sert uniquement si l'équipe a besoin de vous recontacter.
+
 ## Documentation
 
 La section **Documentation**, accessible dans le menu de gauche, rassemble quatre ressources complémentaires :
