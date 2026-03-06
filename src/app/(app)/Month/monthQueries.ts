@@ -38,7 +38,7 @@ const TIMELINE_TRACKED_LIBELLES = Object.keys(LIBELLE_TO_TYPE);
 export async function getMonthActes(supabase: SupabaseClient, dateStart: string, dateEnd: string) {
   const { data, error } = await supabase
     .from('actes_legislatifs')
-    .select('uid, code_acte, libelle_acte, date_acte, statut_conclusion, organe_ref, vote_refs, textes_associes, texte_adopte, dossier_uid')
+    .select('uid, code_acte, libelle_acte, date_acte, statut_conclusion, organe_ref, vote_refs, textes_associes, texte_adopte, dossier_uid, code_loi, titre_loi')
     .gte('date_acte', dateStart)
     .lte('date_acte', dateEnd)
     .not('date_acte', 'is', null)
@@ -116,7 +116,7 @@ export async function getMonthDossiers(supabase: SupabaseClient, dateStart: stri
 
 // Retrouve l'acte législatif associé à chaque scrutin via actes_legislatifs.vote_refs
 // Retourne un objet acte complet réutilisable par acteToFeedEvent
-export type ActeRow = { uid: string; code_acte: string; libelle_acte: string | null; date_acte: string; statut_conclusion: string | null; organe_ref: string | null; vote_refs: string[] | null; textes_associes: string[] | null; texte_adopte: string | null; dossier_uid: string | null };
+export type ActeRow = { uid: string; code_acte: string; libelle_acte: string | null; date_acte: string; statut_conclusion: string | null; organe_ref: string | null; vote_refs: string[] | null; textes_associes: string[] | null; texte_adopte: string | null; dossier_uid: string | null; code_loi?: string | null; titre_loi?: string | null };
 
 export async function getScrutinActeMap(supabase: SupabaseClient, scrutinUids: string[]) {
   if (scrutinUids.length === 0) return new Map<string, ActeRow>();

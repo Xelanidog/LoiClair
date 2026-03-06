@@ -81,6 +81,8 @@ export type FeedEvent = {
   rapporteurName: string | null;
   rapporteurGroupe: string | null;
   rapporteurIsMultiple: boolean | null;
+  codeLoi: string | null;
+  titreLoi: string | null;
   // Vote details (optional) — premier scrutin, pour backward compat
   votePour?: number | null;
   voteContre?: number | null;
@@ -274,6 +276,8 @@ function acteToFeedEvent(
     rapporteurName,
     rapporteurGroupe,
     rapporteurIsMultiple,
+    codeLoi: a.code_loi ?? null,
+    titreLoi: a.titre_loi ?? null,
     votePour: scrutin?.synthese_pour ?? null,
     voteContre: scrutin?.synthese_contre ?? null,
     voteAbstentions: scrutin?.synthese_abstentions ?? null,

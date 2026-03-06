@@ -25,6 +25,7 @@ import {
   ThumbsDown,
   Bookmark,
   Share2,
+  Info,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -249,12 +250,9 @@ function EventBody({ group }: { group: GroupedFeedEvent }) {
     }
 
     case "PROMULGATION":
-      return (
-        <div className="flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400">
-          <CheckCircle2 className="w-3.5 h-3.5" />
-          <span>Publiée au Journal officiel</span>
-        </div>
-      );
+      return e.codeLoi ? (
+        <p className="text-xs text-muted-foreground mt-1 font-mono">Loi n° {e.codeLoi}</p>
+      ) : null;
 
     default:
       return null;
@@ -328,11 +326,16 @@ function SocialIcons() {
 
 // ── Card footer (standard) ───────────────────────────────────
 
-function CardFooter({ dossierUid, texteUid, showResumeIA = true, texteUrlAccessible }: { dossierUid?: string | null; texteUid?: string | null; showResumeIA?: boolean; texteUrlAccessible?: boolean | null }) {
+function CardFooter({ dossierUid, texteUid, showResumeIA = true, texteUrlAccessible, learnMoreHref }: { dossierUid?: string | null; texteUid?: string | null; showResumeIA?: boolean; texteUrlAccessible?: boolean | null; learnMoreHref?: string }) {
   return (
     <div style={{ display: "flex", alignItems: "center", paddingTop: 14, marginTop: 12, width: "100%" }}>
       <div style={{ flexShrink: 0, flexGrow: 1 }}>
-        {showResumeIA && dossierUid ? (
+        {learnMoreHref ? (
+          <Link href={learnMoreHref} className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground hover:underline mt-1">
+            <Info className="w-3 h-3" />
+            En savoir plus
+          </Link>
+        ) : showResumeIA && dossierUid ? (
           <ResumeIALink dossierUid={dossierUid} texteUid={texteUid} texteUrlAccessible={texteUrlAccessible} />
         ) : null}
       </div>
@@ -433,13 +436,12 @@ function CardTitle({ group, e }: { group: GroupedFeedEvent; e: FeedEvent }) {
       </p>
     );
   }
-  // PROMULGATION : dossierTitre + badge JO
+  // PROMULGATION : titre officiel de la loi (capitalisé) ou titre du dossier
   if (t === "PROMULGATION") {
-    return (
-      <p className="text-sm leading-snug mb-0.5">
-        {group.dossierTitre || e.titre}
-      </p>
-    );
+    const titre = e.titreLoi
+      ? e.titreLoi.charAt(0).toUpperCase() + e.titreLoi.slice(1)
+      : (group.dossierTitre || e.titre);
+    return <p className="text-sm leading-snug mb-0.5">{titre}</p>;
   }
   // NAVETTE : direction en ligne 1, juste le titre ici
   if (t === "NAVETTE") {
@@ -653,8 +655,13 @@ function GroupedEventCard({ group, index }: { group: GroupedFeedEvent; index: nu
           <CardFooter
             dossierUid={group.dossierUid}
             texteUid={e.texteUid}
-            showResumeIA={!multi && group.type !== "CMP_CONVOCATION"}
+            showResumeIA={!multi && group.type !== "CMP_CONVOCATION" && group.type !== "CC_SAISINE"}
             texteUrlAccessible={e.texteUrlAccessible}
+            learnMoreHref={
+              group.type === "CMP_CONVOCATION" ? "/documentation/guide#processus-législatif" :
+              group.type === "CC_SAISINE" ? "/documentation/guide#les-organes-du-parlement" :
+              undefined
+            }
           />
         )}
 
