@@ -9,7 +9,7 @@ export async function POST(request: Request) {
   }
 
   const response = NextResponse.json({ ok: true })
- response.cookies.set('site-auth', PASSWORD, {
+ response.cookies.set('site-auth', PASSWORD!, {
   httpOnly: true,
   path: '/',
 })
