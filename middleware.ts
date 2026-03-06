@@ -4,7 +4,7 @@ import type { NextRequest } from 'next/server'
 const COOKIE_NAME = 'site-auth'
 
 export function middleware(request: NextRequest) {
-  const PASSWORD = process.env.SITE_PASSWORD || 'changeme'
+  const PASSWORD = process.env.SITE_PASSWORD
   const { pathname } = request.nextUrl
 
   // Laisser passer la page login ET les routes API
