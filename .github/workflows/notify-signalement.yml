@@ -1,0 +1,29 @@
+name: Notification signalement
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  notify:
+    if: contains(github.event.issue.labels.*.name, 'signalement')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Envoyer un email
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.GMAIL_ADDRESS }}
+          password: ${{ secrets.GMAIL_APP_PASSWORD }}
+          subject: "🚨 Nouveau signalement LoiClair : ${{ github.event.issue.title }}"
+          to: ${{ secrets.GMAIL_ADDRESS }}
+          from: LoiClair <${{ secrets.GMAIL_ADDRESS }}>
+          body: |
+            Un citoyen a signalé un problème sur LoiClair.
+
+            Titre : ${{ github.event.issue.title }}
+
+            ${{ github.event.issue.body }}
+
+            👉 Voir l'issue : ${{ github.event.issue.html_url }}
