@@ -107,14 +107,17 @@ export default function AboutPage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 mb-4">
             <Button variant="default" asChild>
-              <a href="mailto:Loiclair@protonmail.com">Envoyer feedback</a>
+              <a href="mailto:loiclair.fr@gmail.com">Envoyer feedback</a>
             </Button>
             <Button variant="outline" asChild>
-              <a href="mailto:Loiclair@protonmail.com">Proposer contribution</a>
+              <a href="mailto:loiclair.fr@gmail.com">Proposer contribution</a>
             </Button>
           </div>
           <p className="text-sm text-muted-foreground">
-            (Bientôt open-source sur GitHub pour contributions code/données !)
+            Projet open source sous licence AGPL v3 —{" "}
+            <Link href="https://github.com/Xelanidog/LoiClair" className="text-primary hover:underline">
+              Code source sur GitHub
+            </Link>
           </p>
         </section>
 
