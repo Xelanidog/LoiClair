@@ -47,13 +47,22 @@ export default function AboutPage() {
           {/* Liste badges : légère mise en avant sans alourdir */}
           <ul className="list-disc pl-6 mb-8 space-y-2 text-base">
             <li>
-              <Badge variant="secondary" className="mr-2">Next.js</Badge> + <Badge variant="secondary" className="mr-2">React</Badge> + <Badge variant="secondary" className="mr-2">TypeScript</Badge> : interface moderne et rapide.
+              <Badge variant="secondary" className="mr-2">Next.js</Badge> + <Badge variant="secondary" className="mr-2">React</Badge> + <Badge variant="secondary" className="mr-2">TypeScript</Badge> : interface moderne et rapide
             </li>
             <li>
-              <Badge variant="secondary" className="mr-2">Shadcn/ui</Badge> + <Badge variant="secondary" className="mr-2">Tailwind CSS</Badge> : design minimaliste, 100% responsive (desktop → mobile)
+              <Badge variant="secondary" className="mr-2">Tailwind CSS</Badge> + <Badge variant="secondary" className="mr-2">shadcn/ui</Badge> : design minimaliste, 100% responsive (desktop → mobile)
             </li>
             <li>
-              IA avancée : Xai avec prompts optimisés pour les resumés, Claude Code pour le développement.
+              <Badge variant="secondary" className="mr-2">Supabase</Badge> : base de données PostgreSQL hébergée pour stocker toutes les données législatives
+            </li>
+            <li>
+              <Badge variant="secondary" className="mr-2">Vercel</Badge> : hébergement et déploiement automatique à chaque mise à jour du code
+            </li>
+            <li>
+              <Badge variant="secondary" className="mr-2">GitHub Actions</Badge> + <Badge variant="secondary" className="mr-2">Python</Badge> : import quotidien automatique des données depuis les sources officielles
+            </li>
+            <li>
+              IA avancée : <Badge variant="secondary" className="mr-2">xAI / Grok</Badge> pour les résumés de lois, <Badge variant="secondary" className="mr-2">Claude Code</Badge> pour le développement
             </li>
           </ul>
         </section>
@@ -67,34 +76,34 @@ export default function AboutPage() {
           {/* Liste simple : liens prioritaires en gras */}
           <ul className="list-disc pl-6 space-y-4 text-base">
             <li>
+              <Link href="https://data.assemblee-nationale.fr/" className="text-primary hover:underline font-medium">
+                Open Data Assemblée nationale
+              </Link> — Dossiers législatifs, députés, amendements, scrutins, comptes rendus
+            </li>
+            <li>
               <Link href="https://www.assemblee-nationale.fr/" className="text-primary hover:underline font-medium">
                 Assemblée nationale
-              </Link> — Site principal + open data (députés, amendements, votes)
+              </Link> — Textes et documents officiels
             </li>
             <li>
               <Link href="https://www.senat.fr/" className="text-primary hover:underline font-medium">
                 Sénat
-              </Link> — Débats, textes, sénateurs
+              </Link> — Textes et documents officiels
             </li>
             <li>
-              <Link href="https://www.conseil-constitutionnel.fr/" className="text-primary hover:underline font-medium">
-                Conseil constitutionnel
-              </Link> — Contrôle des lois, décisions
+              <Link href="https://data.senat.fr/" className="text-primary hover:underline font-medium">
+                Open Data Sénat
+              </Link> — Questions, scrutins, sénateurs <Badge variant="outline" className="ml-2 text-xs">Bientôt</Badge>
             </li>
             <li>
               <Link href="https://www.legifrance.gouv.fr/" className="text-primary hover:underline font-medium">
                 Légifrance
-              </Link> — Lois promulguées, codes, Journal Officiel
+              </Link> — Lois promulguées, codes, Journal Officiel <Badge variant="outline" className="ml-2 text-xs">Bientôt</Badge>
             </li>
             <li>
-              <Link href="https://data.assemblee-nationale.fr/" className="text-primary hover:underline">
-                Open Data Assemblée
-              </Link> — Projets de loi détaillés
-            </li>
-            <li>
-              <Link href="https://data.senat.fr/" className="text-primary hover:underline">
-                Open Data Sénat
-              </Link> — Questions, scrutins
+              <Link href="https://www.conseil-constitutionnel.fr/" className="text-primary hover:underline font-medium">
+                Conseil constitutionnel
+              </Link> — Contrôle des lois, décisions <Badge variant="outline" className="ml-2 text-xs">Bientôt</Badge>
             </li>
           </ul>
         </section>
