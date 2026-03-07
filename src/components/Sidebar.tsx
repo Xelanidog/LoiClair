@@ -49,7 +49,7 @@ function SidebarLink({ href, label, icon: Icon, onNavigation }: NavItem & { onNa
     >
       <Icon className={cn("h-4 w-4 shrink-0", isActive ? "text-primary" : "text-muted-foreground")} />
       <span>{label}</span>
-      {isActive && <span className="ml-auto text-primary text-[10px] leading-none tracking-[-0.15em]" aria-hidden>||||||||||</span>}
+      {isActive && <span className="ml-auto text-primary text-[10px] leading-none tracking-[0.1em]" aria-hidden>||||||||||</span>}
     </Link>
   )
 }
