@@ -13,7 +13,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <aside className="hidden lg:block w-72 flex-shrink-0 bg-background border-r">
           <Sidebar />
         </aside>
-        <main className="flex-1 overflow-auto bg-background">
+        <main className="flex-1 overflow-auto bg-muted/30">
           <div className="pt-20 lg:pt-10 px-6 pb-6 md:px-8 md:pb-8 lg:px-10 lg:pb-10">
             {children}
           </div>

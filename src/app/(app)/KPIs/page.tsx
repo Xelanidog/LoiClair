@@ -429,7 +429,7 @@ return (
     </div>
 
       {/* Cartes de synthèse */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         
         <Card>
           <CardHeader>
@@ -437,7 +437,7 @@ return (
             <CardDescription>Dossiers législatifs</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-5xl font-bold text-primary">
+            <div className="text-4xl font-bold text-primary">
               {statsData.total_dossiers.toLocaleString('fr-FR')}
             </div>
           </CardContent>
@@ -449,7 +449,7 @@ return (
             <CardDescription>Dossiers déposés</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-5xl font-bold text-primary">
+            <div className="text-4xl font-bold text-primary">
               {statsData.mois_courant.toLocaleString('fr-FR')}
             </div>
           </CardContent>
@@ -461,7 +461,7 @@ return (
             <CardDescription>Sur les 24 derniers mois</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-5xl font-bold text-primary">
+            <div className="text-4xl font-bold text-primary">
               {statsData.moyenne_mensuelle}
             </div>
           </CardContent>
@@ -472,9 +472,9 @@ return (
       <MonthlyDossiersChart data={chartData} />
 
             {/* Nouvelles cartes par statut */}
-      <div className="mt-8">
-  <h2 className="text-4xl font-semibold mb-6">État des dossiers</h2>
-  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6">
+      <div className="mt-6">
+  <h2 className="text-lg font-semibold mb-4">État des dossiers</h2>
+  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
 
     {/* Carte 1 - En traitement */}
     <Card className="grid grid-rows-[auto_1fr_auto] gap-2 text-center">
@@ -485,7 +485,7 @@ return (
         </CardDescription>
       </CardHeader>
       <div className="flex items-end justify-center mt-6 md:mt-8">
-        <div className="text-5xl font-bold">
+        <div className="text-4xl font-bold">
           {statsData.en_cours.toLocaleString('fr-FR')}
         </div>
       </div>
@@ -500,7 +500,7 @@ return (
         </CardDescription>
       </CardHeader>
       <div className="flex items-end justify-center mt-6 md:mt-8">
-        <div className="text-5xl font-bold text-emerald-600">
+        <div className="text-4xl font-bold text-emerald-600">
           {statsData.adoptes_an.toLocaleString('fr-FR')}
         </div>
       </div>
@@ -515,7 +515,7 @@ return (
         </CardDescription>
       </CardHeader>
       <div className="flex items-end justify-center mt-6 md:mt-8">
-        <div className="text-5xl font-bold text-emerald-600">
+        <div className="text-4xl font-bold text-emerald-600">
           {statsData.adoptes_senat.toLocaleString('fr-FR')}
         </div>
       </div>
@@ -530,7 +530,7 @@ return (
         </CardDescription>
       </CardHeader>
       <div className="flex items-end justify-center mt-6 md:mt-8">
-        <div className="text-5xl font-bold text-emerald-600">
+        <div className="text-4xl font-bold text-emerald-600">
           {statsData.adoptes_parlement.toLocaleString('fr-FR')}
         </div>
       </div>
@@ -545,7 +545,7 @@ return (
         </CardDescription>
       </CardHeader>
       <div className="flex items-end justify-center mt-6 md:mt-8">
-        <div className="text-5xl font-bold text-purple-600">
+        <div className="text-4xl font-bold text-purple-600">
           {statsData.promulgues.toLocaleString('fr-FR')}
         </div>
       </div>
@@ -560,7 +560,7 @@ return (
         </CardDescription>
       </CardHeader>
       <div className="flex items-end justify-center mt-6 md:mt-8">
-        <div className="text-5xl font-bold text-red-600">
+        <div className="text-4xl font-bold text-red-600">
           {statsData.rejetes.toLocaleString('fr-FR')}
         </div>
       </div>
@@ -570,9 +570,9 @@ return (
 </div>
 
       {/* Efficacité du processus */}
-      <div className="mt-8">
-        <h2 className="text-4xl font-semibold mb-6">Efficacité du processus</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+      <div className="mt-6">
+        <h2 className="text-lg font-semibold mb-4">Efficacité du processus</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
 
           <Card className="text-center">
             <CardHeader>
@@ -582,7 +582,7 @@ return (
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-5xl font-bold text-purple-600">
+              <div className="text-4xl font-bold text-purple-600">
                 {statsData.taux_promulgation} %
               </div>
               <p className="text-sm text-muted-foreground mt-2">
@@ -602,7 +602,7 @@ return (
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-5xl font-bold text-primary">
+              <div className="text-4xl font-bold text-primary">
                 {statsData.delai_moyen_jours} j
               </div>
               <p className="text-sm text-muted-foreground mt-2">
@@ -625,7 +625,7 @@ return (
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-5xl font-bold text-blue-600">
+              <div className="text-4xl font-bold text-blue-600">
                 {statsData.delai_moyen_an_jours} j
               </div>
               <p className="text-sm text-muted-foreground mt-2">
@@ -648,7 +648,7 @@ return (
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-5xl font-bold text-orange-600">
+              <div className="text-4xl font-bold text-orange-600">
                 {statsData.delai_moyen_sn_jours} j
               </div>
               <p className="text-sm text-muted-foreground mt-2">
@@ -669,9 +669,9 @@ return (
 
       {/* Activité par groupe politique */}
       {groupeStats.length > 0 && (
-        <div className="mt-8">
-          <h2 className="text-4xl font-semibold mb-6">Activité par groupe politique</h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="mt-6">
+          <h2 className="text-lg font-semibold mb-4">Activité par groupe politique</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <GroupeBarChart
               data={groupeStats.map(g => ({ groupe: g.groupe, value: g.total }))}
               title="Textes proposés"
@@ -697,8 +697,8 @@ return (
 
       {/* Taux de succès par groupe politique */}
       {groupeStats.length > 0 && (
-        <div className="mt-8">
-          <h2 className="text-4xl font-semibold mb-2">Succès législatif par groupe</h2>
+        <div className="mt-6">
+          <h2 className="text-lg font-semibold mb-2">Succès législatif par groupe</h2>
           <p className="text-muted-foreground mb-2">
             Adoption Assemblé Nationale et Sénat : sur tous les textes pertinents aux deux chambres. Promulgation : sur les textes à vocation législative uniquement (par exemple certains texte étudiés au parlement n'ont pas vocation à être promulgués; comme les résolution par exemple).
           </p>
@@ -711,8 +711,8 @@ return (
 
       {/* Parlementaires les plus actifs */}
       {allParlementaires.length > 0 && (
-        <div className="mt-8">
-          <h2 className="text-4xl font-semibold mb-2">Parlementaires les plus actifs</h2>
+        <div className="mt-6">
+          <h2 className="text-lg font-semibold mb-2">Parlementaires les plus actifs</h2>
           <p className="text-muted-foreground mb-2">
             Classement des 20 députés et sénateurs les plus impliqués dans les textes législatifs, en tant qu'auteur/co-auteur ou rapporteur.
           </p>

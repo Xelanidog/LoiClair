@@ -43,12 +43,13 @@ function SidebarLink({ href, label, icon: Icon, onNavigation }: NavItem & { onNa
       className={cn(
         "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors",
         isActive
-          ? "bg-primary text-primary-foreground font-medium"
+          ? "text-primary font-medium"
           : "text-muted-foreground hover:text-foreground hover:bg-accent"
       )}
     >
-      <Icon className={cn("h-4 w-4 shrink-0", isActive ? "text-primary-foreground" : "text-muted-foreground")} />
+      <Icon className={cn("h-4 w-4 shrink-0", isActive ? "text-primary" : "text-muted-foreground")} />
       <span>{label}</span>
+      {isActive && <span className="ml-auto text-primary text-[10px] leading-none tracking-[-0.15em]" aria-hidden>||||||||||</span>}
     </Link>
   )
 }
