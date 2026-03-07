@@ -147,21 +147,18 @@ const docItems: NavItem[] = [
 export function SidebarNavContent({ onNavigation }: { onNavigation?: () => void }) {
   return (
     <div className="flex flex-col h-full">
-      {/* Logo */}
+      {/* Header */}
       <div className="px-5 pt-6 pb-5">
-        <Link href="/" onClick={onNavigation} className="flex items-center gap-2">
-          <div className="h-7 w-7 rounded-md bg-primary flex items-center justify-center shrink-0">
-            <Scale className="h-4 w-4 text-primary-foreground" />
-          </div>
+        <Link href="/" onClick={onNavigation}>
           <span className="font-bold text-lg tracking-tight">LoiClair</span>
         </Link>
-        <p className="text-xs text-muted-foreground mt-1.5 pl-9">
+        <p className="text-xs text-muted-foreground mt-1.5">
           Lois claires, République accessible
         </p>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 pt-8 pb-4 space-y-6">
+      <nav className="flex-1 px-3 pt-4 pb-4 space-y-6">
         <SidebarSection label="Tableau de bord" items={dashboardItems} onNavigation={onNavigation} />
         <CollapsibleSection label="Organes législatifs" items={organeItems} onNavigation={onNavigation} />
         <CollapsibleSection label="Documentation" items={docItems} onNavigation={onNavigation} />
