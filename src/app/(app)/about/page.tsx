@@ -112,14 +112,14 @@ export default function AboutPage() {
         <section className="mb-12">
           <h2 className="text-2xl font-semibold mb-6">Donnez votre feedback et contribuez !</h2>
           <p className="text-base leading-relaxed mb-6">
-            LoiClair vit grâce à vous. Dites-nous ce qui manque, ce qui est confus, ou proposez des lois à vulgariser en priorité.
+            LoiClair vit grâce à vous. Feedback, idées de fonctionnalités, lois à vulgariser en priorité, signalement d'erreurs — toute contribution est la bienvenue, technique ou non.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 mb-4">
             <Button variant="default" asChild>
-              <a href="mailto:loiclair.fr@gmail.com">Envoyer feedback</a>
+              <a href="mailto:loiclair.fr@gmail.com">Contactez l'équipe LoiClair</a>
             </Button>
             <Button variant="outline" asChild>
-              <a href="mailto:loiclair.fr@gmail.com">Proposer contribution</a>
+              <Link href="https://github.com/Xelanidog/LoiClair/issues">Contribuer au code sur GitHub</Link>
             </Button>
           </div>
           <p className="text-sm text-muted-foreground">
