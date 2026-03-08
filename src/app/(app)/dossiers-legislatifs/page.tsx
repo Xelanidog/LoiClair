@@ -13,6 +13,7 @@ import SearchInput from '@/components/SearchInput';
 import ProcedureTooltip from '@/components/ProcedureTooltip';
 import { DEFINITIONS } from '@/lib/definitions';
 import { STEP_CONFIG, MILESTONE_CODES } from '@/lib/legislative-steps';
+import { getStatusBadgeClass } from '@/lib/statusMapping';
 import {
   Pagination,
   PaginationContent,
@@ -133,35 +134,7 @@ if (age) {
   // Fetch Supabase avec filtre statut (si présent).
 let query = supabase
   .from('dossiers_legislatifs')
-  .select('*, initiateur_acteur_ref(uid, nom, prenom, roles_text, groupe:organes(uid, libelle)), textes_count: textes!dossier_ref(count), date_promulgation') 
- 
-  if (statut) {
-    query = query.eq('statut_final', statut);
-  }
-
-  if (procedure) {
-  query = query.eq('procedure_libelle', procedure);
-}
-
-// Après les if pour statut et procedure...
-
-if (age && sixMonthsAgo && oneYearAgo) {
-  const sixMonthsAgoISO = sixMonthsAgo.toISOString(); // Convertit en format timestamp ISO pour Supabase.
-  const oneYearAgoISO = oneYearAgo.toISOString();
-
-  if (age === 'moins_6m') {
-    query = query.gt('date_depot', sixMonthsAgoISO); // Plus récent que 6 mois en arrière.
-  } else if (age === '6m_1a') {
-    query = query.gt('date_depot', oneYearAgoISO) // Plus récent que 1 an en arrière...
-               .lte('date_depot', sixMonthsAgoISO); // ...mais pas plus récent que 6 mois en arrière.
-  } else if (age === 'plus_1a') {
-    query = query.lte('date_depot', oneYearAgoISO); // Plus ancien ou égal à 1 an en arrière.
-  }
-}
-
-if (groupeFilter && groupeMap[groupeFilter]) {
-  query = query.eq('initiateur_groupe_libelle', groupeMap[groupeFilter]);
-}
+  .select('*, initiateur_acteur_ref(uid, nom, prenom, roles_text, groupe:organes(uid, libelle)), textes_count: textes!dossier_ref(count), date_promulgation')
 
 // Helper pour appliquer les mêmes filtres sur n'importe quelle query
 function applyFilters(q: any) {
@@ -390,14 +363,7 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
           const textesCount = (dossier.textes_count as { count: number }[] | null)?.[0]?.count ?? 0;
           const hasAccessibleTexte = dossiersWithAccessibleTexte.has(dossier.uid);
 
-          const badgeClass =
-            dossier.statut_final === "Promulguée" ? "bg-[#27AE60]/15 text-[#27AE60] border-[#27AE60]/30" :
-            dossier.statut_final === "Rejeté" ? "bg-[#E74C3C]/15 text-[#E74C3C] border-[#E74C3C]/30" :
-            dossier.statut_final === "En cours d'examen" ? "bg-[#F39C12]/15 text-[#F39C12] border-[#F39C12]/30" :
-            dossier.statut_final === "Adopté par le Parlement" ? "bg-violet-100 text-violet-800 border-violet-200" :
-            dossier.statut_final === "Adopté par l'Assemblée nationale" ? "bg-primary/10 text-primary border-primary/30" :
-            dossier.statut_final === "Adopté par le Sénat" ? "bg-[#F39C12]/10 text-[#F39C12] border-[#F39C12]/30" :
-            "bg-muted text-muted-foreground border-border";
+          const badgeClass = getStatusBadgeClass(dossier.statut_final);
 
           return (
             <li key={dossier.uid}>

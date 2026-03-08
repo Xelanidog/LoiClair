@@ -28,6 +28,7 @@ import {
   Info,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getStatusBadgeClass } from "@/lib/statusMapping";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -144,16 +145,10 @@ function VoteBar({ event }: { event: VoteData }) {
 
 function StatusBadge({ statut }: { statut: string | null }) {
   if (!statut) return null;
-  const l = statut.toLowerCase();
-  const rejected = l.includes("rejet") || l.includes("pas adopté");
-  const adopted = !rejected && l.includes("adopt");
-
   return (
     <span className={cn(
       "inline-block text-[11px] font-medium px-2 py-1 rounded-md leading-relaxed",
-      adopted ? "bg-[#27AE60]/15 text-[#27AE60] dark:bg-[#27AE60]/20 dark:text-[#2ECC71]"
-        : rejected ? "bg-[#E74C3C]/15 text-[#E74C3C] dark:bg-[#E74C3C]/20 dark:text-[#E74C3C]"
-        : "bg-muted text-muted-foreground"
+      getStatusBadgeClass(statut)
     )} style={{ maxWidth: '66%' }}>
       {statut}
     </span>

@@ -16,6 +16,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import ProcedureTooltip from '@/components/ProcedureTooltip';
 import { DEFINITIONS } from '@/lib/definitions';
+import { getStatusBadgeClass } from '@/lib/statusMapping';
 
 interface Texte {
   uid: string;
@@ -86,14 +87,6 @@ function parseCompletion(text: string): Record<string, string> {
   };
 }
 
-const BADGE_CLASSES: Record<string, string> = {
-  "Promulguée": "bg-[#27AE60]/15 text-[#27AE60] border-[#27AE60]/30",
-  "Rejeté": "bg-[#E74C3C]/15 text-[#E74C3C] border-[#E74C3C]/30",
-  "En cours d'examen": "bg-[#F39C12]/15 text-[#F39C12] border-[#F39C12]/30",
-  "Adopté par le Parlement": "bg-violet-100 text-violet-800 border-violet-200",
-  "Adopté par l'Assemblée nationale": "bg-primary/10 text-primary border-primary/30",
-  "Adopté par le Sénat": "bg-[#F39C12]/10 text-[#F39C12] border-[#F39C12]/30",
-};
 
 export default function ResumeIAClient({ uid, titreDossier, initialTextes, statutFinal, procedureLibelle, dateDepot, datePromulgation, lienAN, lienSenat, lienLegifrance, dureeTotal, dureeAN, dureeANEnCours, dureeSenat, dureeSNEnCours, passageCMP, nbVotes, auteurNom, auteurGroupe, timelineSteps, scrutinsParTexte, initialTexteUid, cachedResumes }: ResumeIAClientProps) {
   const [textes] = useState<Texte[]>(initialTextes);
@@ -189,7 +182,7 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
         {/* Ligne 1 : badge statut + type procédure + auteur + groupe + date */}
         <div className="flex flex-wrap items-center gap-2 text-sm">
           {statutFinal && (
-            <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${BADGE_CLASSES[statutFinal] ?? "bg-gray-100 text-gray-700 border-gray-200"}`}>
+            <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${getStatusBadgeClass(statutFinal)}`}>
               {statutFinal}
             </span>
           )}
@@ -414,7 +407,7 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
         return (
           <div className="mb-6 rounded-lg border px-4 py-3" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <div className="flex flex-wrap items-center gap-2">
-              <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${isAdopted ? 'bg-[#27AE60]/15 text-[#27AE60] border-[#27AE60]/30 dark:bg-[#27AE60]/20 dark:text-[#2ECC71] dark:border-[#27AE60]/30' : isRejected ? 'bg-[#E74C3C]/15 text-[#E74C3C] border-[#E74C3C]/30 dark:bg-[#E74C3C]/20 dark:text-[#E74C3C] dark:border-[#E74C3C]/30' : 'bg-muted text-muted-foreground border-border'}`}>
+              <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${getStatusBadgeClass(isAdopted ? 'Adopté' : isRejected ? 'Rejeté' : null)}`}>
                 {isAdopted ? 'Adopté' : isRejected ? 'Rejeté' : 'Vote'}
               </span>
               <div className="flex items-center gap-1.5 flex-1 min-w-0">

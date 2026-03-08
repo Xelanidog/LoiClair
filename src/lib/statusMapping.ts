@@ -79,3 +79,26 @@ export const statusMapping: Record<string, StatusInfo> = {
     color: 'bg-[#F39C12]/15 text-[#F39C12] dark:bg-[#F39C12]/20 dark:text-[#F1C40F]'
   }
 };
+
+// ── Badge classes pour statut_final (source de vérité unique) ──
+
+export const STATUS_BADGE_CLASSES: Record<string, string> = {
+  "Promulguée": "bg-[#27AE60]/15 text-[#27AE60] border-[#27AE60]/30 dark:bg-[#27AE60]/20 dark:text-[#2ECC71]",
+  "Rejeté": "bg-[#E74C3C]/15 text-[#E74C3C] border-[#E74C3C]/30 dark:bg-[#E74C3C]/20",
+  "En cours d'examen": "bg-[#F39C12]/15 text-[#F39C12] border-[#F39C12]/30 dark:bg-[#F39C12]/20 dark:text-[#F1C40F]",
+  "Adopté par le Parlement": "bg-violet-100 text-violet-800 border-violet-200 dark:bg-violet-900/30 dark:text-violet-300",
+  "Adopté par l'Assemblée nationale": "bg-primary/10 text-primary border-primary/30",
+  "Adopté par le Sénat": "bg-[#F39C12]/10 text-[#F39C12] border-[#F39C12]/30 dark:bg-[#F39C12]/15 dark:text-[#F1C40F]",
+};
+
+const FALLBACK_BADGE_CLASS = "bg-muted text-muted-foreground border-border";
+
+/** Retourne la classe badge pour un statut donné (match exact, puis fallback par mot-clé) */
+export function getStatusBadgeClass(statut: string | null | undefined): string {
+  if (!statut) return FALLBACK_BADGE_CLASS;
+  if (STATUS_BADGE_CLASSES[statut]) return STATUS_BADGE_CLASSES[statut];
+  const l = statut.toLowerCase();
+  if (l.includes("rejet") || l.includes("pas adopté")) return STATUS_BADGE_CLASSES["Rejeté"];
+  if (l.includes("adopt") || l.includes("modifi")) return STATUS_BADGE_CLASSES["Promulguée"];
+  return FALLBACK_BADGE_CLASS;
+}
