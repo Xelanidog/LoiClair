@@ -583,7 +583,7 @@ export default function LandingPage() {
             <div className="pt-2">
               <Link href="/Month">
                 <Button size="lg" className="rounded-full gap-2 hover:scale-105">
-                  Découvrir le fil du mois
+                  Fil d&apos;actu parlementaire
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
