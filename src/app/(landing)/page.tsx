@@ -754,7 +754,7 @@ export default function LandingPage() {
                     size="lg"
                     className="gap-2 text-primary hover:text-primary px-0 text-base"
                   >
-                    Explorer le fil du mois
+                    Explorer le fil d&apos;actualité
                     <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
@@ -993,7 +993,7 @@ export default function LandingPage() {
                     size="lg"
                     className="rounded-full gap-2 bg-background text-foreground hover:bg-background hover:scale-105"
                   >
-                    Explorer le fil du mois
+                    Explorer le fil d&apos;actualité
                     <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
