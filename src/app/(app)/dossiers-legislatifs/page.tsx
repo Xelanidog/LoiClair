@@ -373,12 +373,12 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
           <ResetButton />
       </div>
 
-      <div className="mb-4 text-sm text-gray-600">
+      <div className="mb-4 text-sm text-muted-foreground">
       {finalTotalCount} dossier{(totalCount || 0) > 1 ? 's' : ''} trouvé{(totalCount || 0) > 1 ? 's' : ''}.      </div>
 
 
       {sortedDossiers.length === 0 ? (
-  <div className="text-center text-gray-600 mb-4">Aucun dossier législatif trouvé avec ces filtres.</div>
+  <div className="text-center text-muted-foreground mb-4">Aucun dossier législatif trouvé avec ces filtres.</div>
 ) : (
   <>
     <ul className="space-y-3">
@@ -391,13 +391,13 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
           const hasAccessibleTexte = dossiersWithAccessibleTexte.has(dossier.uid);
 
           const badgeClass =
-            dossier.statut_final === "Promulguée" ? "bg-green-100 text-green-800 border-green-200" :
-            dossier.statut_final === "Rejeté" ? "bg-red-100 text-red-800 border-red-200" :
-            dossier.statut_final === "En cours d'examen" ? "bg-yellow-100 text-yellow-800 border-yellow-200" :
-            dossier.statut_final === "Adopté par le Parlement" ? "bg-purple-100 text-purple-800 border-purple-200" :
-            dossier.statut_final === "Adopté par l'Assemblée nationale" ? "bg-blue-100 text-blue-800 border-blue-200" :
-            dossier.statut_final === "Adopté par le Sénat" ? "bg-indigo-100 text-indigo-800 border-indigo-200" :
-            "bg-gray-100 text-gray-700 border-gray-200";
+            dossier.statut_final === "Promulguée" ? "bg-[#27AE60]/15 text-[#27AE60] border-[#27AE60]/30" :
+            dossier.statut_final === "Rejeté" ? "bg-[#E74C3C]/15 text-[#E74C3C] border-[#E74C3C]/30" :
+            dossier.statut_final === "En cours d'examen" ? "bg-[#F39C12]/15 text-[#F39C12] border-[#F39C12]/30" :
+            dossier.statut_final === "Adopté par le Parlement" ? "bg-violet-100 text-violet-800 border-violet-200" :
+            dossier.statut_final === "Adopté par l'Assemblée nationale" ? "bg-primary/10 text-primary border-primary/30" :
+            dossier.statut_final === "Adopté par le Sénat" ? "bg-[#F39C12]/10 text-[#F39C12] border-[#F39C12]/30" :
+            "bg-muted text-muted-foreground border-border";
 
           return (
             <li key={dossier.uid}>
@@ -460,13 +460,13 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
                     .map(code => ({ label: STEP_CONFIG[code].label }));
                   const steps = [{ label: 'Dépôt' }, ...milestoneSteps];
                   const lastIdx = steps.length - 1;
-                  const lineColor = isRejected ? 'bg-red-400' : 'bg-primary';
+                  const lineColor = isRejected ? 'bg-[#E74C3C]' : 'bg-primary';
                   return (
                     <div className="flex mb-6 overflow-x-auto">
                       {steps.map((step, i) => (
                         <div key={i} className="w-12 sm:w-20 shrink-0 flex flex-col">
                           <div className="flex items-center">
-                            <div className={`w-2.5 h-2.5 rounded-full border-2 shrink-0 ${isRejected && i === lastIdx ? 'bg-red-500 border-red-500' : 'bg-primary border-primary'}`} />
+                            <div className={`w-2.5 h-2.5 rounded-full border-2 shrink-0 ${isRejected && i === lastIdx ? 'bg-[#E74C3C] border-[#E74C3C]' : 'bg-primary border-primary'}`} />
                             {i < lastIdx && <div className={`flex-1 h-px ${lineColor}`} />}
                           </div>
                           <span className="text-[10px] leading-tight mt-1.5 text-foreground font-medium">{step.label}</span>
@@ -479,7 +479,7 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
                 {/* Liens */}
                 <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-border text-xs">
                   <Link href={`/dossiers-legislatifs/${dossier.uid}/resume-ia`} target="_blank" className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border border-primary/30 hover:border-primary/60 hover:scale-105 transition-all duration-200 group">
-                    <Sparkles className="w-3.5 h-3.5 text-fuchsia-600 group-hover:rotate-12 transition-transform duration-200" />
+                    <Sparkles className="w-3.5 h-3.5 text-primary group-hover:rotate-12 transition-transform duration-200" />
                     <ShimmerText>Détails, votes & Résumé IA</ShimmerText>
                   </Link>
                   {dossier.lien_an && (
@@ -498,8 +498,8 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
                     </a>
                   )}
                   <div className="ml-auto flex items-center gap-3">
-                    <span className={`inline-flex items-center gap-1 ${hasAccessibleTexte ? 'text-green-600 dark:text-green-400' : textesCount > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-muted-foreground'}`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${hasAccessibleTexte ? 'bg-green-500' : textesCount > 0 ? 'bg-red-500' : 'bg-muted-foreground/40'}`} />
+                    <span className={`inline-flex items-center gap-1 ${hasAccessibleTexte ? 'text-[#27AE60] dark:text-[#2ECC71]' : textesCount > 0 ? 'text-[#F39C12] dark:text-[#F1C40F]' : 'text-muted-foreground'}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${hasAccessibleTexte ? 'bg-[#27AE60]' : textesCount > 0 ? 'bg-[#E74C3C]' : 'bg-muted-foreground/40'}`} />
                       {hasAccessibleTexte ? `${textesCount} texte${textesCount > 1 ? 's' : ''} publié${textesCount > 1 ? 's' : ''}` : textesCount > 0 ? 'Texte non encore publié' : 'Aucun texte'}
                     </span>
                     <span className="font-mono text-[10px] text-muted-foreground/40 select-all">{dossier.uid}</span>

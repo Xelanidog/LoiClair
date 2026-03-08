@@ -74,23 +74,23 @@ export default function ConformiteIAPage() {
 
       {/* Résumé visuel rapide */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
-        <Card className="border-green-500/30 bg-green-500/5">
+        <Card className="border-[#27AE60]/30 bg-[#27AE60]/5">
           <CardContent className="pt-4 pb-4 flex flex-col gap-1">
-            <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
+            <CheckCircle2 className="h-5 w-5 text-[#27AE60] dark:text-[#2ECC71]" />
             <p className="font-semibold text-sm mt-1">Déployeur</p>
             <p className="text-xs text-muted-foreground">LoiClair utilise un modèle existant, ne le crée pas.</p>
           </CardContent>
         </Card>
-        <Card className="border-blue-500/30 bg-blue-500/5">
+        <Card className="border-primary/30 bg-primary/5">
           <CardContent className="pt-4 pb-4 flex flex-col gap-1">
-            <Bot className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            <Bot className="h-5 w-5 text-primary" />
             <p className="font-semibold text-sm mt-1">Risque limité</p>
             <p className="text-xs text-muted-foreground">Information neutre, pas d&apos;influence électorale.</p>
           </CardContent>
         </Card>
-        <Card className="border-orange-500/30 bg-orange-500/5">
+        <Card className="border-[#F39C12]/30 bg-[#F39C12]/5">
           <CardContent className="pt-4 pb-4 flex flex-col gap-1">
-            <Clock className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+            <Clock className="h-5 w-5 text-[#F39C12] dark:text-[#F1C40F]" />
             <p className="font-semibold text-sm mt-1">Échéance : août 2026</p>
             <p className="text-xs text-muted-foreground">Application complète de l&apos;Article 50.</p>
           </CardContent>
@@ -186,7 +186,7 @@ export default function ConformiteIAPage() {
                 { title: 'Ne pas induire en erreur', desc: 'Le contenu IA ne doit pas être présenté comme une analyse humaine ou officielle.', todo: false },
               ].map(({ title, desc, todo }) => (
                 <div key={title} className="flex gap-3 p-3 rounded-lg border">
-                  <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />
+                  <CheckCircle2 className="h-4 w-4 text-[#27AE60] shrink-0 mt-0.5" />
                   <div>
                     <p className="font-semibold text-foreground text-sm">{title} {todo && <Badge variant="outline" className="text-xs ml-1">À venir (2026)</Badge>}</p>
                     <p className="text-xs mt-0.5">{desc}</p>
@@ -195,7 +195,7 @@ export default function ConformiteIAPage() {
               ))}
             </div>
             <div className="flex gap-2 mt-3 p-3 rounded-lg border border-orange-500/30 bg-orange-500/5">
-              <AlertTriangle className="h-4 w-4 text-orange-500 shrink-0 mt-0.5" />
+              <AlertTriangle className="h-4 w-4 text-[#F39C12] shrink-0 mt-0.5" />
               <p className="text-xs">
                 Ces obligations deviennent pleinement applicables en <strong>août 2026</strong>.
                 LoiClair anticipe ces exigences dès maintenant par bonne pratique.
@@ -237,7 +237,7 @@ export default function ConformiteIAPage() {
                 },
               ].map(({ title, desc }) => (
                 <div key={title} className="flex gap-3 p-3 rounded-lg border">
-                  <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />
+                  <CheckCircle2 className="h-4 w-4 text-[#27AE60] shrink-0 mt-0.5" />
                   <div>
                     <p className="font-semibold text-foreground text-sm">{title}</p>
                     <p className="text-xs mt-0.5">{desc}</p>
@@ -258,7 +258,7 @@ export default function ConformiteIAPage() {
             <div key={date} className="flex gap-4">
               <div className="flex flex-col items-center">
                 <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-1
-                  ${done ? 'bg-green-500 border-green-500' : 'bg-background border-primary'}`}>
+                  ${done ? 'bg-[#27AE60] border-[#27AE60]' : 'bg-background border-primary'}`}>
                   {done && <CheckCircle2 className="h-3 w-3 text-white" />}
                 </div>
                 {index < TIMELINE.length - 1 && <div className="w-px flex-1 bg-border mt-1" />}

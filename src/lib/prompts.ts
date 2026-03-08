@@ -42,5 +42,10 @@ export const MODEL_RESUME_LOI = 'grok-4-1-fast-non-reasoning'; // Optimisation :
 // Limite max pour l'input (texteComplet) en caractères (≈ tokens/4). Ajuste pour équilibrer qualité et perf.
 export const MAX_INPUT_CHARS_RESUME_LOI = 20000; // Ex. : 8000 chars ≈ 2000 tokens ≈ 1000-1300 mots ; évite perte de contexte sur lois longues.
 
-// Version du prompt – à bumper (v2, v3…) à chaque modification de prompt, modèle ou params pour invalider le cache.
-export const PROMPT_VERSION_RESUME_LOI = 'v1';
+// Version du prompt – hash auto-calculé à partir du contenu (prompt + modèle + params).
+// Toute modification ci-dessus invalide automatiquement le cache, sans bump manuel.
+import { createHash } from 'crypto';
+export const PROMPT_VERSION_RESUME_LOI = createHash('md5')
+  .update(SYSTEM_PROMPT_RESUME_LOI + USER_PROMPT_TEMPLATE_RESUME_LOI + MODEL_RESUME_LOI + JSON.stringify(PARAMS_RESUME_LOI))
+  .digest('hex')
+  .slice(0, 8);

@@ -149,7 +149,7 @@ export function SidebarNavContent({ onNavigation }: { onNavigation?: () => void 
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="px-5 pt-6 pb-5">
-        <Link href="/" onClick={onNavigation}>
+        <Link href="/Month" onClick={onNavigation}>
           <span className="font-bold text-lg tracking-tight">LoiClair</span>
         </Link>
         <p className="text-xs text-muted-foreground mt-1.5">

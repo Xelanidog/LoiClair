@@ -68,9 +68,9 @@ interface OrganeInfo {
 
 // Palette de couleurs partagée (Tailwind 500/400)
 const GROUP_COLOR_PALETTE = [
-  '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899',
-  '#06B6D4', '#F97316', '#6366F1', '#14B8A6', '#A78BFA',
-  '#F472B6', '#60A5FA', '#34D399', '#FBBF24', '#A3E635',
+  '#06B6D4', '#D4A54A', '#8B5CF6', '#27AE60', '#E74C3C',
+  '#0891B2', '#F39C12', '#6366F1', '#2ECC71', '#A8A29E',
+  '#22D3EE', '#E67E22', '#7C3AED', '#1ABC9C', '#44403C',
 ] as const;
 
 function computeExtremes(acteurs: any[], field: string) {
@@ -137,7 +137,7 @@ function buildGroupesData(
       name: organesMap.get(uid)?.libelle || uid,
       nameShort: organesMap.get(uid)?.libelleAbrege || organesMap.get(uid)?.libelle || uid,
       value,
-      fill: '#888888',
+      fill: '#A8A29E',
     }))
     .sort((a, b) => b.value - a.value)
     .map((g, index) => ({

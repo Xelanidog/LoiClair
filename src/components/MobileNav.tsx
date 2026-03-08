@@ -19,8 +19,8 @@ export default function MobileNav() {
   }, [pathname])
 
   return (
-    <header className="lg:hidden fixed top-0 left-0 right-0 z-40 h-14 flex items-center justify-between px-4 bg-background border-b">
-      <Link href="/" className="font-bold text-xl tracking-tight">
+    <header className="lg:hidden fixed top-0 left-0 right-0 z-40 h-14 flex items-center justify-between px-4 bg-background border-b" style={{ top: 0 }}>
+      <Link href="/Month" className="font-bold text-xl tracking-tight">
         LoiClair
       </Link>
       <Sheet open={open} onOpenChange={setOpen}>

@@ -75,15 +75,15 @@ export function GroupeStatsTable({ data }: { data: GroupeStat[] }) {
       <tr key={`${g.chambre}-${g.groupe}-${i}`} className={i % 2 === 0 ? 'bg-muted/30' : ''}>
         <td className="px-4 py-3 font-medium">{g.groupe}</td>
         <td className="px-4 py-3 text-right tabular-nums">
-          <span className="font-semibold text-blue-600">{pctAN} %</span>
+          <span className="font-semibold text-primary">{pctAN} %</span>
           <br /><span className="text-xs text-muted-foreground">{g.adoptes_an} / {g.total_an}</span>
         </td>
         <td className="px-4 py-3 text-right tabular-nums">
-          <span className="font-semibold text-orange-600">{pctSN} %</span>
+          <span className="font-semibold text-[#F39C12]">{pctSN} %</span>
           <br /><span className="text-xs text-muted-foreground">{g.adoptes_sn} / {g.total_sn}</span>
         </td>
         <td className="px-4 py-3 text-right tabular-nums">
-          <span className="font-semibold text-purple-600">{pctP} %</span>
+          <span className="font-semibold text-violet-600">{pctP} %</span>
           <br /><span className="text-xs text-muted-foreground">{g.promulgues} / {g.total_promulgables}</span>
         </td>
       </tr>
@@ -115,15 +115,15 @@ export function GroupeStatsTable({ data }: { data: GroupeStat[] }) {
       <tr key="total-gouv" className="bg-muted/50 border-t-2 font-semibold">
         <td className="px-4 py-3 italic text-muted-foreground">{label}</td>
         <td className="px-4 py-3 text-right tabular-nums">
-          <span className="font-semibold text-blue-600">{pctAN} %</span>
+          <span className="font-semibold text-primary">{pctAN} %</span>
           <br /><span className="text-xs text-muted-foreground">{tot.adoptes_an} / {tot.total_an}</span>
         </td>
         <td className="px-4 py-3 text-right tabular-nums">
-          <span className="font-semibold text-orange-600">{pctSN} %</span>
+          <span className="font-semibold text-[#F39C12]">{pctSN} %</span>
           <br /><span className="text-xs text-muted-foreground">{tot.adoptes_sn} / {tot.total_sn}</span>
         </td>
         <td className="px-4 py-3 text-right tabular-nums">
-          <span className="font-semibold text-purple-600">{pctP} %</span>
+          <span className="font-semibold text-violet-600">{pctP} %</span>
           <br /><span className="text-xs text-muted-foreground">{tot.promulgues} / {tot.total_promulgables}</span>
         </td>
       </tr>
@@ -165,15 +165,15 @@ export function GroupeStatsTable({ data }: { data: GroupeStat[] }) {
                   <tr key="gouv-single" className="bg-muted border-y">
                     <td className="px-4 py-1.5 font-semibold text-xs uppercase tracking-wider">Gouvernement</td>
                     <td className="px-4 py-1.5 text-right tabular-nums">
-                      <span className="font-semibold text-blue-600">{pctAN} %</span>
+                      <span className="font-semibold text-primary">{pctAN} %</span>
                       <br /><span className="text-xs text-muted-foreground">{g.adoptes_an} / {g.total_an}</span>
                     </td>
                     <td className="px-4 py-1.5 text-right tabular-nums">
-                      <span className="font-semibold text-orange-600">{pctSN} %</span>
+                      <span className="font-semibold text-[#F39C12]">{pctSN} %</span>
                       <br /><span className="text-xs text-muted-foreground">{g.adoptes_sn} / {g.total_sn}</span>
                     </td>
                     <td className="px-4 py-1.5 text-right tabular-nums">
-                      <span className="font-semibold text-purple-600">{pctP} %</span>
+                      <span className="font-semibold text-violet-600">{pctP} %</span>
                       <br /><span className="text-xs text-muted-foreground">{g.promulgues} / {g.total_promulgables}</span>
                     </td>
                   </tr>

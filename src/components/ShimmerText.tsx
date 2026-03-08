@@ -24,7 +24,7 @@ export default function ShimmerText({ children }: { children: React.ReactNode })
     <span
       ref={ref}
       style={{
-        background: 'linear-gradient(90deg,#c026d3 20%,#e879f9 50%,#c026d3 80%)',
+        background: 'linear-gradient(90deg,#0891B2 20%,#22D3EE 50%,#0891B2 80%)',
         backgroundSize: '200% auto',
         WebkitBackgroundClip: 'text',
         backgroundClip: 'text',

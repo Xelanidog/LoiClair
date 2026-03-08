@@ -399,8 +399,8 @@ return (
         <h1 className="text-2xl font-bold mb-3">KPIs Parlement</h1>
         <p className="text-muted-foreground">
           Activité de la 17ᵉ législature en temps réel
-          {procedure && <span className="ml-2 font-medium text-sm text-blue-600">[ {procedure} ]</span>}
-          {groupe && <span className="ml-2 font-medium text-sm text-blue-600">[ {groupe} ]</span>}
+          {procedure && <span className="ml-2 font-medium text-sm text-primary">[ {procedure} ]</span>}
+          {groupe && <span className="ml-2 font-medium text-sm text-primary">[ {groupe} ]</span>}
         </p>
       </div>
 
@@ -500,7 +500,7 @@ return (
         </CardDescription>
       </CardHeader>
       <div className="flex items-end justify-center mt-6 md:mt-8">
-        <div className="text-4xl font-bold text-emerald-600">
+        <div className="text-4xl font-bold text-[#27AE60]">
           {statsData.adoptes_an.toLocaleString('fr-FR')}
         </div>
       </div>
@@ -515,7 +515,7 @@ return (
         </CardDescription>
       </CardHeader>
       <div className="flex items-end justify-center mt-6 md:mt-8">
-        <div className="text-4xl font-bold text-emerald-600">
+        <div className="text-4xl font-bold text-[#27AE60]">
           {statsData.adoptes_senat.toLocaleString('fr-FR')}
         </div>
       </div>
@@ -530,7 +530,7 @@ return (
         </CardDescription>
       </CardHeader>
       <div className="flex items-end justify-center mt-6 md:mt-8">
-        <div className="text-4xl font-bold text-emerald-600">
+        <div className="text-4xl font-bold text-[#27AE60]">
           {statsData.adoptes_parlement.toLocaleString('fr-FR')}
         </div>
       </div>
@@ -545,7 +545,7 @@ return (
         </CardDescription>
       </CardHeader>
       <div className="flex items-end justify-center mt-6 md:mt-8">
-        <div className="text-4xl font-bold text-purple-600">
+        <div className="text-4xl font-bold text-violet-600">
           {statsData.promulgues.toLocaleString('fr-FR')}
         </div>
       </div>
@@ -560,7 +560,7 @@ return (
         </CardDescription>
       </CardHeader>
       <div className="flex items-end justify-center mt-6 md:mt-8">
-        <div className="text-4xl font-bold text-red-600">
+        <div className="text-4xl font-bold text-[#E74C3C]">
           {statsData.rejetes.toLocaleString('fr-FR')}
         </div>
       </div>
@@ -582,7 +582,7 @@ return (
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-4xl font-bold text-purple-600">
+              <div className="text-4xl font-bold text-violet-600">
                 {statsData.taux_promulgation} %
               </div>
               <p className="text-sm text-muted-foreground mt-2">
@@ -625,7 +625,7 @@ return (
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-4xl font-bold text-blue-600">
+              <div className="text-4xl font-bold text-primary">
                 {statsData.delai_moyen_an_jours} j
               </div>
               <p className="text-sm text-muted-foreground mt-2">
@@ -648,7 +648,7 @@ return (
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-4xl font-bold text-orange-600">
+              <div className="text-4xl font-bold text-[#F39C12]">
                 {statsData.delai_moyen_sn_jours} j
               </div>
               <p className="text-sm text-muted-foreground mt-2">

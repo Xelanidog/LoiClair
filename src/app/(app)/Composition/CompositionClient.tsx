@@ -210,7 +210,7 @@ function InstitutionCard({
         {(data.meilleurePresence !== null || data.meilleureCohesion !== null) && (
           <div className="flex flex-wrap justify-start items-start pb-4 gap-6 mt-2">
             <KpiItem
-              icon={<TrendingUp className="h-5 w-5 text-emerald-500" />}
+              icon={<TrendingUp className="h-5 w-5 text-[#27AE60]" />}
               title="Meilleure participation"
               value={data.meilleurePresence?.valeur ?? null}
               extraContent={data.meilleurePresence?.nom}
@@ -219,7 +219,7 @@ function InstitutionCard({
               suffix=" %"
             />
             <KpiItem
-              icon={<TrendingDown className="h-5 w-5 text-red-400" />}
+              icon={<TrendingDown className="h-5 w-5 text-[#E74C3C]" />}
               title="Moindre participation"
               value={data.pirePresence?.valeur ?? null}
               extraContent={data.pirePresence?.nom}
@@ -228,7 +228,7 @@ function InstitutionCard({
               suffix=" %"
             />
             <KpiItem
-              icon={<TrendingUp className="h-5 w-5 text-emerald-500" />}
+              icon={<TrendingUp className="h-5 w-5 text-[#27AE60]" />}
               title="Meilleure part. (importants)"
               value={data.meilleurePresenceImportants?.valeur ?? null}
               extraContent={data.meilleurePresenceImportants?.nom}
@@ -237,7 +237,7 @@ function InstitutionCard({
               suffix=" %"
             />
             <KpiItem
-              icon={<TrendingDown className="h-5 w-5 text-red-400" />}
+              icon={<TrendingDown className="h-5 w-5 text-[#E74C3C]" />}
               title="Moindre part. (importants)"
               value={data.pirePresenceImportants?.valeur ?? null}
               extraContent={data.pirePresenceImportants?.nom}
@@ -246,7 +246,7 @@ function InstitutionCard({
               suffix=" %"
             />
             <KpiItem
-              icon={<TrendingUp className="h-5 w-5 text-emerald-500" />}
+              icon={<TrendingUp className="h-5 w-5 text-[#27AE60]" />}
               title="Meilleure cohésion"
               value={data.meilleureCohesion?.valeur ?? null}
               extraContent={data.meilleureCohesion?.nom}
@@ -255,7 +255,7 @@ function InstitutionCard({
               suffix=" %"
             />
             <KpiItem
-              icon={<TrendingDown className="h-5 w-5 text-red-400" />}
+              icon={<TrendingDown className="h-5 w-5 text-[#E74C3C]" />}
               title="Moindre cohésion"
               value={data.pireCohesion?.valeur ?? null}
               extraContent={data.pireCohesion?.nom}
@@ -430,7 +430,7 @@ function GroupPieChart({
                   if (active && payload && payload.length) {
                     const item = payload[0].payload as { name: string; value: number };
                     return (
-                      <div className="bg-white border border-gray-300 rounded p-3 shadow-md text-sm">
+                      <div className="bg-white border border-border rounded p-3 shadow-sm text-sm">
                         <p className="font-semibold">{item.name}</p>
                         <p>{item.value} {membreLabel.toLowerCase()}</p>
                       </div>
@@ -510,9 +510,9 @@ function GroupPieChart({
 function PctBadge({ value, votes, total }: { value: number | null; votes?: number | null; total?: number | null }) {
   if (value === null) return <span className="text-muted-foreground">—</span>;
   const colorClass =
-    value >= 75 ? 'text-emerald-600 dark:text-emerald-400'
-    : value >= 50 ? 'text-amber-600 dark:text-amber-400'
-    : 'text-red-500 dark:text-red-400';
+    value >= 75 ? 'text-[#27AE60] dark:text-[#2ECC71]'
+    : value >= 50 ? 'text-[#F39C12] dark:text-[#F1C40F]'
+    : 'text-[#E74C3C] dark:text-[#E74C3C]';
   return (
     <span className="flex flex-col items-start gap-0.5">
       <span className={`font-semibold tabular-nums ${colorClass}`}>

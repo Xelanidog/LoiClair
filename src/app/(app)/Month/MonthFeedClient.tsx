@@ -50,30 +50,30 @@ const EVENT_CONFIG: Record<
   FeedEventType,
   { icon: typeof FileText; label: string; color: string; iconBg: string }
 > = {
-  DEPOT_TEXTE: { icon: FileText, label: "Nouveau texte", color: "text-blue-600 dark:text-blue-400", iconBg: "bg-blue-100 dark:bg-blue-900/50" },
-  DEPOT_RAPPORT: { icon: FileSearch, label: "Rapport", color: "text-teal-600 dark:text-teal-400", iconBg: "bg-teal-100 dark:bg-teal-900/50" },
-  DECISION: { icon: BarChart3, label: "Décision", color: "text-fuchsia-600 dark:text-fuchsia-400", iconBg: "bg-fuchsia-100 dark:bg-fuchsia-900/50" },
-  NAVETTE: { icon: ArrowLeftRight, label: "Navette", color: "text-indigo-600 dark:text-indigo-400", iconBg: "bg-indigo-100 dark:bg-indigo-900/50" },
-  CMP_CONVOCATION: { icon: Handshake, label: "Convocation d'une Commission Mixte Paritaire", color: "text-purple-600 dark:text-purple-400", iconBg: "bg-purple-100 dark:bg-purple-900/50" },
-  CMP_RAPPORT: { icon: FileSearch, label: "Rapport", color: "text-teal-600 dark:text-teal-400", iconBg: "bg-teal-100 dark:bg-teal-900/50" },
-  MOTION_CENSURE: { icon: AlertTriangle, label: "Motion de censure", color: "text-red-600 dark:text-red-400", iconBg: "bg-red-100 dark:bg-red-900/50" },
-  DECL_GOUVERNEMENT: { icon: Megaphone, label: "Déclaration gouv.", color: "text-amber-600 dark:text-amber-400", iconBg: "bg-amber-100 dark:bg-amber-900/50" },
-  MOTION_VOTE: { icon: Gavel, label: "Vote motion", color: "text-red-600 dark:text-red-400", iconBg: "bg-red-100 dark:bg-red-900/50" },
-  CC_SAISINE: { icon: Scale, label: "Cons. const.", color: "text-orange-600 dark:text-orange-400", iconBg: "bg-orange-100 dark:bg-orange-900/50" },
-  PROMULGATION: { icon: CheckCircle2, label: "Loi promulguée", color: "text-green-600 dark:text-green-400", iconBg: "bg-green-100 dark:bg-green-900/50" },
+  DEPOT_TEXTE: { icon: FileText, label: "Nouveau texte", color: "text-primary", iconBg: "bg-primary/10" },
+  DEPOT_RAPPORT: { icon: FileSearch, label: "Rapport", color: "text-primary dark:text-primary", iconBg: "bg-primary/10" },
+  DECISION: { icon: BarChart3, label: "Décision", color: "text-violet-600 dark:text-violet-400", iconBg: "bg-violet-100 dark:bg-violet-900/50" },
+  NAVETTE: { icon: ArrowLeftRight, label: "Navette", color: "text-violet-600 dark:text-violet-400", iconBg: "bg-violet-100 dark:bg-violet-900/50" },
+  CMP_CONVOCATION: { icon: Handshake, label: "Convocation d'une Commission Mixte Paritaire", color: "text-[#F39C12]", iconBg: "bg-[#F39C12]/10" },
+  CMP_RAPPORT: { icon: FileSearch, label: "Rapport", color: "text-primary dark:text-primary", iconBg: "bg-primary/10" },
+  MOTION_CENSURE: { icon: AlertTriangle, label: "Motion de censure", color: "text-[#E74C3C]", iconBg: "bg-[#E74C3C]/10" },
+  DECL_GOUVERNEMENT: { icon: Megaphone, label: "Déclaration gouv.", color: "text-[#F39C12]", iconBg: "bg-[#F39C12]/10" },
+  MOTION_VOTE: { icon: Gavel, label: "Vote motion", color: "text-[#E74C3C]", iconBg: "bg-[#E74C3C]/10" },
+  CC_SAISINE: { icon: Scale, label: "Cons. const.", color: "text-[#F39C12] dark:text-[#F1C40F]", iconBg: "bg-[#F39C12]/10" },
+  PROMULGATION: { icon: CheckCircle2, label: "Loi promulguée", color: "text-[#27AE60] dark:text-[#2ECC71]", iconBg: "bg-[#27AE60]/10" },
   AUTRE: { icon: Activity, label: "Autre", color: "text-muted-foreground", iconBg: "bg-muted" },
 };
 
 const FILTER_PILLS: { value: string; label: string; icon: typeof Activity; color: string }[] = [
   { value: "tous", label: "Tous", icon: Activity, color: "text-primary" },
-  { value: "DEPOT_TEXTE", label: "Textes", icon: FileText, color: "text-blue-600 dark:text-blue-400" },
-  { value: "DECISION", label: "Décisions", icon: BarChart3, color: "text-fuchsia-600 dark:text-fuchsia-400" },
-  { value: "DEPOT_RAPPORT", label: "Rapports", icon: FileSearch, color: "text-teal-600 dark:text-teal-400" },
-  { value: "NAVETTE", label: "Navettes", icon: ArrowLeftRight, color: "text-indigo-600 dark:text-indigo-400" },
-  { value: "CMP", label: "CMP", icon: Handshake, color: "text-purple-600 dark:text-purple-400" },
-  { value: "CC_SAISINE", label: "Cons. const.", icon: Scale, color: "text-orange-600 dark:text-orange-400" },
-  { value: "PROMULGATION", label: "Promulgations", icon: CheckCircle2, color: "text-green-600 dark:text-green-400" },
-  { value: "MOTION", label: "Motions", icon: AlertTriangle, color: "text-red-600 dark:text-red-400" },
+  { value: "DEPOT_TEXTE", label: "Textes", icon: FileText, color: "text-primary" },
+  { value: "DECISION", label: "Décisions", icon: BarChart3, color: "text-violet-600 dark:text-violet-400" },
+  { value: "DEPOT_RAPPORT", label: "Rapports", icon: FileSearch, color: "text-primary" },
+  { value: "NAVETTE", label: "Navettes", icon: ArrowLeftRight, color: "text-violet-600 dark:text-violet-400" },
+  { value: "CMP", label: "CMP", icon: Handshake, color: "text-[#F39C12]" },
+  { value: "CC_SAISINE", label: "Cons. const.", icon: Scale, color: "text-[#F39C12] dark:text-[#F1C40F]" },
+  { value: "PROMULGATION", label: "Promulgations", icon: CheckCircle2, color: "text-[#27AE60] dark:text-[#2ECC71]" },
+  { value: "MOTION", label: "Motions", icon: AlertTriangle, color: "text-[#E74C3C]" },
 ];
 
 function matchesFilter(type: FeedEventType, filter: string): boolean {
@@ -113,12 +113,12 @@ function VoteBar({ event }: { event: VoteData }) {
       <TooltipTrigger asChild>
         <div className="flex items-center gap-1.5 flex-1 min-w-0">
           <div className="relative flex-1 h-1.5 rounded-full overflow-hidden isolate" style={{ display: "flex", backgroundColor: "var(--color-muted)" }}>
-            <div style={{ width: `${((event.votePour ?? 0) / T) * 100}%`, backgroundColor: "#22c55e", minWidth: (event.votePour ?? 0) > 0 ? "2px" : "0" }} className="h-full" />
-            <div style={{ width: `${((event.voteContre ?? 0) / T) * 100}%`, backgroundColor: "#ef4444", minWidth: (event.voteContre ?? 0) > 0 ? "2px" : "0" }} className="h-full" />
-            <div style={{ width: `${((event.voteAbstentions ?? 0) / T) * 100}%`, backgroundColor: "#9ca3af", minWidth: (event.voteAbstentions ?? 0) > 0 ? "2px" : "0" }} className="h-full" />
-            <div style={{ width: `${(nv / T) * 100}%`, backgroundColor: "#fb923c", minWidth: nv > 0 ? "2px" : "0" }} className="h-full" />
-            <div style={{ width: `${(abs / T) * 100}%`, backgroundColor: "#e5e7eb" }} className="h-full dark:hidden" />
-            <div style={{ width: `${(abs / T) * 100}%`, backgroundColor: "#374151" }} className="h-full hidden dark:block" />
+            <div style={{ width: `${((event.votePour ?? 0) / T) * 100}%`, backgroundColor: "#27AE60", minWidth: (event.votePour ?? 0) > 0 ? "2px" : "0" }} className="h-full" />
+            <div style={{ width: `${((event.voteContre ?? 0) / T) * 100}%`, backgroundColor: "#E74C3C", minWidth: (event.voteContre ?? 0) > 0 ? "2px" : "0" }} className="h-full" />
+            <div style={{ width: `${((event.voteAbstentions ?? 0) / T) * 100}%`, backgroundColor: "#A8A29E", minWidth: (event.voteAbstentions ?? 0) > 0 ? "2px" : "0" }} className="h-full" />
+            <div style={{ width: `${(nv / T) * 100}%`, backgroundColor: "#F39C12", minWidth: nv > 0 ? "2px" : "0" }} className="h-full" />
+            <div style={{ width: `${(abs / T) * 100}%`, backgroundColor: "#F0EDEA" }} className="h-full dark:hidden" />
+            <div style={{ width: `${(abs / T) * 100}%`, backgroundColor: "#44403C" }} className="h-full hidden dark:block" />
             {majPct > 0 && <div className="absolute top-0 h-full w-px bg-foreground/60" style={{ left: `${majPct}%` }} />}
           </div>
           <span className="text-[10px] text-muted-foreground tabular-nums shrink-0">
@@ -128,11 +128,11 @@ function VoteBar({ event }: { event: VoteData }) {
       </TooltipTrigger>
       <TooltipContent side="bottom" className="text-xs">
         <div className="space-y-0.5">
-          <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: "#22c55e" }} />Pour : {event.votePour}</div>
-          <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: "#ef4444" }} />Contre : {event.voteContre}</div>
-          <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: "#9ca3af" }} />Abstentions : {event.voteAbstentions}</div>
-          <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: "#fb923c" }} />Non-votants : {nv}</div>
-          <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full shrink-0 bg-gray-200 dark:bg-gray-700" />Absents : {abs}</div>
+          <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: "#27AE60" }} />Pour : {event.votePour}</div>
+          <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: "#E74C3C" }} />Contre : {event.voteContre}</div>
+          <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: "#A8A29E" }} />Abstentions : {event.voteAbstentions}</div>
+          <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: "#F39C12" }} />Non-votants : {nv}</div>
+          <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full shrink-0 bg-[#F0EDEA] dark:bg-[#44403C]" />Absents : {abs}</div>
           {(event.voteSuffragesRequis ?? 0) > 0 && <div className="pt-1 border-t mt-1 text-muted-foreground">Majorité requise : {event.voteSuffragesRequis} voix</div>}
         </div>
       </TooltipContent>
@@ -151,8 +151,8 @@ function StatusBadge({ statut }: { statut: string | null }) {
   return (
     <span className={cn(
       "inline-block text-[11px] font-medium px-2 py-1 rounded-md leading-relaxed",
-      adopted ? "bg-green-100 text-green-700 dark:bg-green-900/60 dark:text-green-300"
-        : rejected ? "bg-red-100 text-red-700 dark:bg-red-900/60 dark:text-red-300"
+      adopted ? "bg-[#27AE60]/15 text-[#27AE60] dark:bg-[#27AE60]/20 dark:text-[#2ECC71]"
+        : rejected ? "bg-[#E74C3C]/15 text-[#E74C3C] dark:bg-[#E74C3C]/20 dark:text-[#E74C3C]"
         : "bg-muted text-muted-foreground"
     )} style={{ maxWidth: '66%' }}>
       {statut}
@@ -264,8 +264,8 @@ function ResumeIALink({ dossierUid, texteUid, texteUrlAccessible }: { dossierUid
   if (texteUrlAccessible === false) {
     return (
       <span className="inline-flex items-center gap-1.5 text-xs mt-1 flex-wrap">
-        <span className="inline-flex items-center gap-1 text-orange-600 dark:text-orange-400">
-          <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
+        <span className="inline-flex items-center gap-1 text-[#F39C12] dark:text-[#F1C40F]">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#E74C3C] shrink-0" />
           Non encore publié
         </span>
         <span className="text-muted-foreground">·</span>
@@ -295,16 +295,16 @@ function ResumeIALink({ dossierUid, texteUid, texteUrlAccessible }: { dossierUid
 function SocialIcons() {
   return (
     <div style={{ display: "flex", flexShrink: 0, width: "35%", justifyContent: "space-around", alignItems: "center" }}>
-      <motion.button type="button" whileHover={{ scale: 1.25 }} whileTap={{ scale: 0.95 }} className="p-2 rounded-full text-muted-foreground/30 hover:text-green-500 hover:bg-muted/50 transition-colors" aria-label="J'approuve">
+      <motion.button type="button" whileHover={{ scale: 1.25 }} whileTap={{ scale: 0.95 }} className="p-2 rounded-full text-muted-foreground/30 hover:text-[#27AE60] hover:bg-muted/50 transition-colors" aria-label="J'approuve">
         <ThumbsUp className="w-3.5 h-3.5" />
       </motion.button>
-      <motion.button type="button" whileHover={{ scale: 1.25 }} whileTap={{ scale: 0.95 }} className="p-2 rounded-full text-muted-foreground/30 hover:text-red-500 hover:bg-muted/50 transition-colors" aria-label="Je désapprouve">
+      <motion.button type="button" whileHover={{ scale: 1.25 }} whileTap={{ scale: 0.95 }} className="p-2 rounded-full text-muted-foreground/30 hover:text-[#E74C3C] hover:bg-muted/50 transition-colors" aria-label="Je désapprouve">
         <ThumbsDown className="w-3.5 h-3.5" />
       </motion.button>
-      <motion.button type="button" whileHover={{ scale: 1.25 }} whileTap={{ scale: 0.95 }} className="p-2 rounded-full text-muted-foreground/30 hover:text-blue-500 hover:bg-muted/50 transition-colors" aria-label="Sauvegarder">
+      <motion.button type="button" whileHover={{ scale: 1.25 }} whileTap={{ scale: 0.95 }} className="p-2 rounded-full text-muted-foreground/30 hover:text-primary hover:bg-muted/50 transition-colors" aria-label="Sauvegarder">
         <Bookmark className="w-3.5 h-3.5" />
       </motion.button>
-      <motion.button type="button" whileHover={{ scale: 1.25 }} whileTap={{ scale: 0.95 }} className="p-2 rounded-full text-muted-foreground/30 hover:text-blue-500 hover:bg-muted/50 transition-colors" aria-label="Partager">
+      <motion.button type="button" whileHover={{ scale: 1.25 }} whileTap={{ scale: 0.95 }} className="p-2 rounded-full text-muted-foreground/30 hover:text-primary hover:bg-muted/50 transition-colors" aria-label="Partager">
         <Share2 className="w-3.5 h-3.5" />
       </motion.button>
     </div>

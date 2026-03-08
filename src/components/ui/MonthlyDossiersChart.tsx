@@ -94,9 +94,9 @@ export function MonthlyDossiersChart({ data }: MonthlyDossiersChartProps) {
         <div className="flex gap-2 font-medium leading-none">
           {trendText}
           {trend >= 0 ? (
-            <TrendingUp className="h-4 w-4 text-emerald-500" />
+            <TrendingUp className="h-4 w-4 text-[#27AE60]" />
           ) : (
-            <TrendingDown className="h-4 w-4 text-red-500" />
+            <TrendingDown className="h-4 w-4 text-[#E74C3C]" />
           )}
         </div>
         <p className="text-muted-foreground">

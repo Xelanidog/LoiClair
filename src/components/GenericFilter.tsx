@@ -80,13 +80,13 @@ export default function GenericFilter({
       className={`
         max-w-56 transition-colors duration-200
         ${isActive
-          ? 'border-blue-500 bg-blue-50 text-blue-800 hover:bg-blue-100'
-          : 'border-input hover:bg-gray-100 hover:border-blue-300'}
+          ? 'border-primary bg-primary/10 text-primary hover:bg-primary/15'
+          : 'border-input hover:bg-muted hover:border-primary/30'}
       `}
     >
       <SelectValue placeholder={placeholder} />
       {isActive && (
-        <span className="ml-2 inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
+        <span className="ml-2 inline-flex items-center rounded-full bg-primary/15 px-2 py-0.5 text-xs font-medium text-primary">
           Actif
         </span>
       )}

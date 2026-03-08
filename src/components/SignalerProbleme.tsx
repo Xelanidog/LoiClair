@@ -129,8 +129,8 @@ export default function SignalerProbleme() {
 
           {formState === "success" ? (
             <div className="flex flex-col items-center gap-4 py-4 text-center">
-              <div className="rounded-full bg-green-100 p-3 dark:bg-green-900/30">
-                <CheckCircle2 className="h-6 w-6 text-green-600 dark:text-green-400" />
+              <div className="rounded-full bg-[#27AE60]/10 p-3 dark:bg-[#27AE60]/20">
+                <CheckCircle2 className="h-6 w-6 text-[#27AE60] dark:text-[#2ECC71]" />
               </div>
               <div>
                 <p className="font-medium">Merci pour votre signalement !</p>
