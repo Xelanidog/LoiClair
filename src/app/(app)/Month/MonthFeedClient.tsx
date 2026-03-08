@@ -662,6 +662,7 @@ interface MonthFeedClientProps {
   groupedEvents: GroupedFeedEvent[];
   dossierMode: boolean;
   dossierTitre: string | null;
+  dossierUid?: string | null;
   kpis: MonthKpis;
   year: number;
   monthFormatted: string;
@@ -675,6 +676,7 @@ export function MonthFeedClient({
   groupedEvents,
   dossierMode,
   dossierTitre,
+  dossierUid,
   kpis,
   monthFormatted,
   monthRangeShort,
@@ -702,8 +704,11 @@ export function MonthFeedClient({
       <TooltipProvider>
         <div className="max-w-xl -mx-6 sm:mx-auto sm:px-4 py-6">
           <div className="mb-5 px-4 sm:px-0">
-            <Link href="/Month" className="inline-flex items-center gap-1 text-xs text-primary hover:underline mb-2">
-              <ArrowLeft className="w-3 h-3" />Retour au fil
+            <Link
+              href={`/dossiers-legislatifs/${dossierUid}/resume-ia`}
+              className="inline-flex items-center gap-1 text-xs text-primary hover:underline mb-2"
+            >
+              <ArrowLeft className="w-3 h-3" />Retour au dossier
             </Link>
             <h1 className="text-2xl font-bold">
               {dossierTitre || "Dossier législatif"}

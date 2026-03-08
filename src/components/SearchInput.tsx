@@ -41,7 +41,7 @@ export default function SearchInput() {
   };
 
   return (
-    <div className="relative w-full max-w-xs">
+    <div className="relative w-full" style={{ maxWidth: '13rem' }}>
       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
       <input
         type="text"

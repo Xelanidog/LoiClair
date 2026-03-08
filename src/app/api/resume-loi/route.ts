@@ -14,7 +14,7 @@ import { supabase } from '@/lib/supabase';
 const xai = createXai({ apiKey: process.env.XAI_API_KEY });
 
 async function fetchAndExtractText(lien: string): Promise<string> {
-  const response = await fetch(lien);
+  const response = await fetch(lien, { signal: AbortSignal.timeout(15_000) });
   const contentType = response.headers.get('content-type') || '';
 
   if (!response.ok) {

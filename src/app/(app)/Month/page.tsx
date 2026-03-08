@@ -428,6 +428,7 @@ export default async function MonthPage({
         groupedEvents={groupedEvents}
         dossierMode={true}
         dossierTitre={dossierInfo?.titre ?? null}
+        dossierUid={dossierParam}
         kpis={{ totalEvents: feedEvents.length, scrutins: 0, nouveauxTextes: 0, promulgations: 0 }}
         year={0}
         monthFormatted=""

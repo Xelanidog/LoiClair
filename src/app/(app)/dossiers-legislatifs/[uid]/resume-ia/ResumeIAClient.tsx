@@ -465,7 +465,31 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
 
       {/* État : erreur */}
       {error && (
-        <p className="text-destructive">Erreur : {error.message}</p>
+        <div className="flex items-center gap-3 text-sm">
+          <p className="text-destructive">Le résumé n&apos;a pas pu être généré : le texte officiel n&apos;a pas pu être téléchargé (source inaccessible ou mauvaise connexion).</p>
+          <button
+            onClick={() => {
+              completedForRef.current = null;
+              const t = textes.find(t => t.uid === selectedUid);
+              if (t?.lien_texte) {
+                setCompletion('');
+                complete(JSON.stringify({
+                  lien: t.lien_texte,
+                  titre_texte: t.titre_principal_court || t.denomination || 'Texte inconnu',
+                  texte_uid: selectedUid,
+                }));
+              }
+            }}
+            className="text-xs text-primary hover:underline shrink-0"
+          >
+            Réessayer →
+          </button>
+        </div>
+      )}
+
+      {/* Indicateur de génération */}
+      {(isLoadingResume || isStreamingCache) && !error && (
+        <p className="text-xs text-muted-foreground mb-3">Génération du résumé en cours…</p>
       )}
 
       {/* 3 cartes structurées */}

@@ -5,7 +5,7 @@ export default function ProcedureTooltip({ label, description }: { label: string
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <span className="px-2 py-0.5 rounded-md bg-muted font-medium uppercase tracking-wide cursor-help">
+        <span className="font-medium uppercase tracking-wide cursor-help">
           {label}
         </span>
       </TooltipTrigger>

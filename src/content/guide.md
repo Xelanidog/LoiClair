@@ -57,7 +57,7 @@ Les motions de censure bénéficient d'un traitement particulier. Chaque carte a
 
 ### Mode dossier (timeline)
 
-En cliquant sur le titre d'un dossier depuis n'importe quelle carte, vous accédez à la **timeline complète** de ce dossier : toutes les étapes qu'il a franchies, du dépôt initial jusqu'à la promulgation (le cas échéant). Les mêmes pastilles de filtrage sont disponibles, avec les compteurs adaptés aux événements du dossier. Un lien « Retour au fil » permet de revenir au fil du mois.
+En cliquant sur le titre d'un dossier depuis n'importe quelle carte, vous accédez à la **timeline complète** de ce dossier : toutes les étapes qu'il a franchies, du dépôt initial jusqu'à la promulgation (le cas échéant). Les mêmes pastilles de filtrage sont disponibles, avec les compteurs adaptés aux événements du dossier. Un lien **« ← Retour au dossier »** permet de revenir à la page de résumé IA du dossier.
 
 ### Résumé IA et disponibilité du texte
 
@@ -203,14 +203,11 @@ La page **Tous les textes** liste l'ensemble des dossiers législatifs déposés
 
 ### Lire une carte de dossier
 
-Chaque dossier est présenté sous forme de carte avec :
+Chaque dossier est présenté sous forme de ligne compacte structurée en trois niveaux :
 
-- Le **titre** du texte et le **type de procédure** (projet de loi ordinaire, proposition de loi, loi de finances…)
-- Le **groupe politique** ou le **ministre** à l'origine du dépôt
-- Un **indicateur de progression** visuel montrant l'étape atteinte dans le parcours législatif
-- Le **statut actuel** (en traitement, adopté, promulgué, rejeté…)
-- La **date de dépôt**
-- Un **indicateur de publication** : un point vert et le nombre de textes publiés si au moins un texte est accessible, ou un point rouge avec la mention « Texte non encore publié » si le texte existe mais n'a pas encore été mis en ligne par l'Assemblée nationale
+1. Un **bullet coloré** indique le statut d'un coup d'œil (vert = promulguée, rouge = rejeté, violet = adopté par le Parlement, bleu = Assemblée nationale, orange = Sénat ou en cours), suivi du **statut exact** et de la **durée** (« déposé il y a X jours » ou « promulguée en X jours »).
+2. Le **titre** du texte.
+3. Des **métadonnées** : le type de procédure (avec info-bulle explicative si disponible), la **qualité et le nom de l'auteur** (Député, Sénateur ou Ministre + nom), son **groupe politique**, et la **date de dépôt**. Si aucun texte publié n'est disponible, la mention « Aucun texte » ou « Texte non encore publié » apparaît en fin de ligne. Un bouton **Dossier LoiClair avec résumé IA** permet d'accéder directement à la page de résumé du dossier.
 
 ### Filtres et recherche
 
@@ -226,7 +223,7 @@ La pagination en bas de page permet de naviguer entre les résultats (10 dossier
 
 ### Résumé par intelligence artificielle
 
-Sur chaque carte, un bouton **Détails, votes & Résumé IA** donne accès à la page du dossier, qui comprend une explication du texte générée automatiquement par intelligence artificielle, en langage courant et sans jargon juridique, ainsi que les résultats de vote et les métadonnées du dossier. Ce bouton est toujours accessible, même lorsque le texte n'est pas encore publié.
+Sur chaque carte, un bouton **Dossier LoiClair avec résumé IA** donne accès à la page du dossier, qui comprend une explication du texte générée automatiquement par intelligence artificielle, en langage courant et sans jargon juridique, ainsi que les résultats de vote et les métadonnées du dossier. Ce bouton est toujours accessible, même lorsque le texte n'est pas encore publié.
 
 Sur la page de résumé :
 
@@ -241,7 +238,7 @@ Sur la page de résumé :
 
 En bas de chaque page de résumé, une section **Transparence** indique que le contenu a été généré par une intelligence artificielle, avec un lien vers la page [Conformité AI Act](/documentation/conformite-ia). En dépliants les **Paramètres de génération**, vous pouvez consulter l'ensemble des réglages utilisés : le nom du modèle, le fournisseur, la température (qui contrôle la créativité de l'IA), le nombre maximum de tokens produits, et le prompt système — c'est-à-dire les instructions exactes données à l'IA pour produire le résumé.
 
-> Le résumé est généré à la demande et peut prendre quelques secondes.
+> Pendant la génération, un message **« Génération du résumé en cours… »** s'affiche au-dessus des cartes. Si la génération échoue (source inaccessible ou connexion lente), un message d'erreur apparaît avec un bouton **Réessayer →** pour relancer la demande sans recharger la page.
 
 ---
 

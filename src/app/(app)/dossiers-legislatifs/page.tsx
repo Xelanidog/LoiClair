@@ -7,15 +7,13 @@ export const revalidate = 3600; // Cache 1h — données mises à jour une fois 
 
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
-import { Sparkles, ExternalLink } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import ShimmerText from '@/components/ShimmerText';
 import GenericFilter from '@/components/GenericFilter';
 import ResetButton from '@/components/ResetButton';
 import SearchInput from '@/components/SearchInput';
 import ProcedureTooltip from '@/components/ProcedureTooltip';
 import { DEFINITIONS } from '@/lib/definitions';
-import { STEP_CONFIG, MILESTONE_CODES } from '@/lib/legislative-steps';
-import { getStatusBadgeClass } from '@/lib/statusMapping';
 import {
   Pagination,
   PaginationContent,
@@ -189,39 +187,23 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
  const sortedDossiers = dossiers || [];
 
 
-  // Requêtes batch en parallèle pour les 10 dossiers affichés
+  // Requêtes batch pour les dossiers affichés
   const dossierUids = sortedDossiers.map(d => d.uid);
-  const [{ data: actesData }, { data: textesAccessibles }] = await Promise.all([
-    supabase
-      .from('actes_legislatifs')
-      .select('dossier_uid, code_acte')
-      .in('dossier_uid', dossierUids)
-      .is('parent_uid', null)
-      .in('code_acte', MILESTONE_CODES),
-    supabase
-      .from('textes')
-      .select('dossier_ref')
-      .in('dossier_ref', dossierUids)
-      .eq('url_accessible', true),
-  ]);
+  const { data: textesAccessibles } = await supabase
+    .from('textes')
+    .select('dossier_ref')
+    .in('dossier_ref', dossierUids)
+    .eq('url_accessible', true);
 
   // Set des dossiers ayant au moins 1 texte accessible
   const dossiersWithAccessibleTexte = new Set((textesAccessibles ?? []).map(t => t.dossier_ref));
-
-  // Map dossierUid → Set des codes présents
-  const actesByDossier = new Map<string, Set<string>>();
-  for (const acte of actesData ?? []) {
-    if (!actesByDossier.has(acte.dossier_uid))
-      actesByDossier.set(acte.dossier_uid, new Set());
-    actesByDossier.get(acte.dossier_uid)!.add(acte.code_acte);
-  }
 
   // Fallback auteur : pour les dossiers sans initiateur, utiliser l'auteur du premier texte associé
   const uidsWithoutInitiateur = sortedDossiers
     .filter(d => !d.initiateur_acteur_ref)
     .map(d => d.uid);
 
-  type FallbackActeur = { prenom: string | null; nom: string | null; groupe: { uid: string; libelle: string } | null };
+  type FallbackActeur = { prenom: string | null; nom: string | null; roles_text: string | null; groupe: { uid: string; libelle: string } | null };
   const fallbackActeursByDossier = new Map<string, FallbackActeur>();
 
   if (uidsWithoutInitiateur.length > 0) {
@@ -243,7 +225,7 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
     if (acteurRefs.length > 0) {
       const { data: acteursData } = await supabase
         .from('acteurs')
-        .select('uid, nom, prenom, groupe:organes(uid, libelle)')
+        .select('uid, nom, prenom, roles_text, groupe:organes(uid, libelle)')
         .in('uid', acteurRefs);
 
       const acteursMap = new Map((acteursData ?? []).map(a => [a.uid, a]));
@@ -356,123 +338,92 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
   <div className="text-center text-muted-foreground mb-4">Aucun dossier législatif trouvé avec ces filtres.</div>
 ) : (
   <>
-    <ul className="space-y-3">
+    <ul className="divide-y divide-border">
         {sortedDossiers.map((dossier) => {
-          const isRejected = dossier.statut_final === "Rejeté";
           const daysInfo = getDaysInfo(dossier);
           const depotDate = formatDepotDate(dossier.date_depot);
-
           const textesCount = (dossier.textes_count as { count: number }[] | null)?.[0]?.count ?? 0;
           const hasAccessibleTexte = dossiersWithAccessibleTexte.has(dossier.uid);
+          const displayActeur = dossier.initiateur_acteur_ref ?? fallbackActeursByDossier.get(dossier.uid) ?? null;
 
-          const badgeClass = getStatusBadgeClass(dossier.statut_final);
+          // Couleur du bullet selon statut
+          const bulletColor = (() => {
+            const s = dossier.statut_final;
+            if (s === 'Promulguée') return '#27AE60';
+            if (s === 'Rejeté') return '#E74C3C';
+            if (s?.includes('Parlement')) return '#8B5CF6';
+            if (s?.includes('Assemblée')) return '#06B6D4';
+            if (s?.includes('Sénat')) return '#F39C12';
+            return '#F39C12';
+          })();
 
           return (
             <li key={dossier.uid}>
-              <div className="p-5 bg-card rounded-xl border border-border hover:border-primary/40 hover:shadow-sm transition-all duration-200">
+              <div className="py-5 px-4 hover:bg-muted transition-colors duration-150 rounded-sm">
 
-                {/* En-tête : badge statut + durée */}
-                <div className="flex items-center justify-between mb-3">
-                  <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${badgeClass}`}>
-                    {dossier.statut_final ?? 'Inconnu'}
+                {/* Ligne 1 : statut + durée */}
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: bulletColor }} />
+                  <span className="text-xs text-muted-foreground">
+                    {dossier.statut_final ?? 'Statut inconnu'}
+                    {daysInfo && <> · {dossier.statut_final === 'Promulguée' ? `promulguée en ${daysInfo}` : `déposé il y a ${daysInfo}`}</>}
                   </span>
-                  {daysInfo && (
-                    <span className="text-xs text-muted-foreground">
-                      {dossier.statut_final === "Promulguée" ? `Promulguée en ${daysInfo}` : isRejected ? `Déposé il y a ${daysInfo}` : `En cours depuis ${daysInfo}`}
-                    </span>
-                  )}
                 </div>
 
-                {/* Titre */}
-                <h2 className="text-base font-semibold leading-snug mb-3">{dossier.titre}</h2>
+                {/* Ligne 2 : titre */}
+                <h2 className="text-base font-semibold leading-snug mb-2">{dossier.titre}</h2>
 
-                {/* Méta : type · auteur · groupe */}
-                <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground mb-4">
-                  {dossier.procedure_libelle && (
-                    DEFINITIONS[dossier.procedure_libelle]
-                      ? <ProcedureTooltip label={dossier.procedure_libelle} description={DEFINITIONS[dossier.procedure_libelle]} />
-                      : <span className="px-2 py-0.5 rounded-md bg-muted font-medium uppercase tracking-wide">{dossier.procedure_libelle}</span>
-                  )}
-                  {(() => {
-                    const displayActeur = dossier.initiateur_acteur_ref ?? fallbackActeursByDossier.get(dossier.uid) ?? null;
-                    if (!displayActeur) return null;
-                    return (
+                {/* Ligne 3 : méta + CTA */}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground flex-1 min-w-0">
+                    {dossier.procedure_libelle && (
+                      DEFINITIONS[dossier.procedure_libelle]
+                        ? <ProcedureTooltip label={dossier.procedure_libelle} description={DEFINITIONS[dossier.procedure_libelle]} />
+                        : <span className="font-medium uppercase tracking-wide">{dossier.procedure_libelle}</span>
+                    )}
+                    {displayActeur && (
                       <>
                         <span className="text-border">·</span>
-                        <span>{displayActeur.prenom} {displayActeur.nom}</span>
+                        <span>
+                          {(displayActeur as any).roles_text?.split(',')[0]?.trim()
+                            ? `${(displayActeur as any).roles_text.split(',')[0].trim()} `
+                            : ''}{displayActeur.prenom} {displayActeur.nom}
+                        </span>
                         {displayActeur.groupe && (
                           <>
                             <span className="text-border">·</span>
-                            <span className="px-2 py-0.5 rounded-md bg-muted">
-                              {displayActeur.groupe.libelle ?? 'Mandat terminé'}
-                            </span>
+                            <span>{displayActeur.groupe.libelle ?? 'Mandat terminé'}</span>
                           </>
                         )}
                       </>
-                    );
-                  })()}
-                  {depotDate && (
-                    <>
-                      <span className="text-border">·</span>
-                      <span>Déposé le {depotDate}</span>
-                    </>
-                  )}
-                </div>
-
-                {/* Timeline dynamique basée sur les actes réels */}
-                {(() => {
-                  const codes = actesByDossier.get(dossier.uid) ?? new Set<string>();
-                  const milestoneSteps = MILESTONE_CODES
-                    .filter(code => codes.has(code))
-                    .sort((a, b) => STEP_CONFIG[a].priority - STEP_CONFIG[b].priority)
-                    .map(code => ({ label: STEP_CONFIG[code].label }));
-                  const steps = [{ label: 'Dépôt' }, ...milestoneSteps];
-                  const lastIdx = steps.length - 1;
-                  const lineColor = isRejected ? 'bg-[#E74C3C]' : 'bg-primary';
-                  return (
-                    <div className="flex mb-6 overflow-x-auto">
-                      {steps.map((step, i) => (
-                        <div key={i} className="w-12 sm:w-20 shrink-0 flex flex-col">
-                          <div className="flex items-center">
-                            <div className={`w-2.5 h-2.5 rounded-full border-2 shrink-0 ${isRejected && i === lastIdx ? 'bg-[#E74C3C] border-[#E74C3C]' : 'bg-primary border-primary'}`} />
-                            {i < lastIdx && <div className={`flex-1 h-px ${lineColor}`} />}
-                          </div>
-                          <span className="text-[10px] leading-tight mt-1.5 text-foreground font-medium">{step.label}</span>
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })()}
-
-                {/* Liens */}
-                <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-border text-xs">
-                  <Link href={`/dossiers-legislatifs/${dossier.uid}/resume-ia`} target="_blank" className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border border-primary/30 hover:border-primary/60 hover:scale-105 transition-all duration-200 group">
-                    <Sparkles className="w-3.5 h-3.5 text-primary group-hover:rotate-12 transition-transform duration-200" />
-                    <ShimmerText>Détails, votes & Résumé IA</ShimmerText>
-                  </Link>
-                  {dossier.lien_an && (
-                    <a href={dossier.lien_an} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground hover:underline">
-                      <ExternalLink className="w-3.5 h-3.5" /> Assemblée Nationale
-                    </a>
-                  )}
-                  {dossier.lien_senat && (
-                    <a href={dossier.lien_senat} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground hover:underline">
-                      <ExternalLink className="w-3.5 h-3.5" /> Sénat
-                    </a>
-                  )}
-                  {dossier.url_legifrance && (
-                    <a href={dossier.url_legifrance} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground hover:underline">
-                      <ExternalLink className="w-3.5 h-3.5" /> Légifrance
-                    </a>
-                  )}
-                  <div className="ml-auto flex items-center gap-3">
-                    <span className={`inline-flex items-center gap-1 ${hasAccessibleTexte ? 'text-[#27AE60] dark:text-[#2ECC71]' : textesCount > 0 ? 'text-[#F39C12] dark:text-[#F1C40F]' : 'text-muted-foreground'}`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${hasAccessibleTexte ? 'bg-[#27AE60]' : textesCount > 0 ? 'bg-[#E74C3C]' : 'bg-muted-foreground/40'}`} />
-                      {hasAccessibleTexte ? `${textesCount} texte${textesCount > 1 ? 's' : ''} publié${textesCount > 1 ? 's' : ''}` : textesCount > 0 ? 'Texte non encore publié' : 'Aucun texte'}
-                    </span>
-                    <span className="font-mono text-[10px] text-muted-foreground/40 select-all">{dossier.uid}</span>
+                    )}
+                    {depotDate && (
+                      <>
+                        <span className="text-border">·</span>
+                        <span>{depotDate}</span>
+                      </>
+                    )}
+                    {!hasAccessibleTexte && (
+                      <>
+                        <span className="text-border">·</span>
+                        <span>{textesCount > 0 ? 'Texte non encore publié' : 'Aucun texte'}</span>
+                      </>
+                    )}
                   </div>
+                  <Link
+                    href={`/dossiers-legislatifs/${dossier.uid}/resume-ia`}
+                    target="_blank"
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border border-primary/30 hover:border-primary/60 hover:scale-105 transition-all duration-200 group shrink-0"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-primary group-hover:rotate-12 transition-transform duration-200" />
+                    <ShimmerText>Dossier LoiClair avec résumé IA</ShimmerText>
+                  </Link>
                 </div>
+
+                {/* Debug : référence dossier */}
+                <span className="font-mono text-[10px] text-muted-foreground select-all mt-1.5 block" style={{ opacity: 0.35 }}>
+                  {dossier.uid}
+                </span>
 
               </div>
             </li>
