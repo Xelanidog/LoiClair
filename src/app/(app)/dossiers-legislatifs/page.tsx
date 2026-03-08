@@ -1,5 +1,7 @@
 // src/app/dossiers-legislatifs/page.tsx
 // Page principale pour lister les dossiers législatifs.
+
+export const revalidate = 3600; // Cache 1h — données mises à jour une fois par nuit
 // C'est un Server Component : fetch des données côté serveur pour sécurité et perf.
 // On utilise Tailwind pour un style basique : liste en colonne, cartes sans bordure avec hover.
 

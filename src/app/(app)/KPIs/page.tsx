@@ -1,6 +1,6 @@
 // src/app/KPIs/page.tsx
 
-'use server';
+export const revalidate = 3600; // Cache 1h — données mises à jour une fois par nuit
 
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';

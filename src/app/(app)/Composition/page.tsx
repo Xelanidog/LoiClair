@@ -1,6 +1,8 @@
 // src/app/Composition/page.tsx
 // PAS DE "use client" ici → c'est un Server Component
 
+export const revalidate = 3600; // Cache 1h — données mises à jour une fois par nuit
+
 import { Suspense } from 'react'
 import { getKpiMetrics, type KpiMetrics } from './Compositionqueries'
 import { CompositionClient } from './CompositionClient'

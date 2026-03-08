@@ -1,6 +1,8 @@
 // src/app/(app)/Month/page.tsx
 // Server Component — Fetch des donnees du mois (ou d'un dossier) et transformation en evenements enrichis
 
+export const revalidate = 3600; // Cache 1h — données mises à jour une fois par nuit
+
 import { supabase } from '@/lib/supabase';
 import {
   getMonthActes,
