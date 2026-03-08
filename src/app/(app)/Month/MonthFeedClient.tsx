@@ -405,8 +405,8 @@ function CardTitle({ group, e }: { group: GroupedFeedEvent; e: FeedEvent }) {
     return (
       <p className="text-sm leading-snug mb-0.5">
         {e.organeName && <span className="text-muted-foreground">{e.organeName} · </span>}
-        {e.libelleActe && <span className="text-muted-foreground">{e.libelleActe} </span>}
-        <span>{e.texteTitre || e.texteDenomination || group.dossierTitre || e.titre}</span>
+        {e.libelleActe && <span className="text-muted-foreground">{e.libelleActe}</span>}
+        <span className="block">{e.texteTitre || e.texteDenomination || group.dossierTitre || e.titre}</span>
       </p>
     );
   }
