@@ -41,3 +41,6 @@ export const MODEL_RESUME_LOI = 'grok-4-1-fast-non-reasoning'; // Optimisation :
 
 // Limite max pour l'input (texteComplet) en caractères (≈ tokens/4). Ajuste pour équilibrer qualité et perf.
 export const MAX_INPUT_CHARS_RESUME_LOI = 20000; // Ex. : 8000 chars ≈ 2000 tokens ≈ 1000-1300 mots ; évite perte de contexte sur lois longues.
+
+// Version du prompt – à bumper (v2, v3…) à chaque modification de prompt, modèle ou params pour invalider le cache.
+export const PROMPT_VERSION_RESUME_LOI = 'v1';

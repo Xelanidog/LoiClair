@@ -8,7 +8,8 @@ import { streamText } from 'ai'; // Core AI SDK (Vercel) pour appels IA unifiés
 import { createXai } from '@ai-sdk/xai'; // Provider xAI/Grok spécifique
 import * as cheerio from 'cheerio';
 import pdfParse from 'pdf-parse';
-import { SYSTEM_PROMPT_RESUME_LOI, USER_PROMPT_TEMPLATE_RESUME_LOI, PARAMS_RESUME_LOI, MODEL_RESUME_LOI, MAX_INPUT_CHARS_RESUME_LOI } from '@/lib/prompts';
+import { SYSTEM_PROMPT_RESUME_LOI, USER_PROMPT_TEMPLATE_RESUME_LOI, PARAMS_RESUME_LOI, MODEL_RESUME_LOI, MAX_INPUT_CHARS_RESUME_LOI, PROMPT_VERSION_RESUME_LOI } from '@/lib/prompts';
+import { supabase } from '@/lib/supabase';
 
 const xai = createXai({ apiKey: process.env.XAI_API_KEY });
 
@@ -51,6 +52,7 @@ export async function POST(request: NextRequest) {
 
     let lien: string | undefined = raw.lien; // Typé pour sécurité.
     let titre_texte: string | undefined = raw.titre_texte;
+    let texte_uid: string | undefined = raw.texte_uid;
 
     // Support pour useCompletion : parse si 'prompt' est un JSON stringifié.
     if (typeof raw.prompt === 'string') {
@@ -58,6 +60,7 @@ export async function POST(request: NextRequest) {
         const parsed = JSON.parse(raw.prompt);
         lien = parsed.lien || lien;
         titre_texte = parsed.titre_texte || titre_texte;
+        texte_uid = parsed.texte_uid || texte_uid;
       } catch (parseError) {
         console.error('Erreur parse prompt:', parseError);
         return NextResponse.json({ error: 'Payload invalide.' }, { status: 400 });
@@ -80,7 +83,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Lien erroné ou contenu non encore disponible.' }, { status: 500 });
     }
 
-    // Génération résumé loi en streaming.
+    // Génération résumé loi en streaming + sauvegarde cache après complétion.
     const result = await streamText({
       model: xai(MODEL_RESUME_LOI),
       system: SYSTEM_PROMPT_RESUME_LOI,
@@ -88,6 +91,19 @@ export async function POST(request: NextRequest) {
         .replace('{titre_texte}', titre_texte || 'Titre inconnu')
         .replace('{texteComplet}', texteComplet || 'Texte non disponible'),
       ...PARAMS_RESUME_LOI,
+      onFinish: async ({ text }) => {
+        if (texte_uid && text) {
+          try {
+            await supabase.from('textes').update({
+              resume_ia: text,
+              resume_ia_prompt_version: PROMPT_VERSION_RESUME_LOI,
+              resume_ia_created_at: new Date().toISOString(),
+            }).eq('uid', texte_uid);
+          } catch (err) {
+            console.error('Erreur sauvegarde cache resume_ia:', err);
+          }
+        }
+      },
     });
 
     return result.toTextStreamResponse(); // Retourne le stream pour le frontend.

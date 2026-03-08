@@ -65,6 +65,7 @@ interface ResumeIAClientProps {
   timelineSteps: string[];
   scrutinsParTexte: Record<string, ScrutinData>;
   initialTexteUid: string | null;
+  cachedResumes: Record<string, string>;
 }
 
 const CARDS = [
@@ -86,15 +87,15 @@ function parseCompletion(text: string): Record<string, string> {
 }
 
 const BADGE_CLASSES: Record<string, string> = {
-  "Promulguée": "bg-green-100 text-green-800 border-green-200",
-  "Rejeté": "bg-red-100 text-red-800 border-red-200",
-  "En cours d'examen": "bg-yellow-100 text-yellow-800 border-yellow-200",
-  "Adopté par le Parlement": "bg-purple-100 text-purple-800 border-purple-200",
-  "Adopté par l'Assemblée nationale": "bg-blue-100 text-blue-800 border-blue-200",
-  "Adopté par le Sénat": "bg-indigo-100 text-indigo-800 border-indigo-200",
+  "Promulguée": "bg-[#27AE60]/15 text-[#27AE60] border-[#27AE60]/30",
+  "Rejeté": "bg-[#E74C3C]/15 text-[#E74C3C] border-[#E74C3C]/30",
+  "En cours d'examen": "bg-[#F39C12]/15 text-[#F39C12] border-[#F39C12]/30",
+  "Adopté par le Parlement": "bg-violet-100 text-violet-800 border-violet-200",
+  "Adopté par l'Assemblée nationale": "bg-primary/10 text-primary border-primary/30",
+  "Adopté par le Sénat": "bg-[#F39C12]/10 text-[#F39C12] border-[#F39C12]/30",
 };
 
-export default function ResumeIAClient({ uid, titreDossier, initialTextes, statutFinal, procedureLibelle, dateDepot, datePromulgation, lienAN, lienSenat, lienLegifrance, dureeTotal, dureeAN, dureeANEnCours, dureeSenat, dureeSNEnCours, passageCMP, nbVotes, auteurNom, auteurGroupe, timelineSteps, scrutinsParTexte, initialTexteUid }: ResumeIAClientProps) {
+export default function ResumeIAClient({ uid, titreDossier, initialTextes, statutFinal, procedureLibelle, dateDepot, datePromulgation, lienAN, lienSenat, lienLegifrance, dureeTotal, dureeAN, dureeANEnCours, dureeSenat, dureeSNEnCours, passageCMP, nbVotes, auteurNom, auteurGroupe, timelineSteps, scrutinsParTexte, initialTexteUid, cachedResumes }: ResumeIAClientProps) {
   const [textes] = useState<Texte[]>(initialTextes);
   const [selectedUid, setSelectedUid] = useState<string | null>(() => {
     if (initialTexteUid && initialTextes.some(t => t.uid === initialTexteUid)) return initialTexteUid;
@@ -108,6 +109,7 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
   );
 
   const [open, setOpen] = useState(false);
+  const [isStreamingCache, setIsStreamingCache] = useState(false);
   const completedForRef = useRef<string | null>(null);
 
   const {
@@ -123,22 +125,45 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
     window.open(perplexityUrl, '_blank', 'noopener,noreferrer');
   };
 
-  // Lancement du résumé IA uniquement quand le lien est confirmé valide (via url_accessible en DB)
+  // Lancement du résumé IA : cache hit → streaming simulé, cache miss → appel API réel
   useEffect(() => {
     if (!selectedUid) return;
     if (liensStatus[selectedUid] !== 'valide') return;
     if (completedForRef.current === selectedUid) return;
 
+    completedForRef.current = selectedUid;
+
+    // Cache hit : streaming simulé progressif (même UX que le vrai streaming)
+    if (cachedResumes[selectedUid]) {
+      const fullText = cachedResumes[selectedUid];
+      setCompletion('');
+      setIsStreamingCache(true);
+      let i = 0;
+      const step = 12; // caractères par tick
+      const interval = setInterval(() => {
+        i += step;
+        if (i >= fullText.length) {
+          setCompletion(fullText);
+          setIsStreamingCache(false);
+          clearInterval(interval);
+        } else {
+          setCompletion(fullText.slice(0, i));
+        }
+      }, 16); // ~60fps
+      return () => clearInterval(interval);
+    }
+
+    // Cache miss : appel API réel (streaming)
     const selectedTexte = textes.find(t => t.uid === selectedUid);
     if (!selectedTexte?.lien_texte) return;
 
-    completedForRef.current = selectedUid;
     setCompletion('');
     complete(JSON.stringify({
       lien: selectedTexte.lien_texte,
       titre_texte: selectedTexte.titre_principal_court || selectedTexte.denomination || 'Texte inconnu',
+      texte_uid: selectedUid,
     }));
-  }, [selectedUid, textes, liensStatus, complete, setCompletion]);
+  }, [selectedUid, textes, liensStatus, complete, setCompletion, cachedResumes]);
 
   const handleSelectChange = (uid: string) => setSelectedUid(uid);
 
@@ -248,25 +273,25 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
       {(dureeTotal !== null || dureeAN !== null || dureeSenat !== null || passageCMP || nbVotes > 0) && (
         <div className="flex flex-wrap items-center gap-2 mb-6">
           {dureeTotal !== null && (
-            <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${datePromulgation ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700' : 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-700'}`}>
+            <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${datePromulgation ? 'bg-[#27AE60]/15 text-[#27AE60] border-[#27AE60]/30 dark:bg-[#27AE60]/20 dark:text-[#2ECC71] dark:border-[#27AE60]/30' : 'bg-[#F39C12]/15 text-[#F39C12] border-[#F39C12]/30 dark:bg-[#F39C12]/20 dark:text-[#F1C40F] dark:border-[#F39C12]/30'}`}>
               <Clock className="h-3 w-3 shrink-0" />
               {datePromulgation ? `Promulgué en ${dureeTotal} j` : `En cours depuis ${dureeTotal} j`}
             </span>
           )}
           {dureeAN !== null && (
-            <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-sm ${dureeANEnCours ? 'bg-yellow-100/70 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' : 'bg-blue-100/70 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'}`}>
+            <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-sm ${dureeANEnCours ? 'bg-[#F39C12]/10 text-[#F39C12] dark:bg-[#F39C12]/15 dark:text-[#F1C40F]' : 'bg-primary/10 text-primary dark:bg-primary/15 dark:text-primary'}`}>
               <Building2 className="h-3.5 w-3.5 shrink-0" />
               AN : {dureeAN} j{dureeANEnCours ? ' · en cours' : ''}
             </span>
           )}
           {dureeSenat !== null && (
-            <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-sm ${dureeSNEnCours ? 'bg-yellow-100/70 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' : 'bg-orange-100/70 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300'}`}>
+            <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-sm ${dureeSNEnCours ? 'bg-[#F39C12]/10 text-[#F39C12] dark:bg-[#F39C12]/15 dark:text-[#F1C40F]' : 'bg-[#F39C12]/10 text-[#F39C12] dark:bg-[#F39C12]/15 dark:text-[#F1C40F]'}`}>
               <Building2 className="h-3.5 w-3.5 shrink-0" />
               Sénat : {dureeSenat} j{dureeSNEnCours ? ' · en cours' : ''}
             </span>
           )}
           {passageCMP && (
-            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-100/70 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 text-sm">
+            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-violet-100/70 text-violet-800 dark:bg-violet-900/30 dark:text-violet-300 text-sm">
               <Scale className="h-3.5 w-3.5 shrink-0" />
               CMP
             </span>
@@ -389,17 +414,17 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
         return (
           <div className="mb-6 rounded-lg border px-4 py-3" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <div className="flex flex-wrap items-center gap-2">
-              <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${isAdopted ? 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/60 dark:text-green-300 dark:border-green-800' : isRejected ? 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/60 dark:text-red-300 dark:border-red-800' : 'bg-muted text-muted-foreground border-border'}`}>
+              <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${isAdopted ? 'bg-[#27AE60]/15 text-[#27AE60] border-[#27AE60]/30 dark:bg-[#27AE60]/20 dark:text-[#2ECC71] dark:border-[#27AE60]/30' : isRejected ? 'bg-[#E74C3C]/15 text-[#E74C3C] border-[#E74C3C]/30 dark:bg-[#E74C3C]/20 dark:text-[#E74C3C] dark:border-[#E74C3C]/30' : 'bg-muted text-muted-foreground border-border'}`}>
                 {isAdopted ? 'Adopté' : isRejected ? 'Rejeté' : 'Vote'}
               </span>
               <div className="flex items-center gap-1.5 flex-1 min-w-0">
                 <div className="relative flex-1 h-2 rounded-full overflow-hidden isolate" style={{ display: 'flex', backgroundColor: 'var(--color-muted)' }}>
-                  <div style={{ width: `${(s.pour / TOTAL_DEPUTES) * 100}%`, backgroundColor: '#22c55e', minWidth: s.pour > 0 ? '2px' : '0' }} className="h-full" />
-                  <div style={{ width: `${(s.contre / TOTAL_DEPUTES) * 100}%`, backgroundColor: '#ef4444', minWidth: s.contre > 0 ? '2px' : '0' }} className="h-full" />
-                  <div style={{ width: `${(s.abstentions / TOTAL_DEPUTES) * 100}%`, backgroundColor: '#9ca3af', minWidth: s.abstentions > 0 ? '2px' : '0' }} className="h-full" />
-                  <div style={{ width: `${(s.nonVotants / TOTAL_DEPUTES) * 100}%`, backgroundColor: '#fb923c', minWidth: s.nonVotants > 0 ? '2px' : '0' }} className="h-full" />
-                  <div style={{ width: `${(absents / TOTAL_DEPUTES) * 100}%`, backgroundColor: '#e5e7eb' }} className="h-full dark:hidden" />
-                  <div style={{ width: `${(absents / TOTAL_DEPUTES) * 100}%`, backgroundColor: '#374151' }} className="h-full hidden dark:block" />
+                  <div style={{ width: `${(s.pour / TOTAL_DEPUTES) * 100}%`, backgroundColor: '#27AE60', minWidth: s.pour > 0 ? '2px' : '0' }} className="h-full" />
+                  <div style={{ width: `${(s.contre / TOTAL_DEPUTES) * 100}%`, backgroundColor: '#E74C3C', minWidth: s.contre > 0 ? '2px' : '0' }} className="h-full" />
+                  <div style={{ width: `${(s.abstentions / TOTAL_DEPUTES) * 100}%`, backgroundColor: '#A8A29E', minWidth: s.abstentions > 0 ? '2px' : '0' }} className="h-full" />
+                  <div style={{ width: `${(s.nonVotants / TOTAL_DEPUTES) * 100}%`, backgroundColor: '#F39C12', minWidth: s.nonVotants > 0 ? '2px' : '0' }} className="h-full" />
+                  <div style={{ width: `${(absents / TOTAL_DEPUTES) * 100}%`, backgroundColor: '#F0EDEA' }} className="h-full dark:hidden" />
+                  <div style={{ width: `${(absents / TOTAL_DEPUTES) * 100}%`, backgroundColor: '#44403C' }} className="h-full hidden dark:block" />
                   {majorityPct > 0 && (
                     <div className="absolute top-0 h-full w-0.5 bg-foreground/60" style={{ left: `${majorityPct}%` }} title={`Majorité requise : ${s.suffragesRequis}`} />
                   )}
@@ -411,11 +436,11 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
             </div>
 
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: '#22c55e' }} />Pour : {s.pour}</div>
-              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: '#ef4444' }} />Contre : {s.contre}</div>
-              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: '#9ca3af' }} />Abstentions : {s.abstentions}</div>
-              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: '#fb923c' }} />Non-votants : {s.nonVotants}</div>
-              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full shrink-0 bg-gray-200 dark:bg-gray-700" />Absents : {absents}</div>
+              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: '#27AE60' }} />Pour : {s.pour}</div>
+              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: '#E74C3C' }} />Contre : {s.contre}</div>
+              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: '#A8A29E' }} />Abstentions : {s.abstentions}</div>
+              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: '#F39C12' }} />Non-votants : {s.nonVotants}</div>
+              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full shrink-0 bg-[#F0EDEA] dark:bg-[#44403C]" />Absents : {absents}</div>
             </div>
 
             <div className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
@@ -464,7 +489,7 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
               <CardContent className="text-sm prose prose-sm max-w-none dark:prose-invert">
                 {sections[key] ? (
                   <ReactMarkdown>{sections[key]}</ReactMarkdown>
-                ) : isLoadingResume ? (
+                ) : (isLoadingResume || isStreamingCache) ? (
                   <div className="space-y-2">
                     <Skeleton className="h-3 w-full" />
                     <Skeleton className="h-3 w-5/6" />
@@ -480,7 +505,7 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
       )}
 
       {/* Rainbow button Perplexity — sous les cartes */}
-      {selectedTexte && selectedTexte.lien_texte && (hasContent || (!isLoadingResume && !error)) && liensStatus[selectedTexte.uid] === 'valide' && (
+      {selectedTexte && selectedTexte.lien_texte && (hasContent || (!isLoadingResume && !isStreamingCache && !error)) && liensStatus[selectedTexte.uid] === 'valide' && (
         <div className="flex justify-center mt-8">
           <button
             onClick={() => handleDiscussWithAI(
@@ -489,7 +514,7 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
             )}
             className="cursor-pointer hover:scale-105 active:scale-95 transition-transform rounded-xl"
             style={{
-              background: 'conic-gradient(from var(--rainbow-angle), #ff0080, #ff8c00, #ffe600, #00ff88, #00cfff, #8a2be2, #ff0080)',
+              background: 'conic-gradient(from var(--rainbow-angle), #0891B2, #06B6D4, #22D3EE, #D4A54A, #06B6D4, #0891B2)',
               animation: 'rainbow-rotate 4s linear infinite',
               padding: '2px',
             }}

@@ -2,7 +2,7 @@
 // Server Component : fetch initial des données, puis passe au client pour l'interactivité IA
 
 import { supabase } from '@/lib/supabase';
-import { MODEL_RESUME_LOI } from '@/lib/prompts';
+import { MODEL_RESUME_LOI, PROMPT_VERSION_RESUME_LOI } from '@/lib/prompts';
 import { STEP_CONFIG, MILESTONE_CODES } from '@/lib/legislative-steps';
 import ResumeIAClient from './ResumeIAClient';
 import type { Metadata } from 'next';
@@ -35,7 +35,7 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
   const [textesResult, dossierResult, actesResult, actesKPIResult] = await Promise.all([
     supabase
       .from('textes')
-      .select('uid, date_creation, date_publication, denomination, titre_principal_court, lien_texte, libelle_statut_adoption, provenance, url_accessible, organe_auteur:organe_auteur_ref(libelle)')
+      .select('uid, date_creation, date_publication, denomination, titre_principal_court, lien_texte, libelle_statut_adoption, provenance, url_accessible, organe_auteur:organe_auteur_ref(libelle), resume_ia, resume_ia_prompt_version')
       .eq('dossier_ref', uid)
       .not('uid', 'ilike', '%TAP%')
       .order('date_creation', { ascending: true }),
@@ -66,6 +66,14 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
 
   const dossier = dossierResult.data?.[0];
   const titreDossier = dossier?.titre || 'Titre indisponible';
+
+  // Cache : map uid → resume markdown pour les textes dont le prompt est à jour
+  const cachedResumes: Record<string, string> = {};
+  for (const t of textes) {
+    if (t.resume_ia && t.resume_ia_prompt_version === PROMPT_VERSION_RESUME_LOI) {
+      cachedResumes[t.uid] = t.resume_ia;
+    }
+  }
 
   // Calcul des durées par chambre (aligné sur la logique de la page KPI)
   let depotAN: Date | null = null, decisionAN: Date | null = null;
@@ -222,6 +230,7 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
       timelineSteps={timelineSteps}
       scrutinsParTexte={scrutinsParTexte}
       initialTexteUid={initialTexteUid}
+      cachedResumes={cachedResumes}
     />
   );
 }
