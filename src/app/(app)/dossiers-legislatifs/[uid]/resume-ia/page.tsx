@@ -6,6 +6,7 @@ import { MODEL_RESUME_LOI, PROMPT_VERSION_RESUME_LOI } from '@/lib/prompts';
 import { STEP_CONFIG, MILESTONE_CODES } from '@/lib/legislative-steps';
 import ResumeIAClient from './ResumeIAClient';
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 
 export const metadata: Metadata = {
   other: {
@@ -57,6 +58,14 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
       .in('code_acte', KPI_ACTE_CODES)
       .not('date_acte', 'is', null),
   ]);
+
+  // Erreur Supabase sur la requête principale
+  if (dossierResult.error) throw new Error('db_unavailable');
+
+  // Dossier introuvable (UID inexistant)
+  if (!dossierResult.data || dossierResult.data.length === 0) {
+    notFound();
+  }
 
   // Normalise organe_auteur : Supabase renvoie un array pour les joins, on prend le premier élément
   const textes = (textesResult.data || []).map((t: any) => ({

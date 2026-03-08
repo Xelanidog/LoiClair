@@ -202,16 +202,7 @@ export async function getKpiMetrics(
   }
 
   if (error || !data) {
-    console.error('Erreur KPI fetch:', error);
-    return {
-      membres: 0, ageMoyen: null, plusJeune: null, plusAge: null,
-      pariteFemmes: null, mandatsActifsMoyens: null, groupes: null, nombreGroupes: null,
-
-      meilleurePresence: null, pirePresence: null,
-      meilleurePresenceImportants: null, pirePresenceImportants: null,
-      meilleureCohesion: null, pireCohesion: null,
-      acteursList: [], groupesList: [], scrutinStats: null,
-    };
+    throw new Error('db_unavailable');
   }
 
   const acteurs = data;

@@ -452,6 +452,10 @@ export default async function MonthPage({
   const monthStartISO = queryStart.toISOString();
   const monthEndISO = queryEnd.toISOString();
 
+  // ── Vérification connectivité Supabase ──
+  const { error: dbError } = await supabase.from('actes_legislatifs').select('uid').limit(1);
+  if (dbError) throw new Error('db_unavailable');
+
   // ── Round 1 : actes du mois ──
   const [actes, motionActes] = await Promise.all([
     getMonthActes(supabase, monthStartISO, monthEndISO),

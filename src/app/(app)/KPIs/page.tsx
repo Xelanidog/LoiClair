@@ -250,7 +250,7 @@ try {
     : 0;
 
 } catch (error) {
-  console.error('❌ Erreur Supabase KPIs :', error);
+  throw error;
 }
 
 // Calcul des délais par chambre (depuis actes_legislatifs)
@@ -354,7 +354,7 @@ try {
     .filter(g => g.total >= 10)
     .sort((a, b) => b.total - a.total);
 } catch (error) {
-  console.error('❌ Erreur calcul délais chambre :', error);
+  throw error;
 }
 
 // ────────────────────────────────────────────────────────────────

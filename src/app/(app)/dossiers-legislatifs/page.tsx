@@ -173,11 +173,8 @@ query = applyFilters(query).order('date_depot', { ascending: false }).range(offs
 
 const [{ count: totalCount, error: countError }, { data: dossiers, error }] = await Promise.all([countQuery, query]);
 
+if (countError || error) throw new Error('db_unavailable');
 let finalTotalCount = totalCount || 0;
-if (countError) {
-  console.error('Erreur lors du count des dossiers:', countError);
-  finalTotalCount = 0;
-}
 const totalPages = Math.ceil(finalTotalCount / ITEMS_PER_PAGE);
 if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
 
