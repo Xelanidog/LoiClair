@@ -597,7 +597,7 @@ export default function LandingPage() {
       {/* ------------------------------------------------------------------ */}
       <section
         className="relative overflow-visible"
-        style={{ background: "linear-gradient(135deg, hsl(174 60% 96%), hsl(174 40% 93%) 50%, hsl(43 50% 95%))", paddingTop: "240px", paddingBottom: "5rem", marginTop: "-120px" }}
+        style={{ background: "var(--landing-hero2-bg)", paddingTop: "240px", paddingBottom: "5rem", marginTop: "-120px" }}
       >
         {/* Vague blanche en haut — déborde dans le hero */}
         <svg
@@ -610,7 +610,7 @@ export default function LandingPage() {
         >
           <path
             d="M0 0H1440V80C1200 130 960 30 720 80C480 130 240 30 0 80V0Z"
-            fill="white"
+            style={{ fill: "var(--background)" }}
           />
         </svg>
         <div className="max-w-7xl mx-auto px-6 lg:px-10">

@@ -50,6 +50,8 @@
 :root {
   --radius: 0.625rem;
   --gold: oklch(0.73 0.12 80); /* Or Doux #D4A54A */
+  --landing-hero2-bg: linear-gradient(135deg, hsl(174 60% 96%), hsl(174 40% 93%) 50%, hsl(43 50% 95%));
+  --landing-hero2-wave: white;
   --background: oklch(1 0 0);
   --foreground: oklch(0.22 0.01 75); /* Brun Profond #1C1917 */
   --card: oklch(1 0 0);
@@ -85,6 +87,8 @@
 
 .dark {
   --gold: oklch(0.78 0.12 80); /* Or Doux plus clair en dark */
+  --landing-hero2-bg: linear-gradient(135deg, oklch(0.30 0.025 174), oklch(0.27 0.018 174) 50%, oklch(0.26 0.010 60));
+  --landing-hero2-wave: var(--background);
   --background: oklch(0.18 0.005 60); /* Brun très foncé */
   --foreground: oklch(0.96 0.005 80); /* Blanc chaud */
   --card: oklch(0.24 0.005 60);
