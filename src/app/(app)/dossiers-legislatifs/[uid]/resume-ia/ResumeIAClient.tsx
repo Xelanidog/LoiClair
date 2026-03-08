@@ -460,7 +460,10 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
 
       {/* État : lien invalide */}
       {selectedTexte && liensStatus[selectedTexte.uid] === 'invalide' && (
-        <p className="text-muted-foreground">Ce texte n&apos;a pas encore été publié. Sélectionnez un autre texte.</p>
+        <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          <span className="shrink-0 mt-0.5">⚠️</span>
+          <p>Ce texte n&apos;est pas encore disponible en ligne. Sélectionnez un autre texte dans la liste ci-dessus.</p>
+        </div>
       )}
 
       {/* État : erreur */}

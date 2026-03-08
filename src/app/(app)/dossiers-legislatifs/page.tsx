@@ -406,7 +406,7 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
                     {!hasAccessibleTexte && (
                       <>
                         <span className="text-border">·</span>
-                        <span>{textesCount > 0 ? 'Texte non encore publié' : 'Aucun texte'}</span>
+                        <span className="text-destructive font-medium">{textesCount > 0 ? 'Texte non encore publié' : 'Aucun texte'}</span>
                       </>
                     )}
                   </div>
