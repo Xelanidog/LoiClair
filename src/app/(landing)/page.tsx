@@ -22,6 +22,9 @@ import {
   X,
   Check,
   Vote,
+  FileText,
+  BarChart3,
+  CheckCircle2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -211,6 +214,186 @@ function ProductMockup() {
 }
 
 // ---------------------------------------------------------------------------
+// FeedMockup — fake browser window showing the monthly feed
+// ---------------------------------------------------------------------------
+const FEED_EVENTS = [
+  {
+    icon: FileText,
+    label: "Nouveau texte",
+    context: "Assemblée",
+    date: "3 mar",
+    color: "text-primary",
+    iconBg: "bg-primary/10",
+    title: "Projet de loi relatif à la transition énergétique",
+    footer: "ia" as const,
+  },
+  {
+    icon: BarChart3,
+    label: "Décision",
+    context: "Assemblée",
+    date: "28 fév",
+    color: "text-violet-600 dark:text-violet-400",
+    iconBg: "bg-violet-100 dark:bg-violet-900/50",
+    title: "Budget 2026 — Article 7",
+    vote: { pour: 342, contre: 210, abs: 25 },
+    footer: "adopted" as const,
+  },
+  {
+    icon: CheckCircle2,
+    label: "Loi promulguée",
+    context: null,
+    date: "25 fév",
+    color: "text-[#27AE60] dark:text-[#2ECC71]",
+    iconBg: "bg-[#27AE60]/10",
+    title: "Loi n° 2026-142 relative à la protection des données personnelles",
+    footer: "law" as const,
+  },
+]
+
+const FEED_PILLS = [
+  { label: "Tous", count: 12, active: true },
+  { label: "Textes", count: 5, active: false },
+  { label: "Décisions", count: 4, active: false },
+  { label: "Promulg.", count: 3, active: false },
+]
+
+function FeedMockup() {
+  const total = 577
+  return (
+    <div
+      className="rounded-2xl border shadow-2xl bg-card overflow-hidden"
+      style={{ transform: "rotate(-1deg)" }}
+    >
+      {/* Browser chrome */}
+      <div className="bg-muted border-b px-4 py-3 flex items-center gap-2">
+        <span className="h-3 w-3 rounded-full bg-[#FF5F57] shrink-0" />
+        <span className="h-3 w-3 rounded-full bg-[#FFBD2E] shrink-0" />
+        <span className="h-3 w-3 rounded-full bg-[#28C840] shrink-0" />
+        <div className="flex-1 mx-3 bg-background rounded-md px-3 py-1 text-xs text-muted-foreground font-mono">
+          loiclair.fr/fil-du-mois
+        </div>
+      </div>
+
+      <div className="p-4 space-y-0">
+        {/* Filter pills */}
+        <div className="flex gap-1.5 mb-3">
+          {FEED_PILLS.map((pill) => (
+            <span
+              key={pill.label}
+              className={cn(
+                "rounded-full border px-2.5 py-1 text-[10px] font-medium",
+                pill.active
+                  ? "border-foreground/30 bg-muted text-foreground"
+                  : "border-border text-muted-foreground"
+              )}
+            >
+              {pill.label}{" "}
+              <span className="opacity-50 tabular-nums">{pill.count}</span>
+            </span>
+          ))}
+        </div>
+
+        {/* Event cards */}
+        {FEED_EVENTS.map((event, i) => (
+          <div
+            key={i}
+            className={cn(
+              "flex gap-2.5 py-3",
+              i < FEED_EVENTS.length - 1 && "border-b"
+            )}
+          >
+            {/* Avatar */}
+            <div
+              className={cn(
+                "w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5",
+                event.iconBg
+              )}
+            >
+              <event.icon className={cn("w-3.5 h-3.5", event.color)} />
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 min-w-0 space-y-1">
+              {/* Header */}
+              <div className="flex items-baseline gap-1 text-[10px] text-muted-foreground">
+                <span className={cn("font-semibold", event.color)}>
+                  {event.label}
+                </span>
+                {event.context && (
+                  <>
+                    <span>·</span>
+                    <span className="font-bold text-foreground">
+                      {event.context}
+                    </span>
+                  </>
+                )}
+                <span>·</span>
+                <span>{event.date}</span>
+              </div>
+
+              {/* Title */}
+              <p className="text-xs leading-snug text-foreground line-clamp-2">
+                {event.title}
+              </p>
+
+              {/* Vote bar */}
+              {event.vote && (
+                <div className="flex items-center gap-1.5">
+                  <div className="flex flex-1 h-1.5 rounded-full overflow-hidden bg-muted">
+                    <div
+                      style={{
+                        width: `${(event.vote.pour / total) * 100}%`,
+                        backgroundColor: "#27AE60",
+                      }}
+                      className="h-full"
+                    />
+                    <div
+                      style={{
+                        width: `${(event.vote.contre / total) * 100}%`,
+                        backgroundColor: "#E74C3C",
+                      }}
+                      className="h-full"
+                    />
+                    <div
+                      style={{
+                        width: `${(event.vote.abs / total) * 100}%`,
+                        backgroundColor: "#A8A29E",
+                      }}
+                      className="h-full"
+                    />
+                  </div>
+                  <span className="text-[10px] text-muted-foreground tabular-nums shrink-0">
+                    {event.vote.pour}–{event.vote.contre}–{event.vote.abs}
+                  </span>
+                </div>
+              )}
+
+              {/* Footer */}
+              {event.footer === "ia" && (
+                <span className="inline-flex items-center gap-1 text-[10px] text-primary">
+                  <Sparkles className="w-2.5 h-2.5" />
+                  Résumé IA
+                </span>
+              )}
+              {event.footer === "adopted" && (
+                <span className="inline-block text-[10px] font-medium px-1.5 py-0.5 rounded bg-[#27AE60]/15 text-[#27AE60]">
+                  Adopté
+                </span>
+              )}
+              {event.footer === "law" && (
+                <span className="text-[10px] text-muted-foreground font-mono">
+                  Loi n° 2026-142
+                </span>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Data
 // ---------------------------------------------------------------------------
 const TRUST_ITEMS = [
@@ -391,7 +574,7 @@ export default function LandingPage() {
                   législatif en langage clair. Chaque texte résumé, chaque
                   vote expliqué.
                 </p>
-                <Link href="/Month">
+                <Link href="/KPIs">
                   <Button variant="ghost" size="lg" className="gap-2 text-primary hover:text-primary px-0 text-base">
                     Explorer le tableau de bord
                     <ArrowRight className="h-4 w-4" />
@@ -432,9 +615,62 @@ export default function LandingPage() {
       </section>
 
       {/* ------------------------------------------------------------------ */}
-      {/* 3. LE CONSTAT                                                       */}
+      {/* 3. LE FIL D'ACTU                                                    */}
       {/* ------------------------------------------------------------------ */}
       <section className="py-20 lg:py-28">
+        <div className="max-w-7xl mx-auto px-6 lg:px-10">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* Left — Mockup */}
+            <AnimatedSection variants={fadeLeft}>
+              <FeedMockup />
+            </AnimatedSection>
+
+            {/* Right — Texte */}
+            <AnimatedSection variants={fadeRight}>
+              <div className="space-y-5">
+                <p className="text-primary text-xs uppercase tracking-widest font-semibold">
+                  Votre fil d&apos;actualité
+                </p>
+                <h2
+                  className="font-bold tracking-tight"
+                  style={{
+                    fontSize: "clamp(2rem, 3.5vw + 0.5rem, 3rem)",
+                    lineHeight: 1.15,
+                  }}
+                >
+                  Suivez l&apos;activité parlementaire,{" "}
+                  <span className="text-primary">mois par mois.</span>
+                </h2>
+                <p
+                  className="text-muted-foreground leading-relaxed max-w-lg"
+                  style={{
+                    fontSize: "clamp(1.125rem, 1.2vw + 0.5rem, 1.25rem)",
+                  }}
+                >
+                  Chaque mois, LoiClair rassemble les textes déposés, les votes
+                  en séance et les lois promulguées dans un fil d&apos;actualité
+                  clair et chronologique. Plus besoin de chercher.
+                </p>
+                <Link href="/Month">
+                  <Button
+                    variant="ghost"
+                    size="lg"
+                    className="gap-2 text-primary hover:text-primary px-0 text-base"
+                  >
+                    Explorer le fil du mois
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </Link>
+              </div>
+            </AnimatedSection>
+          </div>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* 4. LE CONSTAT                                                       */}
+      {/* ------------------------------------------------------------------ */}
+      <section className="py-20 lg:py-28 bg-muted/20">
         <div className="max-w-7xl mx-auto px-6 lg:px-10">
           <AnimatedSection className="mb-12 space-y-2">
             <p className="text-primary text-xs uppercase tracking-widest font-semibold">
@@ -464,9 +700,9 @@ export default function LandingPage() {
       </section>
 
       {/* ------------------------------------------------------------------ */}
-      {/* 4. LES VRAIS FREINS                                                 */}
+      {/* 5. LES VRAIS FREINS                                                 */}
       {/* ------------------------------------------------------------------ */}
-      <section className="py-20 lg:py-28 bg-muted/20">
+      <section className="py-20 lg:py-28">
         <div className="max-w-7xl mx-auto px-6 lg:px-10">
           <AnimatedSection className="mb-12 space-y-2">
             <p className="text-primary text-xs uppercase tracking-widest font-semibold">
@@ -511,9 +747,9 @@ export default function LandingPage() {
       </section>
 
       {/* ------------------------------------------------------------------ */}
-      {/* 5. AVANT / APRES                                                    */}
+      {/* 6. AVANT / APRES                                                    */}
       {/* ------------------------------------------------------------------ */}
-      <section className="py-20 lg:py-28">
+      <section className="py-20 lg:py-28 bg-muted/20">
         <div className="max-w-7xl mx-auto px-6 lg:px-10">
           <AnimatedSection className="mb-12 space-y-2 text-center">
             <h2 className="text-2xl md:text-3xl font-bold">
@@ -612,9 +848,9 @@ export default function LandingPage() {
       </section>
 
       {/* ------------------------------------------------------------------ */}
-      {/* 6. VOTRE BOITE A OUTILS                                             */}
+      {/* 7. VOTRE BOITE A OUTILS                                             */}
       {/* ------------------------------------------------------------------ */}
-      <section className="py-20 lg:py-28 bg-muted/20">
+      <section className="py-20 lg:py-28">
         <div className="max-w-7xl mx-auto px-6 lg:px-10">
           <AnimatedSection className="mb-12 space-y-3 text-center max-w-2xl mx-auto">
             <p className="text-primary text-xs uppercase tracking-widest font-semibold">
@@ -661,7 +897,7 @@ export default function LandingPage() {
       </section>
 
       {/* ------------------------------------------------------------------ */}
-      {/* 7. CTA FINAL                                                        */}
+      {/* 8. CTA FINAL                                                        */}
       {/* ------------------------------------------------------------------ */}
       <section className="py-20 lg:py-28">
         <div className="max-w-7xl mx-auto px-6 lg:px-10">

@@ -36,8 +36,14 @@ export default function LandingMobileNav() {
             <Link href="/documentation/guide" className="text-sm font-medium text-muted-foreground" onClick={() => setOpen(false)}>
               Documentation
             </Link>
+            <Link href="/dossiers-legislatifs" className="text-sm font-medium text-muted-foreground" onClick={() => setOpen(false)}>
+              Dossiers
+            </Link>
+            <Link href="/Month" className="text-sm font-medium text-muted-foreground" onClick={() => setOpen(false)}>
+              Fil d&apos;actu
+            </Link>
             <div className="border-t pt-4 mt-2">
-              <Link href="/Month" onClick={() => setOpen(false)}>
+              <Link href="/KPIs" onClick={() => setOpen(false)}>
                 <Button className="w-full rounded-full gap-1.5">
                   Tableau de bord
                   <ArrowRight className="h-3.5 w-3.5" />

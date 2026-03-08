@@ -24,7 +24,13 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
           <Link href="/documentation/guide">
             <Button variant="ghost" size="sm" className="text-sm">Documentation</Button>
           </Link>
-          <Link href="/Month" className="ml-2">
+          <Link href="/dossiers-legislatifs">
+            <Button variant="ghost" size="sm" className="text-sm">Dossiers</Button>
+          </Link>
+          <Link href="/Month">
+            <Button variant="ghost" size="sm" className="text-sm">Fil d&apos;actu</Button>
+          </Link>
+          <Link href="/KPIs" className="ml-2">
             <Button size="sm" className="rounded-full gap-1.5 hover:scale-105">
               Tableau de bord
               <ArrowRight className="h-3.5 w-3.5" />
