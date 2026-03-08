@@ -24,8 +24,54 @@ export default function AboutPage() {
           <h1 className="text-2xl font-bold">À propos de LoiClair</h1>
         </div>
 
-        {/* Section 1 : Qu'est-ce que LoiClair ? (texte direct) */}
-        <section className="mb-12">
+        {/* Section 1 : Le constat */}
+        <section className="pb-12 mb-12 border-b">
+          <h2 className="text-2xl font-semibold mb-6">
+            Pourquoi si peu de participation aux décisions du pays ?
+          </h2>
+
+          <div className="rounded-2xl border divide-y md:divide-y-0 md:divide-x md:grid md:grid-cols-3 overflow-hidden mb-8">
+            <div className="p-8 space-y-2">
+              <p className="text-5xl font-black text-primary tabular-nums">54%</p>
+              <p className="text-sm font-medium leading-snug">d&apos;abstention aux législatives 2022</p>
+              <p className="text-xs text-muted-foreground">Source : Ministère de l&apos;Intérieur</p>
+            </div>
+            <div className="p-8 space-y-2">
+              <p className="text-5xl font-black text-primary tabular-nums">74%</p>
+              <p className="text-sm font-medium leading-snug">des Français estiment les politiques corrompus</p>
+              <p className="text-xs text-muted-foreground">Source : CEVIPOF 2025</p>
+            </div>
+            <div className="p-8 space-y-2">
+              <p className="text-5xl font-black text-primary tabular-nums">16%</p>
+              <p className="text-sm font-medium leading-snug">des inscrits n&apos;ont voté à aucun tour</p>
+              <p className="text-xs text-muted-foreground">Source : Analyse post-électorale 2022</p>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-5">
+            <div className="rounded-2xl border bg-card p-6 space-y-3">
+              <p className="font-semibold">Dispersion des sources</p>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Assemblée, Sénat, Légifrance, JO… tout est éparpillé, introuvable pour le citoyen ordinaire.
+              </p>
+            </div>
+            <div className="rounded-2xl border bg-card p-6 space-y-3">
+              <p className="font-semibold">Langage très technique</p>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Écrit pour des juristes, pas pour le citoyen moyen. Comprendre devient un effort.
+              </p>
+            </div>
+            <div className="rounded-2xl border bg-card p-6 space-y-3">
+              <p className="font-semibold">Volume écrasant</p>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Des dizaines de textes votés chaque mois. Impossible de tout suivre, on finit par abandonner.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Section 2 : Qu'est-ce que LoiClair ? (texte direct) */}
+        <section className="pb-12 mb-12 border-b">
           <h2 className="text-2xl font-semibold mb-6">Qu'est-ce que LoiClair ?</h2>
           <p className="text-base leading-relaxed mb-6">
             LoiClair est un site web qui rend le droit et la politique française vraiment accessibles à tous. Nous permettons à chacun de traduire et simplifier les textes de loi, amendements, débats parlementaires et processus institutionnels en explications simples, concrètes et imagées, grâce a l'intelligence artificielle. Nous produisons aussi des statistiques directement depuis les données officielles des institutions.
@@ -35,8 +81,8 @@ export default function AboutPage() {
           </p>
         </section>
 
-        {/* Section 2 : Construction technique (texte direct, badges pour tech) */}
-        <section className="mb-12">
+        {/* Section 3 : Construction technique (texte direct, badges pour tech) */}
+        <section className="pb-12 mb-12 border-b">
           <h2 className="text-2xl font-semibold mb-6">Comment le site a été construit</h2>
           <p className="text-base leading-relaxed mb-4">
           LoiClair est un projet independant rendu possible grâce à l'utilisation <strong> de l’IA</strong> : depuis l’écriture du code jusqu’à l'analyse et la mise en forme des données brutes, en passant par les résumés intelligents des textes de loi et des débats parlementaires.
@@ -67,8 +113,8 @@ export default function AboutPage() {
           </ul>
         </section>
 
-        {/* Section 3 : Sources (liste textuelle complète, liens directs) */}
-        <section className="mb-12">
+        {/* Section 4 : Sources (liste textuelle complète, liens directs) */}
+        <section className="pb-12 mb-12 border-b">
           <h2 className="text-2xl font-semibold mb-6">Nos Sources Officielles</h2>
           <p className="text-base leading-relaxed mb-6">
             Toutes les infos viennent directement des institutions, sans modification ni interprétation partisane. Mise à jour automatique via API/open data.
@@ -108,7 +154,7 @@ export default function AboutPage() {
           </ul>
         </section>
 
-        {/* Section 4 : Feedback & Contribution (boutons directs) */}
+        {/* Section 5 : Feedback & Contribution (boutons directs) */}
         <section className="mb-12">
           <h2 className="text-2xl font-semibold mb-6">Donnez votre feedback et contribuez !</h2>
           <p className="text-base leading-relaxed mb-6">

@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useEffect, useState } from "react"
+import { useRef } from "react"
 import Link from "next/link"
 import { motion, useInView, type Variants, type Easing } from "framer-motion"
 import {
@@ -13,9 +13,7 @@ import {
   BarChart2,
   RefreshCw,
   Search,
-  BookOpen,
-  MessageSquare,
-  Layers,
+
   Newspaper,
   Bell,
   Mail,
@@ -25,6 +23,9 @@ import {
   FileText,
   BarChart3,
   CheckCircle2,
+  ListFilter,
+  TrendingUp,
+  Users,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -101,117 +102,7 @@ function AnimatedSection({
   )
 }
 
-// ---------------------------------------------------------------------------
-// AnimatedCounter — counts up from 0 to target when in view
-// ---------------------------------------------------------------------------
-function AnimatedCounter({
-  target,
-  suffix = "%",
-  duration = 1500,
-}: {
-  target: number
-  suffix?: string
-  duration?: number
-}) {
-  const ref = useRef<HTMLSpanElement>(null)
-  const inView = useInView(ref, { once: true, margin: "-60px" })
-  const [count, setCount] = useState(0)
 
-  useEffect(() => {
-    if (!inView) return
-    let startTime: number | null = null
-    const step = (timestamp: number) => {
-      if (!startTime) startTime = timestamp
-      const progress = Math.min((timestamp - startTime) / duration, 1)
-      setCount(Math.floor(progress * target))
-      if (progress < 1) requestAnimationFrame(step)
-    }
-    requestAnimationFrame(step)
-  }, [inView, target, duration])
-
-  return (
-    <span ref={ref}>
-      {count}
-      {suffix}
-    </span>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// ProductMockup — fake browser window
-// ---------------------------------------------------------------------------
-function ProductMockup() {
-  return (
-    <div
-      className="rounded-2xl border shadow-2xl bg-card overflow-hidden"
-      style={{ transform: "rotate(2deg)" }}
-    >
-      {/* Browser chrome */}
-      <div className="bg-muted border-b px-4 py-3 flex items-center gap-2">
-        <span className="h-3 w-3 rounded-full bg-[#FF5F57] shrink-0" />
-        <span className="h-3 w-3 rounded-full bg-[#FFBD2E] shrink-0" />
-        <span className="h-3 w-3 rounded-full bg-[#28C840] shrink-0" />
-        <div className="flex-1 mx-3 bg-background rounded-md px-3 py-1 text-xs text-muted-foreground font-mono">
-          loiclair.fr/dossiers-legislatifs
-        </div>
-      </div>
-
-      {/* Card content */}
-      <div className="p-5 space-y-4">
-        {/* Header */}
-        <div className="space-y-1.5">
-          <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-medium">
-            Dossier législatif
-          </p>
-          <div className="flex items-start justify-between gap-2">
-            <h3 className="text-sm font-semibold text-foreground leading-snug">
-              Projet de loi de finances 2026
-            </h3>
-            <span className="shrink-0 text-[10px] font-medium bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-              En cours
-            </span>
-          </div>
-        </div>
-
-        {/* AI summary block */}
-        <div className="bg-primary/5 border border-primary/15 rounded-xl p-3 space-y-1.5">
-          <div className="flex items-center gap-1.5 text-primary">
-            <Sparkles className="h-3.5 w-3.5" />
-            <p className="text-[10px] font-semibold uppercase tracking-wide">
-              Résumé IA
-            </p>
-          </div>
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            Ce texte fixe le budget de l&apos;État pour 2026, répartit les dépenses
-            par ministère et définit les recettes fiscales prévues pour l&apos;année.
-          </p>
-        </div>
-
-        {/* Progress */}
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-            <span>Étape 3/6 — Commission des finances</span>
-            <span className="font-medium text-primary">50%</span>
-          </div>
-          <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
-            <div className="h-full w-1/2 bg-primary rounded-full" />
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-between border-t pt-3">
-          <p className="text-[10px] text-muted-foreground">
-            Mis à jour aujourd&apos;hui
-          </p>
-          <button className="text-[10px] font-medium text-primary flex items-center gap-1">
-            Lire le résumé
-            <ArrowRight className="h-3 w-3" />
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 // ---------------------------------------------------------------------------
 // FeedMockup — fake browser window showing the monthly feed
@@ -262,7 +153,7 @@ function FeedMockup() {
   return (
     <div
       className="rounded-2xl border shadow-2xl bg-card overflow-hidden"
-      style={{ transform: "rotate(-1deg)" }}
+      style={{}}
     >
       {/* Browser chrome */}
       <div className="bg-muted border-b px-4 py-3 flex items-center gap-2">
@@ -394,6 +285,200 @@ function FeedMockup() {
 }
 
 // ---------------------------------------------------------------------------
+// DossierListMockup — fake browser window showing dossier list
+// ---------------------------------------------------------------------------
+const DOSSIER_FILTERS = [
+  { label: "Tous", active: true },
+  { label: "En cours", active: false },
+  { label: "Adoptés", active: false },
+  { label: "Rejetés", active: false },
+]
+
+const DOSSIER_ITEMS = [
+  {
+    title: "Projet de loi de finances 2026",
+    chamber: "Assemblée",
+    status: "En cours",
+    statusColor: "bg-primary/10 text-primary",
+    date: "3 mar 2026",
+  },
+  {
+    title: "Proposition de loi relative au droit au logement",
+    chamber: "Sénat",
+    status: "Adopté",
+    statusColor: "bg-[#27AE60]/10 text-[#27AE60]",
+    date: "28 fév 2026",
+  },
+  {
+    title: "Projet de loi sur la transition énergétique",
+    chamber: "Assemblée",
+    status: "En commission",
+    statusColor: "bg-violet-100 dark:bg-violet-900/50 text-violet-600 dark:text-violet-400",
+    date: "15 fév 2026",
+  },
+]
+
+function DossierListMockup() {
+  return (
+    <div
+      className="rounded-2xl border shadow-2xl bg-card overflow-hidden"
+      style={{}}
+    >
+      {/* Browser chrome */}
+      <div className="bg-muted border-b px-4 py-3 flex items-center gap-2">
+        <span className="h-3 w-3 rounded-full bg-[#FF5F57] shrink-0" />
+        <span className="h-3 w-3 rounded-full bg-[#FFBD2E] shrink-0" />
+        <span className="h-3 w-3 rounded-full bg-[#28C840] shrink-0" />
+        <div className="flex-1 mx-3 bg-background rounded-md px-3 py-1 text-xs text-muted-foreground font-mono">
+          loiclair.fr/dossiers-legislatifs
+        </div>
+      </div>
+
+      <div className="p-4 space-y-3">
+        {/* Search + filter bar */}
+        <div className="flex items-center gap-2">
+          <div className="flex-1 flex items-center gap-2 bg-muted rounded-lg px-3 py-1.5">
+            <Search className="w-3 h-3 text-muted-foreground shrink-0" />
+            <span className="text-[10px] text-muted-foreground">Rechercher un dossier…</span>
+          </div>
+          <div className="h-7 w-7 rounded-lg bg-muted flex items-center justify-center shrink-0">
+            <ListFilter className="w-3.5 h-3.5 text-muted-foreground" />
+          </div>
+        </div>
+
+        {/* Filter pills */}
+        <div className="flex gap-1.5">
+          {DOSSIER_FILTERS.map((pill) => (
+            <span
+              key={pill.label}
+              className={cn(
+                "rounded-full border px-2.5 py-1 text-[10px] font-medium",
+                pill.active
+                  ? "border-foreground/30 bg-muted text-foreground"
+                  : "border-border text-muted-foreground"
+              )}
+            >
+              {pill.label}
+            </span>
+          ))}
+        </div>
+
+        {/* Dossier rows */}
+        {DOSSIER_ITEMS.map((item, i) => (
+          <div
+            key={i}
+            className={cn(
+              "flex items-start gap-3 py-3",
+              i < DOSSIER_ITEMS.length - 1 && "border-b"
+            )}
+          >
+            <div className="flex-1 min-w-0 space-y-1.5">
+              <p className="text-xs font-medium text-foreground leading-snug line-clamp-2">
+                {item.title}
+              </p>
+              <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                <span className="font-medium">{item.chamber}</span>
+                <span>·</span>
+                <span>{item.date}</span>
+              </div>
+            </div>
+            <span className={cn("shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full", item.statusColor)}>
+              {item.status}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// DashboardMockup — fake browser window showing KPI dashboard
+// ---------------------------------------------------------------------------
+const DASHBOARD_KPIS = [
+  { label: "Députés", value: "577", icon: Users, color: "text-primary", bg: "bg-primary/10" },
+  { label: "Taux de participation", value: "46%", icon: Vote, color: "text-violet-600 dark:text-violet-400", bg: "bg-violet-100 dark:bg-violet-900/50" },
+  { label: "Textes votés ce mois", value: "18", icon: FileText, color: "text-[#27AE60]", bg: "bg-[#27AE60]/10" },
+]
+
+const TEXTES_PAR_MOIS = [
+  { label: "Oct", value: 28, max: 50 },
+  { label: "Nov", value: 35, max: 50 },
+  { label: "Déc", value: 22, max: 50 },
+  { label: "Jan", value: 41, max: 50 },
+  { label: "Fév", value: 33, max: 50 },
+  { label: "Mar", value: 38, max: 50 },
+]
+
+function DashboardMockup() {
+  return (
+    <div
+      className="rounded-2xl border shadow-2xl bg-card overflow-hidden"
+      style={{}}
+    >
+      {/* Browser chrome */}
+      <div className="bg-muted border-b px-4 py-3 flex items-center gap-2">
+        <span className="h-3 w-3 rounded-full bg-[#FF5F57] shrink-0" />
+        <span className="h-3 w-3 rounded-full bg-[#FFBD2E] shrink-0" />
+        <span className="h-3 w-3 rounded-full bg-[#28C840] shrink-0" />
+        <div className="flex-1 mx-3 bg-background rounded-md px-3 py-1 text-xs text-muted-foreground font-mono">
+          loiclair.fr/tableau-de-bord
+        </div>
+      </div>
+
+      <div className="p-4 space-y-4">
+        {/* KPI cards */}
+        <div className="grid grid-cols-3 gap-2">
+          {DASHBOARD_KPIS.map((kpi) => (
+            <div key={kpi.label} className="rounded-xl bg-muted/50 p-3 space-y-1.5">
+              <div className={cn("w-6 h-6 rounded-lg flex items-center justify-center", kpi.bg)}>
+                <kpi.icon className={cn("w-3 h-3", kpi.color)} />
+              </div>
+              <p className="text-foreground tabular-nums" style={{ fontSize: "12px", fontWeight: 600 }}>{kpi.value}</p>
+              <p className="text-muted-foreground" style={{ fontSize: "9px" }}>{kpi.label}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Chart — Textes déposés par mois */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="text-foreground tracking-wide" style={{ fontSize: "9px", fontWeight: 500, textTransform: "uppercase" }}>
+              Textes déposés par mois
+            </p>
+            <TrendingUp className="w-3 h-3 text-muted-foreground" />
+          </div>
+          {/* Bar chart */}
+          <div className="flex items-end gap-2" style={{ height: "96px" }}>
+            {TEXTES_PAR_MOIS.map((bar) => (
+              <div key={bar.label} className="flex-1 flex flex-col items-center gap-1">
+                <span className="text-foreground tabular-nums" style={{ fontSize: "8px", fontWeight: 400 }}>
+                  {bar.value}
+                </span>
+                <div className="w-full bg-muted overflow-hidden" style={{ height: "72px", borderRadius: "4px 4px 0 0" }}>
+                  <div
+                    className="w-full"
+                    style={{
+                      height: `${(bar.value / bar.max) * 100}%`,
+                      backgroundColor: "hsl(174, 60%, 45%)",
+                      marginTop: `${100 - (bar.value / bar.max) * 100}%`,
+                      borderRadius: "4px 4px 0 0",
+                    }}
+                  />
+                </div>
+                <span className="text-muted-foreground" style={{ fontSize: "8px" }}>
+                  {bar.label}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Data
 // ---------------------------------------------------------------------------
 const TRUST_ITEMS = [
@@ -403,47 +488,6 @@ const TRUST_ITEMS = [
   { icon: BadgeCheck, label: "Données officielles" },
 ]
 
-const STATS = [
-  {
-    value: 54,
-    label: "d'abstention aux législatives 2022",
-    source: "Source : Ministère de l'Intérieur",
-  },
-  {
-    value: 74,
-    label: "des Français estiment les politiques corrompus",
-    source: "Source : CEVIPOF 2025",
-  },
-  {
-    value: 16,
-    label: "des inscrits n'ont voté à aucun tour",
-    source: "Source : Analyse post-électorale 2022",
-  },
-]
-
-const OBSTACLES = [
-  {
-    number: "01",
-    icon: BookOpen,
-    title: "Dispersion des sources",
-    description:
-      "Assemblée, Sénat, Légifrance, JO… tout est éparpillé, introuvable pour le citoyen ordinaire.",
-  },
-  {
-    number: "02",
-    icon: MessageSquare,
-    title: "Langage très technique",
-    description:
-      "Écrit pour des juristes, pas pour le citoyen moyen. Comprendre devient un effort.",
-  },
-  {
-    number: "03",
-    icon: Layers,
-    title: "Volume écrasant",
-    description:
-      "Des dizaines de textes votés chaque mois. Impossible de tout suivre, on finit par abandonner.",
-  },
-]
 
 const FEATURES = [
   {
@@ -500,7 +544,7 @@ export default function LandingPage() {
       {/* ------------------------------------------------------------------ */}
       {/* 1. HERO IMPACT — centré, plein écran                                 */}
       {/* ------------------------------------------------------------------ */}
-      <section className="min-h-screen flex flex-col items-center justify-center pt-20 lg:pt-24 pb-8">
+      <section className="flex flex-col items-center justify-center pt-20 lg:pt-24 pb-8 relative" style={{ minHeight: "92vh" }}>
         <div className="max-w-4xl mx-auto px-6 lg:px-10 text-center w-full">
           <motion.div
             variants={fadeUp}
@@ -535,17 +579,12 @@ export default function LandingPage() {
               simple — pour comprendre, suivre, et participer.
             </p>
 
-            {/* CTAs */}
-            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+            {/* CTA */}
+            <div className="pt-2">
               <Link href="/Month">
                 <Button size="lg" className="rounded-full gap-2 hover:scale-105">
                   Découvrir le fil du mois
                   <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
-              <Link href="/dossiers-legislatifs">
-                <Button variant="outline" size="lg" className="rounded-full">
-                  Voir les dossiers
                 </Button>
               </Link>
             </div>
@@ -556,27 +595,103 @@ export default function LandingPage() {
       {/* ------------------------------------------------------------------ */}
       {/* 1b. HERO PRODUIT — "enfin lisible" + mockup                         */}
       {/* ------------------------------------------------------------------ */}
-      <section className="pb-20 lg:pb-28">
+      <section
+        className="relative overflow-visible"
+        style={{ background: "linear-gradient(135deg, hsl(174 60% 96%), hsl(174 40% 93%) 50%, hsl(43 50% 95%))", paddingTop: "240px", paddingBottom: "5rem", marginTop: "-120px" }}
+      >
+        {/* Vague blanche en haut — déborde dans le hero */}
+        <svg
+          className="absolute left-0 w-full pointer-events-none"
+          style={{ height: "160px", top: "-1px" }}
+          viewBox="0 0 1440 160"
+          preserveAspectRatio="none"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M0 0H1440V80C1200 130 960 30 720 80C480 130 240 30 0 80V0Z"
+            fill="white"
+          />
+        </svg>
         <div className="max-w-7xl mx-auto px-6 lg:px-10">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Left — Tagline produit */}
+          <div className="grid lg:grid-cols-2 items-center" style={{ gap: "4rem" }}>
+            {/* Left — Texte */}
             <AnimatedSection variants={fadeLeft}>
               <div className="space-y-5">
                 <h2
                   className="font-bold tracking-tight"
-                  style={{ fontSize: "clamp(2rem, 3.5vw + 0.5rem, 3rem)", lineHeight: 1.15 }}
+                  style={{ fontSize: "clamp(1.75rem, 3vw + 0.5rem, 2.5rem)", lineHeight: 1.15 }}
                 >
-                  La politique française,{" "}
+                  Avec LoiClair, la politique française est{" "}
                   <span className="text-primary">enfin lisible.</span>
                 </h2>
                 <p className="text-muted-foreground leading-relaxed max-w-lg" style={{ fontSize: "clamp(1.125rem, 1.2vw + 0.5rem, 1.25rem)" }}>
-                  Un tableau de bord citoyen qui transforme le jargon
-                  législatif en langage clair. Chaque texte résumé, chaque
-                  vote expliqué.
+                  Une boîte à outils citoyenne qui transforme le jargon législatif
+                  en langage clair. Des statistiques clés sur l&apos;activité
+                  parlementaire, une vue simplifiée pour chaque dossier, un fil
+                  d&apos;actualité pour suivre au jour le jour tout ce qui se passe
+                  au Parlement&nbsp;: nouveaux textes, décisions, votes…
                 </p>
-                <Link href="/KPIs">
-                  <Button variant="ghost" size="lg" className="gap-2 text-primary hover:text-primary px-0 text-base">
-                    Explorer le tableau de bord
+              </div>
+            </AnimatedSection>
+
+            {/* Right — Trust items */}
+            <AnimatedSection variants={fadeRight}>
+              <div className="grid grid-cols-2 gap-4">
+                {TRUST_ITEMS.map((item) => (
+                  <div key={item.label} className="flex items-center gap-3 rounded-xl border bg-background/80 px-4 py-3">
+                    <item.icon className="h-5 w-5 text-primary shrink-0" />
+                    <span className="text-sm font-medium">
+                      {item.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </AnimatedSection>
+          </div>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* 3. LES DOSSIERS LÉGISLATIFS                                          */}
+      {/* ------------------------------------------------------------------ */}
+      <section className="py-20 lg:py-28 border-y">
+        <div className="max-w-7xl mx-auto px-6 lg:px-10">
+          <div className="grid lg:grid-cols-2 items-center" style={{ gap: "4rem" }}>
+            {/* Left — Texte */}
+            <AnimatedSection variants={fadeLeft}>
+              <div className="space-y-5">
+                <p className="text-primary text-xs uppercase tracking-widest font-semibold">
+                  Tous les textes au même endroit
+                </p>
+                <h2
+                  className="font-bold tracking-tight"
+                  style={{
+                    fontSize: "clamp(1.75rem, 3vw + 0.5rem, 2.5rem)",
+                    lineHeight: 1.15,
+                  }}
+                >
+                  Les dossiers législatifs,{" "}
+                  <span className="text-primary">simplifiés.</span>
+                </h2>
+                <p
+                  className="text-muted-foreground leading-relaxed max-w-lg"
+                  style={{
+                    fontSize: "clamp(1.125rem, 1.2vw + 0.5rem, 1.25rem)",
+                  }}
+                >
+                  Un dossier législatif, c&apos;est le parcours complet d&apos;un
+                  texte de loi, du dépôt au vote final. Recherchez, filtrez et
+                  suivez chaque projet ou proposition de loi. Statut, chambre,
+                  résumé IA — tout est là, à jour.
+                </p>
+                <Link href="/dossiers-legislatifs">
+                  <Button
+                    variant="ghost"
+                    size="lg"
+                    className="gap-2 text-primary hover:text-primary px-0 text-base"
+                  >
+                    Voir les dossiers
                     <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
@@ -584,45 +699,26 @@ export default function LandingPage() {
             </AnimatedSection>
 
             {/* Right — Mockup */}
-            <AnimatedSection variants={fadeRight}>
-              <ProductMockup />
+            <AnimatedSection variants={fadeRight} className="px-2 lg:px-0">
+              <Link href="/dossiers-legislatifs" className="block hover:scale-[1.02] transition-transform">
+                <DossierListMockup />
+              </Link>
             </AnimatedSection>
           </div>
         </div>
       </section>
 
       {/* ------------------------------------------------------------------ */}
-      {/* 2. TRUST BAND                                                       */}
+      {/* 4. LE FIL D'ACTU                                                    */}
       {/* ------------------------------------------------------------------ */}
-      <section className="border-y py-8 bg-muted/30">
+      <section className="py-20 lg:py-28 bg-muted/20">
         <div className="max-w-7xl mx-auto px-6 lg:px-10">
-          <div className="flex flex-wrap justify-center items-center gap-6 md:gap-0">
-            {TRUST_ITEMS.map((item, index) => (
-              <div key={item.label} className="flex items-center">
-                <div className="flex items-center gap-2 px-6">
-                  <item.icon className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <span className="text-sm font-medium text-muted-foreground">
-                    {item.label}
-                  </span>
-                </div>
-                {index < TRUST_ITEMS.length - 1 && (
-                  <div className="hidden md:block w-px h-5 bg-border" />
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ------------------------------------------------------------------ */}
-      {/* 3. LE FIL D'ACTU                                                    */}
-      {/* ------------------------------------------------------------------ */}
-      <section className="py-20 lg:py-28">
-        <div className="max-w-7xl mx-auto px-6 lg:px-10">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div className="grid lg:grid-cols-2 items-center" style={{ gap: "6rem" }}>
             {/* Left — Mockup */}
-            <AnimatedSection variants={fadeLeft}>
-              <FeedMockup />
+            <AnimatedSection variants={fadeLeft} className="px-2 lg:px-0">
+              <Link href="/Month" className="block hover:scale-[1.02] transition-transform">
+                <FeedMockup />
+              </Link>
             </AnimatedSection>
 
             {/* Right — Texte */}
@@ -634,12 +730,12 @@ export default function LandingPage() {
                 <h2
                   className="font-bold tracking-tight"
                   style={{
-                    fontSize: "clamp(2rem, 3.5vw + 0.5rem, 3rem)",
+                    fontSize: "clamp(1.75rem, 3vw + 0.5rem, 2.5rem)",
                     lineHeight: 1.15,
                   }}
                 >
-                  Suivez l&apos;activité parlementaire,{" "}
-                  <span className="text-primary">mois par mois.</span>
+                  Suivez l&apos;activité parlementaire journalière,{" "}
+                  <span className="text-primary">étape par étape.</span>
                 </h2>
                 <p
                   className="text-muted-foreground leading-relaxed max-w-lg"
@@ -647,9 +743,10 @@ export default function LandingPage() {
                     fontSize: "clamp(1.125rem, 1.2vw + 0.5rem, 1.25rem)",
                   }}
                 >
+                  Aussi simple qu&apos;un fil d&apos;actualité sur un réseau social.
                   Chaque mois, LoiClair rassemble les textes déposés, les votes
-                  en séance et les lois promulguées dans un fil d&apos;actualité
-                  clair et chronologique. Plus besoin de chercher.
+                  en séance et les lois promulguées dans un fil clair et
+                  chronologique. Plus besoin de chercher.
                 </p>
                 <Link href="/Month">
                   <Button
@@ -668,100 +765,79 @@ export default function LandingPage() {
       </section>
 
       {/* ------------------------------------------------------------------ */}
-      {/* 4. LE CONSTAT                                                       */}
+      {/* 5. LE TABLEAU DE BORD                                                */}
       {/* ------------------------------------------------------------------ */}
-      <section className="py-20 lg:py-28 bg-muted/20">
+      <section className="py-20 lg:py-28 border-y">
         <div className="max-w-7xl mx-auto px-6 lg:px-10">
-          <AnimatedSection className="mb-12 space-y-2">
-            <p className="text-primary text-xs uppercase tracking-widest font-semibold">
-              Le constat
-            </p>
-            <h2 className="text-2xl md:text-3xl font-bold">
-              Une crise de confiance
-            </h2>
-          </AnimatedSection>
+          <div className="grid lg:grid-cols-2 items-center" style={{ gap: "4rem" }}>
+            {/* Left — Texte */}
+            <AnimatedSection variants={fadeLeft}>
+              <div className="space-y-5">
+                <p className="text-primary text-xs uppercase tracking-widest font-semibold">
+                  Vue d&apos;ensemble
+                </p>
+                <h2
+                  className="font-bold tracking-tight"
+                  style={{
+                    fontSize: "clamp(1.75rem, 3vw + 0.5rem, 2.5rem)",
+                    lineHeight: 1.15,
+                  }}
+                >
+                  Un tableau de bord{" "}
+                  <span className="text-primary">pour tout comprendre.</span>
+                </h2>
+                <p
+                  className="text-muted-foreground leading-relaxed max-w-lg"
+                  style={{
+                    fontSize: "clamp(1.125rem, 1.2vw + 0.5rem, 1.25rem)",
+                  }}
+                >
+                  Composition de l&apos;Assemblée, répartition des groupes, parité,
+                  âge moyen — les chiffres clés du Parlement en un coup d&apos;œil.
+                </p>
+                <Link href="/KPIs">
+                  <Button
+                    variant="ghost"
+                    size="lg"
+                    className="gap-2 text-primary hover:text-primary px-0 text-base"
+                  >
+                    Explorer le tableau de bord
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </Link>
+              </div>
+            </AnimatedSection>
 
-          <AnimatedSection>
-            <div className="rounded-2xl border divide-y md:divide-y-0 md:divide-x md:grid md:grid-cols-3 overflow-hidden">
-              {STATS.map((stat) => (
-                <div key={stat.value} className="p-8 lg:p-10 space-y-2">
-                  <p className="text-5xl md:text-6xl font-black text-primary tabular-nums">
-                    <AnimatedCounter target={stat.value} />
-                  </p>
-                  <p className="text-sm font-medium text-foreground leading-snug">
-                    {stat.label}
-                  </p>
-                  <p className="text-xs text-muted-foreground">{stat.source}</p>
-                </div>
-              ))}
-            </div>
-          </AnimatedSection>
-        </div>
-      </section>
-
-      {/* ------------------------------------------------------------------ */}
-      {/* 5. LES VRAIS FREINS                                                 */}
-      {/* ------------------------------------------------------------------ */}
-      <section className="py-20 lg:py-28">
-        <div className="max-w-7xl mx-auto px-6 lg:px-10">
-          <AnimatedSection className="mb-12 space-y-2">
-            <p className="text-primary text-xs uppercase tracking-widest font-semibold">
-              Pourquoi c&apos;est difficile
-            </p>
-            <h2 className="text-2xl md:text-3xl font-bold">
-              Les vrais freins
-            </h2>
-          </AnimatedSection>
-
-          <motion.div
-            variants={staggerContainer}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-60px" }}
-            className="grid md:grid-cols-3 gap-5"
-          >
-            {OBSTACLES.map((item) => (
-              <motion.div
-                key={item.number}
-                variants={fadeUp}
-                className="rounded-2xl border bg-card p-6 space-y-4"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                    <item.icon className="h-5 w-5 text-primary" />
-                  </div>
-                  <span className="text-2xl font-bold text-primary/30 font-mono">
-                    {item.number}
-                  </span>
-                </div>
-                <div className="space-y-1.5">
-                  <h3 className="font-semibold text-foreground">{item.title}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {item.description}
-                  </p>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
+            {/* Right — Mockup */}
+            <AnimatedSection variants={fadeRight} className="px-2 lg:px-0">
+              <Link href="/KPIs" className="block hover:scale-[1.02] transition-transform">
+                <DashboardMockup />
+              </Link>
+            </AnimatedSection>
+          </div>
         </div>
       </section>
 
       {/* ------------------------------------------------------------------ */}
       {/* 6. AVANT / APRES                                                    */}
       {/* ------------------------------------------------------------------ */}
-      <section className="py-20 lg:py-28 bg-muted/20">
+      <section className="py-20 lg:py-28 bg-muted/20 border-b">
         <div className="max-w-7xl mx-auto px-6 lg:px-10">
-          <AnimatedSection className="mb-12 space-y-2 text-center">
-            <h2 className="text-2xl md:text-3xl font-bold">
-              Comprendre la loi, avant et après LoiClair
+          <AnimatedSection className="mb-12 space-y-3 max-w-2xl">
+            <h2 className="text-xl md:text-2xl font-bold">
+              L&apos;IA résume chaque texte de loi pour vous
             </h2>
+            <p className="text-muted-foreground text-sm leading-relaxed">
+              Plus besoin de décrypter le jargon juridique. Notre IA analyse et résume chaque dossier législatif en langage clair, en quelques secondes.
+            </p>
           </AnimatedSection>
 
           <div className="grid md:grid-cols-2 gap-6">
             {/* Avant */}
             <AnimatedSection variants={fadeLeft}>
               <div className="bg-muted/30 rounded-2xl p-8 h-full flex flex-col gap-5">
-                <div>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-bold uppercase tracking-widest text-destructive">Avant</span>
                   <span className="inline-flex items-center gap-1.5 text-xs font-semibold bg-destructive/10 text-destructive px-3 py-1 rounded-full">
                     Sources officielles
                   </span>
@@ -800,7 +876,8 @@ export default function LandingPage() {
             {/* Apres */}
             <AnimatedSection variants={fadeRight}>
               <div className="bg-card rounded-2xl p-8 border-2 border-primary/20 shadow-lg h-full flex flex-col gap-5">
-                <div>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-bold uppercase tracking-widest text-primary">Après</span>
                   <span className="inline-flex items-center gap-1.5 text-xs font-semibold bg-primary/10 text-primary px-3 py-1 rounded-full">
                     <Sparkles className="h-3 w-3" />
                     LoiClair
@@ -847,16 +924,15 @@ export default function LandingPage() {
         </div>
       </section>
 
+
+
       {/* ------------------------------------------------------------------ */}
-      {/* 7. VOTRE BOITE A OUTILS                                             */}
+      {/* 8. VOTRE BOITE A OUTILS                                             */}
       {/* ------------------------------------------------------------------ */}
       <section className="py-20 lg:py-28">
         <div className="max-w-7xl mx-auto px-6 lg:px-10">
-          <AnimatedSection className="mb-12 space-y-3 text-center max-w-2xl mx-auto">
-            <p className="text-primary text-xs uppercase tracking-widest font-semibold">
-              La solution
-            </p>
-            <h2 className="text-2xl md:text-3xl font-bold">
+          <AnimatedSection className="mb-12 space-y-3 max-w-2xl">
+            <h2 className="text-xl md:text-2xl font-bold">
               LoiClair, votre boîte à outils citoyenne
             </h2>
             <p className="text-muted-foreground text-sm leading-relaxed">
