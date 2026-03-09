@@ -17,6 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import ProcedureTooltip from '@/components/ProcedureTooltip';
 import { DEFINITIONS } from '@/lib/definitions';
 import { getStatusBadgeClass } from '@/lib/statusMapping';
+import { cn } from '@/lib/utils';
 
 interface Texte {
   uid: string;
