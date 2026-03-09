@@ -599,7 +599,7 @@ export default function LandingPage() {
         className="relative overflow-visible"
         style={{ background: "var(--landing-hero2-bg)", paddingTop: "240px", paddingBottom: "5rem", marginTop: "-120px" }}
       >
-        {/* Vague blanche en haut — déborde dans le hero */}
+        {/* Vagues animées SMIL — animations internes au SVG, pas de CSS transform */}
         <svg
           className="absolute left-0 w-full pointer-events-none"
           style={{ height: "160px", top: "-1px" }}
@@ -608,10 +608,36 @@ export default function LandingPage() {
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
-          <path
-            d="M0 0H1440V80C1200 130 960 30 720 80C480 130 240 30 0 80V0Z"
-            style={{ fill: "var(--background)" }}
-          />
+          {/* Vague arrière-plan — plus lente, sens inverse, semi-transparente */}
+          <g style={{ opacity: 0.5 }}>
+            <path
+              d="M0 0H2880V90C2580 130 2340 50 2100 90C1860 130 1620 50 1380 90C1140 130 900 50 660 90C420 130 180 50 0 90V0Z"
+              style={{ fill: "var(--background)" }}
+            />
+            <animateTransform
+              attributeName="transform"
+              type="translate"
+              from="-1440 0"
+              to="0 0"
+              dur="28s"
+              repeatCount="indefinite"
+            />
+          </g>
+          {/* Vague principale — premier plan */}
+          <g>
+            <path
+              d="M0 0H2880V80C2640 130 2400 30 2160 80C1920 130 1680 30 1440 80C1200 130 960 30 720 80C480 130 240 30 0 80V0Z"
+              style={{ fill: "var(--background)" }}
+            />
+            <animateTransform
+              attributeName="transform"
+              type="translate"
+              from="0 0"
+              to="-1440 0"
+              dur="20s"
+              repeatCount="indefinite"
+            />
+          </g>
         </svg>
         <div className="max-w-7xl mx-auto px-6 lg:px-10">
           <div className="grid lg:grid-cols-2 items-center" style={{ gap: "4rem" }}>
