@@ -561,13 +561,15 @@ def importer_texte(texte_data: dict, file_name: str = "unknown.json") -> list:
                                 continue
 
                             # Data pour upsert du texte promulgué
+                            # Note : lien_texte est volontairement absent — c'est
+                            # import_legifrance_cloud.py qui pose l'URL canonique JORF
+                            # pour éviter qu'un upsert quotidien ne l'écrase.
                             data_texte = {
                                 "uid": uid_texte,
-                                "lien_texte": url_legifrance,
                                 "titre_principal": titre_loi,
                                 "legislature": legislature,
                                 "date_publication": date_publication,
-                                "provenance": "LEGIFRANCE",  # Ou 'JO' si préféré
+                                "provenance": "Légifrance",
                                 "dossier_ref": uid_dossier,
                                 "classification": json.dumps(
                                     {"code": "LOI", "libelle": "Loi promulguée"}
