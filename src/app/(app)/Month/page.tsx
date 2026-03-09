@@ -67,6 +67,7 @@ export type FeedEvent = {
   texteAdopteTitre: string | null;
   texteAdopteLien: string | null;
   texteUrlAccessible: boolean | null;
+  hasContenLegifrance: boolean;
   scrutinUid: string | null;
   scrutinTitre: string | null;
   typeVoteCode: string | null;
@@ -194,7 +195,7 @@ function resolveAuteurChambre(
 function acteToFeedEvent(
   a: ActeRow,
   dossierInfo: { titre: string; initiateurActeurRef: string | null; groupeAbrege: string | null } | null,
-  textes: Map<string, { uid: string; denomination: string | null; titre_principal: string | null; lien_texte: string | null; provenance: string | null; statut_adoption: string | null; url_accessible: boolean | null; auteurs_refs: string[] | null; has_tomes: boolean | null; rapporteurs_refs: string[] | null }>,
+  textes: Map<string, { uid: string; denomination: string | null; titre_principal: string | null; lien_texte: string | null; provenance: string | null; statut_adoption: string | null; url_accessible: boolean | null; auteurs_refs: string[] | null; has_tomes: boolean | null; rapporteurs_refs: string[] | null; contenu_legifrance: string | null }>,
   organes: Map<string, { name: string; libelleAbrege: string | null; codeType: string | null }>,
   scrutinsMap: Map<string, { uid: string; titre: string | null; sort_libelle: string | null; type_vote_code: string | null; type_vote_libelle: string | null; type_majorite: string | null; synthese_pour: number | null; synthese_contre: number | null; synthese_abstentions: number | null; synthese_nombre_votants: number | null; synthese_non_votants: number | null; synthese_suffrages_requis: number | null }>,
   acteurs: Map<string, { prenom: string; nom: string; groupe: string | null; organes_refs: string[] | null }>,
@@ -263,6 +264,7 @@ function acteToFeedEvent(
     texteAdopteTitre: texteAdopte?.titre_principal ?? null,
     texteAdopteLien: texteAdopte?.lien_texte ?? null,
     texteUrlAccessible: texte?.url_accessible ?? null,
+    hasContenLegifrance: (texte?.contenu_legifrance ?? null) !== null,
     scrutinUid: scrutin?.uid ?? null,
     scrutinTitre: scrutin?.titre ?? null,
     typeVoteCode: scrutin?.type_vote_code ?? null,

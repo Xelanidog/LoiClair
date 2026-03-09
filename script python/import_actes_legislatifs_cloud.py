@@ -462,6 +462,47 @@ def enrichir_vote_refs_via_reunion_ref():
         print("  Aucun acte à enrichir")
 
 
+# ==================== LIAISON TEXTES → ACTES PROM-PUB ====================
+
+def lier_textes_prom_pub():
+    """Lie les textes PROMULGUE aux actes PROM-PUB via textes_associes.
+
+    Pour chaque texte avec statut_adoption='PROMULGUE', met à jour les actes
+    PROM-PUB du même dossier dont textes_associes est encore null.
+    Appelé après l'import des actes (les textes sont déjà en base à ce stade).
+    """
+    print(f"\n{'='*60}")
+    print(f"   LIAISON TEXTES → ACTES PROM-PUB")
+    print(f"{'='*60}")
+
+    textes_prom = (
+        supabase.table("textes")
+        .select("uid, dossier_ref")
+        .eq("statut_adoption", "PROMULGUE")
+        .not_.is_("dossier_ref", "null")
+        .execute()
+        .data or []
+    )
+
+    nb_ok = 0
+    nb_skip = 0
+    for t in textes_prom:
+        if not t.get("dossier_ref") or not t.get("uid"):
+            nb_skip += 1
+            continue
+        supabase.table("actes_legislatifs").update(
+            {"textes_associes": [t["uid"]]}
+        ).eq("code_acte", "PROM-PUB").eq("dossier_uid", t["dossier_ref"]).is_(
+            "textes_associes", "null"
+        ).execute()
+        nb_ok += 1
+
+    print(f"   ✅ {nb_ok} actes PROM-PUB liés à leur texte PROMULGUE")
+    if nb_skip:
+        print(f"   ⚠️  {nb_skip} textes ignorés (dossier_ref ou uid manquant)")
+    print(f"{'='*60}")
+
+
 # ==================== EXÉCUTION ====================
 
 if __name__ == "__main__":
@@ -469,4 +510,5 @@ if __name__ == "__main__":
     zip_ref = download_zip(URL)
     importer_actes_from_zip(zip_ref)
     enrichir_vote_refs_via_reunion_ref()
+    lier_textes_prom_pub()
     print("\nTout est terminé !")

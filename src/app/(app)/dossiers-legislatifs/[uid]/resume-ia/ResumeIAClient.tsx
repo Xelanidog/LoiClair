@@ -28,6 +28,7 @@ interface Texte {
   libelle_statut_adoption: string | null;
   provenance: string | null;
   url_accessible: boolean | null;
+  contenu_legifrance: string | null;
   organe_auteur: { libelle: string } | null;
 }
 
@@ -94,23 +95,35 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
     if (initialTexteUid && initialTextes.some(t => t.uid === initialTexteUid)) return initialTexteUid;
     return initialTextes.length > 0 ? initialTextes[initialTextes.length - 1].uid : null;
   });
-  const [liensStatus] = useState<Record<string, 'valide' | 'invalide' | null>>(
-    initialTextes.reduce((acc, t) => ({
-      ...acc,
-      [t.uid]: (t.url_accessible === true && t.lien_texte) ? 'valide' : 'invalide',
-    }), {} as Record<string, 'valide' | 'invalide'>)
+  const [liensStatus] = useState<Record<string, 'valide' | 'invalide' | 'lien-seul' | null>>(
+    initialTextes.reduce((acc, t) => {
+      // Version consolidée sans contenu stocké : lien disponible mais résumé IA impossible
+      if (t.uid.endsWith('-VC') && !t.contenu_legifrance && t.lien_texte) {
+        return { ...acc, [t.uid]: 'lien-seul' as const };
+      }
+      return {
+        ...acc,
+        [t.uid]: (t.contenu_legifrance || (t.url_accessible === true && t.lien_texte)) ? 'valide' : 'invalide',
+      };
+    }, {} as Record<string, 'valide' | 'invalide' | 'lien-seul'>)
   );
 
   const [open, setOpen] = useState(false);
   const [isStreamingCache, setIsStreamingCache] = useState(false);
+  // State local stable pour le streaming cache (évite d'utiliser setCompletion de useCompletion,
+  // qui est throttlé par @ai-sdk/react → nouvelle référence à chaque render → boucle infinie).
+  const [cacheText, setCacheText] = useState('');
   const completedForRef = useRef<string | null>(null);
 
   const {
-    completion, complete, isLoading: isLoadingResume, error, setCompletion,
+    completion: apiCompletion, complete, isLoading: isLoadingResume, error, setCompletion,
   } = useCompletion({
     api: '/api/resume-loi',
     streamProtocol: 'text',
   });
+
+  // Source d'affichage : cache en cours de streaming OU résultat API
+  const completion = isStreamingCache ? cacheText : apiCompletion;
 
   const handleDiscussWithAI = (titre: string, lien: string) => {
     const prompt = `Analyse et explique ce texte législatif français pour en discuter avec moi : "${titre}". Voici le lien officiel : ${lien}. Résume les points clés, les objectifs, les impacts concrets et le contexte politique.`;
@@ -126,37 +139,51 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
 
     completedForRef.current = selectedUid;
 
-    // Cache hit : streaming simulé progressif (même UX que le vrai streaming)
+    // Cache hit : streaming simulé progressif avec state local stable (setCacheText)
     if (cachedResumes[selectedUid]) {
       const fullText = cachedResumes[selectedUid];
-      setCompletion('');
+      setCacheText('');
       setIsStreamingCache(true);
       let i = 0;
+      let done = false;
       const step = 12; // caractères par tick
       const interval = setInterval(() => {
         i += step;
         if (i >= fullText.length) {
-          setCompletion(fullText);
+          setCacheText(fullText);
           setIsStreamingCache(false);
           clearInterval(interval);
+          done = true;
         } else {
-          setCompletion(fullText.slice(0, i));
+          setCacheText(fullText.slice(0, i));
         }
       }, 16); // ~60fps
-      return () => clearInterval(interval);
+      return () => {
+        clearInterval(interval);
+        // Si interrompu avant la fin (ex: React Strict Mode double-mount en dev),
+        // réinitialise le guard pour permettre le redémarrage au prochain passage.
+        if (!done) {
+          completedForRef.current = null;
+          setIsStreamingCache(false);
+        }
+      };
     }
 
-    // Cache miss : appel API réel (streaming)
+    // Cache miss : appel API réel (streaming via useCompletion)
     const selectedTexte = textes.find(t => t.uid === selectedUid);
-    if (!selectedTexte?.lien_texte) return;
+    if (!selectedTexte?.lien_texte && !selectedTexte?.contenu_legifrance) return;
 
     setCompletion('');
     complete(JSON.stringify({
       lien: selectedTexte.lien_texte,
       titre_texte: selectedTexte.titre_principal_court || selectedTexte.denomination || 'Texte inconnu',
       texte_uid: selectedUid,
+      contenu_legifrance: selectedTexte.contenu_legifrance || undefined,
     }));
-  }, [selectedUid, textes, liensStatus, complete, setCompletion, cachedResumes]);
+  // `complete` et `setCompletion` exclus des deps : ce sont des callbacks stables utilisés
+  // uniquement pour déclencher des effets, pas pour lire des valeurs dérivées.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedUid, textes, liensStatus, cachedResumes]);
 
   const handleSelectChange = (uid: string) => setSelectedUid(uid);
 
@@ -376,7 +403,7 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
               <Badge variant="secondary">{selectedTexte.libelle_statut_adoption}</Badge>
             </>
           )}
-          {selectedTexte.lien_texte && liensStatus[selectedTexte.uid] === 'valide' && (
+          {selectedTexte.lien_texte && liensStatus[selectedTexte.uid] !== 'invalide' && (
             <>
               <span>·</span>
               <a
@@ -466,6 +493,17 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
         </div>
       )}
 
+      {/* État : version consolidée (lien seul, pas de résumé IA) */}
+      {selectedTexte && liensStatus[selectedTexte.uid] === 'lien-seul' && (
+        <div className="flex items-start gap-2 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm">
+          <ExternalLink className="h-4 w-4 shrink-0 mt-0.5 text-primary" />
+          <div>
+            <p className="text-foreground">La version consolidée (version en vigueur avec les modifications ultérieures) est consultable directement sur Légifrance.</p>
+            <p className="text-muted-foreground mt-1">Le résumé IA de cette version sera disponible prochainement.</p>
+          </div>
+        </div>
+      )}
+
       {/* État : erreur */}
       {error && (
         <div className="flex items-center gap-3 text-sm">
@@ -496,7 +534,7 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
       )}
 
       {/* 3 cartes structurées */}
-      {selectedTexte && liensStatus[selectedTexte.uid] !== 'invalide' && !error && (
+      {selectedTexte && liensStatus[selectedTexte.uid] === 'valide' && !error && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {CARDS.map(({ key, Icon, title }) => (
             <Card key={key}>

@@ -47,6 +47,17 @@ jobs:
           python import_actes_legislatifs_cloud.py
           python import_scrutins_cloud.py
 
+      # Étape 5 : Enrichir les textes promulgués via l'API Légifrance (PISTE)
+      - name: Enrichir les textes via Légifrance
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          LEGIFRANCE_CLIENT_ID: ${{ secrets.LEGIFRANCE_CLIENT_ID }}
+          LEGIFRANCE_CLIENT_SECRET: ${{ secrets.LEGIFRANCE_CLIENT_SECRET }}
+        run: |
+          cd "script python"
+          python import_legifrance_cloud.py
+
       # Étape 5 : Optionnel - Commit et push si des fichiers changent (pas nécessaire ici, mais scalable)
       # - name: Commit des changements si besoin
       #   run: |

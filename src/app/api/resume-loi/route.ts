@@ -14,7 +14,14 @@ import { supabase } from '@/lib/supabase';
 const xai = createXai({ apiKey: process.env.XAI_API_KEY });
 
 async function fetchAndExtractText(lien: string): Promise<string> {
-  const response = await fetch(lien, { signal: AbortSignal.timeout(15_000) });
+  const response = await fetch(lien, {
+    signal: AbortSignal.timeout(15_000),
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'Accept-Language': 'fr-FR,fr;q=0.9,en;q=0.8',
+    },
+  });
   const contentType = response.headers.get('content-type') || '';
 
   if (!response.ok) {
@@ -53,6 +60,7 @@ export async function POST(request: NextRequest) {
     let lien: string | undefined = raw.lien; // Typé pour sécurité.
     let titre_texte: string | undefined = raw.titre_texte;
     let texte_uid: string | undefined = raw.texte_uid;
+    let contenu_legifrance: string | undefined = raw.contenu_legifrance;
 
     // Support pour useCompletion : parse si 'prompt' est un JSON stringifié.
     if (typeof raw.prompt === 'string') {
@@ -61,24 +69,27 @@ export async function POST(request: NextRequest) {
         lien = parsed.lien || lien;
         titre_texte = parsed.titre_texte || titre_texte;
         texte_uid = parsed.texte_uid || texte_uid;
+        contenu_legifrance = parsed.contenu_legifrance || contenu_legifrance;
       } catch (parseError) {
         console.error('Erreur parse prompt:', parseError);
         return NextResponse.json({ error: 'Payload invalide.' }, { status: 400 });
       }
     }
 
-
-    // Guard précoce : si pas de lien après parsing, erreur immédiate.
-    if (!lien) {
-      return NextResponse.json({ error: 'Aucun lien fourni ou extrait.' }, { status: 400 });
+    // Guard : il faut au moins un contenu ou un lien.
+    if (!lien && !contenu_legifrance) {
+      return NextResponse.json({ error: 'Aucun lien ou contenu fourni.' }, { status: 400 });
     }
 
-    // Priorité au lien direct.
-    let lienUtilise = lien; // Déclaration manquante dans ton code !
-    let texteComplet = ''; // Déclaration manquante dans ton code !
+    // Priorité au contenu Légifrance pré-stocké (évite le fetch URL fragile).
+    let texteComplet = '';
 
-    // Fetch et extract si lien disponible.
-    texteComplet = await fetchAndExtractText(lienUtilise);
+    if (contenu_legifrance) {
+      texteComplet = contenu_legifrance.slice(0, MAX_INPUT_CHARS_RESUME_LOI);
+    } else if (lien) {
+      texteComplet = await fetchAndExtractText(lien);
+    }
+
     if (!texteComplet) {
       return NextResponse.json({ error: 'Lien erroné ou contenu non encore disponible.' }, { status: 500 });
     }

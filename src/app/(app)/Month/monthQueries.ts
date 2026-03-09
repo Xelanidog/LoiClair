@@ -181,16 +181,16 @@ export async function getDossierTimeline(supabase: SupabaseClient, dossierUid: s
 }
 
 export async function getTextesByUids(supabase: SupabaseClient, uids: string[]) {
-  if (uids.length === 0) return new Map<string, { uid: string; denomination: string | null; titre_principal: string | null; lien_texte: string | null; provenance: string | null; statut_adoption: string | null; url_accessible: boolean | null; auteurs_refs: string[] | null; has_tomes: boolean | null; rapporteurs_refs: string[] | null }>();
+  if (uids.length === 0) return new Map<string, { uid: string; denomination: string | null; titre_principal: string | null; lien_texte: string | null; provenance: string | null; statut_adoption: string | null; url_accessible: boolean | null; auteurs_refs: string[] | null; has_tomes: boolean | null; rapporteurs_refs: string[] | null; contenu_legifrance: string | null }>();
 
   const { data, error } = await supabase
     .from('textes')
-    .select('uid, denomination, titre_principal, lien_texte, provenance, statut_adoption, url_accessible, auteurs_refs, has_tomes, rapporteurs_refs')
+    .select('uid, denomination, titre_principal, lien_texte, provenance, statut_adoption, url_accessible, auteurs_refs, has_tomes, rapporteurs_refs, contenu_legifrance')
     .in('uid', uids);
 
   if (error) console.error('Erreur textes batch:', error);
 
-  const map = new Map<string, { uid: string; denomination: string | null; titre_principal: string | null; lien_texte: string | null; provenance: string | null; statut_adoption: string | null; url_accessible: boolean | null; auteurs_refs: string[] | null; has_tomes: boolean | null; rapporteurs_refs: string[] | null }>();
+  const map = new Map<string, { uid: string; denomination: string | null; titre_principal: string | null; lien_texte: string | null; provenance: string | null; statut_adoption: string | null; url_accessible: boolean | null; auteurs_refs: string[] | null; has_tomes: boolean | null; rapporteurs_refs: string[] | null; contenu_legifrance: string | null }>();
   for (const t of data ?? []) {
     map.set(t.uid, t);
   }

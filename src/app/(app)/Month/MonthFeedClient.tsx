@@ -640,7 +640,7 @@ function GroupedEventCard({ group, index }: { group: GroupedFeedEvent; index: nu
           <CardFooter
             dossierUid={group.dossierUid}
             texteUid={e.texteUid}
-            showResumeIA={!multi && group.type !== "CMP_CONVOCATION" && group.type !== "CC_SAISINE"}
+            showResumeIA={!multi && group.type !== "CMP_CONVOCATION" && group.type !== "CC_SAISINE" && (group.type !== "PROMULGATION" || e.hasContenLegifrance)}
             texteUrlAccessible={e.texteUrlAccessible}
             learnMoreHref={
               group.type === "CMP_CONVOCATION" ? "/documentation/guide#processus-législatif" :
