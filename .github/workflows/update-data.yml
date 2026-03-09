@@ -58,7 +58,16 @@ jobs:
           cd "script python"
           python import_legifrance_cloud.py
 
-      # Étape 5 : Optionnel - Commit et push si des fichiers changent (pas nécessaire ici, mais scalable)
+      # Étape 6 : Importer les données d'application des lois (baromètre AN)
+      - name: Import application des lois (baromètre AN)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          cd "script python"
+          python import_application_lois.py
+
+      # Étape 7 : Optionnel - Commit et push si des fichiers changent (pas nécessaire ici, mais scalable)
       # - name: Commit des changements si besoin
       #   run: |
       #     git config --global user.name 'GitHub Actions'
