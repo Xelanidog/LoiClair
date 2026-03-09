@@ -532,10 +532,10 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
         </div>
       )}
 
-      {/* Indicateur de génération */}
-      {(isLoadingResume || isStreamingCache) && !error && (
-        <p className="text-xs text-muted-foreground mb-3">Génération du résumé en cours…</p>
-      )}
+      {/* Indicateur de génération — hauteur réservée pour éviter le saut de layout */}
+      <p className={cn("text-xs mb-3 transition-opacity duration-300", (isLoadingResume || isStreamingCache) && !error ? "text-muted-foreground opacity-100" : "opacity-0")}>
+        Génération du résumé en cours…
+      </p>
 
       {/* 3 cartes structurées */}
       {selectedTexte && liensStatus[selectedTexte.uid] === 'valide' && !error && (
