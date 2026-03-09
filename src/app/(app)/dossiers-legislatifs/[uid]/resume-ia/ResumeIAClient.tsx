@@ -122,8 +122,8 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
     streamProtocol: 'text',
   });
 
-  // Source d'affichage : cache en cours de streaming OU résultat API
-  const completion = isStreamingCache ? cacheText : apiCompletion;
+  // Source d'affichage : cacheText s'il existe (pendant et après streaming cache), sinon résultat API
+  const completion = cacheText || apiCompletion;
 
   const handleDiscussWithAI = (titre: string, lien: string) => {
     const prompt = `Analyse et explique ce texte législatif français pour en discuter avec moi : "${titre}". Voici le lien officiel : ${lien}. Résume les points clés, les objectifs, les impacts concrets et le contexte politique.`;
@@ -173,6 +173,7 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
     const selectedTexte = textes.find(t => t.uid === selectedUid);
     if (!selectedTexte?.lien_texte && !selectedTexte?.contenu_legifrance) return;
 
+    setCacheText(''); // réinitialise cacheText pour ne pas afficher un ancien résumé mis en cache
     setCompletion('');
     complete(JSON.stringify({
       lien: selectedTexte.lien_texte,
@@ -180,6 +181,9 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
       texte_uid: selectedUid,
       contenu_legifrance: selectedTexte.contenu_legifrance || undefined,
     }));
+    // Cleanup : réinitialise le guard pour permettre à React Strict Mode (dev) de relancer l'appel
+    // après sa simulation d'unmount — useCompletion aborte le streaming lors du unmount simulé.
+    return () => { completedForRef.current = null; };
   // `complete` et `setCompletion` exclus des deps : ce sont des callbacks stables utilisés
   // uniquement pour déclencher des effets, pas pour lire des valeurs dérivées.
   // eslint-disable-next-line react-hooks/exhaustive-deps
