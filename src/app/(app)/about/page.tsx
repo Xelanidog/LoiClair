@@ -144,7 +144,12 @@ export default function AboutPage() {
             <li>
               <Link href="https://www.legifrance.gouv.fr/" className="text-primary hover:underline font-medium">
                 Légifrance
-              </Link> — Lois promulguées, codes, Journal Officiel <Badge variant="outline" className="ml-2 text-xs">Bientôt</Badge>
+              </Link> — Textes intégraux des lois, versions consolidées des codes, décrets d&apos;application (via API PISTE / DILA)
+            </li>
+            <li>
+              <Link href="https://www.assemblee-nationale.fr/dyn/taux-application-lois" className="text-primary hover:underline font-medium">
+                Baromètre de l&apos;application des lois
+              </Link> — Suivi de l&apos;application des lois promulguées : taux d&apos;application, mesures attendues, décrets publiés (Assemblée nationale)
             </li>
             <li>
               <Link href="https://www.conseil-constitutionnel.fr/" className="text-primary hover:underline font-medium">
