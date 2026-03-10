@@ -2,9 +2,8 @@
 import_application_lois.py
 Importe les données d'application des lois depuis le baromètre de l'Assemblée Nationale.
 
-Utilise deux CSV publics mis à jour quotidiennement :
-1. barometre_application_lois_assemblee.csv — stats agrégées par loi
-2. barometre_application_mesures_assemblee.csv — détail par mesure (délais)
+Phase 1 : CSV baromètre AN → table application_lois (stats par loi)
+Phase 2 : API Légifrance → tables textes + actes_legislatifs (contenu des décrets)
 
 Usage : python import_application_lois.py
 """
@@ -13,6 +12,7 @@ import os
 import csv
 import io
 import re
+import time
 import requests
 from pathlib import Path
 from datetime import datetime, timezone
@@ -31,6 +31,13 @@ if not SUPABASE_URL or not SUPABASE_KEY:
     raise ValueError("SUPABASE_URL ou SUPABASE_KEY manquant dans .env.local")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# Légifrance API (optionnel — si absent, on skip l'import des décrets)
+LEGIFRANCE_CLIENT_ID = os.getenv("LEGIFRANCE_CLIENT_ID")
+LEGIFRANCE_CLIENT_SECRET = os.getenv("LEGIFRANCE_CLIENT_SECRET")
+OAUTH_URL = "https://sandbox-oauth.piste.gouv.fr/api/oauth/token"
+API_BASE = "https://sandbox-api.piste.gouv.fr/dila/legifrance/lf-engine-app"
+RATE_LIMIT_PAUSE = 0.6
 
 CSV_LOIS_URL = "https://barometre.assemblee-nationale.fr/barometre_application_lois_assemblee.csv"
 CSV_MESURES_URL = "https://barometre.assemblee-nationale.fr/barometre_application_mesures_assemblee.csv"
@@ -204,6 +211,222 @@ def parse_date(val: str):
     return None
 
 
+# ── Auth Légifrance ───────────────────────────────────────────────────────────
+
+def get_legifrance_token() -> str | None:
+    """Authentification OAuth2 Légifrance. Retourne le token ou None si clés absentes."""
+    if not LEGIFRANCE_CLIENT_ID or not LEGIFRANCE_CLIENT_SECRET:
+        return None
+    resp = requests.post(OAUTH_URL, data={
+        "grant_type": "client_credentials",
+        "client_id": LEGIFRANCE_CLIENT_ID,
+        "client_secret": LEGIFRANCE_CLIENT_SECRET,
+        "scope": "openid",
+    })
+    resp.raise_for_status()
+    return resp.json()["access_token"]
+
+
+# ── Import des décrets ───────────────────────────────────────────────────────
+
+def extract_decrets_from_mesures(mesures_rows: list[dict], loi_dossier_map: dict) -> dict:
+    """
+    Extrait les JORFTEXT uniques des décrets depuis le CSV mesures.
+    Ne garde que les décrets dont la loi est matchée avec un dossier.
+    Retourne {decret_jorftext: dossier_uid}
+    """
+    decret_to_dossier = {}
+    for row in mesures_rows:
+        loi_jorftext = row.get("Identifiant loi", "").strip()
+        decret_jorftext = row.get("Identifiant décret", "").strip()
+        if not decret_jorftext or not loi_jorftext:
+            continue
+        if loi_jorftext in loi_dossier_map:
+            decret_to_dossier[decret_jorftext] = loi_dossier_map[loi_jorftext]
+    return decret_to_dossier
+
+
+def get_existing_decrets() -> set:
+    """Retourne les UIDs des décrets déjà en base."""
+    existing = set()
+    offset = 0
+    page_size = 1000
+    while True:
+        resp = (
+            supabase.table("textes")
+            .select("uid")
+            .eq("type_code", "DECRET")
+            .range(offset, offset + page_size - 1)
+            .execute()
+        )
+        if not resp.data:
+            break
+        for row in resp.data:
+            existing.add(row["uid"])
+        if len(resp.data) < page_size:
+            break
+        offset += page_size
+    return existing
+
+
+def extract_articles_html(data: dict) -> str:
+    """Extrait le contenu HTML de tous les articles d'un texte JORF."""
+    parts = []
+
+    def _collect(sections):
+        for s in sections:
+            for a in s.get("articles", []):
+                num = a.get("num", "")
+                content = a.get("content", "")
+                if content:
+                    parts.append(f"<h3>{num}</h3>\n{content}")
+            _collect(s.get("sections", []))
+
+    _collect(data.get("sections", []))
+    for a in data.get("articles", []):
+        num = a.get("num", "")
+        content = a.get("content", "")
+        if content:
+            parts.append(f"<h3>{num}</h3>\n{content}")
+
+    return "\n".join(parts)
+
+
+def import_decrets(mesures_rows: list[dict], loi_dossier_map: dict):
+    """Phase 5 : importer le contenu des décrets via l'API Légifrance."""
+    print("\n5. Import des décrets d'application...")
+
+    # 5a. Auth
+    token = get_legifrance_token()
+    if not token:
+        print("  ⚠ Clés Légifrance absentes — import des décrets ignoré")
+        return
+    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+
+    # 5b. Extraire les décrets uniques
+    decret_to_dossier = extract_decrets_from_mesures(mesures_rows, loi_dossier_map)
+    print(f"  → {len(decret_to_dossier)} décrets uniques pour les dossiers matchés")
+
+    # 5c. Filtrer ceux déjà en base
+    existing = get_existing_decrets()
+    new_decrets = {
+        jorf: dossier
+        for jorf, dossier in decret_to_dossier.items()
+        if f"DECRET_{jorf}" not in existing
+    }
+    print(f"  → {len(existing)} décrets déjà en base, {len(new_decrets)} nouveaux à importer")
+
+    if not new_decrets:
+        print("  Rien à importer.")
+        return
+
+    # 5d-5f. Récupérer et insérer chaque décret
+    stats = {"textes_ok": 0, "actes_ok": 0, "api_errors": 0, "db_errors": 0}
+    etapes_creees = set()
+
+    for i, (jorftext_id, dossier_uid) in enumerate(new_decrets.items()):
+        # Appel API
+        try:
+            resp = requests.post(
+                f"{API_BASE}/consult/jorf",
+                headers=headers,
+                json={"textCid": jorftext_id},
+            )
+            if resp.status_code != 200:
+                print(f"  API erreur {jorftext_id}: {resp.status_code}")
+                stats["api_errors"] += 1
+                time.sleep(RATE_LIMIT_PAUSE)
+                continue
+        except Exception as e:
+            print(f"  API exception {jorftext_id}: {e}")
+            stats["api_errors"] += 1
+            time.sleep(RATE_LIMIT_PAUSE)
+            continue
+
+        data = resp.json()
+        title = data.get("title", "")
+        nor = data.get("nor", "")
+        contenu = extract_articles_html(data)
+
+        # Date de parution (timestamp ms → datetime)
+        date_parution = None
+        if data.get("dateParution"):
+            date_parution = datetime.fromtimestamp(
+                data["dateParution"] / 1000, tz=timezone.utc
+            ).strftime("%Y-%m-%d %H:%M:%S")
+
+        # Extraire le numéro du dossier pour l'UID de l'étape (ex: 51222 de DLR5L17N51222)
+        num_dossier = re.search(r"N(\d+)$", dossier_uid)
+        num_dossier = num_dossier.group(1) if num_dossier else dossier_uid
+
+        # 5e. Insérer dans textes
+        texte_uid = f"DECRET_{jorftext_id}"
+        try:
+            supabase.table("textes").upsert({
+                "uid": texte_uid,
+                "type_code": "DECRET",
+                "type_libelle": "Décret d'application",
+                "titre_principal": title,
+                "date_publication": date_parution,
+                "lien_texte": f"https://www.legifrance.gouv.fr/jorf/id/{jorftext_id}",
+                "contenu_legifrance": contenu,
+                "dossier_ref": dossier_uid,
+                "legislature": 17,
+                "provenance": "Légifrance",
+                "denomination": nor,
+                "url_accessible": True,
+            }, on_conflict="uid").execute()
+            stats["textes_ok"] += 1
+        except Exception as e:
+            print(f"  DB erreur texte {texte_uid}: {e}")
+            stats["db_errors"] += 1
+
+        # 5f. Insérer dans actes_legislatifs
+        # Étape parente (une seule par dossier)
+        etape_uid = f"L17-DECAPP-{num_dossier}"
+        if etape_uid not in etapes_creees:
+            try:
+                supabase.table("actes_legislatifs").upsert({
+                    "uid": etape_uid,
+                    "dossier_uid": dossier_uid,
+                    "code_acte": "DECAPP",
+                    "libelle_acte": "Décrets d'application",
+                    "type_acte": "Etape_Type",
+                }, on_conflict="uid,dossier_uid").execute()
+                etapes_creees.add(etape_uid)
+            except Exception as e:
+                print(f"  DB erreur étape {etape_uid}: {e}")
+
+        # Acte du décret
+        acte_uid = f"L17-DECAPP-{jorftext_id}"
+        try:
+            supabase.table("actes_legislatifs").upsert({
+                "uid": acte_uid,
+                "dossier_uid": dossier_uid,
+                "code_acte": "DECAPP-PUB",
+                "libelle_acte": "Publication d'un décret d'application",
+                "type_acte": "PublicationDecret_Type",
+                "date_acte": date_parution,
+                "parent_uid": etape_uid,
+                "texte_adopte": texte_uid,
+                "titre_loi": title,
+            }, on_conflict="uid,dossier_uid").execute()
+            stats["actes_ok"] += 1
+        except Exception as e:
+            print(f"  DB erreur acte {acte_uid}: {e}")
+            stats["db_errors"] += 1
+
+        if (i + 1) % 10 == 0:
+            print(f"  ... {i + 1}/{len(new_decrets)} décrets traités")
+
+        time.sleep(RATE_LIMIT_PAUSE)
+
+    print(f"  Textes insérés  : {stats['textes_ok']}")
+    print(f"  Actes insérés   : {stats['actes_ok']}")
+    print(f"  Erreurs API     : {stats['api_errors']}")
+    print(f"  Erreurs DB      : {stats['db_errors']}")
+
+
 # ── Import principal ──────────────────────────────────────────────────────────
 
 def main():
@@ -233,6 +456,8 @@ def main():
         "upserted": 0,
         "errors": 0,
     }
+    # Mapping JORFTEXT loi → dossier_uid (pour la phase 5)
+    loi_dossier_map = {}
 
     for row in lois_rows:
         stats["total"] += 1
@@ -255,6 +480,7 @@ def main():
 
         if dossier_uid:
             stats["matched"] += 1
+            loi_dossier_map[jorftext] = dossier_uid
         else:
             stats["unmatched"] += 1
 
@@ -297,7 +523,10 @@ def main():
             stats["errors"] += 1
             print(f"  Erreur upsert {jorftext}: {e}")
 
-    # 5. Résumé
+    # 5. Import des décrets d'application via API Légifrance
+    import_decrets(mesures_rows, loi_dossier_map)
+
+    # 6. Résumé
     print(f"\n{'=' * 60}")
     print("RÉSUMÉ")
     print(f"{'=' * 60}")
@@ -306,12 +535,6 @@ def main():
     print(f"  Non matchées (pas en DB): {stats['unmatched']}")
     print(f"  Upsertées               : {stats['upserted']}")
     print(f"  Erreurs                  : {stats['errors']}")
-
-    # Stats par statut
-    try:
-        resp = supabase.rpc("", {}).execute()  # dummy
-    except Exception:
-        pass
 
     print("\nDistribution par statut :")
     for statut in ["appliquee", "partiellement_appliquee", "non_appliquee",

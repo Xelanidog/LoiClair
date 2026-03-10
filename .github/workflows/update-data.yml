@@ -58,11 +58,13 @@ jobs:
           cd "script python"
           python import_legifrance_cloud.py
 
-      # Étape 6 : Importer les données d'application des lois (baromètre AN)
-      - name: Import application des lois (baromètre AN)
+      # Étape 6 : Importer les données d'application des lois (baromètre AN) + décrets
+      - name: Import application des lois (baromètre AN + décrets)
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          LEGIFRANCE_CLIENT_ID: ${{ secrets.LEGIFRANCE_CLIENT_ID }}
+          LEGIFRANCE_CLIENT_SECRET: ${{ secrets.LEGIFRANCE_CLIENT_SECRET }}
         run: |
           cd "script python"
           python import_application_lois.py
