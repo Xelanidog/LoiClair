@@ -348,6 +348,10 @@ def import_decrets(mesures_rows: list[dict], loi_dossier_map: dict):
         nor = data.get("nor", "")
         contenu = extract_articles_html(data)
 
+        # Extraire le numéro du décret depuis le titre (ex: "Décret n° 2025-877")
+        decret_num_match = re.search(r"(Décret\s+n°\s*[\d\-]+)", title)
+        denomination = decret_num_match.group(1) if decret_num_match else f"Décret ({nor})"
+
         # Date de parution (timestamp ms → datetime)
         date_parution = None
         if data.get("dateParution"):
@@ -373,7 +377,8 @@ def import_decrets(mesures_rows: list[dict], loi_dossier_map: dict):
                 "dossier_ref": dossier_uid,
                 "legislature": 17,
                 "provenance": "Légifrance",
-                "denomination": nor,
+                "denomination": denomination,
+                "num_notice": nor,
                 "url_accessible": True,
             }, on_conflict="uid").execute()
             stats["textes_ok"] += 1

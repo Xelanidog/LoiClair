@@ -71,7 +71,13 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
   const textes = (textesResult.data || []).map((t: any) => ({
     ...t,
     organe_auteur: Array.isArray(t.organe_auteur) ? t.organe_auteur[0] || null : t.organe_auteur,
-  }));
+  })).sort((a: any, b: any) => {
+    const dateA = a.date_creation || a.date_publication || '';
+    const dateB = b.date_creation || b.date_publication || '';
+    if (!dateA && dateB) return 1;
+    if (dateA && !dateB) return -1;
+    return dateA.localeCompare(dateB);
+  });
 
   const dossier = dossierResult.data?.[0];
   const titreDossier = dossier?.titre || 'Titre indisponible';

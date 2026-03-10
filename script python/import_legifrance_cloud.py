@@ -105,6 +105,42 @@ def fetch_jorf_by_id(jorftext_id: str, token: str) -> dict | None:
     return response.json()
 
 
+def fetch_loda_latest_date(nor: str, token: str) -> str | None:
+    """Récupère la date de la dernière version consolidée via recherche LODA par NOR.
+    Retourne une date ISO (YYYY-MM-DD) ou None."""
+    if not nor:
+        return None
+    response = requests.post(
+        f"{API_BASE}/search",
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        },
+        json={
+            "recherche": {
+                "champs": [{"typeChamp": "NOR", "criteres": [{"typeRecherche": "EXACTE", "valeur": nor, "operateur": "ET"}], "operateur": "ET"}],
+                "filtres": [{"facette": "TEXT_LEGAL_STATUS", "valeurs": ["VIGUEUR"]}],
+                "pageNumber": 1,
+                "pageSize": 10,
+                "typePagination": "DEFAUT",
+            },
+            "fond": "LODA_DATE",
+        },
+        timeout=30,
+    )
+    if response.status_code != 200:
+        return None
+    latest = None
+    for r in response.json().get("results", []):
+        for t in r.get("titles", []):
+            m = re.search(r"(\d{2})-(\d{2})-(\d{4})$", t.get("id", ""))
+            if m:
+                iso = f"{m.group(3)}-{m.group(2)}-{m.group(1)}"
+                if not latest or iso > latest:
+                    latest = iso
+    return latest
+
+
 def build_loda_url(jorf_url: str) -> str | None:
     """Construit l'URL de la version consolidée depuis l'URL JORF.
     Ex: /jorf/id/JORFTEXT000051586300 → /loda/id/JORFTEXT000051586300"""
@@ -246,7 +282,7 @@ def fetch_loi_textes_pour_consolidee() -> list:
     while True:
         resp = (
             supabase.table("textes")
-            .select("uid, num_notice, denomination, dossier_ref, lien_texte")
+            .select("uid, num_notice, denomination, dossier_ref, lien_texte, date_publication")
             .eq("type_code", "LOI")
             .eq("is_version_consolidee", False)
             .not_.is_("contenu_legifrance", "null")
@@ -391,38 +427,107 @@ def main():
 
     if textes_a_traiter:
         print()
+
         for texte in textes_a_traiter:
             uid = texte["uid"]
             lien_original = texte.get("lien_texte", "")
             dossier_ref = texte.get("dossier_ref")
             denomination = texte.get("denomination", "")
+            nor = texte.get("num_notice", "")
 
-            # Construire l'URL LODA depuis l'URL JORF (remplace /jorf/ par /loda/)
             loda_url = build_loda_url(lien_original)
             if not loda_url:
                 tqdm.write(f"  Pas de JORFTEXT dans lien_texte pour {uid}, skip")
                 skip_vc += 1
                 continue
 
-            # Créer l'entrée version consolidée
             vc_uid = f"{uid}-VC"
             vc_denomination = f"Version consolidée — {denomination}" if denomination else "Version consolidée"
 
+            # Récupérer la date de dernière modification via recherche LODA
+            latest_date = None
             try:
-                supabase.table("textes").insert({
-                    "uid": vc_uid,
-                    "dossier_ref": dossier_ref,
-                    "type_code": "LOI",
-                    "denomination": vc_denomination,
-                    "lien_texte": loda_url,
-                    "url_accessible": True,
-                    "is_version_consolidee": True,
-                    "provenance": "Légifrance",
-                }).execute()
+                latest_date = fetch_loda_latest_date(nor, token)
+            except Exception as e:
+                tqdm.write(f"  Erreur recherche LODA pour {vc_uid}: {e}")
+            time.sleep(RATE_LIMIT_PAUSE)
+
+            row = {
+                "uid": vc_uid,
+                "dossier_ref": dossier_ref,
+                "type_code": "LOI",
+                "denomination": vc_denomination,
+                "lien_texte": loda_url,
+                "url_accessible": True,
+                "is_version_consolidee": True,
+                "provenance": "Légifrance",
+            }
+            if latest_date:
+                row["date_publication"] = f"{latest_date} 00:00:00"
+
+            try:
+                supabase.table("textes").insert(row).execute()
                 success_vc += 1
             except Exception as e:
                 tqdm.write(f"  Erreur insert VC pour {vc_uid}: {e}")
                 skip_vc += 1
+
+        # Rattrapage : mettre à jour la date des VC existantes sans date
+        existing_vc_sans_date = []
+        offset_vc = 0
+        while True:
+            resp_vc = (
+                supabase.table("textes")
+                .select("uid, lien_texte")
+                .eq("is_version_consolidee", True)
+                .is_("date_publication", "null")
+                .range(offset_vc, offset_vc + 999)
+                .execute()
+            )
+            if not resp_vc.data:
+                break
+            existing_vc_sans_date.extend(resp_vc.data)
+            if len(resp_vc.data) < 1000:
+                break
+            offset_vc += 1000
+
+        if existing_vc_sans_date:
+            print(f"   + {len(existing_vc_sans_date)} VC existante(s) sans date à enrichir.")
+            # Construire un mapping VC uid → NOR depuis la loi originale
+            vc_base_uids = [r["uid"].replace("-VC", "") for r in existing_vc_sans_date]
+            nor_map = {}
+            for i in range(0, len(vc_base_uids), 100):
+                batch = vc_base_uids[i:i+100]
+                resp_nor = (
+                    supabase.table("textes")
+                    .select("uid, num_notice")
+                    .in_("uid", batch)
+                    .execute()
+                )
+                for row in (resp_nor.data or []):
+                    if row.get("num_notice"):
+                        nor_map[row["uid"]] = row["num_notice"]
+
+            enriched_dates = 0
+            for vc_row in existing_vc_sans_date:
+                vc_uid = vc_row["uid"]
+                base_uid = vc_uid.replace("-VC", "")
+                nor = nor_map.get(base_uid)
+                if not nor:
+                    continue
+                try:
+                    latest_date = fetch_loda_latest_date(nor, token)
+                    if latest_date:
+                        supabase.table("textes").update({
+                            "date_publication": f"{latest_date} 00:00:00",
+                        }).eq("uid", vc_uid).execute()
+                        enriched_dates += 1
+                except Exception as e:
+                    tqdm.write(f"  Erreur date VC {vc_uid}: {e}")
+                time.sleep(RATE_LIMIT_PAUSE)
+
+            if enriched_dates:
+                print(f"   VC enrichies (date) : {enriched_dates}")
 
         print(f"\n   Consolidées : {success_vc} créée(s), {skip_vc} ignorée(s)")
     else:
