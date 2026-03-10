@@ -66,8 +66,10 @@ export type FeedEvent = {
   texteAdopteDenomination: string | null;
   texteAdopteTitre: string | null;
   texteAdopteLien: string | null;
+  texteAdopteUrlAccessible: boolean | null;
   texteUrlAccessible: boolean | null;
   hasContenLegifrance: boolean;
+  hasContenLegifranceAdopte: boolean;
   scrutinUid: string | null;
   scrutinTitre: string | null;
   typeVoteCode: string | null;
@@ -263,8 +265,10 @@ function acteToFeedEvent(
     texteAdopteDenomination: texteAdopte?.denomination ?? null,
     texteAdopteTitre: texteAdopte?.titre_principal ?? null,
     texteAdopteLien: texteAdopte?.lien_texte ?? null,
+    texteAdopteUrlAccessible: texteAdopte?.url_accessible ?? null,
     texteUrlAccessible: texte?.url_accessible ?? null,
     hasContenLegifrance: (texte?.contenu_legifrance ?? null) !== null,
+    hasContenLegifranceAdopte: (texteAdopte?.contenu_legifrance ?? null) !== null,
     scrutinUid: scrutin?.uid ?? null,
     scrutinTitre: scrutin?.titre ?? null,
     typeVoteCode: scrutin?.type_vote_code ?? null,
@@ -318,7 +322,7 @@ function groupFeedEvents(feedEvents: FeedEvent[]): Map<string, GroupedFeedEvent>
   const groupMap = new Map<string, GroupedFeedEvent>();
   for (const event of feedEvents) {
     const dateISO = event.date ? toParisDateISO(event.date) : 'unknown';
-    const key = (event.type === 'DECISION' || event.type === 'CC_SAISINE' || event.type === 'MOTION_CENSURE')
+    const key = (event.type === 'DECISION' || event.type === 'CC_SAISINE' || event.type === 'MOTION_CENSURE' || event.type === 'DECRET')
       ? `${event.id}-${dateISO}-${event.type}`
       : `${event.dossierUid}-${dateISO}-${event.type}`;
     const existing = groupMap.get(key);

@@ -8,7 +8,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 export type FeedEventType =
   | 'DEPOT_TEXTE' | 'DEPOT_RAPPORT' | 'DECISION' | 'NAVETTE'
   | 'CMP_CONVOCATION' | 'CMP_RAPPORT' | 'MOTION_CENSURE' | 'DECL_GOUVERNEMENT'
-  | 'MOTION_VOTE' | 'CC_SAISINE' | 'PROMULGATION' | 'AUTRE';
+  | 'MOTION_VOTE' | 'CC_SAISINE' | 'PROMULGATION' | 'DECRET' | 'AUTRE';
 
 export const LIBELLE_TO_TYPE: Record<string, FeedEventType> = {
   "1er depot d'une initiative.": 'DEPOT_TEXTE',
@@ -25,6 +25,7 @@ export const LIBELLE_TO_TYPE: Record<string, FeedEventType> = {
   "Saisine du conseil constitutionnel": 'CC_SAISINE',
   "Conclusion du conseil constitutionnel": 'DECISION',
   "Promulgation d'une loi": 'PROMULGATION',
+  "Publication d'un décret d'application": 'DECRET',
 };
 
 // Fil du mois : tous sauf motions (traitées séparément)

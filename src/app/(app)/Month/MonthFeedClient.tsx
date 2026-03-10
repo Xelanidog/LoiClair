@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import {
   FileText,
   FileSearch,
+  FileCheck2,
   BarChart3,
   ArrowLeftRight,
   Handshake,
@@ -14,6 +15,7 @@ import {
   Gavel,
   Scale,
   CheckCircle2,
+  PartyPopper,
   Sparkles,
   ChevronLeft,
   ChevronRight,
@@ -62,6 +64,7 @@ const EVENT_CONFIG: Record<
   MOTION_VOTE: { icon: Gavel, label: "Vote motion", color: "text-[#E74C3C]", iconBg: "bg-[#E74C3C]/10" },
   CC_SAISINE: { icon: Scale, label: "Cons. const.", color: "text-[#F39C12] dark:text-[#F1C40F]", iconBg: "bg-[#F39C12]/10" },
   PROMULGATION: { icon: CheckCircle2, label: "Loi promulguée", color: "text-[#27AE60] dark:text-[#2ECC71]", iconBg: "bg-[#27AE60]/10" },
+  DECRET: { icon: FileCheck2, label: "Décret d'application", color: "text-[#B45309]", iconBg: "bg-[#B45309]/10" },
   AUTRE: { icon: Activity, label: "Autre", color: "text-muted-foreground", iconBg: "bg-muted" },
 };
 
@@ -74,6 +77,7 @@ const FILTER_PILLS: { value: string; label: string; icon: typeof Activity; color
   { value: "CMP", label: "CMP", icon: Handshake, color: "text-[#F39C12]" },
   { value: "CC_SAISINE", label: "Cons. const.", icon: Scale, color: "text-[#F39C12] dark:text-[#F1C40F]" },
   { value: "PROMULGATION", label: "Promulgations", icon: CheckCircle2, color: "text-[#27AE60] dark:text-[#2ECC71]" },
+  { value: "DECRET", label: "Décrets", icon: FileCheck2, color: "text-[#B45309]" },
   { value: "MOTION", label: "Motions", icon: AlertTriangle, color: "text-[#E74C3C]" },
 ];
 
@@ -197,7 +201,8 @@ function EventBody({ group }: { group: GroupedFeedEvent }) {
     case "CMP_RAPPORT":
       return null; // tout dans CardTitle + RapportFooterLinks
 
-    case "DECISION": {
+    case "DECISION":
+    case "MOTION_CENSURE": {
       const scrutin = e.scrutins[0] ?? null;
       if (!scrutin) {
         return e.statutConclusion
@@ -213,16 +218,6 @@ function EventBody({ group }: { group: GroupedFeedEvent }) {
     case "CMP_CONVOCATION":
       return null; // contenu dans CardTitle
 
-    case "MOTION_CENSURE": {
-      const scrutin = e.scrutins[0] ?? null;
-      if (!scrutin) {
-        return e.statutConclusion
-          ? <div className="mt-1.5"><StatusBadge statut={e.statutConclusion} /></div>
-          : null;
-      }
-      return <div className="mt-1.5 space-y-1.5"><VoteBlock scrutin={scrutin} /></div>;
-    }
-
     case "DECL_GOUVERNEMENT":
       return null;
 
@@ -231,10 +226,23 @@ function EventBody({ group }: { group: GroupedFeedEvent }) {
       return label ? <p className="text-xs text-muted-foreground mt-1">{label}</p> : null;
     }
 
-    case "PROMULGATION":
-      return e.codeLoi ? (
-        <p className="text-xs text-muted-foreground mt-1 font-mono">Loi n° {e.codeLoi}</p>
-      ) : null;
+    case "PROMULGATION": {
+      const loiCode = e.codeLoi ?? (() => {
+        const m = e.texteUid?.match(/^LOI(\d{4})(\d+)$/);
+        return m ? `${m[1]}-${parseInt(m[2], 10)}` : null;
+      })();
+      return (
+        <div className="flex flex-col items-center gap-2 mt-3 mb-1">
+          <div className="w-16 h-16 rounded-full bg-[#27AE60]/10 flex items-center justify-center">
+            <PartyPopper className="w-8 h-8 text-[#27AE60]" />
+          </div>
+          {loiCode && <span className="text-sm font-semibold text-[#27AE60]">Loi n° {loiCode}</span>}
+        </div>
+      );
+    }
+
+    case "DECRET":
+      return null; // contenu géré dans CardTitle
 
     default:
       return null;
@@ -418,6 +426,19 @@ function CardTitle({ group, e }: { group: GroupedFeedEvent; e: FeedEvent }) {
       </p>
     );
   }
+  // DECRET : ligne 1 muted (référence loi parente), ligne 2 titre complet du décret
+  if (t === "DECRET") {
+    const loiRef = e.texteDenomination ? `Pour la ${e.texteDenomination}` : null;
+    const loiTitre = e.texteTitre ?? null;
+    const line1 = [loiRef, loiTitre].filter(Boolean).join(' ');
+    const line2 = e.texteAdopteTitre || e.titreLoi || e.dossierTitre || null;
+    return (
+      <div className="mb-0.5">
+        {line1 && <p className="text-xs text-muted-foreground">{line1}</p>}
+        {line2 && <p className="text-sm leading-snug">{line2}</p>}
+      </div>
+    );
+  }
   // PROMULGATION : titre officiel de la loi (capitalisé) ou titre du dossier
   if (t === "PROMULGATION") {
     const titre = e.titreLoi
@@ -552,6 +573,9 @@ function getContextInfo(type: FeedEventType, e: FeedEvent, multi: boolean, event
     return <span className="font-bold text-foreground shrink-0">Assemblée</span>;
   }
   if (type === "CMP_CONVOCATION") return null;
+  if (type === "DECRET") {
+    return <span className="font-bold text-foreground shrink-0">Gouvernement</span>;
+  }
   if (type === "CC_SAISINE") {
     const inst = institutionName(e.organeCodeType, e.organeName);
     return inst ? <span className="shrink-0">/{inst}</span> : null;
@@ -564,6 +588,7 @@ function getContextInfo(type: FeedEventType, e: FeedEvent, multi: boolean, event
 function DebugAccordion({ group }: { group: GroupedFeedEvent }) {
   const acteUids = group.events.map(e => e.id.replace(/^(acte|scrutin)-/, ''));
   const texteUids = [...new Set(group.events.map(e => e.texteUid).filter(Boolean))];
+  const texteAdopteUids = [...new Set(group.events.map(e => e.texteAdopteUid).filter(Boolean))];
   const scrutinUids = [...new Set(group.events.map(e => e.scrutinUid).filter(Boolean))];
   const codeActes = [...new Set(group.events.map(e => e.codeActe).filter(Boolean))];
 
@@ -575,6 +600,7 @@ function DebugAccordion({ group }: { group: GroupedFeedEvent }) {
         <div><span className="opacity-50">actes:   </span>{acteUids.join(', ') || '—'}</div>
         {codeActes.length > 0 && <div><span className="opacity-50">codes:   </span>{codeActes.join(', ')}</div>}
         {texteUids.length > 0 && <div><span className="opacity-50">textes:  </span>{texteUids.join(', ')}</div>}
+        {texteAdopteUids.length > 0 && <div><span className="opacity-50">adopté:  </span>{texteAdopteUids.join(', ')}</div>}
         {scrutinUids.length > 0 && <div><span className="opacity-50">scrutins:</span>{scrutinUids.join(', ')}</div>}
       </div>
     </details>
@@ -590,7 +616,6 @@ function GroupedEventCard({ group, index }: { group: GroupedFeedEvent; index: nu
   const multi = group.events.length > 1;
   const shortDate = formatShortDate(group.date);
   const context = getContextInfo(group.type, e, multi, group.events);
-
   return (
     <motion.article
       initial={{ opacity: 0, y: 8 }}
@@ -639,9 +664,9 @@ function GroupedEventCard({ group, index }: { group: GroupedFeedEvent; index: nu
         ) : (
           <CardFooter
             dossierUid={group.dossierUid}
-            texteUid={e.texteUid}
+            texteUid={group.type === "DECRET" ? e.texteAdopteUid : e.texteUid}
+            texteUrlAccessible={group.type === "DECRET" ? e.texteAdopteUrlAccessible : e.texteUrlAccessible}
             showResumeIA={!multi && group.type !== "CMP_CONVOCATION" && group.type !== "CC_SAISINE" && (group.type !== "PROMULGATION" || e.hasContenLegifrance)}
-            texteUrlAccessible={e.texteUrlAccessible}
             learnMoreHref={
               group.type === "CMP_CONVOCATION" ? "/documentation/guide#processus-législatif" :
               group.type === "CC_SAISINE" ? "/documentation/guide#les-organes-du-parlement" :

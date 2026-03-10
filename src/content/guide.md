@@ -26,6 +26,7 @@ Une rangée de pastilles cliquables permet de filtrer les événements par caté
 - **CMP** — convocations de la Commission mixte paritaire.
 - **Cons. const.** — saisines du Conseil constitutionnel.
 - **Promulgations** — lois signées et publiées au Journal officiel.
+- **Décrets** — décrets d'application publiés par le Gouvernement pour mettre en œuvre une loi promulguée.
 - **Motions** — motions de censure déposées contre le Gouvernement.
 
 La pastille active est mise en évidence. Sur mobile, la rangée est scrollable horizontalement (un dégradé sur le bord droit indique qu'il y a d'autres filtres).
@@ -43,7 +44,8 @@ Selon le type d'événement, des informations supplémentaires apparaissent :
 
 - **Décisions** : le titre de la carte indique l'**objet exact du vote** (par exemple : « La motion de rejet préalable » ou « L'ensemble du texte »). En dessous, le **type de procédure** (ex. : « Scrutin public ordinaire ») et la **règle de majorité applicable** (ex. : « Majorité absolue des suffrages exprimés ») sont précisés. Lorsque les données sont disponibles, une **barre de vote** montre la répartition pour/contre/abstentions — survolez-la pour le détail chiffré. Un **badge de résultat** (adopté, rejeté…) apparaît sous la barre.
 - **Rapports** : le nom de la commission et la provenance du rapport. Lorsque l'information est disponible, le **nom du rapporteur principal** et son groupe politique sont affichés sous le titre. Si plusieurs rapporteurs ont signé le rapport, la mention « (et collègues) » est ajoutée. Pour les rapports de Commission mixte paritaire (CMP) regroupant un rapport de chaque chambre, les rapporteurs de l'**Assemblée** et du **Sénat** sont indiqués séparément.
-- **Promulgations** : une mention « Publiée au Journal officiel ».
+- **Promulgations** : une icône de célébration centrée et le **numéro officiel de la loi** (ex. : « Loi n° 2025-989 ») mis en évidence.
+- **Décrets d'application** : la loi parente à laquelle le décret se rattache (avec sa dénomination et son numéro), le titre complet du décret, et un lien **Résumé IA** pointant directement vers le décret.
 
 Quand plusieurs événements du même type concernent le même dossier à la même date, ils sont regroupés dans une seule carte avec un compteur (×2, ×3…).
 

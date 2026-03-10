@@ -159,6 +159,11 @@ def parser_acte(acte_data, dossier_uid, parent_uid=None):
         texte_adopte = acte_data.get("texteAdopte")
         code_loi = acte_data.get("codeLoi")
         titre_loi = acte_data.get("titreLoi")
+        # Fallback : dériver code_loi depuis l'UID texteAdopte (ex. LOI2025989 → 2025-989)
+        if not code_loi and texte_adopte:
+            m = re.match(r'^LOI(\d{4})(\d+)$', str(texte_adopte))
+            if m:
+                code_loi = f"{m.group(1)}-{int(m.group(2))}"
 
         autres_infos = {
             "depotInitialLectureDefinitiveRef": acte_data.get("depotInitialLectureDefinitiveRef"),
@@ -465,14 +470,14 @@ def enrichir_vote_refs_via_reunion_ref():
 # ==================== LIAISON TEXTES → ACTES PROM-PUB ====================
 
 def lier_textes_prom_pub():
-    """Lie les textes PROMULGUE aux actes PROM-PUB via textes_associes.
+    """Lie les textes PROMULGUE aux actes PROM-PUB et DECAPP-PUB via textes_associes.
 
     Pour chaque texte avec statut_adoption='PROMULGUE', met à jour les actes
-    PROM-PUB du même dossier dont textes_associes est encore null.
+    PROM-PUB et DECAPP-PUB du même dossier dont textes_associes est encore null.
     Appelé après l'import des actes (les textes sont déjà en base à ce stade).
     """
     print(f"\n{'='*60}")
-    print(f"   LIAISON TEXTES → ACTES PROM-PUB")
+    print(f"   LIAISON TEXTES → ACTES PROM-PUB + DECAPP-PUB")
     print(f"{'='*60}")
 
     textes_prom = (
@@ -485,6 +490,7 @@ def lier_textes_prom_pub():
     )
 
     nb_ok = 0
+    nb_decapp_ok = 0
     nb_skip = 0
     for t in textes_prom:
         if not t.get("dossier_ref") or not t.get("uid"):
@@ -496,8 +502,15 @@ def lier_textes_prom_pub():
             "textes_associes", "null"
         ).execute()
         nb_ok += 1
+        supabase.table("actes_legislatifs").update(
+            {"textes_associes": [t["uid"]]}
+        ).eq("code_acte", "DECAPP-PUB").eq("dossier_uid", t["dossier_ref"]).is_(
+            "textes_associes", "null"
+        ).execute()
+        nb_decapp_ok += 1
 
     print(f"   ✅ {nb_ok} actes PROM-PUB liés à leur texte PROMULGUE")
+    print(f"   ✅ {nb_decapp_ok} actes DECAPP-PUB liés à leur texte PROMULGUE")
     if nb_skip:
         print(f"   ⚠️  {nb_skip} textes ignorés (dossier_ref ou uid manquant)")
     print(f"{'='*60}")
