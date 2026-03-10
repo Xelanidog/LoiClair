@@ -251,8 +251,10 @@ def _clean_html(text: str) -> str:
 # ── Supabase : récupération et mise à jour ────────────────────────────────────
 
 def fetch_loi_textes_sans_contenu() -> list:
-    """Récupère tous les textes LOI originaux sans contenu_legifrance (avec pagination)."""
+    """Récupère les textes LOI originaux sans contenu OU sans lien_texte (avec pagination)."""
     all_rows = []
+    seen_uids = set()
+    # 1. Sans contenu (enrichissement complet)
     offset = 0
     page_size = 1000
     while True:
@@ -267,7 +269,30 @@ def fetch_loi_textes_sans_contenu() -> list:
         )
         if not resp.data:
             break
+        for row in resp.data:
+            seen_uids.add(row["uid"])
         all_rows.extend(resp.data)
+        if len(resp.data) < page_size:
+            break
+        offset += page_size
+    # 2. Avec contenu mais sans lien_texte (rattrapage URL uniquement)
+    offset = 0
+    while True:
+        resp = (
+            supabase.table("textes")
+            .select("uid, lien_texte, num_notice, denomination")
+            .eq("type_code", "LOI")
+            .eq("is_version_consolidee", False)
+            .not_.is_("contenu_legifrance", "null")
+            .is_("lien_texte", "null")
+            .range(offset, offset + page_size - 1)
+            .execute()
+        )
+        if not resp.data:
+            break
+        for row in resp.data:
+            if row["uid"] not in seen_uids:
+                all_rows.append(row)
         if len(resp.data) < page_size:
             break
         offset += page_size
