@@ -1,7 +1,7 @@
 "use client";
 
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { HelpCircle, ListChecks, TrendingUp, ExternalLink, Check, ChevronsUpDown, ChevronDown, Bot, Clock, Building2, Scale, Vote } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
 import { SYSTEM_PROMPT_RESUME_LOI, PARAMS_RESUME_LOI, MODEL_RESUME_LOI, MAX_INPUT_CHARS_RESUME_LOI } from '@/lib/prompts';
@@ -111,9 +111,7 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
 
   const [open, setOpen] = useState(false);
   const [isStreamingCache, setIsStreamingCache] = useState(false);
-  // State local stable pour le streaming cache (évite d'utiliser setCompletion de useCompletion,
-  // qui est throttlé par @ai-sdk/react → nouvelle référence à chaque render → boucle infinie).
-  const [cacheText, setCacheText] = useState('');
+  const [cachedCompletion, setCachedCompletion] = useState('');
   const completedForRef = useRef<string | null>(null);
 
   const {
@@ -123,8 +121,8 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
     streamProtocol: 'text',
   });
 
-  // Source d'affichage : cacheText s'il existe (pendant et après streaming cache), sinon résultat API
-  const completion = cacheText || apiCompletion;
+  // Source d'affichage : cache s'il existe, sinon résultat API
+  const completion = cachedCompletion || apiCompletion;
 
   const handleDiscussWithAI = (titre: string, lien: string) => {
     const prompt = `Analyse et explique ce texte législatif français pour en discuter avec moi : "${titre}". Voici le lien officiel : ${lien}. Résume les points clés, les objectifs, les impacts concrets et le contexte politique.`;
@@ -132,7 +130,7 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
     window.open(perplexityUrl, '_blank', 'noopener,noreferrer');
   };
 
-  // Lancement du résumé IA : cache hit → streaming simulé, cache miss → appel API réel
+  // Lancement du résumé IA : cache hit → affichage immédiat, cache miss → appel API réel
   useEffect(() => {
     if (!selectedUid) return;
     if (liensStatus[selectedUid] !== 'valide') return;
@@ -140,29 +138,30 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
 
     completedForRef.current = selectedUid;
 
-    // Cache hit : streaming simulé progressif avec state local stable (setCacheText)
+    // Nettoie les anciens résultats pour éviter le flash de contenu stale
+    setCachedCompletion('');
+    setCompletion('');
+
+    // Cache hit : streaming simulé progressif (effet IA temps réel)
     if (cachedResumes[selectedUid]) {
       const fullText = cachedResumes[selectedUid];
-      setCacheText('');
       setIsStreamingCache(true);
       let i = 0;
       let done = false;
-      const step = 12; // caractères par tick
+      const step = 8;    // caractères par tick
       const interval = setInterval(() => {
         i += step;
         if (i >= fullText.length) {
-          setCacheText(fullText);
+          setCachedCompletion(fullText);
           setIsStreamingCache(false);
           clearInterval(interval);
           done = true;
         } else {
-          setCacheText(fullText.slice(0, i));
+          setCachedCompletion(fullText.slice(0, i));
         }
-      }, 16); // ~60fps
+      }, 30); // ~8 chars toutes les 30ms → effet écriture lente
       return () => {
         clearInterval(interval);
-        // Si interrompu avant la fin (ex: React Strict Mode double-mount en dev),
-        // réinitialise le guard pour permettre le redémarrage au prochain passage.
         if (!done) {
           completedForRef.current = null;
           setIsStreamingCache(false);
@@ -174,8 +173,6 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
     const selectedTexte = textes.find(t => t.uid === selectedUid);
     if (!selectedTexte?.lien_texte && !selectedTexte?.contenu_legifrance) return;
 
-    setCacheText(''); // réinitialise cacheText pour ne pas afficher un ancien résumé mis en cache
-    setCompletion('');
     complete(JSON.stringify({
       lien: selectedTexte.lien_texte,
       titre_texte: selectedTexte.titre_principal_court || selectedTexte.denomination || 'Texte inconnu',
@@ -199,7 +196,7 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
   };
 
   const selectedTexte = selectedUid ? textes.find((t) => t.uid === selectedUid) : null;
-  const sections = parseCompletion(completion);
+  const sections = useMemo(() => parseCompletion(completion), [completion]);
   const hasContent = Object.values(sections).some(v => v.length > 0);
 
   return (
@@ -534,7 +531,7 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
       )}
 
       {/* Indicateur de génération — hauteur réservée pour éviter le saut de layout */}
-      <p className={cn("text-xs mb-3 transition-opacity duration-300", (isLoadingResume || isStreamingCache) && !error ? "text-muted-foreground opacity-100" : "opacity-0")}>
+      <p className={cn("text-xs mb-3 text-muted-foreground transition-opacity duration-300", (isLoadingResume || isStreamingCache) && !error ? "opacity-100" : "opacity-0")}>
         Génération du résumé en cours…
       </p>
 
