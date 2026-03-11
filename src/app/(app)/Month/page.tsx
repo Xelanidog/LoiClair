@@ -22,7 +22,7 @@ import { MonthFeedClient } from './MonthFeedClient';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Fil du Mois — LoiClair',
+  title: "Fil d'actualité — LoiClair",
   description: 'Les evenements legislatifs du mois : votes, depots, promulgations et plus encore.',
 };
 

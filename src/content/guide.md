@@ -2,9 +2,9 @@ LoiClair est un tableau de bord citoyen qui rend l'activité législative franç
 
 ---
 
-## Fil du Mois
+## Fil d'actualité
 
-La page **Fil du Mois** présente l'activité législative sous forme de fil chronologique, mois par mois. C'est le point d'entrée principal pour suivre ce qui se passe au Parlement.
+La page **Fil d'actualité** présente l'activité législative sous forme de fil chronologique, mois par mois. C'est le point d'entrée principal pour suivre ce qui se passe au Parlement.
 
 ### Naviguer entre les mois
 
@@ -273,10 +273,10 @@ Une frise chronologique présente les 7 étapes que traverse un texte législati
 > En moyenne, une loi ordinaire prend entre 6 et 12 mois pour parcourir ce chemin.
 
 **Qu'est-ce que la Commission mixte paritaire (CMP) ?**
-En France, une loi doit être votée dans les mêmes termes par l'Assemblée nationale et le Sénat. Lorsque les deux chambres ne parviennent pas à s'entendre après plusieurs lectures, le Premier ministre — ou les présidents des deux assemblées pour une loi d'initiative parlementaire — peut convoquer une Commission mixte paritaire. Son **but** : trouver un texte de compromis acceptable pour les deux chambres, plutôt que de prolonger indéfiniment la navette. Sa **composition** : 7 députés et 7 sénateurs, choisis pour refléter la diversité politique de chaque assemblée. Si la CMP réussit à rédiger un texte commun, celui-ci est soumis au vote des deux chambres. Si elle échoue, l'Assemblée nationale a le dernier mot et peut adopter le texte seule. Dans le fil du mois, la convocation d'une CMP apparaît comme une carte distincte.
+En France, une loi doit être votée dans les mêmes termes par l'Assemblée nationale et le Sénat. Lorsque les deux chambres ne parviennent pas à s'entendre après plusieurs lectures, le Premier ministre — ou les présidents des deux assemblées pour une loi d'initiative parlementaire — peut convoquer une Commission mixte paritaire. Son **but** : trouver un texte de compromis acceptable pour les deux chambres, plutôt que de prolonger indéfiniment la navette. Sa **composition** : 7 députés et 7 sénateurs, choisis pour refléter la diversité politique de chaque assemblée. Si la CMP réussit à rédiger un texte commun, celui-ci est soumis au vote des deux chambres. Si elle échoue, l'Assemblée nationale a le dernier mot et peut adopter le texte seule. Dans le fil d'actualité, la convocation d'une CMP apparaît comme une carte distincte.
 
 **Pourquoi plusieurs saisines du Conseil constitutionnel pour la même loi ?**
-L'article 61 de la Constitution permet à 60 députés *ou* 60 sénateurs de saisir le Conseil constitutionnel avant la promulgation d'une loi. Plusieurs groupes politiques peuvent déposer des saisines séparées le même jour — ou à quelques jours d'intervalle — pour des raisons pratiques et politiques : chaque groupe rédige ses propres arguments juridiques, conteste parfois des articles différents, et peut préférer ne pas signer le même document que ses adversaires politiques, même s'ils s'opposent au même texte. Dans le fil du mois, chaque saisine apparaît donc comme une carte distincte.
+L'article 61 de la Constitution permet à 60 députés *ou* 60 sénateurs de saisir le Conseil constitutionnel avant la promulgation d'une loi. Plusieurs groupes politiques peuvent déposer des saisines séparées le même jour — ou à quelques jours d'intervalle — pour des raisons pratiques et politiques : chaque groupe rédige ses propres arguments juridiques, conteste parfois des articles différents, et peut préférer ne pas signer le même document que ses adversaires politiques, même s'ils s'opposent au même texte. Dans le fil d'actualité, chaque saisine apparaît donc comme une carte distincte.
 
 ---
 

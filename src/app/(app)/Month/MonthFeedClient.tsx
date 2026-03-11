@@ -767,7 +767,7 @@ export function MonthFeedClient({
       <div className="max-w-xl -mx-6 sm:mx-auto sm:px-4 py-6">
         {/* Header */}
         <div className="mb-5 px-4 sm:px-0">
-          <h1 className="text-2xl font-bold">Fil du Mois</h1>
+          <h1 className="text-2xl font-bold">Fil d&#39;actualité</h1>
           <p className="text-sm text-muted-foreground mt-0.5 capitalize">{monthFormatted}</p>
         </div>
 

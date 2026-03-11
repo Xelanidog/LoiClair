@@ -122,7 +122,7 @@ function CollapsibleSection({ label, items, onNavigation }: { label: string; ite
 }
 
 const dashboardItems: NavItem[] = [
-  { href: "/Month", label: "Fil du mois", icon: Calendar },
+  { href: "/Month", label: "Fil d'actualité", icon: Calendar },
   { href: "/KPIs", label: "Indicateurs clés", icon: BarChart3 },
   { href: "/Composition", label: "Composition", icon: Users },
   { href: "/dossiers-legislatifs", label: "Tous les textes", icon: ScrollText },

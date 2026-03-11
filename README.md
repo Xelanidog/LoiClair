@@ -14,7 +14,7 @@ LoiClair rend les lois, débats et votes du Parlement compréhensibles par tous,
 - **Résumés IA** — chaque loi expliquée en langage clair avec ses impacts concrets (via xAI/Grok)
 - **Composition des institutions** — visualiser la répartition de l'Assemblée nationale, du Sénat et du Gouvernement
 - **KPIs & statistiques** — indicateurs clés de l'activité législative, mis à jour automatiquement
-- **Fil du mois** — activité législative mensuelle en un coup d'oeil
+- **Fil d'actualité** — activité législative mensuelle en un coup d'oeil
 - **Processus législatif** — comprendre comment une loi est fabriquée, étape par étape
 - **Signalement citoyen** — signaler une erreur ou un problème directement depuis chaque page
 - **Documentation** — guide utilisateur, méthodologie, glossaire et conformité IA
@@ -40,7 +40,7 @@ src/
 │   │   ├── dossiers-legislatifs/
 │   │   │   └── [uid]/resume-ia # Résumés IA par dossier
 │   │   ├── KPIs/               # Indicateurs clés
-│   │   ├── Month/              # Fil du mois
+│   │   ├── Month/              # Fil d'actualité
 │   │   ├── type-textes/        # Types de textes législatifs
 │   │   ├── processus-legislatif/
 │   │   ├── about/

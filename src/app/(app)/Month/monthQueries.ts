@@ -1,5 +1,5 @@
 // src/app/(app)/Month/monthQueries.ts
-// Requêtes Supabase isolées pour la page "Fil du Mois"
+// Requêtes Supabase isolées pour la page "Fil d'actualité"
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 
@@ -28,7 +28,7 @@ export const LIBELLE_TO_TYPE: Record<string, FeedEventType> = {
   "Publication d'un décret d'application": 'DECRET',
 };
 
-// Fil du mois : tous sauf motions (traitées séparément)
+// Fil d'actualité : tous sauf motions (traitées séparément)
 const FEED_TRACKED_LIBELLES = Object.keys(LIBELLE_TO_TYPE).filter(
   l => LIBELLE_TO_TYPE[l] !== 'MOTION_CENSURE' && LIBELLE_TO_TYPE[l] !== 'MOTION_VOTE',
 );
