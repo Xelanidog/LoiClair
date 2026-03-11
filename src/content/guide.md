@@ -8,11 +8,13 @@ La page **Fil d'actualité** présente l'activité législative sous forme de fi
 
 ### Naviguer entre les mois
 
-Des boutons « Préc. » et « Suiv. » permettent de passer d'un mois à l'autre. Le mois en cours est affiché par défaut.
+Le mois en cours est affiché par défaut. En bas de la liste d'événements, un bouton **« Charger le mois précédent »** ajoute les événements du mois précédent directement sous ceux du mois courant, séparés par une ligne de démarcation indiquant le nom du mois. Vous pouvez ainsi remonter dans le temps sans quitter la page — jusqu'à 6 mois consécutifs.
 
-Lorsque vous consultez un mois passé, un raccourci **« Revenir au mois en cours »** apparaît sous la barre de navigation pour retourner directement au mois actuel.
+Au-delà de 6 mois, un lien **« Voir les mois antérieurs »** permet de continuer la consultation.
 
-En bas de la liste d'événements, un bouton **« Voir le mois précédent »** permet de continuer à remonter dans le temps sans avoir à revenir en haut de la page.
+Lorsque vous faites défiler les mois, le sous-titre en haut de la page et l'adresse dans la barre du navigateur se mettent à jour automatiquement pour refléter le mois actuellement visible. Les filtres s'appliquent à l'ensemble des mois chargés : le compteur sur chaque pastille additionne tous les événements de ce type, et un mois entièrement filtré est masqué.
+
+Lorsque vous consultez un mois passé, un raccourci **« Revenir au mois en cours »** apparaît pour retourner directement au mois actuel.
 
 ### Filtrer par type d'événement
 

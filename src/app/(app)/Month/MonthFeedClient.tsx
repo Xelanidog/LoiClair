@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
@@ -17,8 +17,7 @@ import {
   CheckCircle2,
   PartyPopper,
   Sparkles,
-  ChevronLeft,
-  ChevronRight,
+  ChevronDown,
   CalendarX,
   CalendarCheck,
   Activity,
@@ -28,6 +27,7 @@ import {
   Bookmark,
   Share2,
   Info,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getStatusBadgeClass } from "@/lib/statusMapping";
@@ -39,6 +39,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { AnimatedNumber } from "@/components/AnimatedNumber";
+import { loadMonthAction } from "./actions";
 import type {
   FeedEvent,
   FeedEventType,
@@ -683,19 +684,26 @@ function GroupedEventCard({ group, index }: { group: GroupedFeedEvent; index: nu
 
 // ── Main component ──────────────────────────────────────────
 
+type MonthBlock = {
+  monthKey: string;
+  monthFormatted: string;
+  groupedEvents: GroupedFeedEvent[];
+  kpis: MonthKpis;
+};
+
 interface MonthFeedClientProps {
   groupedEvents: GroupedFeedEvent[];
   dossierMode: boolean;
   dossierTitre: string | null;
   dossierUid?: string | null;
   kpis: MonthKpis;
-  year: number;
   monthFormatted: string;
-  monthRangeShort: string;
-  prevMonth: string;
-  nextMonth: string;
+  initialMonthKey: string;
+  initialPrevMonthKey: string;
   isCurrentOrFutureMonth: boolean;
 }
+
+const MAX_MONTHS = 6;
 
 export function MonthFeedClient({
   groupedEvents,
@@ -704,27 +712,96 @@ export function MonthFeedClient({
   dossierUid,
   kpis,
   monthFormatted,
-  monthRangeShort,
-  prevMonth,
-  nextMonth,
+  initialMonthKey,
+  initialPrevMonthKey,
   isCurrentOrFutureMonth,
 }: MonthFeedClientProps) {
   const [activeFilter, setActiveFilter] = useState("tous");
-  const filtered = groupedEvents.filter(g => matchesFilter(g.type, activeFilter));
 
-  // Count grouped events per filter
+  // ── Multi-month state ──
+  const [months, setMonths] = useState<MonthBlock[]>([{
+    monthKey: initialMonthKey,
+    monthFormatted,
+    groupedEvents,
+    kpis,
+  }]);
+  const [nextLoadKey, setNextLoadKey] = useState(initialPrevMonthKey);
+  const [isLoadingMonth, setIsLoadingMonth] = useState(false);
+  const [hasReachedLimit, setHasReachedLimit] = useState(false);
+  const [visibleMonthKey, setVisibleMonthKey] = useState(initialMonthKey);
+
+  // Refs for IntersectionObserver on month separators
+  const monthRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const setMonthRef = useCallback((key: string, el: HTMLDivElement | null) => {
+    if (el) monthRefs.current.set(key, el);
+    else monthRefs.current.delete(key);
+  }, []);
+
+  // ── URL sync via IntersectionObserver ──
+  useEffect(() => {
+    if (dossierMode || months.length <= 1) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            const mk = entry.target.getAttribute("data-month");
+            if (mk) {
+              setVisibleMonthKey(mk);
+              const url = mk === initialMonthKey && isCurrentOrFutureMonth
+                ? "/Month"
+                : `/Month?mois=${mk}`;
+              window.history.replaceState(null, "", url);
+            }
+          }
+        }
+      },
+      { rootMargin: "-80px 0px -80% 0px", threshold: 0 },
+    );
+    for (const el of monthRefs.current.values()) observer.observe(el);
+    return () => observer.disconnect();
+  }, [months, initialMonthKey, isCurrentOrFutureMonth, dossierMode]);
+
+  // ── Load previous month ──
+  const handleLoadPreviousMonth = useCallback(async () => {
+    if (isLoadingMonth || hasReachedLimit) return;
+    setIsLoadingMonth(true);
+    try {
+      const data = await loadMonthAction(nextLoadKey);
+      setMonths(prev => [...prev, {
+        monthKey: data.monthKey,
+        monthFormatted: data.monthFormatted,
+        groupedEvents: data.groupedEvents,
+        kpis: data.kpis,
+      }]);
+      setNextLoadKey(data.prevMonthKey);
+      if (months.length + 1 >= MAX_MONTHS) setHasReachedLimit(true);
+    } finally {
+      setIsLoadingMonth(false);
+    }
+  }, [isLoadingMonth, hasReachedLimit, nextLoadKey, months.length]);
+
+  // ── Global filter counts across all loaded months ──
+  const allGroupedEvents = useMemo(() => months.flatMap(m => m.groupedEvents), [months]);
   const filterCounts = useMemo(() => {
     const map: Record<string, number> = {};
     for (const pill of FILTER_PILLS) {
       map[pill.value] = pill.value === "tous"
-        ? groupedEvents.length
-        : groupedEvents.filter(g => matchesFilter(g.type, pill.value)).length;
+        ? allGroupedEvents.length
+        : allGroupedEvents.filter(g => matchesFilter(g.type, pill.value)).length;
     }
     return map;
-  }, [groupedEvents]);
+  }, [allGroupedEvents]);
 
-  // ── Dossier mode ──
+  // ── Dynamic subtitle for visible month ──
+  const visibleMonthFormatted = useMemo(() => {
+    return months.find(m => m.monthKey === visibleMonthKey)?.monthFormatted ?? months[0].monthFormatted;
+  }, [months, visibleMonthKey]);
+
+  // ── Dossier mode (unchanged) ──
+  // filterCounts from allGroupedEvents works for dossier mode too (single month = same data)
   if (dossierMode) {
+    const filtered = groupedEvents.filter(g => matchesFilter(g.type, activeFilter));
+
     return (
       <TooltipProvider>
         <div className="max-w-xl -mx-6 sm:mx-auto sm:px-4 py-6">
@@ -761,39 +838,14 @@ export function MonthFeedClient({
     );
   }
 
-  // ── Month mode ──
+  // ── Month mode with infinite scroll ──
   return (
     <TooltipProvider>
       <div className="max-w-xl -mx-6 sm:mx-auto sm:px-4 py-6">
         {/* Header */}
         <div className="mb-5 px-4 sm:px-0">
           <h1 className="text-2xl font-bold">Fil d&#39;actualité</h1>
-          <p className="text-sm text-muted-foreground mt-0.5 capitalize">{monthFormatted}</p>
-        </div>
-
-        {/* Navigation */}
-        <div className="flex items-center justify-between mb-5 px-4 sm:px-0">
-          <Button variant="ghost" size="sm" asChild>
-            <Link href={`/Month?mois=${prevMonth}`}>
-              <ChevronLeft className="w-4 h-4 mr-1" />
-              <span className="hidden sm:inline">Mois préc.</span>
-              <span className="sm:hidden">Préc.</span>
-            </Link>
-          </Button>
-          <span className="text-xs font-medium text-muted-foreground capitalize">{monthRangeShort}</span>
-          <Button
-            variant="ghost"
-            size="sm"
-            asChild
-            disabled={isCurrentOrFutureMonth}
-            className={isCurrentOrFutureMonth ? "pointer-events-none opacity-40" : ""}
-          >
-            <Link href={`/Month?mois=${nextMonth}`}>
-              <span className="hidden sm:inline">Mois suiv.</span>
-              <span className="sm:hidden">Suiv.</span>
-              <ChevronRight className="w-4 h-4 ml-1" />
-            </Link>
-          </Button>
+          <p className="text-sm text-muted-foreground mt-0.5 capitalize">{visibleMonthFormatted}</p>
         </div>
 
         {/* Raccourci mois en cours (visible uniquement quand on consulte un mois passé) */}
@@ -810,28 +862,78 @@ export function MonthFeedClient({
 
         <FilterPills activeFilter={activeFilter} onFilter={setActiveFilter} counts={filterCounts} />
 
-        {groupedEvents.length === 0 ? (
+        {allGroupedEvents.length === 0 ? (
           <EmptyState />
-        ) : filtered.length === 0 ? (
+        ) : filterCounts[activeFilter] === 0 ? (
           <NoFilterResults onReset={() => setActiveFilter("tous")} />
         ) : (
           <div>
-            {filtered.map((g, i) => (
-              <GroupedEventCard key={g.key} group={g} index={i} />
-            ))}
+            {months.map((block, blockIdx) => {
+              const filtered = block.groupedEvents.filter(g => matchesFilter(g.type, activeFilter));
+              if (filtered.length === 0 && activeFilter !== "tous") return null;
+
+              return (
+                <div
+                  key={block.monthKey}
+                  ref={(el) => setMonthRef(block.monthKey, el)}
+                  data-month={block.monthKey}
+                >
+                  {/* Month separator (after first month) */}
+                  {blockIdx > 0 && (
+                    <div className="flex items-center gap-3 px-4 sm:px-1 py-4 mt-2">
+                      <div className="flex-1 h-px bg-border" />
+                      <span className="text-xs font-semibold text-muted-foreground capitalize shrink-0">
+                        {block.monthFormatted}
+                      </span>
+                      <div className="flex-1 h-px bg-border" />
+                    </div>
+                  )}
+
+                  {filtered.length === 0 ? (
+                    <p className="text-center text-sm text-muted-foreground py-4">
+                      Aucun événement de ce type en {block.monthFormatted}.
+                    </p>
+                  ) : (
+                    filtered.map((g, i) => (
+                      <GroupedEventCard key={g.key} group={g} index={i} />
+                    ))
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
 
-        {/* Navigation vers le mois précédent en bas de la liste */}
-        {filtered.length > 0 && (
+        {/* Load previous month button */}
+        {allGroupedEvents.length > 0 && !hasReachedLimit && (
           <div className="flex justify-center py-8">
-            <Button variant="outline" size="sm" asChild>
-              <Link href={`/Month?mois=${prevMonth}`}>
-                <ChevronLeft className="w-4 h-4 mr-1.5" />
-                Voir le mois précédent
-              </Link>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLoadPreviousMonth}
+              disabled={isLoadingMonth}
+            >
+              {isLoadingMonth ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                  Chargement…
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="w-4 h-4 mr-1.5" />
+                  Charger le mois précédent
+                </>
+              )}
             </Button>
           </div>
+        )}
+        {hasReachedLimit && (
+          <p className="text-center text-xs text-muted-foreground py-6">
+            {MAX_MONTHS} mois chargés.{" "}
+            <Link href={`/Month?mois=${nextLoadKey}`} className="text-primary hover:underline">
+              Voir les mois antérieurs
+            </Link>
+          </p>
         )}
 
         <Footer />

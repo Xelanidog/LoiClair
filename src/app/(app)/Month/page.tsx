@@ -115,6 +115,18 @@ export type MonthKpis = {
   promulgations: number;
 };
 
+export type MonthData = {
+  groupedEvents: GroupedFeedEvent[];
+  kpis: MonthKpis;
+  year: number;
+  month: number;
+  monthFormatted: string;
+  monthRangeShort: string;
+  monthKey: string;
+  prevMonthKey: string;
+  isCurrentOrFutureMonth: boolean;
+};
+
 // ---------------------------------------------------------------------------
 // Classification par libelle (source unique : LIBELLE_TO_TYPE de monthQueries)
 // ---------------------------------------------------------------------------
@@ -343,124 +355,17 @@ function groupFeedEvents(feedEvents: FeedEvent[]): Map<string, GroupedFeedEvent>
 }
 
 // ---------------------------------------------------------------------------
-// Page component
+// fetchMonthData — pipeline réutilisable (Server Component + Server Action)
 // ---------------------------------------------------------------------------
 
-export default async function MonthPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-}) {
-  const resolvedParams = await searchParams;
-  const dossierParam = typeof resolvedParams.dossier === 'string' ? resolvedParams.dossier : undefined;
-
-  // =========================================================================
-  // MODE DOSSIER : timeline complete d'un dossier legislatif
-  // =========================================================================
-  if (dossierParam) {
-    // 1. Fetch tous les actes pour ce dossier (timeline)
-    const timelineActes = await getDossierTimeline(supabase, dossierParam);
-
-    // 2. Collecter tous les UIDs uniques
-    const texteUids = new Set<string>();
-    const organeUids = new Set<string>();
-    const scrutinUids = new Set<string>();
-
-    for (const a of timelineActes) {
-      (a.textes_associes ?? []).forEach((t: string) => texteUids.add(t));
-      if (a.texte_adopte) texteUids.add(a.texte_adopte);
-      if (a.organe_ref) organeUids.add(a.organe_ref);
-      (a.vote_refs ?? []).forEach((r: string) => scrutinUids.add(r));
-    }
-
-    // 3. Batch resolve textes, scrutins, dossier
-    const [textes, scrutinsMap, dossierTitlesMap] = await Promise.all([
-      getTextesByUids(supabase, [...texteUids]),
-      getScrutinsByUids(supabase, [...scrutinUids]),
-      getDossierTitles(supabase, [dossierParam]),
-    ]);
-
-    const dossierInfo = dossierTitlesMap.get(dossierParam);
-
-    // 4. Collecter les UIDs d'acteurs (auteurs + rapporteurs des textes + initiateur du dossier)
-    const acteurUids = new Set<string>();
-    for (const texte of textes.values()) {
-      if (texte.auteurs_refs?.[0]) acteurUids.add(texte.auteurs_refs[0]);
-      if (texte.rapporteurs_refs?.[0]) acteurUids.add(texte.rapporteurs_refs[0]);
-    }
-    if (dossierInfo?.initiateurActeurRef) acteurUids.add(dossierInfo.initiateurActeurRef);
-
-    // 5. Fetch acteurs, puis leurs organes de groupe
-    const acteurs = await getActeursByUids(supabase, [...acteurUids]);
-    for (const a of acteurs.values()) {
-      if (a.groupe) organeUids.add(a.groupe);
-      (a.organes_refs ?? []).forEach(r => organeUids.add(r));
-    }
-    const organes = await getOrganesByUids(supabase, [...organeUids]);
-
-    // 6. Construire une map parent_uid → statut_conclusion pour les motions
-    const motionConclusionMap = new Map<string, string>();
-    for (const a of timelineActes) {
-      if (a.parent_uid && a.statut_conclusion && classifyByLibelle(a.libelle_acte) === 'MOTION_VOTE') {
-        motionConclusionMap.set(a.parent_uid, a.statut_conclusion);
-      }
-    }
-
-    // 7. Transformer actes en FeedEvents
-    const feedEvents: FeedEvent[] = timelineActes
-      .map(a => {
-        const type = classifyByLibelle(a.libelle_acte);
-        if (type === 'MOTION_CENSURE' && !a.statut_conclusion) {
-          const childConclusion = motionConclusionMap.get(a.uid) ?? null;
-          const texteStatut = a.textes_associes?.[0] ? textes.get(a.textes_associes[0])?.statut_adoption ?? null : null;
-          const scrutinFallback = a.vote_refs?.[0] ? scrutinsMap.get(a.vote_refs[0])?.sort_libelle ?? null : null;
-          return acteToFeedEvent(
-            { ...a, statut_conclusion: childConclusion ?? texteStatut ?? scrutinFallback },
-            dossierInfo ?? null, textes, organes, scrutinsMap, acteurs,
-          );
-        }
-        return acteToFeedEvent(a, dossierInfo ?? null, textes, organes, scrutinsMap, acteurs);
-      })
-      .filter(e => e.type !== 'AUTRE' && e.type !== 'MOTION_VOTE');
-
-    // 5. Grouper par dossierUid + date + type
-    const groupMap = groupFeedEvents(feedEvents);
-
-    // Trier chronologiquement (plus ancien en premier pour la timeline)
-    const groupedEvents = [...groupMap.values()].sort((a, b) => a.date.localeCompare(b.date));
-
-    return (
-      <MonthFeedClient
-        groupedEvents={groupedEvents}
-        dossierMode={true}
-        dossierTitre={dossierInfo?.titre ?? null}
-        dossierUid={dossierParam}
-        kpis={{ totalEvents: feedEvents.length, scrutins: 0, nouveauxTextes: 0, promulgations: 0 }}
-        year={0}
-        monthFormatted=""
-        monthRangeShort=""
-        prevMonth=""
-        nextMonth=""
-        isCurrentOrFutureMonth={true}
-      />
-    );
-  }
-
-  // =========================================================================
-  // MODE MOIS : fil mensuel
-  // =========================================================================
-  const moisParam = typeof resolvedParams.mois === 'string' ? resolvedParams.mois : undefined;
-  const { monthStart, monthEnd, year, month } = getMonthBounds(moisParam);
+export async function fetchMonthData(monthKey?: string): Promise<MonthData> {
+  const { monthStart, monthEnd, year, month } = getMonthBounds(monthKey);
 
   // Elargir les bornes de +/-1 jour pour compenser les decalages de timezone
   const queryStart = new Date(monthStart.getTime() - 86400000);
   const queryEnd = new Date(monthEnd.getTime() + 86400000);
   const monthStartISO = queryStart.toISOString();
   const monthEndISO = queryEnd.toISOString();
-
-  // ── Vérification connectivité Supabase ──
-  const { error: dbError } = await supabase.from('actes_legislatifs').select('uid').limit(1);
-  if (dbError) throw new Error('db_unavailable');
 
   // ── Round 1 : actes du mois ──
   const [actes, motionActes] = await Promise.all([
@@ -554,12 +459,10 @@ export default async function MonthPage({
   const groupMap = groupFeedEvents(monthEvents);
   const groupedEvents = [...groupMap.values()].sort((a, b) => b.date.localeCompare(a.date));
 
-  // Navigation entre mois
+  // Clé du mois courant + mois précédent
+  const currentMonthKey = formatISOMonth(new Date(year, month, 1));
   const prevMonthDate = new Date(year, month - 1, 1);
-  const nextMonthDate = new Date(year, month + 1, 1);
-
-  const prevMonth = formatISOMonth(prevMonthDate);
-  const nextMonth = formatISOMonth(nextMonthDate);
+  const prevMonthKey = formatISOMonth(prevMonthDate);
 
   const isCurrentOrFutureMonth = monthEnd >= new Date();
 
@@ -578,18 +481,150 @@ export default async function MonthPage({
     timeZone: 'Europe/Paris',
   }).format(monthNoon);
 
+  return {
+    groupedEvents,
+    kpis,
+    year,
+    month,
+    monthFormatted,
+    monthRangeShort,
+    monthKey: currentMonthKey,
+    prevMonthKey,
+    isCurrentOrFutureMonth,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// fetchDossierData — pipeline pour la timeline d'un dossier législatif
+// ---------------------------------------------------------------------------
+
+async function fetchDossierData(dossierUid: string) {
+  // 1. Fetch tous les actes pour ce dossier (timeline)
+  const timelineActes = await getDossierTimeline(supabase, dossierUid);
+
+  // 2. Collecter tous les UIDs uniques
+  const texteUids = new Set<string>();
+  const organeUids = new Set<string>();
+  const scrutinUids = new Set<string>();
+
+  for (const a of timelineActes) {
+    (a.textes_associes ?? []).forEach((t: string) => texteUids.add(t));
+    if (a.texte_adopte) texteUids.add(a.texte_adopte);
+    if (a.organe_ref) organeUids.add(a.organe_ref);
+    (a.vote_refs ?? []).forEach((r: string) => scrutinUids.add(r));
+  }
+
+  // 3. Batch resolve textes, scrutins, dossier
+  const [textes, scrutinsMap, dossierTitlesMap] = await Promise.all([
+    getTextesByUids(supabase, [...texteUids]),
+    getScrutinsByUids(supabase, [...scrutinUids]),
+    getDossierTitles(supabase, [dossierUid]),
+  ]);
+
+  const dossierInfo = dossierTitlesMap.get(dossierUid);
+
+  // 4. Collecter les UIDs d'acteurs (auteurs + rapporteurs des textes + initiateur du dossier)
+  const acteurUids = new Set<string>();
+  for (const texte of textes.values()) {
+    if (texte.auteurs_refs?.[0]) acteurUids.add(texte.auteurs_refs[0]);
+    if (texte.rapporteurs_refs?.[0]) acteurUids.add(texte.rapporteurs_refs[0]);
+  }
+  if (dossierInfo?.initiateurActeurRef) acteurUids.add(dossierInfo.initiateurActeurRef);
+
+  // 5. Fetch acteurs, puis leurs organes de groupe
+  const acteurs = await getActeursByUids(supabase, [...acteurUids]);
+  for (const a of acteurs.values()) {
+    if (a.groupe) organeUids.add(a.groupe);
+    (a.organes_refs ?? []).forEach(r => organeUids.add(r));
+  }
+  const organes = await getOrganesByUids(supabase, [...organeUids]);
+
+  // 6. Construire une map parent_uid → statut_conclusion pour les motions
+  const motionConclusionMap = new Map<string, string>();
+  for (const a of timelineActes) {
+    if (a.parent_uid && a.statut_conclusion && classifyByLibelle(a.libelle_acte) === 'MOTION_VOTE') {
+      motionConclusionMap.set(a.parent_uid, a.statut_conclusion);
+    }
+  }
+
+  // 7. Transformer actes en FeedEvents
+  const feedEvents: FeedEvent[] = timelineActes
+    .map(a => {
+      const type = classifyByLibelle(a.libelle_acte);
+      if (type === 'MOTION_CENSURE' && !a.statut_conclusion) {
+        const childConclusion = motionConclusionMap.get(a.uid) ?? null;
+        const texteStatut = a.textes_associes?.[0] ? textes.get(a.textes_associes[0])?.statut_adoption ?? null : null;
+        const scrutinFallback = a.vote_refs?.[0] ? scrutinsMap.get(a.vote_refs[0])?.sort_libelle ?? null : null;
+        return acteToFeedEvent(
+          { ...a, statut_conclusion: childConclusion ?? texteStatut ?? scrutinFallback },
+          dossierInfo ?? null, textes, organes, scrutinsMap, acteurs,
+        );
+      }
+      return acteToFeedEvent(a, dossierInfo ?? null, textes, organes, scrutinsMap, acteurs);
+    })
+    .filter(e => e.type !== 'AUTRE' && e.type !== 'MOTION_VOTE');
+
+  // 8. Grouper par dossierUid + date + type (tri chronologique asc pour timeline)
+  const groupMap = groupFeedEvents(feedEvents);
+  const groupedEvents = [...groupMap.values()].sort((a, b) => a.date.localeCompare(b.date));
+
+  return { groupedEvents, feedEvents, dossierInfo };
+}
+
+// ---------------------------------------------------------------------------
+// Page component
+// ---------------------------------------------------------------------------
+
+export default async function MonthPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const resolvedParams = await searchParams;
+  const dossierParam = typeof resolvedParams.dossier === 'string' ? resolvedParams.dossier : undefined;
+
+  // =========================================================================
+  // MODE DOSSIER : timeline complete d'un dossier legislatif
+  // =========================================================================
+  if (dossierParam) {
+    const { groupedEvents, feedEvents, dossierInfo } = await fetchDossierData(dossierParam);
+
+    return (
+      <MonthFeedClient
+        groupedEvents={groupedEvents}
+        dossierMode={true}
+        dossierTitre={dossierInfo?.titre ?? null}
+        dossierUid={dossierParam}
+        kpis={{ totalEvents: feedEvents.length, scrutins: 0, nouveauxTextes: 0, promulgations: 0 }}
+        monthFormatted=""
+        initialMonthKey=""
+        initialPrevMonthKey=""
+        isCurrentOrFutureMonth={true}
+      />
+    );
+  }
+
+  // =========================================================================
+  // MODE MOIS : fil mensuel (via fetchMonthData réutilisable)
+  // =========================================================================
+  const moisParam = typeof resolvedParams.mois === 'string' ? resolvedParams.mois : undefined;
+
+  // Vérification connectivité Supabase
+  const { error: dbError } = await supabase.from('actes_legislatifs').select('uid').limit(1);
+  if (dbError) throw new Error('db_unavailable');
+
+  const data = await fetchMonthData(moisParam);
+
   return (
     <MonthFeedClient
-      groupedEvents={groupedEvents}
+      groupedEvents={data.groupedEvents}
       dossierMode={false}
       dossierTitre={null}
-      kpis={kpis}
-      year={year}
-      monthFormatted={monthFormatted}
-      monthRangeShort={monthRangeShort}
-      prevMonth={prevMonth}
-      nextMonth={nextMonth}
-      isCurrentOrFutureMonth={isCurrentOrFutureMonth}
+      kpis={data.kpis}
+      monthFormatted={data.monthFormatted}
+      initialMonthKey={data.monthKey}
+      initialPrevMonthKey={data.prevMonthKey}
+      isCurrentOrFutureMonth={data.isCurrentOrFutureMonth}
     />
   );
 }
