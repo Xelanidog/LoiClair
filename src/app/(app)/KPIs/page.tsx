@@ -78,8 +78,14 @@ const acteursParlemPromise = supabase
   .select('uid, prenom, nom, groupe, est_depute_actuel, est_senateur_actuel')
   .or('est_depute_actuel.eq.true,est_senateur_actuel.eq.true');
 
-// On attend les SIX en parallèle
-const [typesResult, groupesResult, actesDelaisResult, organesChambreResult, textesImplicationResult, acteursParlemResult] = await Promise.all([typesPromise, groupesPromise, actesDelaisPromise, organesChambrePromise, textesImplicationPromise, acteursParlemPromise]);
+// 7. Application des lois (baromètre AN)
+const applicationLoisPromise = supabase
+  .from('application_lois')
+  .select('dossier_uid, statut_application, delai_max_jours')
+  .eq('legislature', 17);
+
+// On attend les SEPT en parallèle
+const [typesResult, groupesResult, actesDelaisResult, organesChambreResult, textesImplicationResult, acteursParlemResult, applicationLoisResult] = await Promise.all([typesPromise, groupesPromise, actesDelaisPromise, organesChambrePromise, textesImplicationPromise, acteursParlemPromise, applicationLoisPromise]);
 
 
 // ────────────────────────────────────────────────
@@ -160,6 +166,12 @@ let statsData = {
   delai_moyen_sn_jours: 0,
   delai_min_sn_jours: 0,
   delai_max_sn_jours: 0,
+  lois_appliquees: 0,
+  taux_application: 0,
+  delai_moyen_application_jours: 0,
+  delai_min_application_jours: 0,
+  delai_max_application_jours: 0,
+  nb_lois_avec_decrets: 0,
 };
 
 try {
@@ -197,6 +209,13 @@ try {
 
   statsData.mois_courant = depotDates.filter(d => d >= moisCourantStart).length;
 
+  // Map dossier_uid → statut_application (depuis table application_lois)
+  const applicationMap = new Map<string, string>(
+    (applicationLoisResult.data || [])
+      .filter((a: any) => a.dossier_uid)
+      .map((a: any) => [a.dossier_uid, a.statut_application])
+  );
+
   // Calcul des statuts
   dossiersData.forEach((d: any) => {
     const statut = d.statut_final?.toLowerCase() || 'inconnu';
@@ -205,7 +224,14 @@ try {
     else if (statut.includes('an') || statut.includes('assemblée') || statut.includes('assemblee')) statsData.adoptes_an++;
     else if (statut.includes('sénat')) statsData.adoptes_senat++;
     else if (statut.includes('parlement') || statut.includes('navette') || statut === 'adopté') statsData.adoptes_parlement++;
-    else if (statut.includes('promulgu')) statsData.promulgues++;
+    else if (statut.includes('promulgu')) {
+      statsData.promulgues++;
+      // Vérifier si la loi est appliquée (application directe ou tous décrets publiés)
+      const statutApp = applicationMap.get(d.uid);
+      if (statutApp === 'appliquee' || statutApp === 'application_directe') {
+        statsData.lois_appliquees++;
+      }
+    }
     else if (statut.includes('rejet')) statsData.rejetes++;
 
     if (PROCEDURES_PROMULGABLES.has(d.procedure_libelle)) statsData.total_promulgables++;
@@ -215,6 +241,22 @@ try {
   statsData.taux_promulgation = statsData.total_promulgables > 0
     ? Math.round(statsData.promulgues * 1000 / statsData.total_promulgables) / 10
     : 0;
+
+  // Taux d'application : lois appliquées / textes à vocation législative (même dénominateur)
+  statsData.taux_application = statsData.total_promulgables > 0
+    ? Math.round(statsData.lois_appliquees * 1000 / statsData.total_promulgables) / 10
+    : 0;
+
+  // Délai moyen promulgation → application complète (lois nécessitant des décrets uniquement)
+  const delaisApp = (applicationLoisResult.data || [])
+    .filter((a: any) => a.statut_application === 'appliquee')
+    .map((a: any) => (a.delai_max_jours ?? 0) as number);
+  statsData.nb_lois_avec_decrets = delaisApp.length;
+  statsData.delai_moyen_application_jours = delaisApp.length > 0
+    ? Math.round(delaisApp.reduce((sum: number, d: number) => sum + d, 0) / delaisApp.length)
+    : 0;
+  statsData.delai_min_application_jours = delaisApp.length > 0 ? Math.round(Math.min(...delaisApp)) : 0;
+  statsData.delai_max_application_jours = delaisApp.length > 0 ? Math.round(Math.max(...delaisApp)) : 0;
 
   // Délai moyen dépôt → promulgation (en jours)
   const delais = dossiersData
@@ -474,7 +516,7 @@ return (
             {/* Nouvelles cartes par statut */}
       <div className="mt-6">
   <h2 className="text-lg font-semibold mb-4">État des dossiers</h2>
-  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
+  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3 md:gap-4">
 
     {/* Carte 1 - En traitement */}
     <Card className="grid grid-rows-[auto_1fr_auto] gap-2 text-center">
@@ -551,7 +593,22 @@ return (
       </div>
     </Card>
 
-    {/* Carte 6 - Rejetés */}
+    {/* Carte 6 - Appliquées */}
+    <Card className="grid grid-rows-[auto_1fr_auto] gap-2 text-center">
+      <CardHeader className="pb-1">
+        <CardTitle className="text-base font-medium">Appliquées</CardTitle>
+        <CardDescription className="text-sm text-muted-foreground leading-tight">
+          Loi en vigueur : application directe ou décrets d'application publiés
+        </CardDescription>
+      </CardHeader>
+      <div className="flex items-end justify-center mt-6 md:mt-8">
+        <div className="text-4xl font-bold text-[#27AE60]">
+          {statsData.lois_appliquees.toLocaleString('fr-FR')}
+        </div>
+      </div>
+    </Card>
+
+    {/* Carte 7 - Rejetés */}
     <Card className="grid grid-rows-[auto_1fr_auto] gap-2 text-center">
       <CardHeader className="pb-1">
         <CardTitle className="text-base font-medium">Rejetés</CardTitle>
@@ -572,7 +629,7 @@ return (
       {/* Efficacité du processus */}
       <div className="mt-6">
         <h2 className="text-lg font-semibold mb-4">Efficacité du processus</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
 
           <Card className="text-center">
             <CardHeader>
@@ -589,6 +646,49 @@ return (
                 {statsData.promulgues} promulgués sur {statsData.total_promulgables} textes à vocation législative
               </p>
               <Link href="/documentation/methode#taux-de-promulgation" className="text-xs text-muted-foreground/60 hover:text-foreground transition-colors mt-3 inline-block">
+                Comment c'est calculé →
+              </Link>
+            </CardContent>
+          </Card>
+
+          <Card className="text-center">
+            <CardHeader>
+              <CardTitle>Taux d'application</CardTitle>
+              <CardDescription>
+                Part des textes à vocation législative effectivement appliqués (décrets publiés ou application directe)
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-4xl font-bold text-[#27AE60]">
+                {statsData.taux_application} %
+              </div>
+              <p className="text-sm text-muted-foreground mt-2">
+                {statsData.lois_appliquees} appliquées sur {statsData.total_promulgables} textes à vocation législative
+              </p>
+              <Link href="/documentation/methode#taux-d-application" className="text-xs text-muted-foreground/60 hover:text-foreground transition-colors mt-3 inline-block">
+                Comment c'est calculé →
+              </Link>
+            </CardContent>
+          </Card>
+
+          <Card className="text-center">
+            <CardHeader>
+              <CardTitle>Délai moyen d'application</CardTitle>
+              <CardDescription>
+                Temps moyen pour publier tous les décrets d'application d'une loi
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-4xl font-bold text-[#27AE60]">
+                {statsData.delai_moyen_application_jours} j
+              </div>
+              <p className="text-sm text-muted-foreground mt-2">
+                Pour les {statsData.nb_lois_avec_decrets} lois nécessitant des décrets
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Min {statsData.delai_min_application_jours} j — Max {statsData.delai_max_application_jours} j
+              </p>
+              <Link href="/documentation/methode#delai-moyen-d-application" className="text-xs text-muted-foreground/60 hover:text-foreground transition-colors mt-3 inline-block">
                 Comment c'est calculé →
               </Link>
             </CardContent>

@@ -91,20 +91,23 @@ Un graphique à barres montre l'évolution mensuelle du nombre de dépôts sur l
 
 ### État des dossiers
 
-Six cases répartissent l'ensemble des dossiers selon leur avancement dans le parcours législatif :
+Sept cases répartissent l'ensemble des dossiers selon leur avancement dans le parcours législatif :
 
 - **En traitement** — le texte a été déposé et est étudié par une chambre.
 - **Adoptés par l'Assemblée nationale** — l'AN a voté, le Sénat doit encore se prononcer.
 - **Adoptés par le Sénat** — le Sénat a voté, l'AN doit encore se prononcer.
 - **Adoptés par le Parlement** — les deux chambres ont voté le même texte, il attend la promulgation.
 - **Promulgués** — le Président a signé la loi, publiée au Journal officiel.
+- **Appliquées** — la loi est en vigueur : soit elle s'applique directement (sans besoin de décrets), soit tous les décrets d'application nécessaires ont été publiés.
 - **Rejetés** — le texte a été abandonné (un nouveau dépôt reste possible).
 
 ### Efficacité du processus
 
-Quatre indicateurs mesurent la vitesse et le rendement du processus législatif :
+Six indicateurs mesurent la vitesse et le rendement du processus législatif :
 
 - **Taux de promulgation** : la part des textes à vocation législative qui ont abouti à une loi.
+- **Taux d'application** : la part des textes à vocation législative effectivement appliqués (application directe ou décrets publiés). Ce taux utilise le même dénominateur que le taux de promulgation, ce qui permet de suivre la progression : X % promulgués → Y % appliqués.
+- **Délai moyen d'application** : le temps moyen pour que tous les décrets d'application d'une loi soient publiés. Seules les lois nécessitant des décrets sont prises en compte (pas les lois à application directe).
 - **Délai moyen de promulgation** : le temps moyen entre le dépôt et la publication au Journal officiel.
 - **Délai moyen à l'Assemblée nationale** : le temps moyen entre le dépôt à l'AN et son adoption par cette chambre.
 - **Délai moyen au Sénat** : le même indicateur pour la chambre haute.

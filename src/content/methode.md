@@ -34,6 +34,77 @@ Un taux de 30 % signifie qu'environ 1 texte sur 3 ayant vocation à devenir une 
 
 ---
 
+## Taux d'application
+
+**Ce que ça mesure**
+Ce taux indique quelle part des textes à vocation législative sont effectivement appliqués — c'est-à-dire en vigueur dans la vie quotidienne des citoyens. Une loi promulguée ne suffit pas toujours : beaucoup nécessitent des décrets d'application pour entrer en vigueur. Cet indicateur permet de mesurer l'écart entre les lois votées et les lois réellement opérationnelles.
+
+**Comment c'est calculé**
+> Taux d'application = (Nombre de lois appliquées ÷ Nombre de textes à vocation législative) × 100
+
+Exemple chiffré : si 62 lois sont appliquées sur 1 985 textes à vocation législative, le taux est de 3,1 %.
+
+1. On prend le même dénominateur que le taux de promulgation (textes à vocation législative). Cela permet de lire les deux taux en progression : par exemple, 5 % des textes sont promulgués, et parmi eux, 3 % sont effectivement appliqués.
+2. Une loi est considérée comme **appliquée** dans deux cas :
+   - **Application directe** : la loi s'applique immédiatement sans besoin de décret complémentaire.
+   - **Totalement appliquée** : tous les décrets d'application attendus ont été publiés au Journal officiel.
+
+Variables **incluses** :
+- **Lois appliquées** (numérateur) : lois promulguées dont le statut d'application est « appliquée » (tous décrets publiés) ou « application directe » (pas de décret nécessaire).
+- **Textes à vocation législative** (dénominateur) : identique au taux de promulgation — projets de loi, propositions de loi, lois constitutionnelles, lois organiques, lois de finances, etc.
+
+Variables **exclues et pourquoi** :
+- Les lois « partiellement appliquées » (certains décrets publiés, d'autres non) ne sont pas comptées comme appliquées. Seule l'application complète est retenue.
+- Les lois dont le statut est « sans objet » (par exemple, abrogées avant application) sont exclues.
+
+**D'où viennent les données**
+Le statut d'application provient du Baromètre de l'application des lois publié par l'Assemblée nationale, croisé avec les données Légifrance. Les données sont mises à jour régulièrement. La période couverte est la 17ᵉ législature.
+
+**Ce que ça ne mesure pas**
+⚠ Ce taux ne dit rien sur la qualité ou l'impact réel des lois appliquées. Une loi peut être techniquement appliquée (décrets publiés) mais mal mise en œuvre sur le terrain.
+
+⚠ Le dénominateur inclut tous les textes à vocation législative, y compris ceux encore en cours d'examen. Le taux augmentera mécaniquement à mesure que davantage de lois seront promulguées puis appliquées.
+
+**Comment interpréter**
+Un écart important entre le taux de promulgation et le taux d'application révèle un « embouteillage réglementaire » : des lois votées mais qui attendent leurs décrets pour entrer en vigueur. Plus les deux taux sont proches, mieux la chaîne législative fonctionne de bout en bout.
+
+---
+
+## Délai moyen d'application
+
+**Ce que ça mesure**
+Le temps moyen, en jours, entre la promulgation d'une loi et la publication du dernier décret d'application nécessaire à sa mise en œuvre complète. Cet indicateur révèle combien de temps il faut, après le vote d'une loi, pour qu'elle soit réellement opérationnelle.
+
+**Comment c'est calculé**
+> Délai d'un texte = Date du dernier décret d'application publié − Date de promulgation (en jours)
+> Délai moyen = Somme de tous les délais ÷ Nombre de lois concernées
+
+Exemple chiffré : si une loi est promulguée le 1ᵉʳ janvier et que son dernier décret est publié le 1ᵉʳ juillet, le délai est de 181 jours. Le délai moyen est la moyenne de tous ces délais.
+
+1. Seules les lois **nécessitant des décrets** et **totalement appliquées** sont prises en compte. Les lois à application directe sont exclues car elles n'ont pas de délai d'application (elles s'appliquent immédiatement).
+2. Le délai utilisé est celui du **dernier** décret publié (et non le premier), car c'est lui qui marque l'application complète de la loi.
+
+Variables **incluses** :
+- Les lois promulguées dont le statut est « appliquée » (tous décrets publiés).
+- Le délai mesuré est celui entre la promulgation et la publication du dernier décret.
+
+Variables **exclues et pourquoi** :
+- Les lois à application directe sont exclues : sans décret nécessaire, leur délai d'application est par définition nul, ce qui fausserait la moyenne vers le bas.
+- Les lois partiellement appliquées ou non appliquées sont exclues car leur processus d'application n'est pas terminé.
+
+**D'où viennent les données**
+Les délais d'application proviennent du Baromètre de l'application des lois publié par l'Assemblée nationale, croisé avec les données Légifrance. La période couverte est la 17ᵉ législature.
+
+**Ce que ça ne mesure pas**
+⚠ La moyenne est sensible aux cas extrêmes. Une loi dont les décrets sont publiés en 3 mois tire la moyenne vers le bas autant qu'une loi qui attend ses décrets pendant 2 ans la tire vers le haut. Les valeurs minimum et maximum affichées permettent de visualiser cette dispersion.
+
+⚠ Ce délai ne mesure pas la rapidité de mise en œuvre effective sur le terrain, seulement la publication officielle des décrets.
+
+**Comment interpréter**
+Un délai inférieur à 6 mois (180 jours) est considéré comme rapide pour la publication des décrets d'application. Un délai supérieur à un an signale que la loi a mis du temps à devenir pleinement opérationnelle, souvent en raison de la complexité technique des décrets à rédiger ou de contraintes politiques.
+
+---
+
 ## Délai moyen de promulgation
 
 **Ce que ça mesure**
