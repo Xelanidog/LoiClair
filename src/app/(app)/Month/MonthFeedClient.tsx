@@ -85,12 +85,15 @@ const FILTER_PILLS: { value: string; label: string; icon: typeof Activity; color
   { value: "MOTION", label: "Motions", icon: AlertTriangle, color: "text-[#E74C3C]" },
 ];
 
-function matchesFilter(type: FeedEventType, filter: string): boolean {
-  if (filter === "tous") return true;
-  if (filter === "DEPOT_RAPPORT") return type === "DEPOT_RAPPORT" || type === "CMP_RAPPORT";
-  if (filter === "CMP") return type === "CMP_CONVOCATION";
-  if (filter === "MOTION") return type === "MOTION_CENSURE";
-  return type === filter;
+function matchesFilters(type: FeedEventType, filters: Set<string>): boolean {
+  if (filters.has("tous")) return true;
+  for (const f of filters) {
+    if (f === "DEPOT_RAPPORT" && (type === "DEPOT_RAPPORT" || type === "CMP_RAPPORT")) return true;
+    if (f === "CMP" && type === "CMP_CONVOCATION") return true;
+    if (f === "MOTION" && type === "MOTION_CENSURE") return true;
+    if (type === f) return true;
+  }
+  return false;
 }
 
 function institutionName(codeType: string | null, fallback: string | null): string | null {
@@ -784,7 +787,20 @@ export function MonthFeedClient({
   initialPrevMonthKey,
   isCurrentOrFutureMonth,
 }: MonthFeedClientProps) {
-  const [activeFilter, setActiveFilter] = useState("tous");
+  const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set(["tous"]));
+  const toggleFilter = useCallback((value: string) => {
+    setActiveFilters(prev => {
+      if (value === "tous") return new Set(["tous"]);
+      const next = new Set(prev);
+      next.delete("tous");
+      if (next.has(value)) {
+        next.delete(value);
+        return next.size === 0 ? new Set(["tous"]) : next;
+      }
+      next.add(value);
+      return next;
+    });
+  }, []);
 
   // ── Multi-month state ──
   const [months, setMonths] = useState<MonthBlock[]>([{
@@ -855,7 +871,7 @@ export function MonthFeedClient({
     for (const pill of FILTER_PILLS) {
       map[pill.value] = pill.value === "tous"
         ? allGroupedEvents.length
-        : allGroupedEvents.filter(g => matchesFilter(g.type, pill.value)).length;
+        : allGroupedEvents.filter(g => matchesFilters(g.type, new Set([pill.value]))).length;
     }
     return map;
   }, [allGroupedEvents]);
@@ -868,7 +884,7 @@ export function MonthFeedClient({
   // ── Dossier mode (unchanged) ──
   // filterCounts from allGroupedEvents works for dossier mode too (single month = same data)
   if (dossierMode) {
-    const filtered = groupedEvents.filter(g => matchesFilter(g.type, activeFilter));
+    const filtered = groupedEvents.filter(g => matchesFilters(g.type, activeFilters));
 
     return (
       <TooltipProvider>
@@ -888,10 +904,10 @@ export function MonthFeedClient({
             </p>
           </div>
 
-          <FilterPills activeFilter={activeFilter} onFilter={setActiveFilter} counts={filterCounts} />
+          <FilterPills activeFilters={activeFilters} onFilter={toggleFilter} counts={filterCounts} />
 
           {filtered.length === 0 ? (
-            <NoFilterResults onReset={() => setActiveFilter("tous")} />
+            <NoFilterResults onReset={() => setActiveFilters(new Set(["tous"]))} />
           ) : (
             <div>
               {filtered.map((g, i) => (
@@ -928,17 +944,17 @@ export function MonthFeedClient({
           </div>
         )}
 
-        <FilterPills activeFilter={activeFilter} onFilter={setActiveFilter} counts={filterCounts} />
+        <FilterPills activeFilters={activeFilters} onFilter={toggleFilter} counts={filterCounts} />
 
         {allGroupedEvents.length === 0 ? (
           <EmptyState />
-        ) : filterCounts[activeFilter] === 0 ? (
-          <NoFilterResults onReset={() => setActiveFilter("tous")} />
+        ) : allGroupedEvents.filter(g => matchesFilters(g.type, activeFilters)).length === 0 ? (
+          <NoFilterResults onReset={() => setActiveFilters(new Set(["tous"]))} />
         ) : (
           <div>
             {months.map((block, blockIdx) => {
-              const filtered = block.groupedEvents.filter(g => matchesFilter(g.type, activeFilter));
-              if (filtered.length === 0 && activeFilter !== "tous") return null;
+              const filtered = block.groupedEvents.filter(g => matchesFilters(g.type, activeFilters));
+              if (filtered.length === 0 && !activeFilters.has("tous")) return null;
 
               return (
                 <div
@@ -1012,7 +1028,7 @@ export function MonthFeedClient({
 
 // ── Shared small components ─────────────────────────────────
 
-function FilterPills({ activeFilter, onFilter, counts }: { activeFilter: string; onFilter: (v: string) => void; counts?: Record<string, number> }) {
+function FilterPills({ activeFilters, onFilter, counts }: { activeFilters: Set<string>; onFilter: (v: string) => void; counts?: Record<string, number> }) {
   const ref = useRef<HTMLDivElement>(null);
   const [hint, setHint] = useState(true);
 
@@ -1035,7 +1051,7 @@ function FilterPills({ activeFilter, onFilter, counts }: { activeFilter: string;
       >
         {FILTER_PILLS.map(pill => {
           const count = counts?.[pill.value] ?? 0;
-          const isActive = activeFilter === pill.value;
+          const isActive = activeFilters.has(pill.value);
           const PillIcon = pill.icon;
           return (
             <button
