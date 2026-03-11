@@ -28,6 +28,7 @@ import {
   Share2,
   Info,
   Loader2,
+  Trophy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getStatusBadgeClass } from "@/lib/statusMapping";
@@ -52,7 +53,7 @@ import type {
 
 const EVENT_CONFIG: Record<
   FeedEventType,
-  { icon: typeof FileText; label: string; color: string; iconBg: string }
+  { icon: typeof FileText; label: string; color: string; iconBg: string; colorStyle?: React.CSSProperties; iconBgStyle?: React.CSSProperties }
 > = {
   DEPOT_TEXTE: { icon: FileText, label: "Nouveau texte", color: "text-primary", iconBg: "bg-primary/10" },
   DEPOT_RAPPORT: { icon: FileSearch, label: "Rapport", color: "text-primary dark:text-primary", iconBg: "bg-primary/10" },
@@ -66,10 +67,11 @@ const EVENT_CONFIG: Record<
   CC_SAISINE: { icon: Scale, label: "Cons. const.", color: "text-[#F39C12] dark:text-[#F1C40F]", iconBg: "bg-[#F39C12]/10" },
   PROMULGATION: { icon: CheckCircle2, label: "Loi promulguée", color: "text-[#27AE60] dark:text-[#2ECC71]", iconBg: "bg-[#27AE60]/10" },
   DECRET: { icon: FileCheck2, label: "Décret d'application", color: "text-[#B45309]", iconBg: "bg-[#B45309]/10" },
+  LOI_APPLIQUEE: { icon: Trophy, label: "Loi pleinement appliquée", color: "", iconBg: "", colorStyle: { color: '#D4A017' }, iconBgStyle: { backgroundColor: 'rgba(212, 160, 23, 0.1)' } },
   AUTRE: { icon: Activity, label: "Autre", color: "text-muted-foreground", iconBg: "bg-muted" },
 };
 
-const FILTER_PILLS: { value: string; label: string; icon: typeof Activity; color: string }[] = [
+const FILTER_PILLS: { value: string; label: string; icon: typeof Activity; color: string; colorStyle?: React.CSSProperties }[] = [
   { value: "tous", label: "Tous", icon: Activity, color: "text-primary" },
   { value: "DEPOT_TEXTE", label: "Textes", icon: FileText, color: "text-primary" },
   { value: "DECISION", label: "Décisions", icon: BarChart3, color: "text-violet-600 dark:text-violet-400" },
@@ -79,6 +81,7 @@ const FILTER_PILLS: { value: string; label: string; icon: typeof Activity; color
   { value: "CC_SAISINE", label: "Cons. const.", icon: Scale, color: "text-[#F39C12] dark:text-[#F1C40F]" },
   { value: "PROMULGATION", label: "Promulgations", icon: CheckCircle2, color: "text-[#27AE60] dark:text-[#2ECC71]" },
   { value: "DECRET", label: "Décrets", icon: FileCheck2, color: "text-[#B45309]" },
+  { value: "LOI_APPLIQUEE", label: "Lois appliquées", icon: Trophy, color: "", colorStyle: { color: '#D4A017' } },
   { value: "MOTION", label: "Motions", icon: AlertTriangle, color: "text-[#E74C3C]" },
 ];
 
@@ -238,6 +241,43 @@ function EventBody({ group }: { group: GroupedFeedEvent }) {
             <PartyPopper className="w-8 h-8 text-[#27AE60]" />
           </div>
           {loiCode && <span className="text-sm font-semibold text-[#27AE60]">Loi n° {loiCode}</span>}
+          {e.applicationDirecte && (
+            <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full" style={{ color: '#D4A017', backgroundColor: 'rgba(212, 160, 23, 0.1)' }}>
+              <Trophy className="w-3 h-3" />
+              Application directe
+            </span>
+          )}
+        </div>
+      );
+    }
+
+    case "LOI_APPLIQUEE": {
+      const daysSince = e.datePromulgation
+        ? Math.round((new Date(group.date + 'T12:00:00').getTime() - new Date(e.datePromulgation).getTime()) / 86400000)
+        : null;
+      const delayLabel = daysSince != null && daysSince > 0
+        ? daysSince >= 60
+          ? `${Math.round(daysSince / 30)} mois après promulgation`
+          : `${daysSince} jours après promulgation`
+        : null;
+
+      return (
+        <div className="flex flex-col items-center gap-2 mt-3 mb-1">
+          <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(212, 160, 23, 0.1)' }}>
+            <Trophy className="w-8 h-8" style={{ color: '#D4A017' }} />
+          </div>
+          <span className="text-sm font-semibold" style={{ color: '#D4A017' }}>
+            Tous les décrets publiés
+          </span>
+          {e.nbMesuresAttendues != null && (
+            <span className="text-xs text-muted-foreground">
+              {e.nbMesuresAttendues} mesure{(e.nbMesuresAttendues ?? 0) > 1 ? 's' : ''} appliquée{(e.nbMesuresAttendues ?? 0) > 1 ? 's' : ''}
+              {e.nbDecrets != null && ` · ${e.nbDecrets} décret${(e.nbDecrets ?? 0) > 1 ? 's' : ''}`}
+            </span>
+          )}
+          {delayLabel && (
+            <span className="text-xs text-muted-foreground">{delayLabel}</span>
+          )}
         </div>
       );
     }
@@ -440,6 +480,13 @@ function CardTitle({ group, e }: { group: GroupedFeedEvent; e: FeedEvent }) {
       </div>
     );
   }
+  // LOI_APPLIQUEE : titre de la loi
+  if (t === "LOI_APPLIQUEE") {
+    const titre = e.titreLoi
+      ? e.titreLoi.charAt(0).toUpperCase() + e.titreLoi.slice(1)
+      : (group.dossierTitre || e.titre);
+    return <p className="text-sm leading-snug mb-0.5">{titre}</p>;
+  }
   // PROMULGATION : titre officiel de la loi (capitalisé) ou titre du dossier
   if (t === "PROMULGATION") {
     const titre = e.titreLoi
@@ -574,7 +621,7 @@ function getContextInfo(type: FeedEventType, e: FeedEvent, multi: boolean, event
     return <span className="font-bold text-foreground shrink-0">Assemblée</span>;
   }
   if (type === "CMP_CONVOCATION") return null;
-  if (type === "DECRET") {
+  if (type === "DECRET" || type === "LOI_APPLIQUEE") {
     return <span className="font-bold text-foreground shrink-0">Gouvernement</span>;
   }
   if (type === "CC_SAISINE") {
@@ -625,15 +672,15 @@ function GroupedEventCard({ group, index }: { group: GroupedFeedEvent; index: nu
       className="flex gap-3 px-4 sm:px-1 py-3 border-b hover:bg-muted/30 transition-colors cursor-default"
     >
       {/* Avatar */}
-      <div className={cn("w-9 h-9 rounded-full flex items-center justify-center shrink-0 mt-0.5", config.iconBg)}>
-        <Icon className={cn("w-4 h-4", config.color)} />
+      <div className={cn("w-9 h-9 rounded-full flex items-center justify-center shrink-0 mt-0.5", config.iconBg)} style={config.iconBgStyle}>
+        <Icon className={cn("w-4 h-4", config.color)} style={config.colorStyle} />
       </div>
 
       {/* Content */}
       <div className="flex-1 min-w-0">
         {/* Ligne 1 : label · contexte · date */}
         <div className="flex items-baseline gap-1 text-xs text-muted-foreground mb-0.5 overflow-hidden">
-          <span className={cn("font-semibold shrink-0", config.color)}>{group.type === "CC_SAISINE" && e.libelleActe ? e.libelleActe : config.label}</span>
+          <span className={cn("font-semibold shrink-0", config.color)} style={config.colorStyle}>{group.type === "CC_SAISINE" && e.libelleActe ? e.libelleActe : config.label}</span>
           {group.type !== "CC_SAISINE" && <span className="shrink-0">·</span>}
           {context && <span className="truncate min-w-0">{context}</span>}
           {context && <span className="shrink-0">·</span>}
@@ -662,6 +709,27 @@ function GroupedEventCard({ group, index }: { group: GroupedFeedEvent; index: nu
         {/* Footer : Résumé IA + icônes */}
         {(group.type === "DEPOT_RAPPORT" || group.type === "CMP_RAPPORT") ? (
           <RapportFooterLinks group={group} />
+        ) : group.type === "LOI_APPLIQUEE" && group.dossierUid ? (
+          <div style={{ display: "flex", alignItems: "center", paddingTop: 14, marginTop: 12, width: "100%" }}>
+            <div className="flex items-center gap-2 flex-wrap" style={{ flexShrink: 0, flexGrow: 1 }}>
+              <Link
+                href={`/dossiers-legislatifs/${group.dossierUid}/resume-ia${e.texteUid ? `?texte=${e.texteUid}` : ''}`}
+                className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-1"
+              >
+                <Sparkles className="w-3 h-3" />
+                Résumé IA
+              </Link>
+              <span className="text-xs text-muted-foreground mt-1">·</span>
+              <Link
+                href={`/dossiers-legislatifs/${group.dossierUid}/resume-ia`}
+                className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground hover:underline mt-1"
+              >
+                <FileText className="w-3 h-3" />
+                Dossier complet
+              </Link>
+            </div>
+            <SocialIcons />
+          </div>
         ) : (
           <CardFooter
             dossierUid={group.dossierUid}
@@ -980,7 +1048,7 @@ function FilterPills({ activeFilter, onFilter, counts }: { activeFilter: string;
                   : "border-border text-muted-foreground hover:border-foreground/20 hover:text-foreground"
               )}
             >
-              <PillIcon className={cn("w-3.5 h-3.5", pill.color)} />
+              <PillIcon className={cn("w-3.5 h-3.5", pill.color)} style={pill.colorStyle} />
               <span>{pill.label}</span>
               {counts && count > 0 && (
                 <span className="text-xs tabular-nums opacity-60">{count}</span>

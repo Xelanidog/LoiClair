@@ -10,6 +10,7 @@ import GenericFilter from '@/components/GenericFilter';
 import ResetButton from '@/components/ResetButton';
 import { GroupeStatsTable } from '@/components/GroupeStatsTable';
 import { GroupeBarChart } from '@/components/ui/GroupeBarChart';
+import { LegislativeFunnel } from '@/components/ui/LegislativeFunnel';
 import { ParlementairesTable } from '@/components/ParlementairesTable';
 
 export default async function KpisPage({ 
@@ -469,6 +470,17 @@ return (
         <ResetButton />
       </div>
     </div>
+
+      {/* Funnel législatif */}
+      <div className="mb-6">
+        <LegislativeFunnel steps={[
+          { label: 'Déposés', count: statsData.total_dossiers, description: 'Tous les dossiers législatifs déposés' },
+          { label: 'À vocation législative', count: statsData.total_promulgables, description: 'Textes destinés à devenir des lois' },
+          { label: 'Adoptés par ≥1 chambre', count: statsData.adoptes_an + statsData.adoptes_senat + statsData.adoptes_parlement + statsData.promulgues, description: 'Au moins une chambre a voté pour' },
+          { label: 'Promulgués', count: statsData.promulgues, description: 'Signés par le Président de la République' },
+          { label: 'Appliquées', count: statsData.lois_appliquees, description: 'Loi en vigueur, décrets publiés ou application directe' },
+        ]} />
+      </div>
 
       {/* Cartes de synthèse */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">

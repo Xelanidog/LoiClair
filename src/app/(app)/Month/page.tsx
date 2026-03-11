@@ -14,6 +14,10 @@ import {
   getScrutinsByUids,
   getMonthMotionActes,
   getMotionDecisionActes,
+  getApplicationDirecteSet,
+  getFullyAppliedLaws,
+  getLastDecreeDates,
+  getPromulgationTexteUids,
   LIBELLE_TO_TYPE,
   type FeedEventType,
   type ActeRow,
@@ -88,6 +92,11 @@ export type FeedEvent = {
   rapporteurIsMultiple: boolean | null;
   codeLoi: string | null;
   titreLoi: string | null;
+  // Application des lois (optionnel)
+  applicationDirecte?: boolean;
+  nbDecrets?: number;
+  nbMesuresAttendues?: number;
+  datePromulgation?: string | null;
   // Vote details (optional) — premier scrutin, pour backward compat
   votePour?: number | null;
   voteContre?: number | null;
@@ -334,7 +343,7 @@ function groupFeedEvents(feedEvents: FeedEvent[]): Map<string, GroupedFeedEvent>
   const groupMap = new Map<string, GroupedFeedEvent>();
   for (const event of feedEvents) {
     const dateISO = event.date ? toParisDateISO(event.date) : 'unknown';
-    const key = (event.type === 'DECISION' || event.type === 'CC_SAISINE' || event.type === 'MOTION_CENSURE' || event.type === 'DECRET')
+    const key = (event.type === 'DECISION' || event.type === 'CC_SAISINE' || event.type === 'MOTION_CENSURE' || event.type === 'DECRET' || event.type === 'LOI_APPLIQUEE')
       ? `${event.id}-${dateISO}-${event.type}`
       : `${event.dossierUid}-${dateISO}-${event.type}`;
     const existing = groupMap.get(key);
@@ -367,10 +376,18 @@ export async function fetchMonthData(monthKey?: string): Promise<MonthData> {
   const monthStartISO = queryStart.toISOString();
   const monthEndISO = queryEnd.toISOString();
 
-  // ── Round 1 : actes du mois ──
-  const [actes, motionActes] = await Promise.all([
+  // ── Round 1 : actes du mois + lois pleinement appliquées ──
+  const [actes, motionActes, fullyAppliedLaws] = await Promise.all([
     getMonthActes(supabase, monthStartISO, monthEndISO),
     getMonthMotionActes(supabase, monthStartISO, monthEndISO),
+    getFullyAppliedLaws(supabase),
+  ]);
+
+  // Dates du dernier décret + texte_uid promulgation pour chaque loi appliquée
+  const appliedDossierUids = fullyAppliedLaws.map(a => a.dossier_uid!);
+  const [lastDecreeDates, promulgationTexteUids] = await Promise.all([
+    getLastDecreeDates(supabase, appliedDossierUids),
+    getPromulgationTexteUids(supabase, appliedDossierUids),
   ]);
 
   const uniqueMotions = [...new Map(motionActes.map(a => [a.uid, a])).values()];
@@ -392,6 +409,9 @@ export async function fetchMonthData(monthKey?: string): Promise<MonthData> {
     (a.vote_refs ?? []).forEach((r: string) => scrutinUidsFromActes.add(r));
     if (a.dossier_uid) dossierUidsSet.add(a.dossier_uid);
   }
+  // Ajouter les dossiers des lois appliquées pour résolution
+  for (const uid of appliedDossierUids) dossierUidsSet.add(uid);
+
   // ── Round 3 : textes, scrutins, dossiers ──
   const [dossierTitles, textes, scrutinsMapFromActes] = await Promise.all([
     getDossierTitles(supabase, [...dossierUidsSet]),
@@ -436,12 +456,59 @@ export async function fetchMonthData(monthKey?: string): Promise<MonthData> {
     );
   });
 
-  const allEvents: FeedEvent[] = [...acteEvents, ...motionEvents]
+  // ── Application directe : enrichir les cartes PROMULGATION ──
+  const promulgationDossierUids = acteEvents
+    .filter(e => e.type === 'PROMULGATION' && e.dossierUid)
+    .map(e => e.dossierUid!);
+  const applicationDirecteSet = await getApplicationDirecteSet(supabase, promulgationDossierUids);
+  for (const event of acteEvents) {
+    if (event.type === 'PROMULGATION' && event.dossierUid && applicationDirecteSet.has(event.dossierUid)) {
+      event.applicationDirecte = true;
+    }
+  }
+
+  // ── LOI_APPLIQUEE : événements synthétiques ──
+  const monthStartISO_paris = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+  const monthEndISO_paris = `${year}-${String(month + 1).padStart(2, '0')}-${String(monthEnd.getDate()).padStart(2, '0')}`;
+
+  const loiAppliqueeEvents: FeedEvent[] = [];
+  for (const law of fullyAppliedLaws) {
+    const decreeInfo = lastDecreeDates.get(law.dossier_uid!);
+    if (!decreeInfo) continue;
+    const lastDateParis = toParisDateISO(decreeInfo.lastDate);
+    if (lastDateParis < monthStartISO_paris || lastDateParis > monthEndISO_paris) continue;
+
+    const dossier = dossierTitles.get(law.dossier_uid!);
+    loiAppliqueeEvents.push({
+      id: `loi-appliquee-${law.dossier_uid}`,
+      type: 'LOI_APPLIQUEE',
+      date: decreeInfo.lastDate,
+      titre: law.titre || dossier?.titre || 'Loi pleinement appliquée',
+      dossierUid: law.dossier_uid,
+      dossierTitre: dossier?.titre ?? null,
+      libelleActe: null, codeActe: null, organeName: null,
+      texteUid: promulgationTexteUids.get(law.dossier_uid!) ?? null, texteDenomination: null, texteTitre: null, texteLien: null,
+      texteAdopteUid: null, texteAdopteDenomination: null, texteAdopteTitre: null, texteAdopteLien: null,
+      texteAdopteUrlAccessible: null, texteUrlAccessible: null,
+      hasContenLegifrance: false, hasContenLegifranceAdopte: false,
+      scrutinUid: null, scrutinTitre: null,
+      typeVoteCode: null, typeVoteLibelle: null, typeMajorite: null, statutConclusion: null,
+      auteur: null, groupeAbrege: null, auteurChambre: null,
+      texteProvenance: null, texteHasTomes: null, organeCodeType: null,
+      rapporteurName: null, rapporteurGroupe: null, rapporteurIsMultiple: null,
+      codeLoi: dossier?.codeLoi ?? null,
+      titreLoi: law.titre,
+      nbDecrets: decreeInfo.count,
+      nbMesuresAttendues: law.nb_mesures_attendues,
+      datePromulgation: dossier?.datePromulgation ?? null,
+      scrutins: [],
+    });
+  }
+
+  const allEvents: FeedEvent[] = [...acteEvents, ...motionEvents, ...loiAppliqueeEvents]
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   // Filtrer les events du buffer ±1j qui tombent hors du mois (timezone Paris)
-  const monthStartISO_paris = `${year}-${String(month + 1).padStart(2, '0')}-01`;
-  const monthEndISO_paris = `${year}-${String(month + 1).padStart(2, '0')}-${String(monthEnd.getDate()).padStart(2, '0')}`;
   const monthEvents = allEvents.filter(event => {
     const iso = toParisDateISO(event.date);
     return iso >= monthStartISO_paris && iso <= monthEndISO_paris;
@@ -457,7 +524,9 @@ export async function fetchMonthData(monthKey?: string): Promise<MonthData> {
 
   // Grouper les événements filtrés
   const groupMap = groupFeedEvents(monthEvents);
-  const groupedEvents = [...groupMap.values()].sort((a, b) => b.date.localeCompare(a.date));
+  const groupedEvents = [...groupMap.values()].sort((a, b) =>
+    b.date.localeCompare(a.date) || (b.type === 'LOI_APPLIQUEE' ? 1 : 0) - (a.type === 'LOI_APPLIQUEE' ? 1 : 0)
+  );
 
   // Clé du mois courant + mois précédent
   const currentMonthKey = formatISOMonth(new Date(year, month, 1));
@@ -564,9 +633,61 @@ async function fetchDossierData(dossierUid: string) {
     })
     .filter(e => e.type !== 'AUTRE' && e.type !== 'MOTION_VOTE');
 
-  // 8. Grouper par dossierUid + date + type (tri chronologique asc pour timeline)
+  // 8. Application directe + LOI_APPLIQUEE pour ce dossier
+  const appDirecteSet = await getApplicationDirecteSet(supabase, [dossierUid]);
+  for (const event of feedEvents) {
+    if (event.type === 'PROMULGATION' && appDirecteSet.has(dossierUid)) {
+      event.applicationDirecte = true;
+    }
+  }
+
+  // Vérifier si la loi est pleinement appliquée via décrets
+  const { data: appData } = await supabase
+    .from('application_lois')
+    .select('titre, nb_mesures_attendues, nb_mesures_appliquees')
+    .eq('dossier_uid', dossierUid)
+    .eq('statut_application', 'appliquee')
+    .gt('nb_mesures_attendues', 0)
+    .maybeSingle();
+
+  if (appData) {
+    const decretActes = timelineActes.filter(a => a.code_acte === 'DECAPP-PUB' && a.date_acte);
+    const promulgActe = timelineActes.find(a => a.libelle_acte === "Promulgation d'une loi");
+    const loiTexteUid = promulgActe?.textes_associes?.[0] ?? null;
+    if (decretActes.length > 0) {
+      const lastDate = decretActes.reduce((max, a) => a.date_acte > max ? a.date_acte : max, decretActes[0].date_acte);
+      feedEvents.push({
+        id: `loi-appliquee-${dossierUid}`,
+        type: 'LOI_APPLIQUEE',
+        date: lastDate,
+        titre: appData.titre || dossierInfo?.titre || 'Loi pleinement appliquée',
+        dossierUid,
+        dossierTitre: dossierInfo?.titre ?? null,
+        libelleActe: null, codeActe: null, organeName: null,
+        texteUid: loiTexteUid, texteDenomination: null, texteTitre: null, texteLien: null,
+        texteAdopteUid: null, texteAdopteDenomination: null, texteAdopteTitre: null, texteAdopteLien: null,
+        texteAdopteUrlAccessible: null, texteUrlAccessible: null,
+        hasContenLegifrance: false, hasContenLegifranceAdopte: false,
+        scrutinUid: null, scrutinTitre: null,
+        typeVoteCode: null, typeVoteLibelle: null, typeMajorite: null, statutConclusion: null,
+        auteur: null, groupeAbrege: null, auteurChambre: null,
+        texteProvenance: null, texteHasTomes: null, organeCodeType: null,
+        rapporteurName: null, rapporteurGroupe: null, rapporteurIsMultiple: null,
+        codeLoi: dossierInfo?.codeLoi ?? null,
+        titreLoi: appData.titre,
+        nbDecrets: decretActes.length,
+        nbMesuresAttendues: appData.nb_mesures_attendues,
+        datePromulgation: dossierInfo?.datePromulgation ?? null,
+        scrutins: [],
+      });
+    }
+  }
+
+  // 9. Grouper par dossierUid + date + type (tri chronologique asc pour timeline)
   const groupMap = groupFeedEvents(feedEvents);
-  const groupedEvents = [...groupMap.values()].sort((a, b) => a.date.localeCompare(b.date));
+  const groupedEvents = [...groupMap.values()].sort((a, b) =>
+    a.date.localeCompare(b.date) || (a.type === 'LOI_APPLIQUEE' ? 1 : 0) - (b.type === 'LOI_APPLIQUEE' ? 1 : 0)
+  );
 
   return { groupedEvents, feedEvents, dossierInfo };
 }
@@ -617,6 +738,7 @@ export default async function MonthPage({
 
   return (
     <MonthFeedClient
+      key={data.monthKey}
       groupedEvents={data.groupedEvents}
       dossierMode={false}
       dossierTitre={null}

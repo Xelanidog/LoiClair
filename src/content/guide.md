@@ -29,6 +29,7 @@ Une rangée de pastilles cliquables permet de filtrer les événements par caté
 - **Cons. const.** — saisines du Conseil constitutionnel.
 - **Promulgations** — lois signées et publiées au Journal officiel.
 - **Décrets** — décrets d'application publiés par le Gouvernement pour mettre en œuvre une loi promulguée.
+- **Lois appliquées** — lois dont tous les décrets d'application ont été publiés, marquant leur pleine entrée en vigueur.
 - **Motions** — motions de censure déposées contre le Gouvernement.
 
 La pastille active est mise en évidence. Sur mobile, la rangée est scrollable horizontalement (un dégradé sur le bord droit indique qu'il y a d'autres filtres).
@@ -48,6 +49,8 @@ Selon le type d'événement, des informations supplémentaires apparaissent :
 - **Rapports** : le nom de la commission et la provenance du rapport. Lorsque l'information est disponible, le **nom du rapporteur principal** et son groupe politique sont affichés sous le titre. Si plusieurs rapporteurs ont signé le rapport, la mention « (et collègues) » est ajoutée. Pour les rapports de Commission mixte paritaire (CMP) regroupant un rapport de chaque chambre, les rapporteurs de l'**Assemblée** et du **Sénat** sont indiqués séparément.
 - **Promulgations** : une icône de célébration centrée et le **numéro officiel de la loi** (ex. : « Loi n° 2025-989 ») mis en évidence.
 - **Décrets d'application** : la loi parente à laquelle le décret se rattache (avec sa dénomination et son numéro), le titre complet du décret, et un lien **Résumé IA** pointant directement vers le décret.
+- **Loi pleinement appliquée** : une icône trophée dorée et le message « Tous les décrets publiés ». La carte indique le nombre de mesures appliquées, le nombre de décrets, et le délai écoulé depuis la promulgation. Deux liens sont proposés : **Résumé IA** (pointant vers la version consolidée de la loi) et **Dossier complet**.
+- **Promulgations avec application directe** : lorsqu'une loi s'applique immédiatement sans décret, un badge doré **« Application directe »** apparaît sous le numéro de la loi sur la carte de promulgation.
 
 Quand plusieurs événements du même type concernent le même dossier à la même date, ils sont regroupés dans une seule carte avec un compteur (×2, ×3…).
 
@@ -88,6 +91,10 @@ Trois chiffres en haut de page résument l'activité globale :
 ### Graphique d'activité
 
 Un graphique à barres montre l'évolution mensuelle du nombre de dépôts sur les 2 dernières années. Il permet de repérer les périodes d'intense activité (rentrée parlementaire, examen du budget) et les creux (été, intersessions).
+
+### Funnel législatif
+
+Un entonnoir visuel montre combien de textes franchissent chaque grande étape du parcours législatif — du dépôt jusqu'à l'application effective. Il donne d'un coup d'œil une idée du « rendement » du processus : sur tous les dossiers déposés, combien aboutissent réellement à une loi appliquée ?
 
 ### État des dossiers
 

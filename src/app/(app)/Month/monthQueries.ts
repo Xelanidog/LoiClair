@@ -8,7 +8,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 export type FeedEventType =
   | 'DEPOT_TEXTE' | 'DEPOT_RAPPORT' | 'DECISION' | 'NAVETTE'
   | 'CMP_CONVOCATION' | 'CMP_RAPPORT' | 'MOTION_CENSURE' | 'DECL_GOUVERNEMENT'
-  | 'MOTION_VOTE' | 'CC_SAISINE' | 'PROMULGATION' | 'DECRET' | 'AUTRE';
+  | 'MOTION_VOTE' | 'CC_SAISINE' | 'PROMULGATION' | 'DECRET' | 'LOI_APPLIQUEE' | 'AUTRE';
 
 export const LIBELLE_TO_TYPE: Record<string, FeedEventType> = {
   "1er depot d'une initiative.": 'DEPOT_TEXTE',
@@ -144,16 +144,16 @@ export async function getScrutinActeMap(supabase: SupabaseClient, scrutinUids: s
 
 // Récupère les titres des dossiers liés aux actes (batch) + initiateur
 export async function getDossierTitles(supabase: SupabaseClient, dossierUids: string[]) {
-  if (dossierUids.length === 0) return new Map<string, { titre: string; uid: string; statut_final: string | null; procedure_libelle: string | null; initiateurActeurRef: string | null; groupeAbrege: string | null }>();
+  if (dossierUids.length === 0) return new Map<string, { titre: string; uid: string; statut_final: string | null; procedure_libelle: string | null; initiateurActeurRef: string | null; groupeAbrege: string | null; datePromulgation: string | null; codeLoi: string | null }>();
 
   const { data, error } = await supabase
     .from('dossiers_legislatifs')
-    .select('uid, titre, statut_final, procedure_libelle, initiateur_acteur_ref, initiateur_groupe_libelle')
+    .select('uid, titre, statut_final, procedure_libelle, initiateur_acteur_ref, initiateur_groupe_libelle, date_promulgation, code_loi')
     .in('uid', dossierUids);
 
   if (error) console.error('Erreur titres dossiers:', error);
 
-  const map = new Map<string, { titre: string; uid: string; statut_final: string | null; procedure_libelle: string | null; initiateurActeurRef: string | null; groupeAbrege: string | null }>();
+  const map = new Map<string, { titre: string; uid: string; statut_final: string | null; procedure_libelle: string | null; initiateurActeurRef: string | null; groupeAbrege: string | null; datePromulgation: string | null; codeLoi: string | null }>();
   for (const d of data ?? []) {
     map.set(d.uid, {
       titre: d.titre,
@@ -162,6 +162,8 @@ export async function getDossierTitles(supabase: SupabaseClient, dossierUids: st
       procedure_libelle: d.procedure_libelle,
       initiateurActeurRef: d.initiateur_acteur_ref ?? null,
       groupeAbrege: d.initiateur_groupe_libelle ?? null,
+      datePromulgation: d.date_promulgation ?? null,
+      codeLoi: d.code_loi ?? null,
     });
   }
   return map;
@@ -246,6 +248,78 @@ export async function getScrutinsByUids(supabase: SupabaseClient, uids: string[]
   const map = new Map<string, { uid: string; titre: string | null; sort_libelle: string | null; type_vote_libelle: string | null; type_vote_code: string | null; type_majorite: string | null; synthese_pour: number | null; synthese_contre: number | null; synthese_abstentions: number | null; synthese_nombre_votants: number | null; synthese_non_votants: number | null; synthese_suffrages_requis: number | null }>();
   for (const s of data ?? []) {
     map.set(s.uid, s);
+  }
+  return map;
+}
+
+// ── Application des lois : requêtes pour LOI_APPLIQUEE et application directe ──
+
+/** Set des dossier_uid ayant application_directe = true */
+export async function getApplicationDirecteSet(supabase: SupabaseClient, dossierUids: string[]) {
+  if (dossierUids.length === 0) return new Set<string>();
+
+  const { data, error } = await supabase
+    .from('application_lois')
+    .select('dossier_uid')
+    .eq('application_directe', true)
+    .in('dossier_uid', dossierUids);
+
+  if (error) console.error('Erreur application_directe:', error);
+  return new Set((data ?? []).map(d => d.dossier_uid).filter(Boolean) as string[]);
+}
+
+/** Lois pleinement appliquées via décrets (statut_application = 'appliquee') */
+export async function getFullyAppliedLaws(supabase: SupabaseClient) {
+  const { data, error } = await supabase
+    .from('application_lois')
+    .select('dossier_uid, titre, nb_mesures_attendues, nb_mesures_appliquees')
+    .eq('statut_application', 'appliquee')
+    .gt('nb_mesures_attendues', 0)
+    .not('dossier_uid', 'is', null);
+
+  if (error) console.error('Erreur fully applied laws:', error);
+  return data ?? [];
+}
+
+/** Date du dernier décret DECAPP-PUB et nombre total par dossier */
+export async function getPromulgationTexteUids(supabase: SupabaseClient, dossierUids: string[]) {
+  if (dossierUids.length === 0) return new Map<string, string>();
+  const { data, error } = await supabase
+    .from('actes_legislatifs')
+    .select('dossier_uid, textes_associes')
+    .eq('libelle_acte', "Promulgation d'une loi")
+    .in('dossier_uid', dossierUids)
+    .not('textes_associes', 'is', null);
+  if (error) console.error('Erreur promulgation texte uids:', error);
+  const map = new Map<string, string>();
+  for (const row of data ?? []) {
+    const uid = row.textes_associes?.[0];
+    if (uid) map.set(row.dossier_uid, uid);
+  }
+  return map;
+}
+
+export async function getLastDecreeDates(supabase: SupabaseClient, dossierUids: string[]) {
+  if (dossierUids.length === 0) return new Map<string, { lastDate: string; count: number }>();
+
+  const { data, error } = await supabase
+    .from('actes_legislatifs')
+    .select('dossier_uid, date_acte')
+    .eq('code_acte', 'DECAPP-PUB')
+    .in('dossier_uid', dossierUids)
+    .not('date_acte', 'is', null);
+
+  if (error) console.error('Erreur last decree dates:', error);
+
+  const map = new Map<string, { lastDate: string; count: number }>();
+  for (const row of data ?? []) {
+    const existing = map.get(row.dossier_uid);
+    if (!existing) {
+      map.set(row.dossier_uid, { lastDate: row.date_acte, count: 1 });
+    } else {
+      existing.count++;
+      if (row.date_acte > existing.lastDate) existing.lastDate = row.date_acte;
+    }
   }
   return map;
 }
