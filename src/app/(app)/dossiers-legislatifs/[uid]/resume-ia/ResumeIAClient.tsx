@@ -78,8 +78,12 @@ const CARDS = [
 ] as const;
 
 function parseCompletion(text: string): Record<string, string> {
+  // Pendant le streaming, un chunk peut couper un header "## ..." en plein milieu.
+  // Le regex inclut alors le fragment dans le contenu de la section précédente,
+  // causant un flash visuel. On supprime cette ligne partielle avant le parsing.
+  const cleaned = text.replace(/\n#{2}[^\n]*$/, '');
   const extract = (header: string) => {
-    const match = text.match(new RegExp(`## ${header}([\\s\\S]*?)(?=## |$)`));
+    const match = cleaned.match(new RegExp(`## ${header}([\\s\\S]*?)(?=## |$)`));
     return match?.[1]?.trim() || '';
   };
   return {
