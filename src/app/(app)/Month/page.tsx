@@ -683,10 +683,10 @@ async function fetchDossierData(dossierUid: string) {
     }
   }
 
-  // 9. Grouper par dossierUid + date + type (tri chronologique asc pour timeline)
+  // 9. Grouper par dossierUid + date + type (tri antéchronologique, événements récents en premier)
   const groupMap = groupFeedEvents(feedEvents);
   const groupedEvents = [...groupMap.values()].sort((a, b) =>
-    a.date.localeCompare(b.date) || (a.type === 'LOI_APPLIQUEE' ? 1 : 0) - (b.type === 'LOI_APPLIQUEE' ? 1 : 0)
+    b.date.localeCompare(a.date) || (b.type === 'LOI_APPLIQUEE' ? 1 : 0) - (a.type === 'LOI_APPLIQUEE' ? 1 : 0)
   );
 
   return { groupedEvents, feedEvents, dossierInfo };
