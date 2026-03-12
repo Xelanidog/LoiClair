@@ -1,3 +1,21 @@
+## 12 mars 2026
+
+### Ajouté
+- **Timeline verticale sur la page résumé IA** — le parcours législatif d'un dossier est désormais affiché sous forme de timeline verticale avec la date de chaque étape, la durée entre deux étapes consécutives, et un point animé sur l'étape en cours
+- **Étapes post-promulgation** — après la promulgation, la timeline affiche les décrets d'application et le statut d'application de la loi (ou « Application directe » si aucun décret n'est nécessaire)
+- **Étape suivante en attente** — la timeline affiche l'étape suivante attendue (autre chambre ou promulgation) avec une ligne en pointillés
+- **Préfixe « Texte CMP »** dans le fil d'actualité — les décisions de débat en CMP dans le fil du mois affichent désormais « Texte CMP · » devant le nom de l'institution
+
+### Modifié
+- **Badges de durée AN / Sénat** — les badges précisent désormais « (dépôt → décision) » pour clarifier ce que la durée mesure
+- **Résolutions et textes non promulguables** — les résolutions, rapports d'information et autres textes qui n'ont pas vocation à être promulgués n'affichent plus « Promulguée » comme étape suivante
+
+### Corrigé
+- **Ordre des étapes** — le Conseil constitutionnel et la CMP s'affichent désormais à la bonne position chronologique (et non après la promulgation)
+- **Dates erronées filtrées** — les décrets dont la date est antérieure au dépôt du dossier (données issues d'anciennes législatures) sont exclus de la timeline
+
+---
+
 ## Semaine du 11 mars 2026
 
 ### Ajouté

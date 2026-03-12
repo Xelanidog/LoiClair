@@ -65,7 +65,7 @@ interface ResumeIAClientProps {
   nbVotes: number;
   auteurNom: string | null;
   auteurGroupe: string | null;
-  timelineSteps: string[];
+  timelineSteps: { code: string; label: string; date: string | null; done: boolean }[];
   scrutinsParTexte: Record<string, ScrutinData>;
   initialTexteUid: string | null;
   cachedResumes: Record<string, string>;
@@ -270,23 +270,83 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
           </div>
         )}
 
-        {/* Ligne 3 : timeline */}
+        {/* Timeline verticale */}
         {timelineSteps.length > 0 && (() => {
-          const steps = ['Dépôt', ...timelineSteps];
-          const lastIdx = steps.length - 1;
           const isRejected = statutFinal === 'Rejeté';
-          const lineColor = isRejected ? 'bg-red-400' : 'bg-primary';
+          const lastDoneIdx = timelineSteps.reduce((acc, s, i) => s.done ? i : acc, -1);
+          const hasPendingSteps = timelineSteps.some(s => !s.done);
+          const isOngoing = !datePromulgation && !isRejected;
+          const toDateStr = (s: string) => s.slice(0, 10); // normalise timestamp ou ISO date → "YYYY-MM-DD"
+          const formatDate = (iso: string) => {
+            const d = new Date(toDateStr(iso) + 'T00:00:00');
+            return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+          };
+          const daysBetween = (a: string, b: string) => {
+            const diff = Math.round((new Date(toDateStr(b) + 'T00:00:00').getTime() - new Date(toDateStr(a) + 'T00:00:00').getTime()) / 86400000);
+            if (diff > 60) return `${Math.round(diff / 30)} mois`;
+            return `${diff} j`;
+          };
           return (
-            <div className="flex overflow-x-auto">
-              {steps.map((label, i) => (
-                <div key={i} className="w-12 sm:w-20 shrink-0 flex flex-col">
-                  <div className="flex items-center">
-                    <div className={`w-2.5 h-2.5 rounded-full border-2 shrink-0 ${isRejected && i === lastIdx ? 'bg-red-500 border-red-500' : 'bg-primary border-primary'}`} />
-                    {i < lastIdx && <div className={`flex-1 h-px ${lineColor}`} />}
+            <div className="flex flex-col gap-0 mt-1">
+              {timelineSteps.map((step, i) => {
+                const isLast = i === timelineSteps.length - 1;
+                const isLastDone = i === lastDoneIdx;
+                const nextStep = !isLast ? timelineSteps[i + 1] : null;
+                const showDuration = step.date && nextStep?.date;
+                const isNextPending = nextStep && !nextStep.done;
+                const isCurrent = isLastDone && (hasPendingSteps || isOngoing) && !isRejected;
+                const dotColor = !step.done
+                  ? 'border-muted-foreground bg-transparent'
+                  : isRejected && isLastDone
+                    ? 'border-red-500 bg-red-500'
+                    : 'border-primary bg-primary';
+                return (
+                  <div key={step.code} className="flex items-stretch gap-3">
+                    {/* Colonne gauche : point + ligne */}
+                    <div className="flex flex-col items-center" style={{ width: '14px' }}>
+                      <div className="relative shrink-0" style={{ width: '14px', height: '14px', marginTop: '3px' }}>
+                        {isCurrent && (
+                          <div
+                            className="absolute rounded-full border-2 border-primary animate-ping"
+                            style={{ inset: 0, opacity: 0.4 }}
+                          />
+                        )}
+                        <div
+                          className={`absolute rounded-full border-2 ${dotColor}`}
+                          style={{ top: '2px', left: '2px', width: '10px', height: '10px' }}
+                        />
+                      </div>
+                      {!isLast && (
+                        <div
+                          className={isNextPending || !step.done ? 'border-muted-foreground' : isRejected ? 'border-red-400' : 'border-primary'}
+                          style={{
+                            flex: 1,
+                            minHeight: showDuration ? '32px' : '16px',
+                            borderLeftWidth: '2px',
+                            borderLeftStyle: isNextPending || !step.done ? 'dashed' : 'solid',
+                          }}
+                        />
+                      )}
+                    </div>
+                    {/* Colonne droite : label + date + durée */}
+                    <div className={`flex flex-col ${isLast ? '' : 'pb-0'}`} style={{ minHeight: isLast ? 'auto' : showDuration ? '40px' : '24px' }}>
+                      <div className="flex items-baseline gap-2">
+                        <span className={`text-sm font-medium ${step.done ? 'text-foreground' : 'text-muted-foreground'}`}>
+                          {step.label}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {step.date ? formatDate(step.date) : step.done ? '' : 'en attente'}
+                        </span>
+                      </div>
+                      {showDuration && (
+                        <span className="text-xs text-muted-foreground mt-0.5" style={{ opacity: 0.7 }}>
+                          {daysBetween(step.date!, nextStep!.date!)}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <span className="text-[10px] leading-tight mt-1.5 text-foreground font-medium">{label}</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           );
         })()}
@@ -307,13 +367,13 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
           {dureeAN !== null && (
             <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-sm ${dureeANEnCours ? 'bg-[#F39C12]/10 text-[#F39C12] dark:bg-[#F39C12]/15 dark:text-[#F1C40F]' : 'bg-primary/10 text-primary dark:bg-primary/15 dark:text-primary'}`}>
               <Building2 className="h-3.5 w-3.5 shrink-0" />
-              AN : {dureeAN} j{dureeANEnCours ? ' · en cours' : ''}
+              AN : {dureeAN} j (dépôt → décision){dureeANEnCours ? ' · en cours' : ''}
             </span>
           )}
           {dureeSenat !== null && (
             <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-sm ${dureeSNEnCours ? 'bg-[#F39C12]/10 text-[#F39C12] dark:bg-[#F39C12]/15 dark:text-[#F1C40F]' : 'bg-[#F39C12]/10 text-[#F39C12] dark:bg-[#F39C12]/15 dark:text-[#F1C40F]'}`}>
               <Building2 className="h-3.5 w-3.5 shrink-0" />
-              Sénat : {dureeSenat} j{dureeSNEnCours ? ' · en cours' : ''}
+              Sénat : {dureeSenat} j (dépôt → décision){dureeSNEnCours ? ' · en cours' : ''}
             </span>
           )}
           {passageCMP && (

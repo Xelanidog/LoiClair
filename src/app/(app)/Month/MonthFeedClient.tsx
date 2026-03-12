@@ -603,12 +603,17 @@ function getContextInfo(type: FeedEventType, e: FeedEvent, multi: boolean, event
     return direction ? <span className="font-bold text-foreground shrink-0">{direction}</span> : null;
   }
   if (type === "DECISION") {
+    const isCmpVote = (ev: FeedEvent) => ev.codeActe?.startsWith('CMP-DEBATS');
     if (multi) {
-      const insts = [...new Set(events.map(ev => institutionName(ev.organeCodeType, ev.organeName)).filter((v): v is string => v !== null))];
+      const insts = [...new Set(events.map(ev => {
+        const name = institutionName(ev.organeCodeType, ev.organeName);
+        return name ? (isCmpVote(ev) ? `Texte CMP · ${name}` : name) : null;
+      }).filter((v): v is string => v !== null))];
       return insts.length > 0 ? <span className="font-bold text-foreground shrink-0">{insts.join(' + ')}</span> : null;
     }
     const inst = institutionName(e.organeCodeType, e.organeName);
-    return inst ? <span className="font-bold text-foreground shrink-0">{inst}</span> : null;
+    const prefix = isCmpVote(e) ? 'Texte CMP · ' : '';
+    return inst ? <span className="font-bold text-foreground shrink-0">{prefix}{inst}</span> : null;
   }
   if (type === "DEPOT_RAPPORT") {
     const chambre = e.organeCodeType === "COMSENAT" ? "Sénat" : "Assemblée";

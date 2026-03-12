@@ -25,15 +25,17 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
   const KPI_ACTE_CODES = [
     'AN1-DEPOT', 'AN2-DEPOT', 'ANLDEF-DEPOT', 'ANLUNI-DEPOT', 'ANNLEC-DEPOT',
     'AN1-DEBATS-DEC', 'AN2-DEBATS-DEC', 'ANLDEF-DEBATS-DEC', 'ANLUNI-DEBATS-DEC', 'ANNLEC-DEBATS-DEC',
-    'CMP-DEBATS-AN-DEC',
+    'CMP-DEBATS-AN-DEC', 'CMP-SAISIE', 'CMP-DEC',
     'SN1-DEPOT', 'SN2-DEPOT', 'SNNLEC-DEPOT',
     'PROM-PUB',
     'SN1-DEBATS-DEC', 'SN2-DEBATS-DEC', 'SNNLEC-DEBATS-DEC',
     'CMP-DEBATS-SN-DEC',
+    'CC-SAISIE-PM', 'CC-SAISIE-AN', 'CC-SAISIE-SN', 'CC-SAISIE-DROIT', 'CC-CONCLUSION',
+    'DECAPP-PUB', 'AN-APPLI-RAPPORT',
   ];
 
   // Fetch textes, dossier complet, actes législatifs et actes KPI en parallèle
-  const [textesResult, dossierResult, actesResult, actesKPIResult] = await Promise.all([
+  const [textesResult, dossierResult, actesResult, actesKPIResult, appLoiResult] = await Promise.all([
     supabase
       .from('textes')
       .select('uid, date_creation, date_publication, denomination, titre_principal_court, lien_texte, libelle_statut_adoption, provenance, url_accessible, contenu_legifrance, organe_auteur:organe_auteur_ref(libelle), resume_ia, resume_ia_prompt_version')
@@ -57,6 +59,11 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
       .eq('dossier_uid', uid)
       .in('code_acte', KPI_ACTE_CODES)
       .not('date_acte', 'is', null),
+    supabase
+      .from('application_lois')
+      .select('application_directe, statut_application, taux_application')
+      .eq('dossier_uid', uid)
+      .limit(1),
   ]);
 
   // Erreur Supabase sur la requête principale
@@ -110,11 +117,15 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
       if (!decisionSN || d > decisionSN) decisionSN = d;
     }
     // Map milestone code → earliest date (pour tri chronologique)
-    for (const milestone of MILESTONE_CODES) {
-      if (code.startsWith(milestone + '-')) {
-        const existing = milestoneDateMap.get(milestone);
-        if (!existing || d < existing) milestoneDateMap.set(milestone, d);
-        break;
+    // Ignorer les dates antérieures au dépôt (données erronées, ex : décrets PLFSS antérieur)
+    const depotDate = dossier?.date_depot ? new Date(dossier.date_depot) : null;
+    if (!depotDate || d >= depotDate) {
+      for (const milestone of MILESTONE_CODES) {
+        if (code.startsWith(milestone + '-')) {
+          const existing = milestoneDateMap.get(milestone);
+          if (!existing || d < existing) milestoneDateMap.set(milestone, d);
+          break;
+        }
       }
     }
   }
@@ -131,14 +142,42 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
 
   // Timeline : codes des actes présents, triés par date réelle (fallback : priority)
   const actesCodes = new Set((actesResult.data ?? []).map((a: any) => a.code_acte));
+  const isProm = actesCodes.has('PROM');
+  const isRejected = dossier?.statut_final === 'Rejeté';
+  const appLoi = appLoiResult.data?.[0] ?? null;
+  const isAppDirecte = appLoi?.application_directe === true;
+  // Logique "étape suivante" : afficher l'étape immédiatement après la dernière étape en cours
+  const isLectureUnique = actesCodes.has('ANLUNI');
+  const hasANSteps = [...actesCodes].some(c => c.startsWith('AN') && MILESTONE_CODES.includes(c));
+  const hasSNSteps = [...actesCodes].some(c => c.startsWith('SN') && MILESTONE_CODES.includes(c));
+  const bothChambersPresent = (hasANSteps || isLectureUnique) && (hasSNSteps || isLectureUnique);
+  // Certaines procédures (résolutions, rapports, missions…) n'ont pas vocation à être promulguées
+  const proc = (dossier?.procedure_libelle ?? '').toLowerCase();
+  const canBePromulgated = proc.includes('loi') || proc.includes('ratification');
   const timelineSteps = MILESTONE_CODES
-    .filter(code => actesCodes.has(code))
+    .filter(code => {
+      // Promulgation : en attente seulement pour les procédures pouvant être promulguées
+      if (code === 'PROM') return isProm || (!isRejected && canBePromulgated && bothChambersPresent);
+      if (code === 'DECAPP') return isProm && !isAppDirecte;
+      if (code === 'AN-APPLI') return isProm;
+      // Chambre suivante en attente : afficher si l'autre chambre a des étapes mais pas celle-ci
+      if (code === 'SN1' && !actesCodes.has('SN1')) return !isRejected && hasANSteps && !hasSNSteps && !isLectureUnique;
+      if (code === 'AN1' && !actesCodes.has('AN1')) return !isRejected && hasSNSteps && !hasANSteps;
+      return actesCodes.has(code);
+    })
     .sort((a, b) => {
       const da = milestoneDateMap.get(a)?.getTime() ?? (1e15 + STEP_CONFIG[a].priority);
       const db = milestoneDateMap.get(b)?.getTime() ?? (1e15 + STEP_CONFIG[b].priority);
       return da - db;
     })
-    .map(code => STEP_CONFIG[code].label);
+    .map(code => ({
+      code,
+      label: code === 'AN-APPLI' && isAppDirecte ? 'Application directe' : STEP_CONFIG[code].label,
+      date: milestoneDateMap.get(code)?.toISOString().slice(0, 10) ?? null,
+      done: code === 'AN-APPLI' && isAppDirecte ? true : actesCodes.has(code),
+    }));
+  // Ajouter "Dépôt" en tête avec la date du dossier
+  timelineSteps.unshift({ code: 'DEPOT', label: 'Dépôt', date: dossier?.date_depot?.slice(0, 10) ?? null, done: true });
   const passageCMP = actesCodes.has('CMP');
 
   // Scrutins associés aux textes via actes_legislatifs

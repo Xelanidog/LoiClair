@@ -13,6 +13,8 @@ export const STEP_CONFIG: Record<string, { label: string; priority: number }> = 
   'ANLDEF': { label: 'AN (déf.)',      priority: 70 },
   'CC':     { label: 'Cons. const.',  priority: 80 },
   'PROM':   { label: 'Promulguée',    priority: 90 },
+  'DECAPP':    { label: 'Décrets d\'application', priority: 100 },
+  'AN-APPLI':  { label: 'Application',          priority: 110 },
 };
 
 export const MILESTONE_CODES = Object.keys(STEP_CONFIG);
