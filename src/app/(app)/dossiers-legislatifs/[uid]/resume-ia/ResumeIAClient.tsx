@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { HelpCircle, ListChecks, TrendingUp, ExternalLink, Check, ChevronsUpDown, ChevronDown, Bot, Clock, Building2, Scale, Vote } from "lucide-react";
+import { HelpCircle, ListChecks, TrendingUp, ExternalLink, Check, ChevronsUpDown, ChevronDown, Bot, Clock } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
 import { SYSTEM_PROMPT_RESUME_LOI, PARAMS_RESUME_LOI, MODEL_RESUME_LOI, MAX_INPUT_CHARS_RESUME_LOI } from '@/lib/prompts';
 import { useCompletion } from '@ai-sdk/react';
@@ -57,12 +57,6 @@ interface ResumeIAClientProps {
   lienSenat: string | null;
   lienLegifrance: string | null;
   dureeTotal: number | null;
-  dureeAN: number | null;
-  dureeANEnCours: boolean;
-  dureeSenat: number | null;
-  dureeSNEnCours: boolean;
-  passageCMP: boolean;
-  nbVotes: number;
   auteurNom: string | null;
   auteurGroupe: string | null;
   timelineSteps: { code: string; label: string; date: string | null; done: boolean }[];
@@ -94,7 +88,7 @@ function parseCompletion(text: string): Record<string, string> {
 }
 
 
-export default function ResumeIAClient({ uid, titreDossier, initialTextes, statutFinal, procedureLibelle, dateDepot, datePromulgation, lienAN, lienSenat, lienLegifrance, dureeTotal, dureeAN, dureeANEnCours, dureeSenat, dureeSNEnCours, passageCMP, nbVotes, auteurNom, auteurGroupe, timelineSteps, scrutinsParTexte, initialTexteUid, cachedResumes }: ResumeIAClientProps) {
+export default function ResumeIAClient({ uid, titreDossier, initialTextes, statutFinal, procedureLibelle, dateDepot, datePromulgation, lienAN, lienSenat, lienLegifrance, dureeTotal, auteurNom, auteurGroupe, timelineSteps, scrutinsParTexte, initialTexteUid, cachedResumes }: ResumeIAClientProps) {
   const [textes] = useState<Texte[]>(initialTextes);
   const [selectedUid, setSelectedUid] = useState<string | null>(() => {
     if (initialTexteUid && initialTextes.some(t => t.uid === initialTexteUid)) return initialTexteUid;
@@ -321,7 +315,7 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
                           className={isNextPending || !step.done ? 'border-muted-foreground' : isRejected ? 'border-red-400' : 'border-primary'}
                           style={{
                             flex: 1,
-                            minHeight: showDuration ? '32px' : '16px',
+                            minHeight: showDuration ? '32px' : isCurrent ? '32px' : '16px',
                             borderLeftWidth: '2px',
                             borderLeftStyle: isNextPending || !step.done ? 'dashed' : 'solid',
                           }}
@@ -329,7 +323,7 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
                       )}
                     </div>
                     {/* Colonne droite : label + date + durée */}
-                    <div className={`flex flex-col ${isLast ? '' : 'pb-0'}`} style={{ minHeight: isLast ? 'auto' : showDuration ? '40px' : '24px' }}>
+                    <div className={`flex flex-col ${isLast ? '' : 'pb-0'}`} style={{ minHeight: isLast ? 'auto' : showDuration ? '40px' : isCurrent ? '40px' : '24px' }}>
                       <div className="flex items-baseline gap-2">
                         <span className={`text-sm font-medium ${step.done ? 'text-foreground' : 'text-muted-foreground'}`}>
                           {step.label}
@@ -341,6 +335,11 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
                       {showDuration && (
                         <span className="text-xs text-muted-foreground mt-0.5" style={{ opacity: 0.7 }}>
                           {daysBetween(step.date!, nextStep!.date!)}
+                        </span>
+                      )}
+                      {isCurrent && step.date && (
+                        <span className="text-xs mt-0.5" style={{ color: '#F39C12' }}>
+                          en cours depuis {daysBetween(step.date, new Date().toISOString().slice(0, 10))}
                         </span>
                       )}
                     </div>
@@ -355,39 +354,13 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
         </Link>
       </div>
 
-      {/* KPIs du dossier */}
-      {(dureeTotal !== null || dureeAN !== null || dureeSenat !== null || passageCMP || nbVotes > 0) && (
+      {/* Durée totale du dossier */}
+      {dureeTotal !== null && (
         <div className="flex flex-wrap items-center gap-2 mb-6">
-          {dureeTotal !== null && (
-            <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${datePromulgation ? 'bg-[#27AE60]/15 text-[#27AE60] border-[#27AE60]/30 dark:bg-[#27AE60]/20 dark:text-[#2ECC71] dark:border-[#27AE60]/30' : 'bg-[#F39C12]/15 text-[#F39C12] border-[#F39C12]/30 dark:bg-[#F39C12]/20 dark:text-[#F1C40F] dark:border-[#F39C12]/30'}`}>
-              <Clock className="h-3 w-3 shrink-0" />
-              {datePromulgation ? `Promulgué en ${dureeTotal} j` : `En cours depuis ${dureeTotal} j`}
-            </span>
-          )}
-          {dureeAN !== null && (
-            <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-sm ${dureeANEnCours ? 'bg-[#F39C12]/10 text-[#F39C12] dark:bg-[#F39C12]/15 dark:text-[#F1C40F]' : 'bg-primary/10 text-primary dark:bg-primary/15 dark:text-primary'}`}>
-              <Building2 className="h-3.5 w-3.5 shrink-0" />
-              AN : {dureeAN} j (dépôt → décision){dureeANEnCours ? ' · en cours' : ''}
-            </span>
-          )}
-          {dureeSenat !== null && (
-            <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-sm ${dureeSNEnCours ? 'bg-[#F39C12]/10 text-[#F39C12] dark:bg-[#F39C12]/15 dark:text-[#F1C40F]' : 'bg-[#F39C12]/10 text-[#F39C12] dark:bg-[#F39C12]/15 dark:text-[#F1C40F]'}`}>
-              <Building2 className="h-3.5 w-3.5 shrink-0" />
-              Sénat : {dureeSenat} j (dépôt → décision){dureeSNEnCours ? ' · en cours' : ''}
-            </span>
-          )}
-          {passageCMP && (
-            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-violet-100/70 text-violet-800 dark:bg-violet-900/30 dark:text-violet-300 text-sm">
-              <Scale className="h-3.5 w-3.5 shrink-0" />
-              CMP
-            </span>
-          )}
-          {nbVotes > 0 && (
-            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted/60 text-sm">
-              <Vote className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-              {nbVotes} vote{nbVotes > 1 ? 's' : ''}
-            </span>
-          )}
+          <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${datePromulgation ? 'bg-[#27AE60]/15 text-[#27AE60] border-[#27AE60]/30 dark:bg-[#27AE60]/20 dark:text-[#2ECC71] dark:border-[#27AE60]/30' : 'bg-[#F39C12]/15 text-[#F39C12] border-[#F39C12]/30 dark:bg-[#F39C12]/20 dark:text-[#F1C40F] dark:border-[#F39C12]/30'}`}>
+            <Clock className="h-3 w-3 shrink-0" />
+            {datePromulgation ? `Promulgué en ${dureeTotal} j` : `En cours depuis ${dureeTotal} j`}
+          </span>
           <Link href="/documentation/methode#delai-moyen-de-promulgation" className="text-xs text-muted-foreground/60 hover:text-foreground transition-colors ml-1">
             Comment c'est calculé →
           </Link>

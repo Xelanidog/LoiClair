@@ -97,25 +97,11 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
     }
   }
 
-  // Calcul des durées par chambre (aligné sur la logique de la page KPI)
-  let depotAN: Date | null = null, decisionAN: Date | null = null;
-  let depotSN: Date | null = null, decisionSN: Date | null = null;
+  // Calcul de la durée totale et des dates par milestone
   const milestoneDateMap = new Map<string, Date>();
   for (const acte of actesKPIResult.data ?? []) {
     const d = new Date(acte.date_acte);
     const code: string = acte.code_acte;
-    if (code.startsWith('AN') && code.endsWith('-DEPOT')) {
-      if (!depotAN || d < depotAN) depotAN = d;
-    }
-    if ((code.startsWith('AN') && code.endsWith('-DEBATS-DEC')) || code === 'CMP-DEBATS-AN-DEC') {
-      if (!decisionAN || d > decisionAN) decisionAN = d;
-    }
-    if (code.startsWith('SN') && code.endsWith('-DEPOT')) {
-      if (!depotSN || d < depotSN) depotSN = d;
-    }
-    if ((code.startsWith('SN') && code.endsWith('-DEBATS-DEC')) || code === 'CMP-DEBATS-SN-DEC') {
-      if (!decisionSN || d > decisionSN) decisionSN = d;
-    }
     // Map milestone code → earliest date (pour tri chronologique)
     // Ignorer les dates antérieures au dépôt (données erronées, ex : décrets PLFSS antérieur)
     const depotDate = dossier?.date_depot ? new Date(dossier.date_depot) : null;
@@ -135,10 +121,6 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
   const dateDepotDate = dossier?.date_depot ? new Date(dossier.date_depot) : null;
   const datePromDate = dossier?.date_promulgation ? new Date(dossier.date_promulgation) : null;
   const dureeTotal = toDays(dateDepotDate, datePromDate ?? today);
-  const dureeAN = toDays(depotAN, decisionAN ?? (depotAN ? today : null));
-  const dureeANEnCours = depotAN !== null && decisionAN === null;
-  const dureeSenat = toDays(depotSN, decisionSN ?? (depotSN ? today : null));
-  const dureeSNEnCours = depotSN !== null && decisionSN === null;
 
   // Timeline : codes des actes présents, triés par date réelle (fallback : priority)
   const actesCodes = new Set((actesResult.data ?? []).map((a: any) => a.code_acte));
@@ -178,7 +160,7 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
     }));
   // Ajouter "Dépôt" en tête avec la date du dossier
   timelineSteps.unshift({ code: 'DEPOT', label: 'Dépôt', date: dossier?.date_depot?.slice(0, 10) ?? null, done: true });
-  const passageCMP = actesCodes.has('CMP');
+
 
   // Scrutins associés aux textes via actes_legislatifs
   // Un acte peut avoir textes_associes (→ texte uid) ET vote_refs (→ scrutin uid)
@@ -273,12 +255,6 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
       lienSenat={dossier?.lien_senat ?? null}
       lienLegifrance={dossier?.url_legifrance ?? null}
       dureeTotal={dureeTotal}
-      dureeAN={dureeAN}
-      dureeANEnCours={dureeANEnCours}
-      dureeSenat={dureeSenat}
-      dureeSNEnCours={dureeSNEnCours}
-      passageCMP={passageCMP}
-      nbVotes={voteRefs.length}
       auteurNom={auteur ? `${auteur.prenom ?? ''} ${auteur.nom ?? ''}`.trim() : null}
       auteurGroupe={auteur?.groupe?.libelle ?? null}
       timelineSteps={timelineSteps}
