@@ -18,6 +18,7 @@ LoiClair rend les lois, débats et votes du Parlement compréhensibles par tous,
 - **Processus législatif** — comprendre comment une loi est fabriquée, étape par étape
 - **Signalement citoyen** — signaler une erreur ou un problème directement depuis chaque page
 - **Documentation** — guide utilisateur, méthodologie, glossaire et conformité IA
+- **Notes de version** — historique des évolutions du site, accessible depuis le pied de page
 
 ## Stack technique
 
@@ -44,8 +45,10 @@ src/
 │   │   ├── type-textes/        # Types de textes législatifs
 │   │   ├── processus-legislatif/
 │   │   ├── about/
+│   │   ├── changelog/           # Notes de version
 │   │   └── documentation/      # Guide, méthode, glossaire, conformité IA
 │   ├── api/
+│   │   ├── login/              # Authentification par mot de passe
 │   │   ├── resume-loi/         # Endpoint IA (résumés Grok)
 │   │   └── signaler/           # Endpoint signalements citoyens
 │   └── layout.tsx              # Layout avec sidebar fixe

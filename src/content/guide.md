@@ -328,3 +328,7 @@ La section **Documentation**, accessible dans le menu de gauche, rassemble quatr
 - **Glossaire** — définitions des termes législatifs utilisés sur LoiClair : statuts des dossiers, types de procédures, étapes législatives. Le glossaire est alimenté directement par les données en base — les termes apparaissent automatiquement à mesure que de nouvelles procédures sont référencées.
 - **Méthodologie** — explication détaillée de chaque indicateur affiché sur le site : formule de calcul, variables utilisées et exclues, source des données, limites d'interprétation.
 - **Conformité AI Act** — explication du règlement européen sur l'intelligence artificielle (règlement UE 2024/1689), du rôle de LoiClair en tant que déployeur, et des mesures concrètes mises en place pour se conformer à l'Article 50 : signalement visible sur chaque résumé, publication du prompt système, marquage machine-readable, et neutralité explicite des instructions données à l'IA.
+
+## Notes de version
+
+La page **Notes de version**, accessible depuis le pied de page du site, retrace l'historique complet des évolutions de LoiClair. Chaque semaine est résumée avec les nouvelles fonctionnalités, les modifications et les corrections apportées. Les sections sont dépliables : la semaine la plus récente est ouverte par défaut, les précédentes peuvent être consultées en un clic.

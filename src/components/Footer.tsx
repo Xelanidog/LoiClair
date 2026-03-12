@@ -18,6 +18,10 @@ export default async function Footer() {
           <Link href="https://github.com/Xelanidog/LoiClair/issues">
             <Button variant="ghost" className="text-xs">Contribuer sur GitHub</Button>
           </Link>
+          <span className="text-muted-foreground/40">&middot;</span>
+          <Link href="/changelog">
+            <Button variant="ghost" className="text-xs">Notes de version</Button>
+          </Link>
         </nav>
         <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
           <span>Données publiques officielles &copy; {new Date().getFullYear()}</span>
