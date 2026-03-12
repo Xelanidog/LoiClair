@@ -389,7 +389,7 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
           );
         })()}
         <Link href={`/Month?dossier=${uid}`} className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-1">
-          Voir la chronologie →
+          Voir le fil d'actu de ce dossier →
         </Link>
       </div>
 
