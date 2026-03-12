@@ -308,9 +308,13 @@ La page **Types de textes** explique les différentes catégories de textes qui 
 
 ---
 
-## Signaler un problème
+## Une idée ? Un problème ?
 
-Un bouton **Signaler** est visible en bas à droite de chaque page. Il permet à tout visiteur de remonter :
+Un bouton **Une idée ? Un problème ?** est visible en bas à droite de chaque page. En cliquant dessus, vous pouvez choisir entre deux actions :
+
+### Signaler un problème
+
+Remontez tout dysfonctionnement constaté sur le site :
 
 - une **donnée incorrecte** (chiffre, nom, date, etc.),
 - un **problème d'affichage** (mise en page cassée, élément manquant),
@@ -318,7 +322,15 @@ Un bouton **Signaler** est visible en bas à droite de chaque page. Il permet à
 - un **résumé IA incorrect** (erreur factuelle dans un résumé généré),
 - ou **tout autre souci**.
 
-Après envoi, un ticket est automatiquement créé sur le dépôt GitHub public de LoiClair. Un lien vous est fourni pour suivre l'avancement du traitement. L'adresse email est facultative — elle sert uniquement si l'équipe a besoin de vous recontacter.
+### Proposer une idée
+
+Suggérez des améliorations ou de nouvelles fonctionnalités :
+
+- une **nouvelle fonctionnalité** que vous aimeriez voir sur LoiClair,
+- une **amélioration** d'une fonctionnalité existante,
+- ou **toute autre idée**.
+
+Dans les deux cas, un ticket est automatiquement créé sur le dépôt GitHub public de LoiClair après envoi. Un lien vous est fourni pour suivre l'avancement. L'adresse email est facultative — elle sert uniquement si l'équipe a besoin de vous recontacter.
 
 ## Documentation
 

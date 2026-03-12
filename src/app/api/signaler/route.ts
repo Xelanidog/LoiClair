@@ -6,14 +6,19 @@ const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
 const RATE_LIMIT_MAX = 5
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000 // 1 heure
 
-const TYPES_VALIDES = ["donnee-incorrecte", "affichage", "lien-casse", "ia", "autre"]
+const TYPES_PROBLEME = ["donnee-incorrecte", "affichage", "lien-casse", "ia", "autre-probleme"]
+const TYPES_IDEE = ["nouvelle-fonctionnalite", "amelioration", "autre-idee"]
+const CATEGORIES_VALIDES = ["probleme", "idee"]
 
 const TYPE_LABELS: Record<string, string> = {
   "donnee-incorrecte": "Donnée incorrecte",
   "affichage": "Problème d'affichage",
   "lien-casse": "Lien cassé",
   "ia": "Résumé IA incorrect",
-  "autre": "Autre",
+  "autre-probleme": "Autre problème",
+  "nouvelle-fonctionnalite": "Nouvelle fonctionnalité",
+  "amelioration": "Amélioration existante",
+  "autre-idee": "Autre idée",
 }
 
 function getClientIp(request: NextRequest): string {
@@ -62,12 +67,19 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { type, description, email, pageUrl } = body
+    const { category, type, description, email, pageUrl } = body
 
     // Validation
-    if (!type || !TYPES_VALIDES.includes(type)) {
+    if (!category || !CATEGORIES_VALIDES.includes(category)) {
       return NextResponse.json(
-        { error: "Type de problème invalide." },
+        { error: "Catégorie invalide." },
+        { status: 400 }
+      )
+    }
+    const typesValides = category === "probleme" ? TYPES_PROBLEME : TYPES_IDEE
+    if (!type || !typesValides.includes(type)) {
+      return NextResponse.json(
+        { error: "Type invalide." },
         { status: 400 }
       )
     }
@@ -97,10 +109,12 @@ export async function POST(request: NextRequest) {
     })
 
     // Création issue GitHub
+    const isIdee = category === "idee"
+    const tag = isIdee ? "Idée" : "Signalement"
     const pagePath = pageUrlSafe.replace(/https?:\/\/[^/]+/, "") || "/"
-    const issueTitle = `[Signalement] ${TYPE_LABELS[type]} — ${pagePath}`
+    const issueTitle = `[${tag}] ${TYPE_LABELS[type]} — ${pagePath}`
     const issueBody = [
-      "## Signalement utilisateur",
+      `## ${tag} utilisateur`,
       "",
       `**Type :** ${TYPE_LABELS[type]}`,
       `**Page :** ${pageUrlSafe}`,
@@ -113,7 +127,7 @@ export async function POST(request: NextRequest) {
       `Email : ${email || "Non fourni"}`,
       "",
       "---",
-      "_Signalement automatique depuis LoiClair._",
+      `_${tag} automatique depuis LoiClair._`,
     ].join("\n")
 
     const token = process.env.GITHUB_TOKEN
@@ -137,7 +151,7 @@ export async function POST(request: NextRequest) {
         body: JSON.stringify({
           title: issueTitle,
           body: issueBody,
-          labels: ["signalement", type],
+          labels: [isIdee ? "idée" : "signalement", type],
         }),
       }
     )

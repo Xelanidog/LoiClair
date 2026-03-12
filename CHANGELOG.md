@@ -1,3 +1,11 @@
+## Semaine du 11 mars 2026
+
+### Modifié
+- Le bouton "Signaler" devient **"Une idée ? Un problème ?"** — il permet désormais de proposer des idées de fonctionnalités en plus de signaler des bugs
+- La modale s'ouvre sur un écran de choix entre "Signaler un problème" et "Proposer une idée", avec un formulaire adapté à chaque cas
+
+---
+
 ## Semaine du 10 mars 2026
 
 ### Ajouté
