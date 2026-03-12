@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { HelpCircle, ListChecks, TrendingUp, ExternalLink, Check, ChevronsUpDown, ChevronDown, Bot, Clock } from "lucide-react";
+import { HelpCircle, ListChecks, TrendingUp, ExternalLink, Check, ChevronsUpDown, ChevronDown, Bot, Flag } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
 import { SYSTEM_PROMPT_RESUME_LOI, PARAMS_RESUME_LOI, MODEL_RESUME_LOI, MAX_INPUT_CHARS_RESUME_LOI } from '@/lib/prompts';
 import { useCompletion } from '@ai-sdk/react';
@@ -57,6 +57,8 @@ interface ResumeIAClientProps {
   lienSenat: string | null;
   lienLegifrance: string | null;
   dureeTotal: number | null;
+  dureeApplication: number | null;
+  isAppDirecte: boolean;
   auteurNom: string | null;
   auteurGroupe: string | null;
   timelineSteps: { code: string; label: string; date: string | null; done: boolean; detail: string | null }[];
@@ -88,7 +90,7 @@ function parseCompletion(text: string): Record<string, string> {
 }
 
 
-export default function ResumeIAClient({ uid, titreDossier, initialTextes, statutFinal, procedureLibelle, dateDepot, datePromulgation, lienAN, lienSenat, lienLegifrance, dureeTotal, auteurNom, auteurGroupe, timelineSteps, scrutinsParTexte, initialTexteUid, cachedResumes }: ResumeIAClientProps) {
+export default function ResumeIAClient({ uid, titreDossier, initialTextes, statutFinal, procedureLibelle, dateDepot, datePromulgation, lienAN, lienSenat, lienLegifrance, dureeTotal, dureeApplication, isAppDirecte, auteurNom, auteurGroupe, timelineSteps, scrutinsParTexte, initialTexteUid, cachedResumes }: ResumeIAClientProps) {
   const [textes] = useState<Texte[]>(initialTextes);
   const [selectedUid, setSelectedUid] = useState<string | null>(() => {
     if (initialTexteUid && initialTextes.some(t => t.uid === initialTexteUid)) return initialTexteUid;
@@ -294,25 +296,54 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
                   : isRejected && isLastDone
                     ? 'border-red-500 bg-red-500'
                     : 'border-primary bg-primary';
-                const hasConnectorText = showDuration || (isCurrent && step.date && !step.detail) || step.detail;
+                const lineColor = isNextPending || !step.done ? 'border-muted-foreground' : isRejected ? 'border-red-400' : 'border-primary';
+                const lineStyle = isNextPending || !step.done ? 'dashed' : 'solid';
                 return (
-                  <div key={step.code} className="flex flex-col">
-                    {/* Étape : point + label */}
-                    <div className="flex items-start gap-3">
-                      <div className="flex justify-center" style={{ width: '14px' }}>
-                        <div className="relative shrink-0" style={{ width: '14px', height: '14px', marginTop: '3px' }}>
-                          {isCurrent && (
-                            <div
-                              className="absolute rounded-full border-2 border-primary animate-ping"
-                              style={{ inset: 0, opacity: 0.4 }}
-                            />
-                          )}
+                  <div key={step.code} className="flex gap-3">
+                    {/* Colonne gauche : point + ligne continue */}
+                    <div className="flex flex-col items-center" style={{ width: '14px' }}>
+                      <div className="relative shrink-0" style={{ width: '14px', height: '14px', marginTop: '3px' }}>
+                        {isCurrent && (
+                          <div
+                            className="absolute rounded-full border-2 border-primary animate-ping"
+                            style={{ inset: 0, opacity: 0.4 }}
+                          />
+                        )}
+                        {step.code === 'PROM' && step.done ? (
+                          <div
+                            className="absolute flex items-center justify-center rounded-full bg-primary"
+                            style={{ top: '0px', left: '0px', width: '14px', height: '14px' }}
+                          >
+                            <Check className="text-primary-foreground" style={{ width: '10px', height: '10px' }} />
+                          </div>
+                        ) : step.code === 'AN-APPLI' && step.done ? (
+                          <div
+                            className="absolute flex items-center justify-center rounded-full bg-primary"
+                            style={{ top: '0px', left: '0px', width: '14px', height: '14px' }}
+                          >
+                            <Flag className="text-primary-foreground" style={{ width: '9px', height: '9px' }} />
+                          </div>
+                        ) : (
                           <div
                             className={`absolute rounded-full border-2 ${dotColor}`}
                             style={{ top: '2px', left: '2px', width: '10px', height: '10px' }}
                           />
-                        </div>
+                        )}
                       </div>
+                      {!isLast && (
+                        <div
+                          className={lineColor}
+                          style={{
+                            flex: 1,
+                            minHeight: '28px',
+                            borderLeftWidth: '2px',
+                            borderLeftStyle: lineStyle,
+                          }}
+                        />
+                      )}
+                    </div>
+                    {/* Colonne droite : contenu */}
+                    <div className="flex flex-col" style={{ paddingBottom: isLast ? 0 : '8px' }}>
                       <div className="flex items-baseline gap-2">
                         <span className={`text-sm font-medium ${step.done ? 'text-foreground' : 'text-muted-foreground'}`}>
                           {step.label}
@@ -321,23 +352,19 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
                           {step.date ? formatDate(step.date) : step.done ? '' : 'en attente'}
                         </span>
                       </div>
-                    </div>
-                    {/* Connecteur : ligne + durée entre étapes */}
-                    {!isLast && (
-                      <div className="flex items-start gap-3" style={{ minHeight: '28px' }}>
-                        <div className="flex justify-center" style={{ width: '14px', height: '100%' }}>
-                          <div
-                            className={isNextPending || !step.done ? 'border-muted-foreground' : isRejected ? 'border-red-400' : 'border-primary'}
-                            style={{
-                              height: '100%',
-                              minHeight: '28px',
-                              borderLeftWidth: '2px',
-                              borderLeftStyle: isNextPending || !step.done ? 'dashed' : 'solid',
-                            }}
-                          />
-                        </div>
-                        <div className="flex flex-col justify-center" style={{ minHeight: '28px' }}>
-                          {showDuration && (
+                      {step.code === 'PROM' && step.done && dureeTotal !== null && (
+                        <span className="text-xs font-semibold" style={{ color: '#27AE60' }}>
+                          {isAppDirecte ? `Promulgué et appliqué en ${dureeTotal} j` : `Promulgué en ${dureeTotal} j`}
+                        </span>
+                      )}
+                      {step.code === 'AN-APPLI' && step.done && dureeApplication !== null && (
+                        <span className="text-xs font-semibold" style={{ color: '#27AE60' }}>
+                          Appliquée en {dureeApplication} j
+                        </span>
+                      )}
+                      {!isLast && (
+                        <div style={{ minHeight: '12px', marginTop: '4px' }}>
+                          {showDuration && !step.detail && (
                             <span className="text-xs text-muted-foreground" style={{ opacity: 0.7 }}>
                               {daysBetween(step.date!, nextStep!.date!)}
                             </span>
@@ -353,8 +380,8 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
                             </span>
                           )}
                         </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                 );
               })}
@@ -365,19 +392,6 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
           Voir la chronologie →
         </Link>
       </div>
-
-      {/* Durée totale du dossier */}
-      {dureeTotal !== null && (
-        <div className="flex flex-wrap items-center gap-2 mb-6">
-          <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${datePromulgation ? 'bg-[#27AE60]/15 text-[#27AE60] border-[#27AE60]/30 dark:bg-[#27AE60]/20 dark:text-[#2ECC71] dark:border-[#27AE60]/30' : 'bg-[#F39C12]/15 text-[#F39C12] border-[#F39C12]/30 dark:bg-[#F39C12]/20 dark:text-[#F1C40F] dark:border-[#F39C12]/30'}`}>
-            <Clock className="h-3 w-3 shrink-0" />
-            {datePromulgation ? `Promulgué en ${dureeTotal} j` : `En cours depuis ${dureeTotal} j`}
-          </span>
-          <Link href="/documentation/methode#delai-moyen-de-promulgation" className="text-xs text-muted-foreground/60 hover:text-foreground transition-colors ml-1">
-            Comment c'est calculé →
-          </Link>
-        </div>
-      )}
 
       {/* Combobox de sélection du texte */}
       <div className="mb-2">

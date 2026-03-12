@@ -134,6 +134,10 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
   const appLoi = appLoiResult.data?.[0] ?? null;
   const isAppDirecte = appLoi?.application_directe === true;
   const isAppAppliquee = appLoi?.statut_application === 'appliquee';
+  // Durée d'application : dépôt → dernier décret (si appliquée)
+  const dureeApplication = isAppAppliquee && !isAppDirecte && dateDepotDate && decappLastDate
+    ? toDays(dateDepotDate, decappLastDate)
+    : null;
   // Logique "étape suivante" : afficher l'étape immédiatement après la dernière étape en cours
   const isLectureUnique = actesCodes.has('ANLUNI');
   const hasANSteps = [...actesCodes].some(c => c.startsWith('AN') && MILESTONE_CODES.includes(c));
@@ -147,7 +151,7 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
       // Promulgation : en attente seulement pour les procédures pouvant être promulguées
       if (code === 'PROM') return isProm || (!isRejected && canBePromulgated && bothChambersPresent);
       if (code === 'DECAPP') return isProm && !isAppDirecte;
-      if (code === 'AN-APPLI') return isProm;
+      if (code === 'AN-APPLI') return isProm && !isAppDirecte;
       // Chambre suivante en attente : afficher si l'autre chambre a des étapes mais pas celle-ci
       if (code === 'SN1' && !actesCodes.has('SN1')) return !isRejected && hasANSteps && !hasSNSteps && !isLectureUnique;
       if (code === 'AN1' && !actesCodes.has('AN1')) return !isRejected && hasSNSteps && !hasANSteps;
@@ -173,8 +177,12 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
       }
       return {
         code,
-        label: code === 'AN-APPLI' && isAppDirecte ? 'Application directe' : STEP_CONFIG[code].label,
-        date: milestoneDateMap.get(code)?.toISOString().slice(0, 10) ?? null,
+        label: code === 'PROM' && isAppDirecte ? 'Promulguée (application directe)' : STEP_CONFIG[code].label,
+        date: (code === 'AN-APPLI' && isAppAppliquee && !isAppDirecte && decappLastDate)
+          ? decappLastDate.toISOString().slice(0, 10)
+          : (code === 'AN-APPLI' && isAppDirecte && datePromDate)
+            ? datePromDate.toISOString().slice(0, 10)
+            : milestoneDateMap.get(code)?.toISOString().slice(0, 10) ?? null,
         done: (code === 'AN-APPLI' && (isAppDirecte || isAppAppliquee)) ? true : actesCodes.has(code),
         detail,
       };
@@ -276,6 +284,8 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
       lienSenat={dossier?.lien_senat ?? null}
       lienLegifrance={dossier?.url_legifrance ?? null}
       dureeTotal={dureeTotal}
+      dureeApplication={dureeApplication}
+      isAppDirecte={isAppDirecte}
       auteurNom={auteur ? `${auteur.prenom ?? ''} ${auteur.nom ?? ''}`.trim() : null}
       auteurGroupe={auteur?.groupe?.libelle ?? null}
       timelineSteps={timelineSteps}

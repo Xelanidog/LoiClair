@@ -1,3 +1,17 @@
+## 13 mars 2026
+
+### Ajouté
+- **Durées intégrées dans la timeline** — la durée totale du parcours législatif (« Promulgué en X j ») et la durée d'application (« Appliquée en X j ») s'affichent directement sous les étapes correspondantes dans la timeline, à la place des badges séparés
+- **Icônes spéciales** — l'étape Promulguée porte une icône ✓ et l'étape Application un drapeau pour les distinguer visuellement
+- **Date d'application** — pour les lois nécessitant des décrets, l'étape Application affiche la date du dernier décret publié
+- **Application directe** — les lois d'application directe affichent « Promulguée (application directe) » avec « Promulgué et appliqué en X j » en une seule étape finale
+
+### Modifié
+- **Timeline en colonne continue** — la ligne verticale reliant les étapes est désormais ininterrompue, même quand une étape contient du texte supplémentaire (durée, détail des décrets)
+- **Suppression des badges KPI séparés** — les indicateurs de durée sont désormais intégrés directement dans la timeline
+
+---
+
 ## 12 mars 2026
 
 ### Ajouté
