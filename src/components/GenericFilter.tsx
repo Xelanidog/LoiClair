@@ -78,7 +78,7 @@ export default function GenericFilter({
   const trigger = (
     <SelectTrigger
       className={`
-        max-w-56 transition-colors duration-200
+        max-w-full md:max-w-56 transition-colors duration-200
         ${isActive
           ? 'border-primary bg-primary/10 text-primary hover:bg-primary/15'
           : 'border-input hover:bg-muted hover:border-primary/30'}

@@ -12,6 +12,7 @@ import ShimmerText from '@/components/ShimmerText';
 import GenericFilter from '@/components/GenericFilter';
 import ResetButton from '@/components/ResetButton';
 import SearchInput from '@/components/SearchInput';
+import FilterDrawer from '@/components/FilterDrawer';
 import ProcedureTooltip from '@/components/ProcedureTooltip';
 import { DEFINITIONS } from '@/lib/definitions';
 import {
@@ -275,7 +276,7 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
       </p>
 
       {/* Filtres */}
-      <div className="mb-4 flex flex-wrap items-center gap-3">
+      <FilterDrawer>
           <SearchInput />
           <GenericFilter
             paramName="statut"
@@ -325,7 +326,7 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
             options={themeOptions}
           />
           <ResetButton />
-      </div>
+      </FilterDrawer>
 
       <div className="mb-4 text-sm text-muted-foreground">
       {finalTotalCount} dossier{(totalCount || 0) > 1 ? 's' : ''} trouvé{(totalCount || 0) > 1 ? 's' : ''}.      </div>

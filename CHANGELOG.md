@@ -1,6 +1,12 @@
 ## Semaine du 11 mars 2026
 
+### Ajouté
+- **Filtres en panneau sur mobile** — sur la page des dossiers législatifs, les filtres sont regroupés dans un panneau qui s'ouvre depuis un bouton "Filtres", pour une navigation plus fluide sur téléphone
+
 ### Modifié
+- **Optimisation mobile générale** — espacement réduit en haut des pages, marges latérales ajustées, meilleure utilisation de l'espace sur petit écran
+- **Page d'accueil plus compacte sur mobile** — le héro et les sections prennent moins de place verticale, les espaces entre sections sont réduits
+- Les filtres (statut, dates, types, groupes, thèmes) s'affichent en pleine largeur sur mobile pour plus de lisibilité
 - Le bouton "Signaler" devient **"Une idée ? Un problème ?"** — il permet désormais de proposer des idées de fonctionnalités en plus de signaler des bugs
 - La modale s'ouvre sur un écran de choix entre "Signaler un problème" et "Proposer une idée", avec un formulaire adapté à chaque cas
 

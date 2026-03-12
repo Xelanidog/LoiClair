@@ -225,7 +225,7 @@ Chaque dossier est présenté sous forme de ligne compacte structurée en trois 
 
 ### Filtres et recherche
 
-Plusieurs filtres permettent de cibler les dossiers qui vous intéressent :
+Plusieurs filtres permettent de cibler les dossiers qui vous intéressent. Sur mobile, un bouton **Filtres** ouvre un panneau en bas de l'écran avec l'ensemble des filtres disponibles ; sur ordinateur, ils sont affichés directement sous le titre.
 
 - **Type de procédure** — pour isoler un type de texte en particulier.
 - **Statut** — pour ne voir que les textes promulgués, en cours, rejetés, etc.

@@ -544,7 +544,7 @@ export default function LandingPage() {
       {/* ------------------------------------------------------------------ */}
       {/* 1. HERO IMPACT — centré, plein écran                                 */}
       {/* ------------------------------------------------------------------ */}
-      <section className="flex flex-col items-center justify-center pt-20 lg:pt-24 pb-8 relative" style={{ minHeight: "92vh" }}>
+      <section className="flex flex-col items-center justify-center pt-20 lg:pt-24 pb-8 relative min-h-[65vh] lg:min-h-[92vh]">
         <div className="max-w-4xl mx-auto px-6 lg:px-10 text-center w-full">
           <motion.div
             variants={fadeUp}
@@ -640,7 +640,7 @@ export default function LandingPage() {
           </g>
         </svg>
         <div className="max-w-7xl mx-auto px-6 lg:px-10">
-          <div className="grid lg:grid-cols-2 items-center" style={{ gap: "4rem" }}>
+          <div className="grid lg:grid-cols-2 items-center gap-8 lg:gap-16">
             {/* Left — Texte */}
             <AnimatedSection variants={fadeLeft}>
               <div className="space-y-5">
@@ -683,7 +683,7 @@ export default function LandingPage() {
       {/* ------------------------------------------------------------------ */}
       <section className="py-20 lg:py-28 border-y">
         <div className="max-w-7xl mx-auto px-6 lg:px-10">
-          <div className="grid lg:grid-cols-2 items-center" style={{ gap: "4rem" }}>
+          <div className="grid lg:grid-cols-2 items-center gap-8 lg:gap-16">
             {/* Left — Texte */}
             <AnimatedSection variants={fadeLeft}>
               <div className="space-y-5">
@@ -739,7 +739,7 @@ export default function LandingPage() {
       {/* ------------------------------------------------------------------ */}
       <section className="py-20 lg:py-28 bg-muted/20">
         <div className="max-w-7xl mx-auto px-6 lg:px-10">
-          <div className="grid lg:grid-cols-2 items-center" style={{ gap: "6rem" }}>
+          <div className="grid lg:grid-cols-2 items-center gap-8 lg:gap-24">
             {/* Left — Mockup */}
             <AnimatedSection variants={fadeLeft} className="px-2 lg:px-0">
               <Link href="/Month" className="block hover:scale-[1.02] transition-transform">
@@ -795,7 +795,7 @@ export default function LandingPage() {
       {/* ------------------------------------------------------------------ */}
       <section className="py-20 lg:py-28 border-y">
         <div className="max-w-7xl mx-auto px-6 lg:px-10">
-          <div className="grid lg:grid-cols-2 items-center" style={{ gap: "4rem" }}>
+          <div className="grid lg:grid-cols-2 items-center gap-8 lg:gap-16">
             {/* Left — Texte */}
             <AnimatedSection variants={fadeLeft}>
               <div className="space-y-5">
