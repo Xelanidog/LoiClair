@@ -6,14 +6,18 @@
 - **Étape suivante en attente** — la timeline affiche l'étape suivante attendue (autre chambre ou promulgation) avec une ligne en pointillés
 - **Préfixe « Texte CMP »** dans le fil d'actualité — les décisions de débat en CMP dans le fil du mois affichent désormais « Texte CMP · » devant le nom de l'institution
 - **« En cours depuis X j »** — l'étape en cours dans la timeline affiche désormais depuis combien de temps elle est active, en orange
+- **Durée de publication des décrets** — l'étape « Décrets d'application » affiche combien de temps il a fallu pour publier tous les décrets, ou « en cours depuis X j » si tous ne sont pas encore publiés
 
 ### Modifié
 - **Résolutions et textes non promulguables** — les résolutions, rapports d'information et autres textes qui n'ont pas vocation à être promulgués n'affichent plus « Promulguée » comme étape suivante
 - **Simplification des indicateurs** — les badges de durée par chambre (AN, Sénat), CMP et nombre de votes sont supprimés de la page résumé IA car ces informations sont désormais directement lisibles dans la timeline
+- **Durées sur les lignes de connexion** — les durées entre étapes sont affichées sur la ligne reliant deux étapes (et non sous le nom de l'étape), pour éviter toute ambiguïté
+- **Espacement uniforme** — toutes les étapes de la timeline ont désormais le même espacement vertical
 
 ### Corrigé
 - **Ordre des étapes** — le Conseil constitutionnel et la CMP s'affichent désormais à la bonne position chronologique (et non après la promulgation)
 - **Dates erronées filtrées** — les décrets dont la date est antérieure au dépôt du dossier (données issues d'anciennes législatures) sont exclus de la timeline
+- **Statut d'application** — quand une loi est 100 % appliquée, l'étape « Application » est correctement marquée comme terminée dans la timeline
 
 ---
 

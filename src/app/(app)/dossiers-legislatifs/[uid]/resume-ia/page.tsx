@@ -99,6 +99,7 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
 
   // Calcul de la durée totale et des dates par milestone
   const milestoneDateMap = new Map<string, Date>();
+  let decappLastDate: Date | null = null;
   for (const acte of actesKPIResult.data ?? []) {
     const d = new Date(acte.date_acte);
     const code: string = acte.code_acte;
@@ -106,6 +107,10 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
     // Ignorer les dates antérieures au dépôt (données erronées, ex : décrets PLFSS antérieur)
     const depotDate = dossier?.date_depot ? new Date(dossier.date_depot) : null;
     if (!depotDate || d >= depotDate) {
+      // Tracker la date du dernier décret d'application
+      if (code === 'DECAPP-PUB') {
+        if (!decappLastDate || d > decappLastDate) decappLastDate = d;
+      }
       for (const milestone of MILESTONE_CODES) {
         if (code.startsWith(milestone + '-')) {
           const existing = milestoneDateMap.get(milestone);
@@ -128,6 +133,7 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
   const isRejected = dossier?.statut_final === 'Rejeté';
   const appLoi = appLoiResult.data?.[0] ?? null;
   const isAppDirecte = appLoi?.application_directe === true;
+  const isAppAppliquee = appLoi?.statut_application === 'appliquee';
   // Logique "étape suivante" : afficher l'étape immédiatement après la dernière étape en cours
   const isLectureUnique = actesCodes.has('ANLUNI');
   const hasANSteps = [...actesCodes].some(c => c.startsWith('AN') && MILESTONE_CODES.includes(c));
@@ -152,14 +158,29 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
       const db = milestoneDateMap.get(b)?.getTime() ?? (1e15 + STEP_CONFIG[b].priority);
       return da - db;
     })
-    .map(code => ({
-      code,
-      label: code === 'AN-APPLI' && isAppDirecte ? 'Application directe' : STEP_CONFIG[code].label,
-      date: milestoneDateMap.get(code)?.toISOString().slice(0, 10) ?? null,
-      done: code === 'AN-APPLI' && isAppDirecte ? true : actesCodes.has(code),
-    }));
+    .map(code => {
+      // Détail pour l'étape décrets : durée entre premier et dernier décret, ou "en cours"
+      let detail: string | null = null;
+      if (code === 'DECAPP' && milestoneDateMap.has('DECAPP')) {
+        const firstDecapp = milestoneDateMap.get('DECAPP')!;
+        if (isAppAppliquee && decappLastDate && decappLastDate > firstDecapp) {
+          const days = Math.round((decappLastDate.getTime() - firstDecapp.getTime()) / 86400000);
+          detail = days > 60 ? `tous publiés en ${Math.round(days / 30)} mois` : `tous publiés en ${days} j`;
+        } else if (!isAppAppliquee) {
+          const days = Math.round((today.getTime() - firstDecapp.getTime()) / 86400000);
+          detail = days > 60 ? `en cours depuis ${Math.round(days / 30)} mois` : `en cours depuis ${days} j`;
+        }
+      }
+      return {
+        code,
+        label: code === 'AN-APPLI' && isAppDirecte ? 'Application directe' : STEP_CONFIG[code].label,
+        date: milestoneDateMap.get(code)?.toISOString().slice(0, 10) ?? null,
+        done: (code === 'AN-APPLI' && (isAppDirecte || isAppAppliquee)) ? true : actesCodes.has(code),
+        detail,
+      };
+    });
   // Ajouter "Dépôt" en tête avec la date du dossier
-  timelineSteps.unshift({ code: 'DEPOT', label: 'Dépôt', date: dossier?.date_depot?.slice(0, 10) ?? null, done: true });
+  timelineSteps.unshift({ code: 'DEPOT', label: 'Dépôt', date: dossier?.date_depot?.slice(0, 10) ?? null, done: true, detail: null });
 
 
   // Scrutins associés aux textes via actes_legislatifs

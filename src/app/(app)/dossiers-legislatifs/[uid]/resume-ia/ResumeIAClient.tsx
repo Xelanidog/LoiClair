@@ -59,7 +59,7 @@ interface ResumeIAClientProps {
   dureeTotal: number | null;
   auteurNom: string | null;
   auteurGroupe: string | null;
-  timelineSteps: { code: string; label: string; date: string | null; done: boolean }[];
+  timelineSteps: { code: string; label: string; date: string | null; done: boolean; detail: string | null }[];
   scrutinsParTexte: Record<string, ScrutinData>;
   initialTexteUid: string | null;
   cachedResumes: Record<string, string>;
@@ -294,36 +294,25 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
                   : isRejected && isLastDone
                     ? 'border-red-500 bg-red-500'
                     : 'border-primary bg-primary';
+                const hasConnectorText = showDuration || (isCurrent && step.date && !step.detail) || step.detail;
                 return (
-                  <div key={step.code} className="flex items-stretch gap-3">
-                    {/* Colonne gauche : point + ligne */}
-                    <div className="flex flex-col items-center" style={{ width: '14px' }}>
-                      <div className="relative shrink-0" style={{ width: '14px', height: '14px', marginTop: '3px' }}>
-                        {isCurrent && (
+                  <div key={step.code} className="flex flex-col">
+                    {/* Étape : point + label */}
+                    <div className="flex items-start gap-3">
+                      <div className="flex justify-center" style={{ width: '14px' }}>
+                        <div className="relative shrink-0" style={{ width: '14px', height: '14px', marginTop: '3px' }}>
+                          {isCurrent && (
+                            <div
+                              className="absolute rounded-full border-2 border-primary animate-ping"
+                              style={{ inset: 0, opacity: 0.4 }}
+                            />
+                          )}
                           <div
-                            className="absolute rounded-full border-2 border-primary animate-ping"
-                            style={{ inset: 0, opacity: 0.4 }}
+                            className={`absolute rounded-full border-2 ${dotColor}`}
+                            style={{ top: '2px', left: '2px', width: '10px', height: '10px' }}
                           />
-                        )}
-                        <div
-                          className={`absolute rounded-full border-2 ${dotColor}`}
-                          style={{ top: '2px', left: '2px', width: '10px', height: '10px' }}
-                        />
+                        </div>
                       </div>
-                      {!isLast && (
-                        <div
-                          className={isNextPending || !step.done ? 'border-muted-foreground' : isRejected ? 'border-red-400' : 'border-primary'}
-                          style={{
-                            flex: 1,
-                            minHeight: showDuration ? '32px' : isCurrent ? '32px' : '16px',
-                            borderLeftWidth: '2px',
-                            borderLeftStyle: isNextPending || !step.done ? 'dashed' : 'solid',
-                          }}
-                        />
-                      )}
-                    </div>
-                    {/* Colonne droite : label + date + durée */}
-                    <div className={`flex flex-col ${isLast ? '' : 'pb-0'}`} style={{ minHeight: isLast ? 'auto' : showDuration ? '40px' : isCurrent ? '40px' : '24px' }}>
                       <div className="flex items-baseline gap-2">
                         <span className={`text-sm font-medium ${step.done ? 'text-foreground' : 'text-muted-foreground'}`}>
                           {step.label}
@@ -332,17 +321,40 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
                           {step.date ? formatDate(step.date) : step.done ? '' : 'en attente'}
                         </span>
                       </div>
-                      {showDuration && (
-                        <span className="text-xs text-muted-foreground mt-0.5" style={{ opacity: 0.7 }}>
-                          {daysBetween(step.date!, nextStep!.date!)}
-                        </span>
-                      )}
-                      {isCurrent && step.date && (
-                        <span className="text-xs mt-0.5" style={{ color: '#F39C12' }}>
-                          en cours depuis {daysBetween(step.date, new Date().toISOString().slice(0, 10))}
-                        </span>
-                      )}
                     </div>
+                    {/* Connecteur : ligne + durée entre étapes */}
+                    {!isLast && (
+                      <div className="flex items-start gap-3" style={{ minHeight: '28px' }}>
+                        <div className="flex justify-center" style={{ width: '14px', height: '100%' }}>
+                          <div
+                            className={isNextPending || !step.done ? 'border-muted-foreground' : isRejected ? 'border-red-400' : 'border-primary'}
+                            style={{
+                              height: '100%',
+                              minHeight: '28px',
+                              borderLeftWidth: '2px',
+                              borderLeftStyle: isNextPending || !step.done ? 'dashed' : 'solid',
+                            }}
+                          />
+                        </div>
+                        <div className="flex flex-col justify-center" style={{ minHeight: '28px' }}>
+                          {showDuration && (
+                            <span className="text-xs text-muted-foreground" style={{ opacity: 0.7 }}>
+                              {daysBetween(step.date!, nextStep!.date!)}
+                            </span>
+                          )}
+                          {isCurrent && step.date && !step.detail && (
+                            <span className="text-xs" style={{ color: '#F39C12' }}>
+                              en cours depuis {daysBetween(step.date, new Date().toISOString().slice(0, 10))}
+                            </span>
+                          )}
+                          {step.detail && (
+                            <span className="text-xs" style={{ color: step.detail.startsWith('en cours') ? '#F39C12' : undefined, opacity: step.detail.startsWith('en cours') ? 1 : 0.7 }}>
+                              {step.detail}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}
