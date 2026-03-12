@@ -12,6 +12,8 @@
 
 ### Corrigé
 - **Filtres sur Safari** — le panneau de filtres mobile ne s'affichait plus correctement sur Safari (il apparaissait aussi sur grand écran). Corrigé pour que les filtres inline s'affichent sur desktop et le panneau uniquement sur mobile
+- **Clavier mobile sur les filtres** — le clavier virtuel ne s'ouvre plus automatiquement à l'ouverture du panneau de filtres sur mobile (Safari)
+- **Logo "LoiClair" cohérent** — la taille et le lien du logo en haut à gauche sont maintenant identiques sur toutes les pages (redirige vers la page d'accueil)
 
 ---
 

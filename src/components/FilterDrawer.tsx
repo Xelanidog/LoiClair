@@ -33,7 +33,7 @@ export default function FilterDrawer({ children }: { children: React.ReactNode }
               Filtres
             </Button>
           </SheetTrigger>
-          <SheetContent side="bottom" size="content" className="max-h-[80vh] overflow-y-auto rounded-t-2xl">
+          <SheetContent side="bottom" size="content" className="max-h-[80vh] overflow-y-auto rounded-t-2xl" onOpenAutoFocus={(e) => e.preventDefault()}>
             <SheetHeader>
               <SheetTitle>Filtres</SheetTitle>
             </SheetHeader>

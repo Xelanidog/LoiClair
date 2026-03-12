@@ -18,7 +18,7 @@ export default function LandingMobileNav() {
       className="lg:hidden fixed top-0 left-0 right-0 z-40 h-14 flex items-center justify-between px-4 bg-background/80 backdrop-blur-md border-b"
       style={{ WebkitBackdropFilter: "blur(12px)", top: 0 }}
     >
-      <Link href="/" className="font-bold text-lg tracking-tight">
+      <Link href="/" className="font-bold text-xl tracking-tight">
         LoiClair
       </Link>
       <Sheet open={open} onOpenChange={setOpen}>
