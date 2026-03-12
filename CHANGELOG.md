@@ -10,6 +10,9 @@
 - Le bouton "Signaler" devient **"Une idée ? Un problème ?"** — il permet désormais de proposer des idées de fonctionnalités en plus de signaler des bugs
 - La modale s'ouvre sur un écran de choix entre "Signaler un problème" et "Proposer une idée", avec un formulaire adapté à chaque cas
 
+### Corrigé
+- **Filtres sur Safari** — le panneau de filtres mobile ne s'affichait plus correctement sur Safari (il apparaissait aussi sur grand écran). Corrigé pour que les filtres inline s'affichent sur desktop et le panneau uniquement sur mobile
+
 ---
 
 ## Semaine du 10 mars 2026

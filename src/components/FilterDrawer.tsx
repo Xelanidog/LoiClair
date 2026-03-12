@@ -13,8 +13,19 @@ import {
 export default function FilterDrawer({ children }: { children: React.ReactNode }) {
   return (
     <>
+      <style>{`
+        .filter-mobile { display: block; }
+        .filter-desktop { display: none; }
+        @media (min-width: 768px) {
+          .filter-mobile { display: none; }
+          .filter-desktop { display: flex; }
+        }
+        .filter-drawer-mobile > * { max-width: 100% !important; width: 100%; }
+        .filter-drawer-mobile button[data-slot="select-trigger"] { max-width: 100% !important; width: 100%; }
+      `}</style>
+
       {/* Mobile: bouton + Sheet en bas de l'écran */}
-      <div className="md:hidden mb-4">
+      <div className="filter-mobile mb-4">
         <Sheet>
           <SheetTrigger asChild>
             <Button variant="outline" size="sm" className="gap-2">
@@ -27,18 +38,14 @@ export default function FilterDrawer({ children }: { children: React.ReactNode }
               <SheetTitle>Filtres</SheetTitle>
             </SheetHeader>
             <div className="filter-drawer-mobile flex flex-col gap-3 pt-4">
-              <style>{`
-                .filter-drawer-mobile > * { max-width: 100% !important; width: 100%; }
-                .filter-drawer-mobile button[data-slot="select-trigger"] { max-width: 100% !important; width: 100%; }
-              `}</style>
               {children}
             </div>
           </SheetContent>
         </Sheet>
       </div>
 
-      {/* Desktop: filtres inline comme avant */}
-      <div className="hidden md:flex flex-wrap items-center gap-3 mb-4">
+      {/* Desktop: filtres inline */}
+      <div className="filter-desktop flex-wrap items-center gap-3 mb-4">
         {children}
       </div>
     </>
