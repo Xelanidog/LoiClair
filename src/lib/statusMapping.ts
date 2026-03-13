@@ -83,12 +83,13 @@ export const statusMapping: Record<string, StatusInfo> = {
 // ── Badge classes pour statut_final (source de vérité unique) ──
 
 export const STATUS_BADGE_CLASSES: Record<string, string> = {
+  "Appliquée": "bg-[#DAA520]/15 text-[#DAA520] border-[#DAA520]/30 dark:bg-[#DAA520]/20 dark:text-[#F1C40F]",
   "Promulguée": "bg-[#27AE60]/15 text-[#27AE60] border-[#27AE60]/30 dark:bg-[#27AE60]/20 dark:text-[#2ECC71]",
   "Rejeté": "bg-[#E74C3C]/15 text-[#E74C3C] border-[#E74C3C]/30 dark:bg-[#E74C3C]/20",
   "En cours d'examen": "bg-[#F39C12]/15 text-[#F39C12] border-[#F39C12]/30 dark:bg-[#F39C12]/20 dark:text-[#F1C40F]",
   "Adopté par le Parlement": "bg-violet-100 text-violet-800 border-violet-200 dark:bg-violet-900/30 dark:text-violet-300",
-  "Adopté par l'Assemblée nationale": "bg-primary/10 text-primary border-primary/30",
-  "Adopté par le Sénat": "bg-[#F39C12]/10 text-[#F39C12] border-[#F39C12]/30 dark:bg-[#F39C12]/15 dark:text-[#F1C40F]",
+  "Adopté par l'Assemblée nationale": "bg-violet-100 text-violet-800 border-violet-200 dark:bg-violet-900/30 dark:text-violet-300",
+  "Adopté par le Sénat": "bg-violet-100 text-violet-800 border-violet-200 dark:bg-violet-900/30 dark:text-violet-300",
 };
 
 const FALLBACK_BADGE_CLASS = "bg-muted text-muted-foreground border-border";

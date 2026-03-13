@@ -1,3 +1,15 @@
+## 14 mars 2026 (après-midi)
+
+### Ajouté
+- **Nouveau statut « Appliquée »** — les lois promulguées dont tous les décrets d'application sont publiés (ou d'application directe) sont désormais identifiées par le statut « Appliquée », avec un badge et un bullet doré
+- **Filtre « Appliquée »** — un nouveau filtre statut permet d'isoler les lois pleinement appliquées dans la liste des dossiers
+
+### Modifié
+- **Couleurs des statuts harmonisées** — chaque statut a maintenant une couleur distincte : or pour « Appliquée », vert pour « Promulguée », violet unifié pour tous les « Adopté » (Assemblée, Sénat, Parlement), rouge pour « Rejeté », orange pour « En cours »
+- **Comptabilisation des lois appliquées dans les indicateurs** — les lois « Appliquées » sont correctement comptées à la fois comme promulguées et comme appliquées dans le tableau de bord
+
+---
+
 ## 14 mars 2026
 
 ### Modifié

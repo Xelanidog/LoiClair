@@ -646,7 +646,38 @@ def main():
     # 6. Création des actes synthétiques d'application
     insert_application_actes()
 
-    # 7. Résumé
+    # 7. Mise à jour statut_final → "Appliquée" pour les lois appliquées
+    print("\n7. Mise à jour statut_final → Appliquée...")
+    try:
+        # Récupérer les dossier_uid ayant un acte AN-APPLI-DIRECTE ou AN-APPLI-COMPLETE
+        appli_uids = set()
+        for code in ["AN-APPLI-DIRECTE", "AN-APPLI-COMPLETE"]:
+            resp = (
+                supabase.table("actes_legislatifs")
+                .select("dossier_uid")
+                .eq("code_acte", code)
+                .execute()
+            )
+            for row in resp.data:
+                appli_uids.add(row["dossier_uid"])
+
+        if appli_uids:
+            updated = 0
+            for uid in appli_uids:
+                try:
+                    supabase.table("dossiers_legislatifs").update(
+                        {"statut_final": "Appliquée"}
+                    ).eq("uid", uid).eq("statut_final", "Promulguée").execute()
+                    updated += 1
+                except Exception as e:
+                    print(f"  Erreur update {uid}: {e}")
+            print(f"  → {len(appli_uids)} dossiers éligibles, {updated} mis à jour")
+        else:
+            print("  → Aucun dossier à mettre à jour")
+    except Exception as e:
+        print(f"  Erreur lors de la mise à jour statut_final: {e}")
+
+    # 8. Résumé
     print(f"\n{'=' * 60}")
     print("RÉSUMÉ")
     print(f"{'=' * 60}")

@@ -62,6 +62,7 @@ export default async function DossiersLegislatifsPage({ searchParams }: { search
     "adopte_par_parlement": "Adopté par le Parlement",
     "rejetee": "Rejeté",
     "promulguee": "Promulguée",
+    "appliquee": "Appliquée",
   };
 
   const statut = statutSlug ? statutMap[statutSlug] : undefined;
@@ -241,7 +242,7 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
     const depotDate = new Date(depotDateRaw);
     if (isNaN(depotDate.getTime())) return '';
 
-    if (dossier.statut_final === "Promulguée" && dossier.date_promulgation) {
+    if ((dossier.statut_final === "Promulguée" || dossier.statut_final === "Appliquée") && dossier.date_promulgation) {
       const promulDate = new Date(dossier.date_promulgation);
       if (isNaN(promulDate.getTime())) return '';
       const days = Math.floor((promulDate.getTime() - depotDate.getTime()) / 86400000);
@@ -290,6 +291,7 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
               { slug: 'adopte_par_parlement', libelle: "Adopté par le Parlement" },
               { slug: 'rejetee', libelle: "Rejeté" },
               { slug: 'promulguee', libelle: "Promulguée" },
+              { slug: 'appliquee', libelle: "Appliquée" },
             ]}
           />
           <GenericFilter
@@ -347,11 +349,10 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
           // Couleur du bullet selon statut
           const bulletColor = (() => {
             const s = dossier.statut_final;
+            if (s === 'Appliquée') return '#DAA520';
             if (s === 'Promulguée') return '#27AE60';
             if (s === 'Rejeté') return '#E74C3C';
-            if (s?.includes('Parlement')) return '#8B5CF6';
-            if (s?.includes('Assemblée')) return '#06B6D4';
-            if (s?.includes('Sénat')) return '#F39C12';
+            if (s?.includes('Adopt')) return '#8B5CF6';
             return '#F39C12';
           })();
 
@@ -364,7 +365,7 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
                   <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: bulletColor }} />
                   <span className="text-xs text-muted-foreground">
                     {dossier.statut_final ?? 'Statut inconnu'}
-                    {daysInfo && <> · {dossier.statut_final === 'Promulguée' ? `promulguée en ${daysInfo}` : `déposé il y a ${daysInfo}`}</>}
+                    {daysInfo && <> · {(dossier.statut_final === 'Promulguée' || dossier.statut_final === 'Appliquée') ? `promulguée en ${daysInfo}` : `déposé il y a ${daysInfo}`}</>}
                   </span>
                 </div>
 

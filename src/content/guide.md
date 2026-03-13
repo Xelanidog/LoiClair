@@ -219,7 +219,7 @@ La page **Tous les textes** liste l'ensemble des dossiers législatifs déposés
 
 Chaque dossier est présenté sous forme de ligne compacte structurée en trois niveaux :
 
-1. Un **bullet coloré** indique le statut d'un coup d'œil (vert = promulguée, rouge = rejeté, violet = adopté par le Parlement, bleu = Assemblée nationale, orange = Sénat ou en cours), suivi du **statut exact** et de la **durée** (« déposé il y a X jours » ou « promulguée en X jours »).
+1. Un **bullet coloré** indique le statut d'un coup d'œil (or = appliquée, vert = promulguée, violet = adopté, rouge = rejeté, orange = en cours d'examen), suivi du **statut exact** et de la **durée** (« déposé il y a X jours » ou « promulguée en X jours »).
 2. Le **titre** du texte.
 3. Des **métadonnées** : le type de procédure (avec info-bulle explicative si disponible), la **qualité et le nom de l'auteur** (Député, Sénateur ou Ministre + nom), son **groupe politique**, et la **date de dépôt**. Si aucun texte publié n'est disponible, la mention « Aucun texte » ou « Texte non encore publié » apparaît en fin de ligne. Un bouton **Dossier LoiClair avec résumé IA** permet d'accéder directement à la page de résumé du dossier.
 
@@ -228,7 +228,7 @@ Chaque dossier est présenté sous forme de ligne compacte structurée en trois 
 Plusieurs filtres permettent de cibler les dossiers qui vous intéressent. Sur mobile, un bouton **Filtres** ouvre un panneau en bas de l'écran avec l'ensemble des filtres disponibles ; sur ordinateur, ils sont affichés directement sous le titre.
 
 - **Type de procédure** — pour isoler un type de texte en particulier.
-- **Statut** — pour ne voir que les textes promulgués, en cours, rejetés, etc.
+- **Statut** — pour ne voir que les textes appliqués, promulgués, en cours, rejetés, etc. Le statut **Appliquée** signifie que la loi a été promulguée et que ses décrets d'application sont publiés (ou qu'elle est d'application directe).
 - **Groupe politique** — pour filtrer par groupe initiateur.
 - **Thème** — pour afficher uniquement les dossiers portant sur un sujet donné (santé, éducation, transports, etc.). Les thèmes sont attribués automatiquement à partir du titre de chaque dossier (voir [Méthodologie — Classification thématique](/documentation/methode#classification-thematique)).
 - **Barre de recherche** — pour chercher un dossier par mot-clé dans le titre.

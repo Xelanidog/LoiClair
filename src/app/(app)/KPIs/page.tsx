@@ -225,12 +225,16 @@ try {
     else if (statut.includes('an') || statut.includes('assemblée') || statut.includes('assemblee')) statsData.adoptes_an++;
     else if (statut.includes('sénat')) statsData.adoptes_senat++;
     else if (statut.includes('parlement') || statut.includes('navette') || statut === 'adopté') statsData.adoptes_parlement++;
-    else if (statut.includes('promulgu')) {
+    else if (statut.includes('promulgu') || statut.includes('appliqu')) {
       statsData.promulgues++;
-      // Vérifier si la loi est appliquée (application directe ou tous décrets publiés)
-      const statutApp = applicationMap.get(d.uid);
-      if (statutApp === 'appliquee' || statutApp === 'application_directe') {
+      // Vérifier si la loi est appliquée (statut_final "Appliquée" ou via applicationMap)
+      if (statut.includes('appliqu')) {
         statsData.lois_appliquees++;
+      } else {
+        const statutApp = applicationMap.get(d.uid);
+        if (statutApp === 'appliquee' || statutApp === 'application_directe') {
+          statsData.lois_appliquees++;
+        }
       }
     }
     else if (statut.includes('rejet')) statsData.rejetes++;
@@ -390,7 +394,8 @@ try {
     }
     if (PROCEDURES_PROMULGABLES.has(proc)) {
       gs.total_promulgables++;
-      if (d.statut_final?.toLowerCase().includes('promulgu')) gs.promulgues++;
+      const sf = d.statut_final?.toLowerCase() || '';
+      if (sf.includes('promulgu') || sf.includes('appliqu')) gs.promulgues++;
     }
   }
   groupeStats = [...gsMap.values()]
