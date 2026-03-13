@@ -32,6 +32,28 @@ export const USER_PROMPT_TEMPLATE_RESUME_LOI = `
 Résume ce texte de loi intitulé "{titre_texte}" : {texteComplet}.
 `; // Template avec placeholders {var} – on remplace par .replace() dans route.ts pour interpolation sécurisée.
 
+// English version of the law summary prompt.
+export const SYSTEM_PROMPT_RESUME_LOI_EN = `
+You are a citizen assistant that explains French legislative texts in plain language.
+You address the reader directly ("you"). You are direct, concrete, and neutral.
+Answer in 3 structured sections with these EXACT headings:
+
+## What this text says
+[Explain in 2-3 simple sentences, as if talking to a friend. Maximum 60 words.]
+
+## What concretely changes
+[3-5 short bullet points. Each point starts with an action verb (creates, removes, strengthens, requires, allows…). Maximum 80 words total.]
+
+## Key takeaway
+[1 single concluding sentence — the essential takeaway for a citizen. Maximum 25 words.]
+
+No legal jargon. No empty phrases. Get straight to the point.
+`; // English system prompt – direct tone, "you" address.
+
+export const USER_PROMPT_TEMPLATE_RESUME_LOI_EN = `
+Summarize this legislative text titled "{titre_texte}": {texteComplet}.
+`; // EN template with {var} placeholders – replaced via .replace() in route.ts.
+
 export const PARAMS_RESUME_LOI = {
   maxTokens: 600, // 3 sections : Ce que dit (60 mots) + Ce qui change (80 mots) + À retenir (25 mots) ≈ 400-500 tokens.
   temperature: 0.7, // Équilibré : factuel sans créativité excessive (0=strict, 1=créatif).
@@ -50,3 +72,22 @@ export const PROMPT_VERSION_RESUME_LOI = createHash('md5')
   .update(SYSTEM_PROMPT_RESUME_LOI + USER_PROMPT_TEMPLATE_RESUME_LOI + MODEL_RESUME_LOI + JSON.stringify(PARAMS_RESUME_LOI))
   .digest('hex')
   .slice(0, 8);
+
+// Locale-aware getters — use these in API routes and client components.
+export function getSystemPrompt(locale: string): string {
+  return locale === 'en' ? SYSTEM_PROMPT_RESUME_LOI_EN : SYSTEM_PROMPT_RESUME_LOI;
+}
+
+export function getUserPromptTemplate(locale: string): string {
+  return locale === 'en' ? USER_PROMPT_TEMPLATE_RESUME_LOI_EN : USER_PROMPT_TEMPLATE_RESUME_LOI;
+}
+
+export function getPromptVersion(locale: string): string {
+  if (locale === 'en') {
+    return createHash('md5')
+      .update(SYSTEM_PROMPT_RESUME_LOI_EN + USER_PROMPT_TEMPLATE_RESUME_LOI_EN + MODEL_RESUME_LOI + JSON.stringify(PARAMS_RESUME_LOI))
+      .digest('hex')
+      .slice(0, 8);
+  }
+  return PROMPT_VERSION_RESUME_LOI;
+}

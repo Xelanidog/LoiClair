@@ -1,5 +1,6 @@
+import { getTranslations } from 'next-intl/server';
 import { supabase } from '@/lib/supabase'
-import { DEFINITIONS } from '@/lib/definitions'
+import { DEFINITION_KEYS } from '@/lib/definitions'
 
 type GlossaireEntry = { term: string; definition: string }
 type Category = { label: string; entries: GlossaireEntry[] }
@@ -8,11 +9,18 @@ function deduplicate(values: (string | null)[]): string[] {
   return [...new Set(values.filter(Boolean) as string[])].sort()
 }
 
-function toEntry(term: string): GlossaireEntry {
-  return { term, definition: DEFINITIONS[term] ?? 'Définition à venir.' }
-}
-
 export default async function GlossairePage() {
+  const t = await getTranslations('definitions');
+
+  function toEntry(dbValue: string): GlossaireEntry {
+    const i18nKey = DEFINITION_KEYS[dbValue];
+    if (!i18nKey) return { term: dbValue, definition: t('fallback') };
+    return {
+      term: t(`${i18nKey}.term`),
+      definition: t(`${i18nKey}.definition`),
+    };
+  }
+
   const [statutsRes, proceduresRes, actesRes, provenanceRes] = await Promise.all([
     supabase.from('dossiers_legislatifs').select('statut_final'),
     supabase.from('dossiers_legislatifs').select('procedure_libelle'),
@@ -22,25 +30,25 @@ export default async function GlossairePage() {
 
   const categories: Category[] = [
     {
-      label: 'Statuts',
+      label: t('categoryStatuts'),
       entries: deduplicate(
         (statutsRes.data ?? []).map(r => r.statut_final)
       ).map(toEntry),
     },
     {
-      label: 'Types de procédures',
+      label: t('categoryProcedures'),
       entries: deduplicate(
         (proceduresRes.data ?? []).map(r => r.procedure_libelle)
       ).map(toEntry),
     },
     {
-      label: 'Étapes législatives',
+      label: t('categoryEtapes'),
       entries: deduplicate(
         (actesRes.data ?? []).map(r => r.libelle_acte)
       ).map(toEntry),
     },
     {
-      label: 'Provenance des textes',
+      label: t('categoryProvenance'),
       entries: deduplicate(
         (provenanceRes.data ?? []).map(r => r.provenance)
       ).map(toEntry),

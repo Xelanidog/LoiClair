@@ -17,43 +17,57 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart';
 
-const chartConfig: ChartConfig = {
-  dossiers: {
-    label: "Dossiers déposés",
-    color: "var(--chart-1)",
-  },
-} satisfies ChartConfig;
-
 interface MonthlyDossiersChartProps {
-  data: { month: string; dossiers: number }[];   // ← Changé de "lois" à "dossiers"
+  data: { month: string; dossiers: number }[];
+  title: string;
+  description: string;
+  tooltipLabel: string;
+  trendUpTemplate: string;
+  trendDownTemplate: string;
+  trendStable: string;
+  comparisonLabel: string;
 }
 
-export function MonthlyDossiersChart({ data }: MonthlyDossiersChartProps) {
+export function MonthlyDossiersChart({
+  data,
+  title,
+  description,
+  tooltipLabel,
+  trendUpTemplate,
+  trendDownTemplate,
+  trendStable,
+  comparisonLabel,
+}: MonthlyDossiersChartProps) {
+  const chartConfig: ChartConfig = {
+    dossiers: {
+      label: tooltipLabel,
+      color: "var(--chart-1)",
+    },
+  } satisfies ChartConfig;
+
   // Calcul de la tendance (mois courant vs mois précédent)
   const lastMonth = data[data.length - 1]?.dossiers ?? 0;
   const prevMonth = data[data.length - 2]?.dossiers ?? 0;
   const trend = prevMonth > 0 ? ((lastMonth - prevMonth) / prevMonth) * 100 : 0;
 
-  const trendText = trend > 0 
-    ? `En hausse de ${trend.toFixed(1)}%` 
-    : trend < 0 
-    ? `En baisse de ${Math.abs(trend).toFixed(1)}%` 
-    : "Stable";
+  const trendText = trend > 0
+    ? trendUpTemplate.replace('__RATE__', trend.toFixed(1))
+    : trend < 0
+    ? trendDownTemplate.replace('__RATE__', Math.abs(trend).toFixed(1))
+    : trendStable;
 
   return (
     <Card>
       <CardHeader className="flex flex-col items-stretch border-b !p-0 sm:flex-row">
         <div className="flex flex-1 flex-col justify-center gap-1 px-6 py-5 sm:py-6">
-          <CardTitle>Évolution mensuelle</CardTitle>
-          <CardDescription>
-            Nombre de dossiers législatifs déposés — 24 derniers mois
-          </CardDescription>
+          <CardTitle>{title}</CardTitle>
+          <CardDescription>{description}</CardDescription>
         </div>
       </CardHeader>
 
       <CardContent className="px-2 pt-6 sm:p-6">
-        <ChartContainer 
-          config={chartConfig} 
+        <ChartContainer
+          config={chartConfig}
           className="aspect-auto h-[150px] w-full"
         >
           <BarChart
@@ -72,7 +86,7 @@ export function MonthlyDossiersChart({ data }: MonthlyDossiersChartProps) {
             />
             <ChartTooltip
               content={
-                <ChartTooltipContent 
+                <ChartTooltipContent
                   className="w-[160px]"
                   labelFormatter={(value) => {
                     const [shortMonth, year] = value.split('-');
@@ -81,9 +95,9 @@ export function MonthlyDossiersChart({ data }: MonthlyDossiersChartProps) {
                 />
               }
             />
-            <Bar 
-              dataKey="dossiers" 
-              fill="var(--color-dossiers)" 
+            <Bar
+              dataKey="dossiers"
+              fill="var(--color-dossiers)"
               radius={2}
             />
           </BarChart>
@@ -99,9 +113,7 @@ export function MonthlyDossiersChart({ data }: MonthlyDossiersChartProps) {
             <TrendingDown className="h-4 w-4 text-[#E74C3C]" />
           )}
         </div>
-        <p className="text-muted-foreground">
-          Comparaison avec le mois précédent
-        </p>
+        <p className="text-muted-foreground">{comparisonLabel}</p>
       </CardFooter>
     </Card>
   );

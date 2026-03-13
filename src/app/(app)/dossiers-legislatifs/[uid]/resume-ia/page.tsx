@@ -2,11 +2,12 @@
 // Server Component : fetch initial des données, puis passe au client pour l'interactivité IA
 
 import { supabase } from '@/lib/supabase';
-import { MODEL_RESUME_LOI, PROMPT_VERSION_RESUME_LOI } from '@/lib/prompts';
+import { MODEL_RESUME_LOI, getPromptVersion } from '@/lib/prompts';
 import { STEP_CONFIG, MILESTONE_CODES, KPI_ACTE_CODES } from '@/lib/legislative-steps';
 import ResumeIAClient from './ResumeIAClient';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { getTranslations, getLocale } from 'next-intl/server';
 
 export const metadata: Metadata = {
   other: {
@@ -20,13 +21,16 @@ export const metadata: Metadata = {
 export default async function ResumeIAPage({ params, searchParams }: { params: Promise<{ uid: string }>; searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
   const { uid } = await params;
   const resolvedSearchParams = await searchParams;
+  const tSteps = await getTranslations('steps');
+  const locale = await getLocale();
+  const promptVersion = getPromptVersion(locale);
   const allActeCodes = [...MILESTONE_CODES, ...KPI_ACTE_CODES];
 
   // Fetch textes, dossier complet et actes législatifs en parallèle
   const [textesResult, dossierResult, actesResult] = await Promise.all([
     supabase
       .from('textes')
-      .select('uid, date_creation, date_publication, denomination, titre_principal_court, lien_texte, libelle_statut_adoption, provenance, url_accessible, contenu_legifrance, organe_auteur:organe_auteur_ref(libelle), resume_ia, resume_ia_prompt_version')
+      .select('uid, date_creation, date_publication, denomination, titre_principal_court, lien_texte, libelle_statut_adoption, provenance, url_accessible, contenu_legifrance, organe_auteur:organe_auteur_ref(libelle), resume_ia, resume_ia_en, resume_ia_prompt_version')
       .eq('dossier_ref', uid)
       .not('uid', 'ilike', '%TAP%')
       .order('date_creation', { ascending: true }),
@@ -68,7 +72,9 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
   // Cache : map uid → resume markdown pour les textes dont le prompt est à jour
   const cachedResumes: Record<string, string> = {};
   for (const t of textes) {
-    if (t.resume_ia && t.resume_ia_prompt_version === PROMPT_VERSION_RESUME_LOI) {
+    if (locale === 'en' && t.resume_ia_en && t.resume_ia_prompt_version === promptVersion) {
+      cachedResumes[t.uid] = t.resume_ia_en;
+    } else if (locale !== 'en' && t.resume_ia && t.resume_ia_prompt_version === promptVersion) {
       cachedResumes[t.uid] = t.resume_ia;
     }
   }
@@ -160,9 +166,10 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
           detail = days > 60 ? `en cours depuis ${Math.round(days / 30)} mois` : `en cours depuis ${days} j`;
         }
       }
+      const baseLabel = tSteps(STEP_CONFIG[code].labelKey as any);
       return {
         code,
-        label: code === 'PROM' && isAppDirecte ? 'Promulguée (application directe)' : STEP_CONFIG[code].label,
+        label: code === 'PROM' && isAppDirecte ? `${baseLabel} (application directe)` : baseLabel,
         date: milestoneDateMap.get(code)?.toISOString().slice(0, 10) ?? null,
         done: (code === 'AN-APPLI' && (isAppDirecte || isAppAppliquee)) ? true : actesCodes.has(code),
         detail,

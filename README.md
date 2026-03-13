@@ -17,6 +17,7 @@ LoiClair rend les lois, débats et votes du Parlement compréhensibles par tous,
 - **Fil d'actualité** — activité législative mensuelle en un coup d'oeil
 - **Processus législatif** — comprendre comment une loi est fabriquée, étape par étape
 - **Signalement citoyen** — signaler une erreur ou un problème directement depuis chaque page
+- **Bilingue FR/EN** — interface disponible en français et en anglais, avec toggle instantané
 - **Documentation** — guide utilisateur, méthodologie, glossaire et conformité IA
 - **Notes de version** — historique des évolutions du site, accessible depuis le pied de page
 
@@ -25,7 +26,7 @@ LoiClair rend les lois, débats et votes du Parlement compréhensibles par tous,
 | Couche | Technologies |
 |---|---|
 | Frontend | [Next.js](https://nextjs.org) 16, [React](https://react.dev) 19, [TypeScript](https://www.typescriptlang.org) 5 |
-| UI | [Tailwind CSS](https://tailwindcss.com) v4, [shadcn/ui](https://ui.shadcn.com), [Framer Motion](https://www.framer.com/motion) |
+| UI | [Tailwind CSS](https://tailwindcss.com) v4, [shadcn/ui](https://ui.shadcn.com), [Framer Motion](https://www.framer.com/motion), [next-intl](https://next-intl.dev) |
 | Base de données | [Supabase](https://supabase.com) (PostgreSQL) |
 | IA | [xAI/Grok](https://x.ai) via [Vercel AI SDK](https://sdk.vercel.ai) |
 | Pipeline de données | Python + GitHub Actions (import quotidien depuis l'open data de l'Assemblée nationale) |

@@ -4,8 +4,13 @@ import { Button } from "@/components/ui/button"
 import Footer from "@/components/Footer"
 import SignalerProbleme from "@/components/SignalerProbleme"
 import LandingMobileNav from "./LandingMobileNav"
+import LocaleToggle from "@/components/LocaleToggle"
+import { getTranslations } from "next-intl/server"
 
-export default function LandingLayout({ children }: { children: React.ReactNode }) {
+export default async function LandingLayout({ children }: { children: React.ReactNode }) {
+  const t = await getTranslations("nav")
+  const tc = await getTranslations("common")
+
   return (
     <div className="min-h-screen flex flex-col">
       {/* Desktop header — fixed + max-lg:hidden (Safari-safe: no hidden→flex conflict, no sticky-in-flex bug) */}
@@ -14,28 +19,31 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
         style={{ WebkitBackdropFilter: "blur(12px)", top: 0 }}
       >
         <Link href="/" className="text-lg font-bold tracking-tight">
-          LoiClair
+          {tc("appName")}
         </Link>
 
         <nav className="flex items-center gap-1">
           <Link href="/about">
-            <Button variant="ghost" size="sm" className="text-sm">À propos</Button>
+            <Button variant="ghost" size="sm" className="text-sm">{t("about")}</Button>
           </Link>
           <Link href="/documentation/guide">
-            <Button variant="ghost" size="sm" className="text-sm">Documentation</Button>
+            <Button variant="ghost" size="sm" className="text-sm">{t("documentation")}</Button>
           </Link>
           <Link href="/dossiers-legislatifs">
-            <Button variant="ghost" size="sm" className="text-sm">Dossiers</Button>
+            <Button variant="ghost" size="sm" className="text-sm">{t("dossiers")}</Button>
           </Link>
           <Link href="/Month">
-            <Button variant="ghost" size="sm" className="text-sm">Fil d&apos;actu</Button>
+            <Button variant="ghost" size="sm" className="text-sm">{t("newsFeedShort")}</Button>
           </Link>
           <Link href="/KPIs" className="ml-2">
             <Button size="sm" className="rounded-full gap-1.5 hover:scale-105">
-              Tableau de bord
+              {t("dashboard")}
               <ArrowRight className="h-3.5 w-3.5" />
             </Button>
           </Link>
+          <div className="ml-2">
+            <LocaleToggle />
+          </div>
         </nav>
       </header>
 

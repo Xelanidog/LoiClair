@@ -3,6 +3,7 @@
 import { useRef } from "react"
 import Link from "next/link"
 import { motion, useInView, type Variants, type Easing } from "framer-motion"
+import { useTranslations } from "next-intl"
 import {
   ArrowRight,
   Heart,
@@ -102,54 +103,54 @@ function AnimatedSection({
   )
 }
 
-
-
 // ---------------------------------------------------------------------------
 // FeedMockup — fake browser window showing the monthly feed
 // ---------------------------------------------------------------------------
-const FEED_EVENTS = [
-  {
-    icon: FileText,
-    label: "Nouveau texte",
-    context: "Assemblée",
-    date: "3 mar",
-    color: "text-primary",
-    iconBg: "bg-primary/10",
-    title: "Projet de loi relatif à la transition énergétique",
-    footer: "ia" as const,
-  },
-  {
-    icon: BarChart3,
-    label: "Décision",
-    context: "Assemblée",
-    date: "28 fév",
-    color: "text-violet-600 dark:text-violet-400",
-    iconBg: "bg-violet-100 dark:bg-violet-900/50",
-    title: "Budget 2026 — Article 7",
-    vote: { pour: 342, contre: 210, abs: 25 },
-    footer: "adopted" as const,
-  },
-  {
-    icon: CheckCircle2,
-    label: "Loi promulguée",
-    context: null,
-    date: "25 fév",
-    color: "text-[#27AE60] dark:text-[#2ECC71]",
-    iconBg: "bg-[#27AE60]/10",
-    title: "Loi n° 2026-142 relative à la protection des données personnelles",
-    footer: "law" as const,
-  },
-]
-
-const FEED_PILLS = [
-  { label: "Tous", count: 12, active: true },
-  { label: "Textes", count: 5, active: false },
-  { label: "Décisions", count: 4, active: false },
-  { label: "Promulg.", count: 3, active: false },
-]
-
 function FeedMockup() {
+  const t = useTranslations("landing")
   const total = 577
+
+  const FEED_EVENTS = [
+    {
+      icon: FileText,
+      label: t("feedLabelNewText"),
+      context: t("feedContext"),
+      date: t("feedDate1"),
+      color: "text-primary",
+      iconBg: "bg-primary/10",
+      title: t("feedTitle1"),
+      footer: "ia" as const,
+    },
+    {
+      icon: BarChart3,
+      label: t("feedLabelDecision"),
+      context: t("feedContext"),
+      date: t("feedDate2"),
+      color: "text-violet-600 dark:text-violet-400",
+      iconBg: "bg-violet-100 dark:bg-violet-900/50",
+      title: t("feedTitle2"),
+      vote: { pour: 342, contre: 210, abs: 25 },
+      footer: "adopted" as const,
+    },
+    {
+      icon: CheckCircle2,
+      label: t("feedLabelEnacted"),
+      context: null,
+      date: t("feedDate3"),
+      color: "text-[#27AE60] dark:text-[#2ECC71]",
+      iconBg: "bg-[#27AE60]/10",
+      title: t("feedTitle3"),
+      footer: "law" as const,
+    },
+  ]
+
+  const FEED_PILLS = [
+    { label: t("feedPillAll"), count: 12, active: true },
+    { label: t("feedPillTexts"), count: 5, active: false },
+    { label: t("feedPillDecisions"), count: 4, active: false },
+    { label: t("feedPillEnacted"), count: 3, active: false },
+  ]
+
   return (
     <div
       className="rounded-2xl border shadow-2xl bg-card overflow-hidden"
@@ -263,17 +264,17 @@ function FeedMockup() {
               {event.footer === "ia" && (
                 <span className="inline-flex items-center gap-1 text-[10px] text-primary">
                   <Sparkles className="w-2.5 h-2.5" />
-                  Résumé IA
+                  {t("feedFooterIa")}
                 </span>
               )}
               {event.footer === "adopted" && (
                 <span className="inline-block text-[10px] font-medium px-1.5 py-0.5 rounded bg-[#27AE60]/15 text-[#27AE60]">
-                  Adopté
+                  {t("feedFooterAdopted")}
                 </span>
               )}
               {event.footer === "law" && (
                 <span className="text-[10px] text-muted-foreground font-mono">
-                  Loi n° 2026-142
+                  {t("feedFooterLaw")}
                 </span>
               )}
             </div>
@@ -287,38 +288,40 @@ function FeedMockup() {
 // ---------------------------------------------------------------------------
 // DossierListMockup — fake browser window showing dossier list
 // ---------------------------------------------------------------------------
-const DOSSIER_FILTERS = [
-  { label: "Tous", active: true },
-  { label: "En cours", active: false },
-  { label: "Adoptés", active: false },
-  { label: "Rejetés", active: false },
-]
-
-const DOSSIER_ITEMS = [
-  {
-    title: "Projet de loi de finances 2026",
-    chamber: "Assemblée",
-    status: "En cours",
-    statusColor: "bg-primary/10 text-primary",
-    date: "3 mar 2026",
-  },
-  {
-    title: "Proposition de loi relative au droit au logement",
-    chamber: "Sénat",
-    status: "Adopté",
-    statusColor: "bg-[#27AE60]/10 text-[#27AE60]",
-    date: "28 fév 2026",
-  },
-  {
-    title: "Projet de loi sur la transition énergétique",
-    chamber: "Assemblée",
-    status: "En commission",
-    statusColor: "bg-violet-100 dark:bg-violet-900/50 text-violet-600 dark:text-violet-400",
-    date: "15 fév 2026",
-  },
-]
-
 function DossierListMockup() {
+  const t = useTranslations("landing")
+
+  const DOSSIER_FILTERS = [
+    { label: t("dossierFilterAll"), active: true },
+    { label: t("dossierFilterOngoing"), active: false },
+    { label: t("dossierFilterAdopted"), active: false },
+    { label: t("dossierFilterRejected"), active: false },
+  ]
+
+  const DOSSIER_ITEMS = [
+    {
+      title: t("dossierItem1Title"),
+      chamber: t("dossierItem1Chamber"),
+      status: t("dossierItem1Status"),
+      statusColor: "bg-primary/10 text-primary",
+      date: t("dossierItem1Date"),
+    },
+    {
+      title: t("dossierItem2Title"),
+      chamber: t("dossierItem2Chamber"),
+      status: t("dossierItem2Status"),
+      statusColor: "bg-[#27AE60]/10 text-[#27AE60]",
+      date: t("dossierItem2Date"),
+    },
+    {
+      title: t("dossierItem3Title"),
+      chamber: t("dossierItem3Chamber"),
+      status: t("dossierItem3Status"),
+      statusColor: "bg-violet-100 dark:bg-violet-900/50 text-violet-600 dark:text-violet-400",
+      date: t("dossierItem3Date"),
+    },
+  ]
+
   return (
     <div
       className="rounded-2xl border shadow-2xl bg-card overflow-hidden"
@@ -339,7 +342,7 @@ function DossierListMockup() {
         <div className="flex items-center gap-2">
           <div className="flex-1 flex items-center gap-2 bg-muted rounded-lg px-3 py-1.5">
             <Search className="w-3 h-3 text-muted-foreground shrink-0" />
-            <span className="text-[10px] text-muted-foreground">Rechercher un dossier…</span>
+            <span className="text-[10px] text-muted-foreground">{t("dossierSearch")}</span>
           </div>
           <div className="h-7 w-7 rounded-lg bg-muted flex items-center justify-center shrink-0">
             <ListFilter className="w-3.5 h-3.5 text-muted-foreground" />
@@ -395,22 +398,24 @@ function DossierListMockup() {
 // ---------------------------------------------------------------------------
 // DashboardMockup — fake browser window showing KPI dashboard
 // ---------------------------------------------------------------------------
-const DASHBOARD_KPIS = [
-  { label: "Députés", value: "577", icon: Users, color: "text-primary", bg: "bg-primary/10" },
-  { label: "Taux de participation", value: "46%", icon: Vote, color: "text-violet-600 dark:text-violet-400", bg: "bg-violet-100 dark:bg-violet-900/50" },
-  { label: "Textes votés ce mois", value: "18", icon: FileText, color: "text-[#27AE60]", bg: "bg-[#27AE60]/10" },
-]
-
-const TEXTES_PAR_MOIS = [
-  { label: "Oct", value: 28, max: 50 },
-  { label: "Nov", value: 35, max: 50 },
-  { label: "Déc", value: 22, max: 50 },
-  { label: "Jan", value: 41, max: 50 },
-  { label: "Fév", value: 33, max: 50 },
-  { label: "Mar", value: 38, max: 50 },
-]
-
 function DashboardMockup() {
+  const t = useTranslations("landing")
+
+  const DASHBOARD_KPIS = [
+    { label: t("dashboardKpi1Label"), value: "577", icon: Users, color: "text-primary", bg: "bg-primary/10" },
+    { label: t("dashboardKpi2Label"), value: "46%", icon: Vote, color: "text-violet-600 dark:text-violet-400", bg: "bg-violet-100 dark:bg-violet-900/50" },
+    { label: t("dashboardKpi3Label"), value: "18", icon: FileText, color: "text-[#27AE60]", bg: "bg-[#27AE60]/10" },
+  ]
+
+  const TEXTES_PAR_MOIS = [
+    { label: t("dashboardMonthOct"), value: 28, max: 50 },
+    { label: t("dashboardMonthNov"), value: 35, max: 50 },
+    { label: t("dashboardMonthDec"), value: 22, max: 50 },
+    { label: t("dashboardMonthJan"), value: 41, max: 50 },
+    { label: t("dashboardMonthFeb"), value: 33, max: 50 },
+    { label: t("dashboardMonthMar"), value: 38, max: 50 },
+  ]
+
   return (
     <div
       className="rounded-2xl border shadow-2xl bg-card overflow-hidden"
@@ -440,11 +445,11 @@ function DashboardMockup() {
           ))}
         </div>
 
-        {/* Chart — Textes déposés par mois */}
+        {/* Chart */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <p className="text-foreground tracking-wide" style={{ fontSize: "9px", fontWeight: 500, textTransform: "uppercase" }}>
-              Textes déposés par mois
+              {t("dashboardChartTitle")}
             </p>
             <TrendingUp className="w-3 h-3 text-muted-foreground" />
           </div>
@@ -479,66 +484,74 @@ function DashboardMockup() {
 }
 
 // ---------------------------------------------------------------------------
-// Data
-// ---------------------------------------------------------------------------
-const TRUST_ITEMS = [
-  { icon: Heart, label: "Gratuit" },
-  { icon: Github, label: "Open source" },
-  { icon: Shield, label: "Indépendant" },
-  { icon: BadgeCheck, label: "Données officielles" },
-]
-
-
-const FEATURES = [
-  {
-    icon: RefreshCw,
-    title: "Données en temps réel",
-    description: "Mise à jour quotidienne depuis les sources officielles.",
-  },
-  {
-    icon: Sparkles,
-    title: "Résumés par l'IA",
-    description: "Chaque texte traduit en langage courant, sans jargon.",
-  },
-  {
-    icon: BarChart2,
-    title: "Statistiques",
-    description:
-      "Parité, groupes politiques, votes — tout en chiffres.",
-  },
-  {
-    icon: Search,
-    title: "Trouver vos élus",
-    description: "Retrouvez votre député ou sénateur en secondes.",
-  },
-  {
-    icon: Vote,
-    title: "Vote citoyen",
-    description:
-      "Donnez votre avis et comparez-le aux votes du Parlement.",
-  },
-  {
-    icon: Newspaper,
-    title: "Fil d'actualité",
-    description: "L'essentiel de l'activité parlementaire chaque mois.",
-  },
-  {
-    icon: Bell,
-    title: "Alertes personnalisées",
-    description: "Suivez un texte ou un élu, soyez alerté.",
-  },
-  {
-    icon: Mail,
-    title: "Newsletter IA",
-    description:
-      "Chaque semaine, l'activité parlementaire résumée par email.",
-  },
-]
-
-// ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 export default function LandingPage() {
+  const t = useTranslations("landing")
+
+  const TRUST_ITEMS = [
+    { icon: Heart, label: t("trustFree") },
+    { icon: Github, label: t("trustOpenSource") },
+    { icon: Shield, label: t("trustIndependent") },
+    { icon: BadgeCheck, label: t("trustOfficialData") },
+  ]
+
+  const FEATURES = [
+    {
+      icon: RefreshCw,
+      title: t("feature1Title"),
+      description: t("feature1Description"),
+    },
+    {
+      icon: Sparkles,
+      title: t("feature2Title"),
+      description: t("feature2Description"),
+    },
+    {
+      icon: BarChart2,
+      title: t("feature3Title"),
+      description: t("feature3Description"),
+    },
+    {
+      icon: Search,
+      title: t("feature4Title"),
+      description: t("feature4Description"),
+    },
+    {
+      icon: Vote,
+      title: t("feature5Title"),
+      description: t("feature5Description"),
+    },
+    {
+      icon: Newspaper,
+      title: t("feature6Title"),
+      description: t("feature6Description"),
+    },
+    {
+      icon: Bell,
+      title: t("feature7Title"),
+      description: t("feature7Description"),
+    },
+    {
+      icon: Mail,
+      title: t("feature8Title"),
+      description: t("feature8Description"),
+    },
+  ]
+
+  const BEFORE_LINES: { key: string; opacity: number }[] = [
+    { key: "beforeLine1", opacity: 0.9 },
+    { key: "beforeLine2", opacity: 0.8 },
+    { key: "beforeLine3", opacity: 0.65 },
+    { key: "beforeLine4", opacity: 0.5 },
+    { key: "beforeLine5", opacity: 0.4 },
+    { key: "beforeLine6", opacity: 0.3 },
+    { key: "beforeLine7", opacity: 0.2 },
+    { key: "beforeLine8", opacity: 0.15 },
+    { key: "beforeLine9", opacity: 0.1 },
+    { key: "beforeLine10", opacity: 0.05 },
+  ]
+
   return (
     <div className="overflow-x-hidden">
       {/* ------------------------------------------------------------------ */}
@@ -559,31 +572,35 @@ export default function LandingPage() {
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-[#27AE60]" />
               </span>
               <span className="text-xs font-medium text-muted-foreground">
-                Bêta privée — Gratuit · Indépendant · Neutre
+                {t("heroBadge")}
               </span>
             </div>
 
             {/* Title */}
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.12]">
-              Chaque mois, des lois
-              <br />
-              sont votées <span className="text-primary">en votre nom.</span>
+              {t.rich("heroTitle", {
+                highlight: (chunks) => (
+                  <>
+                    <br />
+                    <span className="text-primary">{chunks}</span>
+                  </>
+                ),
+              })}
             </h1>
 
             {/* Subtitle */}
             <p className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-xl mx-auto">
-              Savez-vous ce qui a été décidé en votre nom dernièrement&nbsp;?
+              {t("heroSubtitle")}
             </p>
-            <p className="text-sm md:text-base text-muted-foreground opacity-70 leading-relaxed max-w-lg mx-auto">
-              LoiClair traduit l&apos;activité législative française en langage
-              simple — pour comprendre, suivre, et participer.
+            <p className="text-sm md:text-base text-muted-foreground leading-relaxed max-w-lg mx-auto" style={{ opacity: 0.7 }}>
+              {t("heroDescription")}
             </p>
 
             {/* CTA */}
             <div className="pt-2">
               <Link href="/Month">
                 <Button size="lg" className="rounded-full gap-2 hover:scale-105">
-                  Fil d&apos;actu parlementaire
+                  {t("heroCta")}
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
@@ -648,15 +665,14 @@ export default function LandingPage() {
                   className="font-bold tracking-tight"
                   style={{ fontSize: "clamp(1.75rem, 3vw + 0.5rem, 2.5rem)", lineHeight: 1.15 }}
                 >
-                  Avec LoiClair, la politique française est{" "}
-                  <span className="text-primary">enfin lisible.</span>
+                  {t.rich("hero2Title", {
+                    highlight: (chunks) => (
+                      <span className="text-primary">{chunks}</span>
+                    ),
+                  })}
                 </h2>
                 <p className="text-muted-foreground leading-relaxed max-w-lg" style={{ fontSize: "clamp(1.125rem, 1.2vw + 0.5rem, 1.25rem)" }}>
-                  Une boîte à outils citoyenne qui transforme le jargon législatif
-                  en langage clair. Des statistiques clés sur l&apos;activité
-                  parlementaire, une vue simplifiée pour chaque dossier, un fil
-                  d&apos;actualité pour suivre au jour le jour tout ce qui se passe
-                  au Parlement&nbsp;: nouveaux textes, décisions, votes…
+                  {t("hero2Description")}
                 </p>
               </div>
             </AnimatedSection>
@@ -688,7 +704,7 @@ export default function LandingPage() {
             <AnimatedSection variants={fadeLeft}>
               <div className="space-y-5">
                 <p className="text-primary text-xs uppercase tracking-widest font-semibold">
-                  Tous les textes au même endroit
+                  {t("dossierOverline")}
                 </p>
                 <h2
                   className="font-bold tracking-tight"
@@ -697,8 +713,11 @@ export default function LandingPage() {
                     lineHeight: 1.15,
                   }}
                 >
-                  Les dossiers législatifs,{" "}
-                  <span className="text-primary">simplifiés.</span>
+                  {t.rich("dossierSectionTitle", {
+                    highlight: (chunks) => (
+                      <span className="text-primary">{chunks}</span>
+                    ),
+                  })}
                 </h2>
                 <p
                   className="text-muted-foreground leading-relaxed max-w-lg"
@@ -706,10 +725,7 @@ export default function LandingPage() {
                     fontSize: "clamp(1.125rem, 1.2vw + 0.5rem, 1.25rem)",
                   }}
                 >
-                  Un dossier législatif, c&apos;est le parcours complet d&apos;un
-                  texte de loi, du dépôt au vote final. Recherchez, filtrez et
-                  suivez chaque projet ou proposition de loi. Statut, chambre,
-                  résumé IA — tout est là, à jour.
+                  {t("dossierDescription")}
                 </p>
                 <Link href="/dossiers-legislatifs">
                   <Button
@@ -717,7 +733,7 @@ export default function LandingPage() {
                     size="lg"
                     className="gap-2 text-primary hover:text-primary px-0 text-base"
                   >
-                    Voir les dossiers
+                    {t("dossierCta")}
                     <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
@@ -751,7 +767,7 @@ export default function LandingPage() {
             <AnimatedSection variants={fadeRight}>
               <div className="space-y-5">
                 <p className="text-primary text-xs uppercase tracking-widest font-semibold">
-                  Votre fil d&apos;actualité
+                  {t("feedOverline")}
                 </p>
                 <h2
                   className="font-bold tracking-tight"
@@ -760,8 +776,11 @@ export default function LandingPage() {
                     lineHeight: 1.15,
                   }}
                 >
-                  Suivez l&apos;activité parlementaire journalière,{" "}
-                  <span className="text-primary">étape par étape.</span>
+                  {t.rich("feedSectionTitle", {
+                    highlight: (chunks) => (
+                      <span className="text-primary">{chunks}</span>
+                    ),
+                  })}
                 </h2>
                 <p
                   className="text-muted-foreground leading-relaxed max-w-lg"
@@ -769,10 +788,7 @@ export default function LandingPage() {
                     fontSize: "clamp(1.125rem, 1.2vw + 0.5rem, 1.25rem)",
                   }}
                 >
-                  Aussi simple qu&apos;un fil d&apos;actualité sur un réseau social.
-                  Chaque mois, LoiClair rassemble les textes déposés, les votes
-                  en séance et les lois promulguées dans un fil clair et
-                  chronologique. Plus besoin de chercher.
+                  {t("feedDescription")}
                 </p>
                 <Link href="/Month">
                   <Button
@@ -780,7 +796,7 @@ export default function LandingPage() {
                     size="lg"
                     className="gap-2 text-primary hover:text-primary px-0 text-base"
                   >
-                    Explorer le fil d&apos;actualité
+                    {t("feedCta")}
                     <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
@@ -800,7 +816,7 @@ export default function LandingPage() {
             <AnimatedSection variants={fadeLeft}>
               <div className="space-y-5">
                 <p className="text-primary text-xs uppercase tracking-widest font-semibold">
-                  Vue d&apos;ensemble
+                  {t("dashboardOverline")}
                 </p>
                 <h2
                   className="font-bold tracking-tight"
@@ -809,8 +825,11 @@ export default function LandingPage() {
                     lineHeight: 1.15,
                   }}
                 >
-                  Un tableau de bord{" "}
-                  <span className="text-primary">pour tout comprendre.</span>
+                  {t.rich("dashboardSectionTitle", {
+                    highlight: (chunks) => (
+                      <span className="text-primary">{chunks}</span>
+                    ),
+                  })}
                 </h2>
                 <p
                   className="text-muted-foreground leading-relaxed max-w-lg"
@@ -818,8 +837,7 @@ export default function LandingPage() {
                     fontSize: "clamp(1.125rem, 1.2vw + 0.5rem, 1.25rem)",
                   }}
                 >
-                  Composition de l&apos;Assemblée, répartition des groupes, parité,
-                  âge moyen — les chiffres clés du Parlement en un coup d&apos;œil.
+                  {t("dashboardDescription")}
                 </p>
                 <Link href="/KPIs">
                   <Button
@@ -827,7 +845,7 @@ export default function LandingPage() {
                     size="lg"
                     className="gap-2 text-primary hover:text-primary px-0 text-base"
                   >
-                    Explorer le tableau de bord
+                    {t("dashboardCta")}
                     <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
@@ -851,10 +869,10 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-6 lg:px-10">
           <AnimatedSection className="mb-12 space-y-3 max-w-2xl">
             <h2 className="text-xl md:text-2xl font-bold">
-              L&apos;IA résume chaque texte de loi pour vous
+              {t("beforeAfterTitle")}
             </h2>
             <p className="text-muted-foreground text-sm leading-relaxed">
-              Plus besoin de décrypter le jargon juridique. Notre IA analyse et résume chaque dossier législatif en langage clair, en quelques secondes.
+              {t("beforeAfterDescription")}
             </p>
           </AnimatedSection>
 
@@ -863,27 +881,16 @@ export default function LandingPage() {
             <AnimatedSection variants={fadeLeft}>
               <div className="bg-muted/30 rounded-2xl p-8 h-full flex flex-col gap-5">
                 <div className="flex items-center gap-3">
-                  <span className="text-xs font-bold uppercase tracking-widest text-destructive">Avant</span>
+                  <span className="text-xs font-bold uppercase tracking-widest text-destructive">{t("beforeLabel")}</span>
                   <span className="inline-flex items-center gap-1.5 text-xs font-semibold bg-destructive/10 text-destructive px-3 py-1 rounded-full">
-                    Sources officielles
+                    {t("beforeSourcesBadge")}
                   </span>
                 </div>
 
                 <div className="font-mono text-xs leading-relaxed space-y-1.5 select-none">
-                  {[
-                    { text: "Article L. 432-1 du Code civil — Vu le décret n°2024-1138", opacity: 0.9 },
-                    { text: "du 4 octobre 2024 portant modification des dispositions", opacity: 0.8 },
-                    { text: "relatives aux modalités d'application de l'alinéa 3", opacity: 0.65 },
-                    { text: "conformément aux dispositions de l'ordonnance n° 2023-389", opacity: 0.5 },
-                    { text: "du 12 mai 2023 relative à l'exercice des compétences des...", opacity: 0.4 },
-                    { text: "collectivités territoriales en matière de gestion publique", opacity: 0.3 },
-                    { text: "...susvisées et après avis du Conseil d'État...", opacity: 0.2 },
-                    { text: "§ 4 — Les conditions cumulatives définies à l'art. 7", opacity: 0.15 },
-                    { text: "doivent faire l'objet d'une appréciation au cas par cas...", opacity: 0.1 },
-                    { text: "tenant compte des circonstances mentionnées à l'art. 12 bis", opacity: 0.05 },
-                  ].map((line, i) => (
+                  {BEFORE_LINES.map((line, i) => (
                     <p key={i} className="text-foreground" style={{ opacity: line.opacity }}>
-                      {line.text}
+                      {t(line.key as Parameters<typeof t>[0])}
                     </p>
                   ))}
                 </div>
@@ -893,7 +900,7 @@ export default function LandingPage() {
                     <X className="h-3 w-3 text-destructive" />
                   </div>
                   <p className="text-xs font-medium text-destructive">
-                    Incompréhensible pour la plupart des citoyens
+                    {t("beforeCaption")}
                   </p>
                 </div>
               </div>
@@ -903,7 +910,7 @@ export default function LandingPage() {
             <AnimatedSection variants={fadeRight}>
               <div className="bg-card rounded-2xl p-8 border-2 border-primary/20 shadow-lg h-full flex flex-col gap-5">
                 <div className="flex items-center gap-3">
-                  <span className="text-xs font-bold uppercase tracking-widest text-primary">Après</span>
+                  <span className="text-xs font-bold uppercase tracking-widest text-primary">{t("afterLabel")}</span>
                   <span className="inline-flex items-center gap-1.5 text-xs font-semibold bg-primary/10 text-primary px-3 py-1 rounded-full">
                     <Sparkles className="h-3 w-3" />
                     LoiClair
@@ -912,26 +919,20 @@ export default function LandingPage() {
 
                 <div className="space-y-3">
                   <p className="text-sm font-semibold text-foreground">
-                    Projet de loi de finances 2026
+                    {t("afterTitle")}
                   </p>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    Ce texte fixe le budget de l&apos;État pour 2026. Il détermine
-                    combien l&apos;État peut dépenser, et d&apos;où vient l&apos;argent (impôts,
-                    emprunts…). Chaque ministère reçoit une enveloppe.
+                    {t("afterDescription")}
                   </p>
                 </div>
 
                 <div className="space-y-2">
-                  {[
-                    "Budget total : 492 milliards d'euros",
-                    "Présenté par le gouvernement en septembre",
-                    "Doit être voté avant le 31 décembre",
-                  ].map((item) => (
-                    <div key={item} className="flex items-start gap-2">
+                  {(["afterBullet1", "afterBullet2", "afterBullet3"] as const).map((key) => (
+                    <div key={key} className="flex items-start gap-2">
                       <div className="h-4 w-4 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
                         <Check className="h-2.5 w-2.5 text-primary" />
                       </div>
-                      <p className="text-xs text-muted-foreground">{item}</p>
+                      <p className="text-xs text-muted-foreground">{t(key)}</p>
                     </div>
                   ))}
                 </div>
@@ -941,7 +942,7 @@ export default function LandingPage() {
                     <Check className="h-3 w-3 text-[#27AE60]" />
                   </div>
                   <p className="text-xs font-medium text-[#27AE60]">
-                    Compris en 30 secondes
+                    {t("afterCaption")}
                   </p>
                 </div>
               </div>
@@ -950,8 +951,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-
-
       {/* ------------------------------------------------------------------ */}
       {/* 8. VOTRE BOITE A OUTILS                                             */}
       {/* ------------------------------------------------------------------ */}
@@ -959,11 +958,10 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-6 lg:px-10">
           <AnimatedSection className="mb-12 space-y-3 max-w-2xl">
             <h2 className="text-xl md:text-2xl font-bold">
-              LoiClair, votre boîte à outils citoyenne
+              {t("featuresTitle")}
             </h2>
             <p className="text-muted-foreground text-sm leading-relaxed">
-              Tout ce dont vous avez besoin pour comprendre, suivre et participer
-              à ce qui se passe au Parlement.
+              {t("featuresDescription")}
             </p>
           </AnimatedSection>
 
@@ -974,9 +972,9 @@ export default function LandingPage() {
             viewport={{ once: true, margin: "-60px" }}
             className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4"
           >
-            {FEATURES.map((feature) => (
+            {FEATURES.map((feature, idx) => (
               <motion.div
-                key={feature.title}
+                key={idx}
                 variants={fadeUp}
                 whileHover={{ y: -4 }}
                 className="rounded-2xl border bg-card p-5 space-y-3 cursor-default"
@@ -999,18 +997,17 @@ export default function LandingPage() {
       </section>
 
       {/* ------------------------------------------------------------------ */}
-      {/* 8. CTA FINAL                                                        */}
+      {/* 9. CTA FINAL                                                        */}
       {/* ------------------------------------------------------------------ */}
       <section className="py-20 lg:py-28">
         <div className="max-w-7xl mx-auto px-6 lg:px-10">
           <AnimatedSection>
             <div className="bg-foreground text-background rounded-2xl px-8 py-14 lg:py-20 text-center space-y-6">
               <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold max-w-2xl mx-auto leading-tight">
-                Et si on rendait la politique lisible ?
+                {t("ctaTitle")}
               </h2>
-              <p className="text-sm md:text-base opacity-70 max-w-xl mx-auto leading-relaxed">
-                Comprendre, c&apos;est le premier pas. Suivre, c&apos;est reprendre le
-                contrôle. Participer, c&apos;est changer les choses.
+              <p className="text-sm md:text-base max-w-xl mx-auto leading-relaxed" style={{ opacity: 0.7 }}>
+                {t("ctaDescription")}
               </p>
 
               <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
@@ -1019,7 +1016,7 @@ export default function LandingPage() {
                     size="lg"
                     className="rounded-full gap-2 bg-background text-foreground hover:bg-background hover:scale-105"
                   >
-                    Explorer le fil d&apos;actualité
+                    {t("ctaPrimary")}
                     <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
@@ -1029,13 +1026,13 @@ export default function LandingPage() {
                     size="lg"
                     className="rounded-full border border-background/20 text-background hover:bg-background/10 hover:text-background"
                   >
-                    Voir les dossiers
+                    {t("ctaSecondary")}
                   </Button>
                 </Link>
               </div>
 
-              <p className="text-xs opacity-40 pt-2">
-                Bêta privée — Données officielles de l&apos;Assemblée nationale
+              <p className="text-xs pt-2" style={{ opacity: 0.4 }}>
+                {t("ctaFootnote")}
               </p>
             </div>
           </AnimatedSection>

@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/tooltip";
 import { AnimatedNumber } from "@/components/AnimatedNumber";
 import { loadMonthAction } from "./actions";
+import { useTranslations, useLocale } from "next-intl";
 import type {
   FeedEvent,
   FeedEventType,
@@ -53,36 +54,36 @@ import type {
 
 const EVENT_CONFIG: Record<
   FeedEventType,
-  { icon: typeof FileText; label: string; color: string; iconBg: string; colorStyle?: React.CSSProperties; iconBgStyle?: React.CSSProperties }
+  { icon: typeof FileText; labelKey: string; color: string; iconBg: string; colorStyle?: React.CSSProperties; iconBgStyle?: React.CSSProperties }
 > = {
-  DEPOT_TEXTE: { icon: FileText, label: "Nouveau texte", color: "text-primary", iconBg: "bg-primary/10" },
-  DEPOT_RAPPORT: { icon: FileSearch, label: "Rapport", color: "text-primary dark:text-primary", iconBg: "bg-primary/10" },
-  DECISION: { icon: BarChart3, label: "Décision", color: "text-violet-600 dark:text-violet-400", iconBg: "bg-violet-100 dark:bg-violet-900/50" },
-  NAVETTE: { icon: ArrowLeftRight, label: "Navette", color: "text-violet-600 dark:text-violet-400", iconBg: "bg-violet-100 dark:bg-violet-900/50" },
-  CMP_CONVOCATION: { icon: Handshake, label: "Convocation d'une Commission Mixte Paritaire", color: "text-[#F39C12]", iconBg: "bg-[#F39C12]/10" },
-  CMP_RAPPORT: { icon: FileSearch, label: "Rapport", color: "text-primary dark:text-primary", iconBg: "bg-primary/10" },
-  MOTION_CENSURE: { icon: AlertTriangle, label: "Motion de censure", color: "text-[#E74C3C]", iconBg: "bg-[#E74C3C]/10" },
-  DECL_GOUVERNEMENT: { icon: Megaphone, label: "Déclaration gouv.", color: "text-[#F39C12]", iconBg: "bg-[#F39C12]/10" },
-  MOTION_VOTE: { icon: Gavel, label: "Vote motion", color: "text-[#E74C3C]", iconBg: "bg-[#E74C3C]/10" },
-  CC_SAISINE: { icon: Scale, label: "Cons. const.", color: "text-[#F39C12] dark:text-[#F1C40F]", iconBg: "bg-[#F39C12]/10" },
-  PROMULGATION: { icon: CheckCircle2, label: "Loi promulguée", color: "text-[#27AE60] dark:text-[#2ECC71]", iconBg: "bg-[#27AE60]/10" },
-  DECRET: { icon: FileCheck2, label: "Décret d'application", color: "text-[#B45309]", iconBg: "bg-[#B45309]/10" },
-  LOI_APPLIQUEE: { icon: Trophy, label: "Loi pleinement appliquée", color: "", iconBg: "", colorStyle: { color: '#D4A017' }, iconBgStyle: { backgroundColor: 'rgba(212, 160, 23, 0.1)' } },
-  AUTRE: { icon: Activity, label: "Autre", color: "text-muted-foreground", iconBg: "bg-muted" },
+  DEPOT_TEXTE: { icon: FileText, labelKey: "eventType.newText", color: "text-primary", iconBg: "bg-primary/10" },
+  DEPOT_RAPPORT: { icon: FileSearch, labelKey: "eventType.report", color: "text-primary dark:text-primary", iconBg: "bg-primary/10" },
+  DECISION: { icon: BarChart3, labelKey: "eventType.decision", color: "text-violet-600 dark:text-violet-400", iconBg: "bg-violet-100 dark:bg-violet-900/50" },
+  NAVETTE: { icon: ArrowLeftRight, labelKey: "eventType.shuttle", color: "text-violet-600 dark:text-violet-400", iconBg: "bg-violet-100 dark:bg-violet-900/50" },
+  CMP_CONVOCATION: { icon: Handshake, labelKey: "eventType.cmpConvocation", color: "text-[#F39C12]", iconBg: "bg-[#F39C12]/10" },
+  CMP_RAPPORT: { icon: FileSearch, labelKey: "eventType.report", color: "text-primary dark:text-primary", iconBg: "bg-primary/10" },
+  MOTION_CENSURE: { icon: AlertTriangle, labelKey: "eventType.motionCensure", color: "text-[#E74C3C]", iconBg: "bg-[#E74C3C]/10" },
+  DECL_GOUVERNEMENT: { icon: Megaphone, labelKey: "eventType.govDeclaration", color: "text-[#F39C12]", iconBg: "bg-[#F39C12]/10" },
+  MOTION_VOTE: { icon: Gavel, labelKey: "eventType.motionVote", color: "text-[#E74C3C]", iconBg: "bg-[#E74C3C]/10" },
+  CC_SAISINE: { icon: Scale, labelKey: "eventType.ccSaisine", color: "text-[#F39C12] dark:text-[#F1C40F]", iconBg: "bg-[#F39C12]/10" },
+  PROMULGATION: { icon: CheckCircle2, labelKey: "eventType.promulgation", color: "text-[#27AE60] dark:text-[#2ECC71]", iconBg: "bg-[#27AE60]/10" },
+  DECRET: { icon: FileCheck2, labelKey: "eventType.decree", color: "text-[#B45309]", iconBg: "bg-[#B45309]/10" },
+  LOI_APPLIQUEE: { icon: Trophy, labelKey: "eventType.lawApplied", color: "", iconBg: "", colorStyle: { color: '#D4A017' }, iconBgStyle: { backgroundColor: 'rgba(212, 160, 23, 0.1)' } },
+  AUTRE: { icon: Activity, labelKey: "eventType.other", color: "text-muted-foreground", iconBg: "bg-muted" },
 };
 
-const FILTER_PILLS: { value: string; label: string; icon: typeof Activity; color: string; colorStyle?: React.CSSProperties }[] = [
-  { value: "tous", label: "Tous", icon: Activity, color: "text-primary" },
-  { value: "DEPOT_TEXTE", label: "Textes", icon: FileText, color: "text-primary" },
-  { value: "DECISION", label: "Décisions", icon: BarChart3, color: "text-violet-600 dark:text-violet-400" },
-  { value: "DEPOT_RAPPORT", label: "Rapports", icon: FileSearch, color: "text-primary" },
-  { value: "NAVETTE", label: "Navettes", icon: ArrowLeftRight, color: "text-violet-600 dark:text-violet-400" },
-  { value: "CMP", label: "CMP", icon: Handshake, color: "text-[#F39C12]" },
-  { value: "CC_SAISINE", label: "Cons. const.", icon: Scale, color: "text-[#F39C12] dark:text-[#F1C40F]" },
-  { value: "PROMULGATION", label: "Promulgations", icon: CheckCircle2, color: "text-[#27AE60] dark:text-[#2ECC71]" },
-  { value: "DECRET", label: "Décrets", icon: FileCheck2, color: "text-[#B45309]" },
-  { value: "LOI_APPLIQUEE", label: "Lois appliquées", icon: Trophy, color: "", colorStyle: { color: '#D4A017' } },
-  { value: "MOTION", label: "Motions", icon: AlertTriangle, color: "text-[#E74C3C]" },
+const FILTER_PILLS: { value: string; labelKey: string; icon: typeof Activity; color: string; colorStyle?: React.CSSProperties }[] = [
+  { value: "tous", labelKey: "filter.all", icon: Activity, color: "text-primary" },
+  { value: "DEPOT_TEXTE", labelKey: "filter.texts", icon: FileText, color: "text-primary" },
+  { value: "DECISION", labelKey: "filter.decisions", icon: BarChart3, color: "text-violet-600 dark:text-violet-400" },
+  { value: "DEPOT_RAPPORT", labelKey: "filter.reports", icon: FileSearch, color: "text-primary" },
+  { value: "NAVETTE", labelKey: "filter.shuttles", icon: ArrowLeftRight, color: "text-violet-600 dark:text-violet-400" },
+  { value: "CMP", labelKey: "filter.cmp", icon: Handshake, color: "text-[#F39C12]" },
+  { value: "CC_SAISINE", labelKey: "filter.ccSaisine", icon: Scale, color: "text-[#F39C12] dark:text-[#F1C40F]" },
+  { value: "PROMULGATION", labelKey: "filter.promulgations", icon: CheckCircle2, color: "text-[#27AE60] dark:text-[#2ECC71]" },
+  { value: "DECRET", labelKey: "filter.decrees", icon: FileCheck2, color: "text-[#B45309]" },
+  { value: "LOI_APPLIQUEE", labelKey: "filter.appliedLaws", icon: Trophy, color: "", colorStyle: { color: '#D4A017' } },
+  { value: "MOTION", labelKey: "filter.motions", icon: AlertTriangle, color: "text-[#E74C3C]" },
 ];
 
 function matchesFilters(type: FeedEventType, filters: Set<string>): boolean {
@@ -96,24 +97,27 @@ function matchesFilters(type: FeedEventType, filters: Set<string>): boolean {
   return false;
 }
 
-function institutionName(codeType: string | null, fallback: string | null): string | null {
-  if (codeType === "ASSEMBLEE") return "Assemblée";
-  if (codeType === "SENAT") return "Sénat";
-  if (codeType === "CMP") return "Commission mixte paritaire";
-  if (codeType === "CONSTITU") return "Conseil constitutionnel";
-  if (codeType === "GOUVERNEMENT") return "Gouvernement";
+type TFunction = ReturnType<typeof useTranslations<"month">>;
+
+function institutionName(codeType: string | null, fallback: string | null, t: TFunction): string | null {
+  if (codeType === "ASSEMBLEE") return t("institution.assemblee");
+  if (codeType === "SENAT") return t("institution.senat");
+  if (codeType === "CMP") return t("institution.cmp");
+  if (codeType === "CONSTITU") return t("institution.cconstit");
+  if (codeType === "GOUVERNEMENT") return t("institution.gouvernement");
   return fallback;
 }
 
-function formatShortDate(dateStr: string): string {
+function formatShortDate(dateStr: string, locale: string): string {
   const d = new Date(dateStr + "T12:00:00");
-  return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short", timeZone: "Europe/Paris" });
+  return d.toLocaleDateString(locale, { day: "numeric", month: "short", timeZone: "Europe/Paris" });
 }
 
 // ── VoteBar ─────────────────────────────────────────────────
 
 type VoteData = { votePour?: number | null; voteContre?: number | null; voteAbstentions?: number | null; voteVotants?: number | null; voteNonVotants?: number | null; voteSuffragesRequis?: number | null };
 function VoteBar({ event }: { event: VoteData }) {
+  const t = useTranslations("month");
   if (event.votePour == null) return null;
   const T = 577;
   const nv = event.voteNonVotants ?? 0;
@@ -140,12 +144,12 @@ function VoteBar({ event }: { event: VoteData }) {
       </TooltipTrigger>
       <TooltipContent side="bottom" className="text-xs">
         <div className="space-y-0.5">
-          <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: "#27AE60" }} />Pour : {event.votePour}</div>
-          <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: "#E74C3C" }} />Contre : {event.voteContre}</div>
-          <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: "#A8A29E" }} />Abstentions : {event.voteAbstentions}</div>
-          <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: "#F39C12" }} />Non-votants : {nv}</div>
-          <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full shrink-0 bg-[#F0EDEA] dark:bg-[#44403C]" />Absents : {abs}</div>
-          {(event.voteSuffragesRequis ?? 0) > 0 && <div className="pt-1 border-t mt-1 text-muted-foreground">Majorité requise : {event.voteSuffragesRequis} voix</div>}
+          <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: "#27AE60" }} />{t("vote.for", { count: event.votePour ?? 0 })}</div>
+          <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: "#E74C3C" }} />{t("vote.against", { count: event.voteContre ?? 0 })}</div>
+          <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: "#A8A29E" }} />{t("vote.abstentions", { count: event.voteAbstentions ?? 0 })}</div>
+          <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: "#F39C12" }} />{t("vote.nonVoting", { count: nv })}</div>
+          <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full shrink-0 bg-[#F0EDEA] dark:bg-[#44403C]" />{t("vote.absent", { count: abs })}</div>
+          {(event.voteSuffragesRequis ?? 0) > 0 && <div className="pt-1 border-t mt-1 text-muted-foreground">{t("vote.majorityRequired", { count: event.voteSuffragesRequis ?? 0 })}</div>}
         </div>
       </TooltipContent>
     </Tooltip>
@@ -183,12 +187,12 @@ function VoteBlock({ scrutin }: { scrutin: ScrutinItem }) {
   );
 }
 
-function ccSaisineLabel(codeActe: string | null): string | null {
+function ccSaisineLabel(codeActe: string | null, t: TFunction): string | null {
   switch (codeActe) {
-    case 'CC-SAISIE-AN': return '60 députés ou plus ont saisi le Conseil constitutionnel.';
-    case 'CC-SAISIE-SN': return '60 sénateurs ou plus ont saisi le Conseil constitutionnel.';
-    case 'CC-SAISIE-PM': return 'Le Premier ministre a saisi le Conseil constitutionnel.';
-    case 'CC-SAISIE-DROIT': return 'Saisine automatique (loi organique ou loi de finances).';
+    case 'CC-SAISIE-AN': return t('ccSaisine.AN');
+    case 'CC-SAISIE-SN': return t('ccSaisine.SN');
+    case 'CC-SAISIE-PM': return t('ccSaisine.PM');
+    case 'CC-SAISIE-DROIT': return t('ccSaisine.auto');
     default: return null;
   }
 }
@@ -196,17 +200,17 @@ function ccSaisineLabel(codeActe: string | null): string | null {
 // ── Type-specific card body ─────────────────────────────────
 
 function EventBody({ group }: { group: GroupedFeedEvent }) {
-  const { type, events, dossierUid } = group;
+  const t = useTranslations("month");
+  const { type, events } = group;
   const e = events[0];
-  const multi = events.length > 1;
 
   switch (type) {
     case "DEPOT_TEXTE":
-      return null; // contenu déjà dans CardTitle
+      return null;
 
     case "DEPOT_RAPPORT":
     case "CMP_RAPPORT":
-      return null; // tout dans CardTitle + RapportFooterLinks
+      return null;
 
     case "DECISION":
     case "MOTION_CENSURE": {
@@ -220,16 +224,16 @@ function EventBody({ group }: { group: GroupedFeedEvent }) {
     }
 
     case "NAVETTE":
-      return null; // contenu dans CardTitle
+      return null;
 
     case "CMP_CONVOCATION":
-      return null; // contenu dans CardTitle
+      return null;
 
     case "DECL_GOUVERNEMENT":
       return null;
 
     case "CC_SAISINE": {
-      const label = ccSaisineLabel(e.codeActe);
+      const label = ccSaisineLabel(e.codeActe, t);
       return label ? <p className="text-xs text-muted-foreground mt-1">{label}</p> : null;
     }
 
@@ -243,11 +247,11 @@ function EventBody({ group }: { group: GroupedFeedEvent }) {
           <div className="w-16 h-16 rounded-full bg-[#27AE60]/10 flex items-center justify-center">
             <PartyPopper className="w-8 h-8 text-[#27AE60]" />
           </div>
-          {loiCode && <span className="text-sm font-semibold text-[#27AE60]">Loi n° {loiCode}</span>}
+          {loiCode && <span className="text-sm font-semibold text-[#27AE60]">{t("lawNumber", { code: loiCode })}</span>}
           {e.applicationDirecte && (
             <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full" style={{ color: '#D4A017', backgroundColor: 'rgba(212, 160, 23, 0.1)' }}>
               <Trophy className="w-3 h-3" />
-              Application directe
+              {t("directApplication")}
             </span>
           )}
         </div>
@@ -260,8 +264,8 @@ function EventBody({ group }: { group: GroupedFeedEvent }) {
         : null;
       const delayLabel = daysSince != null && daysSince > 0
         ? daysSince >= 60
-          ? `${Math.round(daysSince / 30)} mois après promulgation`
-          : `${daysSince} jours après promulgation`
+          ? t("monthsAfterPromulgation", { count: Math.round(daysSince / 30) })
+          : t("daysAfterPromulgation", { count: daysSince })
         : null;
 
       return (
@@ -270,12 +274,12 @@ function EventBody({ group }: { group: GroupedFeedEvent }) {
             <Trophy className="w-8 h-8" style={{ color: '#D4A017' }} />
           </div>
           <span className="text-sm font-semibold" style={{ color: '#D4A017' }}>
-            Tous les décrets publiés
+            {t("allDecreesPublished")}
           </span>
           {e.nbMesuresAttendues != null && (
             <span className="text-xs text-muted-foreground">
-              {e.nbMesuresAttendues} mesure{(e.nbMesuresAttendues ?? 0) > 1 ? 's' : ''} appliquée{(e.nbMesuresAttendues ?? 0) > 1 ? 's' : ''}
-              {e.nbDecrets != null && ` · ${e.nbDecrets} décret${(e.nbDecrets ?? 0) > 1 ? 's' : ''}`}
+              {t("measuresApplied", { count: e.nbMesuresAttendues })}
+              {e.nbDecrets != null && ` · ${t("decreeCount", { count: e.nbDecrets })}`}
             </span>
           )}
           {delayLabel && (
@@ -286,7 +290,7 @@ function EventBody({ group }: { group: GroupedFeedEvent }) {
     }
 
     case "DECRET":
-      return null; // contenu géré dans CardTitle
+      return null;
 
     default:
       return null;
@@ -296,15 +300,15 @@ function EventBody({ group }: { group: GroupedFeedEvent }) {
 // ── Résumé IA link helper ────────────────────────────────────
 
 function ResumeIALink({ dossierUid, texteUid, texteUrlAccessible }: { dossierUid: string; texteUid?: string | null; texteUrlAccessible?: boolean | null }) {
+  const t = useTranslations("month");
   if (texteUrlAccessible === null) {
-    // Pas de texte associé → lien dossier seul, sans "Non encore publié"
     return (
       <Link
         href={`/dossiers-legislatifs/${dossierUid}/resume-ia`}
         className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground hover:underline mt-1"
       >
         <FileText className="w-3 h-3" />
-        Dossier complet
+        {t("fullDossier")}
       </Link>
     );
   }
@@ -313,7 +317,7 @@ function ResumeIALink({ dossierUid, texteUid, texteUrlAccessible }: { dossierUid
       <span className="inline-flex items-center gap-1.5 text-xs mt-1 flex-wrap">
         <span className="inline-flex items-center gap-1 text-[#F39C12] dark:text-[#F1C40F]">
           <span className="w-1.5 h-1.5 rounded-full bg-[#E74C3C] shrink-0" />
-          Non encore publié
+          {t("notYetPublished")}
         </span>
         <span className="text-muted-foreground">·</span>
         <Link
@@ -321,7 +325,7 @@ function ResumeIALink({ dossierUid, texteUid, texteUrlAccessible }: { dossierUid
           className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground hover:underline"
         >
           <FileText className="w-3 h-3" />
-          Dossier complet
+          {t("fullDossier")}
         </Link>
       </span>
     );
@@ -332,7 +336,7 @@ function ResumeIALink({ dossierUid, texteUid, texteUrlAccessible }: { dossierUid
       className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-1"
     >
       <Sparkles className="w-3 h-3" />
-      Résumé IA
+      {t("aiSummary")}
     </Link>
   );
 }
@@ -340,18 +344,19 @@ function ResumeIALink({ dossierUid, texteUid, texteUrlAccessible }: { dossierUid
 // ── Social icons (partagé entre CardFooter et RapportFooterLinks) ───────────
 
 function SocialIcons() {
+  const t = useTranslations("month");
   return (
     <div style={{ display: "flex", flexShrink: 0, width: "35%", justifyContent: "space-around", alignItems: "center" }}>
-      <motion.button type="button" whileHover={{ scale: 1.25 }} whileTap={{ scale: 0.95 }} className="p-2 rounded-full text-muted-foreground/30 hover:text-[#27AE60] hover:bg-muted/50 transition-colors" aria-label="J'approuve">
+      <motion.button type="button" whileHover={{ scale: 1.25 }} whileTap={{ scale: 0.95 }} className="p-2 rounded-full text-muted-foreground/30 hover:text-[#27AE60] hover:bg-muted/50 transition-colors" aria-label={t("ariaApprove")}>
         <ThumbsUp className="w-3.5 h-3.5" />
       </motion.button>
-      <motion.button type="button" whileHover={{ scale: 1.25 }} whileTap={{ scale: 0.95 }} className="p-2 rounded-full text-muted-foreground/30 hover:text-[#E74C3C] hover:bg-muted/50 transition-colors" aria-label="Je désapprouve">
+      <motion.button type="button" whileHover={{ scale: 1.25 }} whileTap={{ scale: 0.95 }} className="p-2 rounded-full text-muted-foreground/30 hover:text-[#E74C3C] hover:bg-muted/50 transition-colors" aria-label={t("ariaDisapprove")}>
         <ThumbsDown className="w-3.5 h-3.5" />
       </motion.button>
-      <motion.button type="button" whileHover={{ scale: 1.25 }} whileTap={{ scale: 0.95 }} className="p-2 rounded-full text-muted-foreground/30 hover:text-primary hover:bg-muted/50 transition-colors" aria-label="Sauvegarder">
+      <motion.button type="button" whileHover={{ scale: 1.25 }} whileTap={{ scale: 0.95 }} className="p-2 rounded-full text-muted-foreground/30 hover:text-primary hover:bg-muted/50 transition-colors" aria-label={t("ariaSave")}>
         <Bookmark className="w-3.5 h-3.5" />
       </motion.button>
-      <motion.button type="button" whileHover={{ scale: 1.25 }} whileTap={{ scale: 0.95 }} className="p-2 rounded-full text-muted-foreground/30 hover:text-primary hover:bg-muted/50 transition-colors" aria-label="Partager">
+      <motion.button type="button" whileHover={{ scale: 1.25 }} whileTap={{ scale: 0.95 }} className="p-2 rounded-full text-muted-foreground/30 hover:text-primary hover:bg-muted/50 transition-colors" aria-label={t("ariaShare")}>
         <Share2 className="w-3.5 h-3.5" />
       </motion.button>
     </div>
@@ -361,13 +366,14 @@ function SocialIcons() {
 // ── Card footer (standard) ───────────────────────────────────
 
 function CardFooter({ dossierUid, texteUid, showResumeIA = true, texteUrlAccessible, learnMoreHref }: { dossierUid?: string | null; texteUid?: string | null; showResumeIA?: boolean; texteUrlAccessible?: boolean | null; learnMoreHref?: string }) {
+  const t = useTranslations("month");
   return (
     <div style={{ display: "flex", alignItems: "center", paddingTop: 14, marginTop: 12, width: "100%" }}>
       <div style={{ flexShrink: 0, flexGrow: 1 }}>
         {learnMoreHref ? (
           <Link href={learnMoreHref} className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground hover:underline mt-1">
             <Info className="w-3 h-3" />
-            En savoir plus
+            {t("learnMore")}
           </Link>
         ) : showResumeIA && dossierUid ? (
           <ResumeIALink dossierUid={dossierUid} texteUid={texteUid} texteUrlAccessible={texteUrlAccessible} />
@@ -381,13 +387,13 @@ function CardFooter({ dossierUid, texteUid, showResumeIA = true, texteUrlAccessi
 // ── Footer liens Résumé IA pour rapports ────────────────────
 
 function RapportFooterLinks({ group }: { group: GroupedFeedEvent }) {
+  const t = useTranslations("month");
   const { type, events, dossierUid } = group;
   const e = events[0];
   const multi = events.length > 1;
 
   if (!dossierUid) return null;
 
-  // CMP groupé même jour → Assemblée | Sénat | Texte adopté
   if (type === "CMP_RAPPORT" && multi) {
     const an = events.find(ev => ev.organeCodeType === "ASSEMBLEE");
     const sn = events.find(ev => ev.organeCodeType === "SENAT");
@@ -396,22 +402,22 @@ function RapportFooterLinks({ group }: { group: GroupedFeedEvent }) {
       <div style={{ display: "flex", alignItems: "center", paddingTop: 14, marginTop: 12, width: "100%" }}>
         <span className="inline-flex items-center gap-1.5 text-xs text-primary flex-wrap" style={{ flexGrow: 1 }}>
           <Sparkles className="w-3 h-3 shrink-0" />
-          <span>Résumé IA :</span>
+          <span>{t("aiSummaryLabel")}</span>
           {an?.texteUid && (
             <Link href={`/dossiers-legislatifs/${dossierUid}/resume-ia?texte=${an.texteUid}`} className="hover:underline">
-              Assemblée
+              {t("institution.assemblee")}
             </Link>
           )}
           {an?.texteUid && sn?.texteUid && <span className="text-muted-foreground">|</span>}
           {sn?.texteUid && (
             <Link href={`/dossiers-legislatifs/${dossierUid}/resume-ia?texte=${sn.texteUid}`} className="hover:underline">
-              Sénat
+              {t("institution.senat")}
             </Link>
           )}
           {texteAdopteUid && <>
             <span className="text-muted-foreground">|</span>
             <Link href={`/dossiers-legislatifs/${dossierUid}/resume-ia?texte=${texteAdopteUid}`} className="hover:underline text-muted-foreground">
-              Texte adopté
+              {t("adoptedText")}
             </Link>
           </>}
         </span>
@@ -420,7 +426,6 @@ function RapportFooterLinks({ group }: { group: GroupedFeedEvent }) {
     );
   }
 
-  // DEPOT_RAPPORT ou CMP_RAPPORT single
   const isCmp = type === "CMP_RAPPORT";
   const hasSecondLink = !!e.texteAdopteUid;
   const tomes = !isCmp && e.texteHasTomes;
@@ -428,18 +433,18 @@ function RapportFooterLinks({ group }: { group: GroupedFeedEvent }) {
     <div style={{ display: "flex", alignItems: "center", paddingTop: 14, marginTop: 12, width: "100%" }}>
       <span className="inline-flex items-center gap-1.5 text-xs text-primary flex-wrap" style={{ flexGrow: 1 }}>
         <Sparkles className="w-3 h-3 shrink-0" />
-        {hasSecondLink ? <span>Résumé IA :</span> : null}
+        {hasSecondLink ? <span>{t("aiSummaryLabel")}</span> : null}
         {e.texteUid ? (
           <Link href={`/dossiers-legislatifs/${dossierUid}/resume-ia?texte=${e.texteUid}`} className="hover:underline">
-            {hasSecondLink ? <>Rapport{tomes && <span className="text-muted-foreground"> (+ tomes)</span>}</> : <>Résumé IA{tomes && <span className="text-muted-foreground"> (+ tomes)</span>}</>}
+            {hasSecondLink ? <>{t("report")}{tomes && <span className="text-muted-foreground"> {t("plusTomes")}</span>}</> : <>{t("aiSummary")}{tomes && <span className="text-muted-foreground"> {t("plusTomes")}</span>}</>}
           </Link>
         ) : (
-          <span className="text-muted-foreground">{hasSecondLink ? "Rapport" : "Résumé IA"}</span>
+          <span className="text-muted-foreground">{hasSecondLink ? t("report") : t("aiSummary")}</span>
         )}
         {hasSecondLink && <>
           <span className="text-muted-foreground">|</span>
           <Link href={`/dossiers-legislatifs/${dossierUid}/resume-ia?texte=${e.texteAdopteUid}`} className="hover:underline text-muted-foreground">
-            {isCmp ? "Texte adopté" : "Texte modifié"}
+            {isCmp ? t("adoptedText") : t("modifiedText")}
           </Link>
         </>}
       </span>
@@ -451,9 +456,10 @@ function RapportFooterLinks({ group }: { group: GroupedFeedEvent }) {
 // ── Card title helper ────────────────────────────────────────
 
 function CardTitle({ group, e }: { group: GroupedFeedEvent; e: FeedEvent }) {
-  const t = group.type;
-  // DEPOT_TEXTE : organe · libelleActe + titre du texte
-  if (t === "DEPOT_TEXTE") {
+  const t = useTranslations("month");
+  const type = group.type;
+
+  if (type === "DEPOT_TEXTE") {
     return (
       <p className="text-sm leading-snug mb-0.5">
         {e.organeName && <span className="text-muted-foreground">{e.organeName} · </span>}
@@ -462,17 +468,15 @@ function CardTitle({ group, e }: { group: GroupedFeedEvent; e: FeedEvent }) {
       </p>
     );
   }
-  // MOTION_CENSURE : titre du dossier (plus lisible que le titre du texte)
-  if (t === "MOTION_CENSURE") {
+  if (type === "MOTION_CENSURE") {
     return (
       <p className="text-sm leading-snug mb-0.5">
         {group.dossierTitre || e.texteTitre || e.texteDenomination || e.titre}
       </p>
     );
   }
-  // DECRET : ligne 1 muted (référence loi parente), ligne 2 titre complet du décret
-  if (t === "DECRET") {
-    const loiRef = e.texteDenomination ? `Pour la ${e.texteDenomination}` : null;
+  if (type === "DECRET") {
+    const loiRef = e.texteDenomination ? t("forThe", { denomination: e.texteDenomination }) : null;
     const loiTitre = e.texteTitre ?? null;
     const line1 = [loiRef, loiTitre].filter(Boolean).join(' ');
     const line2 = e.texteAdopteTitre || e.titreLoi || e.dossierTitre || null;
@@ -483,47 +487,42 @@ function CardTitle({ group, e }: { group: GroupedFeedEvent; e: FeedEvent }) {
       </div>
     );
   }
-  // LOI_APPLIQUEE : titre de la loi
-  if (t === "LOI_APPLIQUEE") {
+  if (type === "LOI_APPLIQUEE") {
     const titre = e.titreLoi
       ? e.titreLoi.charAt(0).toUpperCase() + e.titreLoi.slice(1)
       : (group.dossierTitre || e.titre);
     return <p className="text-sm leading-snug mb-0.5">{titre}</p>;
   }
-  // PROMULGATION : titre officiel de la loi (capitalisé) ou titre du dossier
-  if (t === "PROMULGATION") {
+  if (type === "PROMULGATION") {
     const titre = e.titreLoi
       ? e.titreLoi.charAt(0).toUpperCase() + e.titreLoi.slice(1)
       : (group.dossierTitre || e.titre);
     return <p className="text-sm leading-snug mb-0.5">{titre}</p>;
   }
-  // NAVETTE : direction en ligne 1, juste le titre ici
-  if (t === "NAVETTE") {
+  if (type === "NAVETTE") {
     return (
       <p className="text-sm leading-snug mb-0.5">
         <span>{e.texteTitre || group.dossierTitre || e.titre}</span>
       </p>
     );
   }
-  // DEPOT_RAPPORT / CMP_RAPPORT : single → titre du rapport, multi → titre du dossier
-  if (t === "DEPOT_RAPPORT" || t === "CMP_RAPPORT") {
+  if (type === "DEPOT_RAPPORT" || type === "CMP_RAPPORT") {
     const isSingle = group.events.length === 1;
     const titre = isSingle
       ? (e.texteTitre || e.texteDenomination || group.dossierTitre || e.titre)
       : (group.dossierTitre || e.titre);
 
-    // Ligne rapporteur(s)
     let rapporteurLine: React.ReactNode = null;
     if (isSingle && e.rapporteurName) {
       rapporteurLine = (
         <p className="text-xs text-muted-foreground mt-2">
-          <span>Rapporteur(s) : </span>
+          <span>{t("rapporteur")}</span>
           <span className="font-bold text-foreground">{e.rapporteurName}</span>
           {e.rapporteurGroupe && <span>/{e.rapporteurGroupe}</span>}
-          {e.rapporteurIsMultiple && <span> (et collègues)</span>}
+          {e.rapporteurIsMultiple && <span> {t("andColleagues")}</span>}
         </p>
       );
-    } else if (!isSingle && t === "CMP_RAPPORT") {
+    } else if (!isSingle && type === "CMP_RAPPORT") {
       const an = group.events.find(ev => ev.organeCodeType === "ASSEMBLEE");
       const sn = group.events.find(ev => ev.organeCodeType === "SENAT");
       if (an?.rapporteurName || sn?.rapporteurName) {
@@ -531,16 +530,16 @@ function CardTitle({ group, e }: { group: GroupedFeedEvent; e: FeedEvent }) {
           <p className="text-xs text-muted-foreground mt-2 flex flex-wrap gap-x-3">
             {an?.rapporteurName && (
               <span>
-                Assemblée : <span className="font-bold text-foreground">{an.rapporteurName}</span>
+                {t("institution.assemblee")} : <span className="font-bold text-foreground">{an.rapporteurName}</span>
                 {an.rapporteurGroupe && <span>/{an.rapporteurGroupe}</span>}
-                {an.rapporteurIsMultiple && <span> (et collègues)</span>}
+                {an.rapporteurIsMultiple && <span> {t("andColleagues")}</span>}
               </span>
             )}
             {sn?.rapporteurName && (
               <span>
-                Sénat : <span className="font-bold text-foreground">{sn.rapporteurName}</span>
+                {t("institution.senat")} : <span className="font-bold text-foreground">{sn.rapporteurName}</span>
                 {sn.rapporteurGroupe && <span>/{sn.rapporteurGroupe}</span>}
-                {sn.rapporteurIsMultiple && <span> (et collègues)</span>}
+                {sn.rapporteurIsMultiple && <span> {t("andColleagues")}</span>}
               </span>
             )}
           </p>
@@ -555,8 +554,7 @@ function CardTitle({ group, e }: { group: GroupedFeedEvent; e: FeedEvent }) {
       </>
     );
   }
-  // DECISION : single → titre du scrutin nettoyé ; multi → titre du texte/dossier
-  if (t === "DECISION") {
+  if (type === "DECISION") {
     const isMulti = e.scrutins.length > 1;
     const scrutinTitre = !isMulti && e.scrutinTitre
       ? e.scrutinTitre.replace(/^sur\s+/i, '').replace(/^(.)/, c => c.toUpperCase())
@@ -567,15 +565,13 @@ function CardTitle({ group, e }: { group: GroupedFeedEvent; e: FeedEvent }) {
       </p>
     );
   }
-  // CMP_CONVOCATION / CC_SAISINE : libelleActe déjà dans le header, juste le titre
-  if (t === "CMP_CONVOCATION" || t === "CC_SAISINE") {
+  if (type === "CMP_CONVOCATION" || type === "CC_SAISINE") {
     return (
       <p className="text-sm leading-snug mb-0.5">
         {e.texteTitre || e.texteDenomination || group.dossierTitre || e.titre}
       </p>
     );
   }
-  // Défaut : dossierTitre ou titre
   return (
     <p className="text-sm leading-snug mb-0.5">
       {group.dossierTitre || e.titre}
@@ -585,20 +581,20 @@ function CardTitle({ group, e }: { group: GroupedFeedEvent; e: FeedEvent }) {
 
 // ── Context info helper ─────────────────────────────────────
 
-function getContextInfo(type: FeedEventType, e: FeedEvent, multi: boolean, events: FeedEvent[]) {
+function getContextInfo(type: FeedEventType, e: FeedEvent, multi: boolean, events: FeedEvent[], t: TFunction) {
   if (type === "DEPOT_TEXTE") {
     if (!e.auteur) return null;
     return <>
       <span className="font-bold text-foreground shrink-0">
-        { e.auteurChambre === 'AN' ? 'Dep. ' : e.auteurChambre === 'SENAT' ? 'Sén. ' : e.auteurChambre === 'GOUV' ? 'Min. ' : '' }
+        {e.auteurChambre === 'AN' ? t("prefixDep") : e.auteurChambre === 'SENAT' ? t("prefixSen") : e.auteurChambre === 'GOUV' ? t("prefixMin") : ''}
         {e.auteur}
       </span>
       {e.groupeAbrege && <span className="font-normal shrink-0">/{e.groupeAbrege}</span>}
     </>;
   }
   if (type === "NAVETTE") {
-    const direction = e.organeCodeType === "SENAT" ? "Assemblée → Sénat"
-      : e.organeCodeType === "ASSEMBLEE" ? "Sénat → Assemblée"
+    const direction = e.organeCodeType === "SENAT" ? t("shuttleToSenat")
+      : e.organeCodeType === "ASSEMBLEE" ? t("shuttleToAssemblee")
       : e.organeName;
     return direction ? <span className="font-bold text-foreground shrink-0">{direction}</span> : null;
   }
@@ -606,34 +602,34 @@ function getContextInfo(type: FeedEventType, e: FeedEvent, multi: boolean, event
     const isCmpVote = (ev: FeedEvent) => ev.codeActe?.startsWith('CMP-DEBATS');
     if (multi) {
       const insts = [...new Set(events.map(ev => {
-        const name = institutionName(ev.organeCodeType, ev.organeName);
-        return name ? (isCmpVote(ev) ? `Texte CMP · ${name}` : name) : null;
+        const name = institutionName(ev.organeCodeType, ev.organeName, t);
+        return name ? (isCmpVote(ev) ? `${t("texteCMP")} · ${name}` : name) : null;
       }).filter((v): v is string => v !== null))];
       return insts.length > 0 ? <span className="font-bold text-foreground shrink-0">{insts.join(' + ')}</span> : null;
     }
-    const inst = institutionName(e.organeCodeType, e.organeName);
-    const prefix = isCmpVote(e) ? 'Texte CMP · ' : '';
+    const inst = institutionName(e.organeCodeType, e.organeName, t);
+    const prefix = isCmpVote(e) ? `${t("texteCMP")} · ` : '';
     return inst ? <span className="font-bold text-foreground shrink-0">{prefix}{inst}</span> : null;
   }
   if (type === "DEPOT_RAPPORT") {
-    const chambre = e.organeCodeType === "COMSENAT" ? "Sénat" : "Assemblée";
+    const chambre = e.organeCodeType === "COMSENAT" ? t("institution.senat") : t("institution.assemblee");
     return <>
       <span className="font-bold text-foreground shrink-0">{chambre}</span>
       {e.organeName && <span className="font-normal shrink-0">/{e.organeName}</span>}
     </>;
   }
   if (type === "CMP_RAPPORT") {
-    return <span className="font-bold text-foreground shrink-0">Commission mixte paritaire</span>;
+    return <span className="font-bold text-foreground shrink-0">{t("institution.cmp")}</span>;
   }
   if (type === "MOTION_CENSURE") {
-    return <span className="font-bold text-foreground shrink-0">Assemblée</span>;
+    return <span className="font-bold text-foreground shrink-0">{t("institution.assemblee")}</span>;
   }
   if (type === "CMP_CONVOCATION") return null;
   if (type === "DECRET" || type === "LOI_APPLIQUEE") {
-    return <span className="font-bold text-foreground shrink-0">Gouvernement</span>;
+    return <span className="font-bold text-foreground shrink-0">{t("institution.gouvernement")}</span>;
   }
   if (type === "CC_SAISINE") {
-    const inst = institutionName(e.organeCodeType, e.organeName);
+    const inst = institutionName(e.organeCodeType, e.organeName, t);
     return inst ? <span className="shrink-0">/{inst}</span> : null;
   }
   return e.organeName ? <span className="truncate">{e.organeName}</span> : null;
@@ -666,12 +662,14 @@ function DebugAccordion({ group }: { group: GroupedFeedEvent }) {
 // ── Grouped event card (unifié style X) ─────────────────────
 
 function GroupedEventCard({ group, index }: { group: GroupedFeedEvent; index: number }) {
+  const t = useTranslations("month");
+  const locale = useLocale();
   const config = EVENT_CONFIG[group.type];
   const Icon = config.icon;
   const e = group.events[0];
   const multi = group.events.length > 1;
-  const shortDate = formatShortDate(group.date);
-  const context = getContextInfo(group.type, e, multi, group.events);
+  const shortDate = formatShortDate(group.date, locale);
+  const context = getContextInfo(group.type, e, multi, group.events, t);
   return (
     <motion.article
       initial={{ opacity: 0, y: 8 }}
@@ -688,7 +686,7 @@ function GroupedEventCard({ group, index }: { group: GroupedFeedEvent; index: nu
       <div className="flex-1 min-w-0">
         {/* Ligne 1 : label · contexte · date */}
         <div className="flex items-baseline gap-1 text-xs text-muted-foreground mb-0.5 overflow-hidden">
-          <span className={cn("font-semibold shrink-0", config.color)} style={config.colorStyle}>{group.type === "CC_SAISINE" && e.libelleActe ? e.libelleActe : config.label}</span>
+          <span className={cn("font-semibold shrink-0", config.color)} style={config.colorStyle}>{group.type === "CC_SAISINE" && e.libelleActe ? e.libelleActe : t(config.labelKey)}</span>
           {group.type !== "CC_SAISINE" && <span className="shrink-0">·</span>}
           {context && <span className="truncate min-w-0">{context}</span>}
           {context && <span className="shrink-0">·</span>}
@@ -707,7 +705,7 @@ function GroupedEventCard({ group, index }: { group: GroupedFeedEvent; index: nu
         {group.type === "DEPOT_TEXTE" && e.texteAdopteUid && e.texteAdopteUid !== e.texteUid && (
           <p className="text-sm leading-snug mb-0.5">
             {e.texteAdopteDenomination && <span className="text-muted-foreground">{e.texteAdopteDenomination} — </span>}
-            <span>{e.texteAdopteTitre || "Texte adopté"}</span>
+            <span>{e.texteAdopteTitre || t("adoptedTextFallback")}</span>
           </p>
         )}
 
@@ -725,7 +723,7 @@ function GroupedEventCard({ group, index }: { group: GroupedFeedEvent; index: nu
                 className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-1"
               >
                 <Sparkles className="w-3 h-3" />
-                Résumé IA
+                {t("aiSummary")}
               </Link>
               <span className="text-xs text-muted-foreground mt-1">·</span>
               <Link
@@ -733,7 +731,7 @@ function GroupedEventCard({ group, index }: { group: GroupedFeedEvent; index: nu
                 className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground hover:underline mt-1"
               >
                 <FileText className="w-3 h-3" />
-                Dossier complet
+                {t("fullDossier")}
               </Link>
             </div>
             <SocialIcons />
@@ -886,8 +884,9 @@ export function MonthFeedClient({
     return months.find(m => m.monthKey === visibleMonthKey)?.monthFormatted ?? months[0].monthFormatted;
   }, [months, visibleMonthKey]);
 
-  // ── Dossier mode (unchanged) ──
-  // filterCounts from allGroupedEvents works for dossier mode too (single month = same data)
+  const t = useTranslations("month");
+
+  // ── Dossier mode ──
   if (dossierMode) {
     const filtered = groupedEvents.filter(g => matchesFilters(g.type, activeFilters));
 
@@ -899,13 +898,13 @@ export function MonthFeedClient({
               href={`/dossiers-legislatifs/${dossierUid}/resume-ia`}
               className="inline-flex items-center gap-1 text-xs text-primary hover:underline mb-2"
             >
-              <ArrowLeft className="w-3 h-3" />Retour au dossier
+              <ArrowLeft className="w-3 h-3" />{t("backToDossier")}
             </Link>
             <h1 className="text-2xl font-bold">
-              {dossierTitre || "Dossier législatif"}
+              {dossierTitre || t("legislativeDossier")}
             </h1>
             <p className="text-sm text-muted-foreground mt-0.5">
-              Timeline complète · {groupedEvents.length} étape{groupedEvents.length > 1 ? "s" : ""}
+              {t("timelineComplete", { count: groupedEvents.length })}
             </p>
           </div>
 
@@ -931,19 +930,17 @@ export function MonthFeedClient({
   return (
     <TooltipProvider>
       <div className="max-w-xl -mx-6 sm:mx-auto sm:px-4 py-6">
-        {/* Header */}
         <div className="mb-5 px-4 sm:px-0">
-          <h1 className="text-2xl font-bold">Fil d&#39;actualité</h1>
+          <h1 className="text-2xl font-bold">{t("newsFeedTitle")}</h1>
           <p className="text-sm text-muted-foreground mt-0.5 capitalize">{visibleMonthFormatted}</p>
         </div>
 
-        {/* Raccourci mois en cours (visible uniquement quand on consulte un mois passé) */}
         {!isCurrentOrFutureMonth && (
           <div className="flex justify-center mb-4 px-4 sm:px-0">
             <Button variant="ghost" size="sm" asChild className="text-primary">
               <Link href="/Month">
                 <CalendarCheck className="w-3.5 h-3.5 mr-1.5" />
-                Revenir au mois en cours
+                {t("backToCurrentMonth")}
               </Link>
             </Button>
           </div>
@@ -967,7 +964,6 @@ export function MonthFeedClient({
                   ref={(el) => setMonthRef(block.monthKey, el)}
                   data-month={block.monthKey}
                 >
-                  {/* Month separator (after first month) */}
                   {blockIdx > 0 && (
                     <div className="flex items-center gap-3 px-4 sm:px-1 py-4 mt-2">
                       <div className="flex-1 h-px bg-border" />
@@ -980,7 +976,7 @@ export function MonthFeedClient({
 
                   {filtered.length === 0 ? (
                     <p className="text-center text-sm text-muted-foreground py-4">
-                      Aucun événement de ce type en {block.monthFormatted}.
+                      {t("noEventsOfType", { month: block.monthFormatted })}
                     </p>
                   ) : (
                     filtered.map((g, i) => (
@@ -993,7 +989,6 @@ export function MonthFeedClient({
           </div>
         )}
 
-        {/* Load previous month button */}
         {allGroupedEvents.length > 0 && !hasReachedLimit && (
           <div className="flex justify-center py-8">
             <Button
@@ -1005,12 +1000,12 @@ export function MonthFeedClient({
               {isLoadingMonth ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
-                  Chargement…
+                  {t("loading")}
                 </>
               ) : (
                 <>
                   <ChevronDown className="w-4 h-4 mr-1.5" />
-                  Charger le mois précédent
+                  {t("loadPreviousMonth")}
                 </>
               )}
             </Button>
@@ -1018,9 +1013,9 @@ export function MonthFeedClient({
         )}
         {hasReachedLimit && (
           <p className="text-center text-xs text-muted-foreground py-6">
-            {MAX_MONTHS} mois chargés.{" "}
+            {t("monthsLoaded", { count: MAX_MONTHS })}{" "}
             <Link href={`/Month?mois=${nextLoadKey}`} className="text-primary hover:underline">
-              Voir les mois antérieurs
+              {t("viewOlderMonths")}
             </Link>
           </p>
         )}
@@ -1034,6 +1029,7 @@ export function MonthFeedClient({
 // ── Shared small components ─────────────────────────────────
 
 function FilterPills({ activeFilters, onFilter, counts }: { activeFilters: Set<string>; onFilter: (v: string) => void; counts?: Record<string, number> }) {
+  const t = useTranslations("month");
   const ref = useRef<HTMLDivElement>(null);
   const [hint, setHint] = useState(true);
 
@@ -1070,7 +1066,7 @@ function FilterPills({ activeFilters, onFilter, counts }: { activeFilters: Set<s
               )}
             >
               <PillIcon className={cn("w-3.5 h-3.5", pill.color)} style={pill.colorStyle} />
-              <span>{pill.label}</span>
+              <span>{t(pill.labelKey)}</span>
               {counts && count > 0 && (
                 <span className="text-xs tabular-nums opacity-60">{count}</span>
               )}
@@ -1083,32 +1079,35 @@ function FilterPills({ activeFilters, onFilter, counts }: { activeFilters: Set<s
 }
 
 function NoFilterResults({ onReset }: { onReset: () => void }) {
+  const t = useTranslations("month");
   return (
     <div className="text-center py-16">
-      <p className="text-muted-foreground text-sm">Aucun événement de ce type.</p>
+      <p className="text-muted-foreground text-sm">{t("noEventsType")}</p>
       <button onClick={onReset} className="mt-2 text-sm text-primary hover:underline">
-        Voir tous les événements
+        {t("viewAll")}
       </button>
     </div>
   );
 }
 
 function EmptyState() {
+  const t = useTranslations("month");
   return (
     <div className="text-center py-20">
       <CalendarX className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-      <h2 className="text-base font-semibold mb-1">Mois calme au Parlement</h2>
+      <h2 className="text-base font-semibold mb-1">{t("quietMonth")}</h2>
       <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-        Aucun événement législatif enregistré. Essayez un autre mois.
+        {t("noEventsRecorded")}
       </p>
     </div>
   );
 }
 
 function Footer() {
+  const t = useTranslations("month");
   return (
     <p className="text-center text-[11px] text-muted-foreground mt-10 pb-4">
-      Source :{" "}
+      {t("source")}{" "}
       <a href="https://data.assemblee-nationale.fr/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
         data.assemblee-nationale.fr
       </a>

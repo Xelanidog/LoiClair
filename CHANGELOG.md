@@ -1,3 +1,23 @@
+## 13 mars 2026
+
+### Ajouté
+- **Interface bilingue français/anglais** — toute l'interface est désormais disponible en anglais grâce à un toggle FR/EN dans la barre latérale. La langue est mémorisée dans un cookie
+- **Résumés IA en anglais** — les résumés de lois peuvent être générés en anglais, avec un cache séparé pour chaque langue (colonne `resume_ia_en` en base)
+- **Traduction du guide et de la méthodologie** — les pages documentation sont disponibles en anglais
+- **Pages 404 et erreur localisées** — les pages d'erreur s'affichent dans la langue choisie, avec un lien pour signaler un bug
+
+### Modifié
+- **Graphique mensuel localisé** — le titre, la description et les tendances du graphique d'évolution mensuelle s'adaptent à la langue
+- **Recherche et filtres localisés** — le placeholder de recherche, les labels de filtres et la pagination s'affichent dans la langue choisie
+- **Entonnoir législatif localisé** — le parcours législatif dans les indicateurs clés s'affiche dans la langue active
+- **Toggle langue aligné à gauche** — le sélecteur FR/EN est calé à gauche dans la barre latérale pour un meilleur alignement visuel
+
+### Corrigé
+- **Cartes « boîte à outils » disparaissaient** — les cartes de fonctionnalités sur la page d'accueil restent visibles après un changement de langue
+- **Résumé IA cassé** — la requête de données échouait car une colonne n'existait pas encore en base ; corrigé par l'ajout de la colonne et la mise à jour du code
+
+---
+
 ## 14 mars 2026 (après-midi)
 
 ### Ajouté

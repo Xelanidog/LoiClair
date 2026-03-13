@@ -23,12 +23,15 @@ import {
   type ActeRow,
 } from './monthQueries';
 import { MonthFeedClient } from './MonthFeedClient';
-import type { Metadata } from 'next';
+import { getTranslations, getLocale } from 'next-intl/server';
 
-export const metadata: Metadata = {
-  title: "Fil d'actualité — LoiClair",
-  description: 'Les evenements legislatifs du mois : votes, depots, promulgations et plus encore.',
-};
+export async function generateMetadata() {
+  const t = await getTranslations('month');
+  return {
+    title: t('pageTitle'),
+    description: t('pageDescription'),
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Types exportes pour le client (FeedEventType importé depuis monthQueries)
@@ -367,7 +370,7 @@ function groupFeedEvents(feedEvents: FeedEvent[]): Map<string, GroupedFeedEvent>
 // fetchMonthData — pipeline réutilisable (Server Component + Server Action)
 // ---------------------------------------------------------------------------
 
-export async function fetchMonthData(monthKey?: string): Promise<MonthData> {
+export async function fetchMonthData(monthKey?: string, locale?: string, lawFullyAppliedLabel?: string): Promise<MonthData> {
   const { monthStart, monthEnd, year, month } = getMonthBounds(monthKey);
 
   // Elargir les bornes de +/-1 jour pour compenser les decalages de timezone
@@ -483,7 +486,7 @@ export async function fetchMonthData(monthKey?: string): Promise<MonthData> {
       id: `loi-appliquee-${law.dossier_uid}`,
       type: 'LOI_APPLIQUEE',
       date: decreeInfo.lastDate,
-      titre: law.titre || dossier?.titre || 'Loi pleinement appliquée',
+      titre: law.titre || dossier?.titre || lawFullyAppliedLabel || 'Loi pleinement appliquée',
       dossierUid: law.dossier_uid,
       dossierTitre: dossier?.titre ?? null,
       libelleActe: null, codeActe: null, organeName: null,
@@ -536,15 +539,16 @@ export async function fetchMonthData(monthKey?: string): Promise<MonthData> {
   const isCurrentOrFutureMonth = monthEnd >= new Date();
 
   // Formatage du mois : "février 2026"
+  const intlLocale = locale ?? 'fr';
   const monthNoon = new Date(year, month, 15, 12, 0, 0);
-  const monthFormatted = new Intl.DateTimeFormat('fr-FR', {
+  const monthFormatted = new Intl.DateTimeFormat(intlLocale, {
     month: 'long',
     year: 'numeric',
     timeZone: 'Europe/Paris',
   }).format(monthNoon);
 
   // Format court pour le pill : "fév. 2026"
-  const monthRangeShort = new Intl.DateTimeFormat('fr-FR', {
+  const monthRangeShort = new Intl.DateTimeFormat(intlLocale, {
     month: 'short',
     year: 'numeric',
     timeZone: 'Europe/Paris',
@@ -567,7 +571,7 @@ export async function fetchMonthData(monthKey?: string): Promise<MonthData> {
 // fetchDossierData — pipeline pour la timeline d'un dossier législatif
 // ---------------------------------------------------------------------------
 
-async function fetchDossierData(dossierUid: string) {
+async function fetchDossierData(dossierUid: string, lawFullyAppliedLabel?: string) {
   // 1. Fetch tous les actes pour ce dossier (timeline)
   const timelineActes = await getDossierTimeline(supabase, dossierUid);
 
@@ -660,7 +664,7 @@ async function fetchDossierData(dossierUid: string) {
         id: `loi-appliquee-${dossierUid}`,
         type: 'LOI_APPLIQUEE',
         date: lastDate,
-        titre: appData.titre || dossierInfo?.titre || 'Loi pleinement appliquée',
+        titre: appData.titre || dossierInfo?.titre || lawFullyAppliedLabel || 'Loi pleinement appliquée',
         dossierUid,
         dossierTitre: dossierInfo?.titre ?? null,
         libelleActe: null, codeActe: null, organeName: null,
@@ -704,11 +708,14 @@ export default async function MonthPage({
   const resolvedParams = await searchParams;
   const dossierParam = typeof resolvedParams.dossier === 'string' ? resolvedParams.dossier : undefined;
 
+  const [locale, t] = await Promise.all([getLocale(), getTranslations('month')]);
+  const lawFullyAppliedLabel = t('lawFullyApplied');
+
   // =========================================================================
   // MODE DOSSIER : timeline complete d'un dossier legislatif
   // =========================================================================
   if (dossierParam) {
-    const { groupedEvents, feedEvents, dossierInfo } = await fetchDossierData(dossierParam);
+    const { groupedEvents, feedEvents, dossierInfo } = await fetchDossierData(dossierParam, lawFullyAppliedLabel);
 
     return (
       <MonthFeedClient
@@ -734,7 +741,7 @@ export default async function MonthPage({
   const { error: dbError } = await supabase.from('actes_legislatifs').select('uid').limit(1);
   if (dbError) throw new Error('db_unavailable');
 
-  const data = await fetchMonthData(moisParam);
+  const data = await fetchMonthData(moisParam, locale, lawFullyAppliedLabel);
 
   return (
     <MonthFeedClient

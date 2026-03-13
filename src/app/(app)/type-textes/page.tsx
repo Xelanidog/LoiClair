@@ -1,86 +1,87 @@
-// src/app/processus-legislatif/page.tsx
-// Page pédagogique sur le processus législatif en France
+// src/app/(app)/type-textes/page.tsx
+// Page pédagogique sur les types de textes législatifs en France
 // Utilise Shadcn pour les composants (Accordion, Card)
 
+import { getTranslations } from "next-intl/server"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-export default function ProcessusLegislatif() {
+export default async function TypeTextes() {
+  const t = await getTranslations("textTypes")
+
   return (
     // Conteneur principal : largeur raisonnable + centrage automatique
     <div className="container mx-auto p-6 max-w-7xl">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold mb-3">Le Processus Législatif en France</h1>
+        <h1 className="text-2xl font-bold mb-3">{t("pageTitle")}</h1>
         <p className="text-muted-foreground">
-          Comprendre comment naissent les lois : des organes impliqués au parcours complet d'un texte législatif.
+          {t("pageDesc")}
         </p>
       </div>
 
-
-
-      {/* SECTION 2 : Types de textes */}
+      {/* Types de textes */}
       <Card className="mb-12">
         <CardHeader>
-          <CardTitle>Les Différents Types de Textes Législatifs</CardTitle>
+          <CardTitle>{t("pageTitle")}</CardTitle>
         </CardHeader>
         <CardContent>
           <Accordion type="single" collapsible className="w-full">
             <AccordionItem value="projet-loi">
-              <AccordionTrigger>Projet de Loi</AccordionTrigger>
+              <AccordionTrigger>{t("projetLoi.trigger")}</AccordionTrigger>
               <AccordionContent>
-                <p>Initié par le Gouvernement. Exemples : budgets (PLF), réformes sociales. Il suit la procédure législative complète.</p>
+                <p>{t("projetLoi.content")}</p>
               </AccordionContent>
             </AccordionItem>
 
             <AccordionItem value="proposition-loi">
-              <AccordionTrigger>Proposition de Loi</AccordionTrigger>
+              <AccordionTrigger>{t("propositionLoi.trigger")}</AccordionTrigger>
               <AccordionContent>
-                <p>Initiée par un parlementaire (député ou sénateur). Souvent sur des sujets spécifiques, comme des lois locales ou thématiques.</p>
+                <p>{t("propositionLoi.content")}</p>
               </AccordionContent>
             </AccordionItem>
 
             <AccordionItem value="proposition-loi-organique">
-              <AccordionTrigger>Proposition de Loi Organique</AccordionTrigger>
+              <AccordionTrigger>{t("propositionLoiOrganique.trigger")}</AccordionTrigger>
               <AccordionContent>
-                <p>Variante très spécifique visant à modifier ou compléter les lois organiques (textes qui précisent l'application de la Constitution).</p>
-                <p className="mt-3 text-sm font-medium">Procédure renforcée :</p>
+                <p>{t("propositionLoiOrganique.content")}</p>
+                <p className="mt-3 text-sm font-medium">{t("propositionLoiOrganique.reinforcedLabel")}</p>
                 <ul className="list-disc pl-5 text-sm mt-1 space-y-1">
-                  <li>Majorité absolue dans chaque assemblée (289 voix à l'Assemblée, 174 au Sénat)</li>
-                  <li>Sénat a un pouvoir égal (pas de dernier mot exclusif)</li>
-                  <li>Contrôle obligatoire du Conseil Constitutionnel</li>
-                  <li>Délai de 15 jours avant examen en séance</li>
+                  <li>{t("propositionLoiOrganique.reinforced1")}</li>
+                  <li>{t("propositionLoiOrganique.reinforced2")}</li>
+                  <li>{t("propositionLoiOrganique.reinforced3")}</li>
+                  <li>{t("propositionLoiOrganique.reinforced4")}</li>
                 </ul>
-                <p className="mt-3 text-sm">Exemples : règlement des assemblées, statut des parlementaires.</p>
+                <p className="mt-3 text-sm">{t("propositionLoiOrganique.examples")}</p>
               </AccordionContent>
             </AccordionItem>
 
             <AccordionItem value="rapport">
-              <AccordionTrigger>Rapport</AccordionTrigger>
+              <AccordionTrigger>{t("rapport.trigger")}</AccordionTrigger>
               <AccordionContent>
-                <p>Document d'analyse produit par une commission parlementaire ou un rapporteur.</p>
+                <p>{t("rapport.content")}</p>
               </AccordionContent>
             </AccordionItem>
 
             <AccordionItem value="resolution">
-              <AccordionTrigger>Résolution</AccordionTrigger>
+              <AccordionTrigger>{t("resolution.trigger")}</AccordionTrigger>
               <AccordionContent>
-                <p>Texte non contraignant exprimant une position (ex : résolution européenne).</p>
+                <p>{t("resolution.content")}</p>
               </AccordionContent>
             </AccordionItem>
 
             <AccordionItem value="autres">
-              <AccordionTrigger>Autres (Avis, Étude d'Impact...)</AccordionTrigger>
+              <AccordionTrigger>{t("autres.trigger")}</AccordionTrigger>
               <AccordionContent>
-                <p>- Avis : Opinion d'une commission<br />
-                - Étude d'Impact : Analyse des effets<br />
-                - Accord International : Ratification de traités</p>
+                <p>
+                  - {t("autres.avis")}<br />
+                  - {t("autres.etudeImpact")}<br />
+                  - {t("autres.accordInternational")}
+                </p>
               </AccordionContent>
             </AccordionItem>
           </Accordion>
         </CardContent>
       </Card>
-
-      
     </div>
   );
 }

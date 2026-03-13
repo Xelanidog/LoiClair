@@ -1,0 +1,999 @@
+{
+  "meta": {
+    "title": "LoiClair – Lois claires, République accessible",
+    "description": "Comprendre simplement l'activité législative française"
+  },
+  "common": {
+    "appName": "LoiClair",
+    "tagline": "Lois claires, République accessible",
+    "contribute": "Contribuer",
+    "contributeDesc": "Signaler un bug ou proposer une amélioration sur GitHub.",
+    "openMenu": "Ouvrir le menu",
+    "navMenu": "Menu de navigation",
+    "searchPlaceholder": "Rechercher par titre ou auteur…",
+    "clearSearch": "Effacer la recherche"
+  },
+  "nav": {
+    "dashboard": "Tableau de bord",
+    "newsFeed": "Fil d'actualité",
+    "keyIndicators": "Indicateurs clés",
+    "composition": "Composition",
+    "allTexts": "Tous les textes",
+    "legislativeBodies": "Organes législatifs",
+    "legislativeProcess": "Processus législatif",
+    "textTypes": "Types de texte",
+    "nationalAssembly": "Assemblée nationale",
+    "senate": "Sénat",
+    "government": "Gouvernement",
+    "constitutionalCouncil": "Conseil constitutionnel",
+    "documentation": "Documentation",
+    "userGuide": "Guide d'utilisation",
+    "glossary": "Glossaire",
+    "methodology": "Méthodologie",
+    "aiCompliance": "Conformité AI Act",
+    "about": "À propos",
+    "dossiers": "Dossiers",
+    "newsFeedShort": "Fil d'actu"
+  },
+  "footer": {
+    "about": "À propos",
+    "contactUs": "Contactez-nous",
+    "contributeGithub": "Contribuer sur GitHub",
+    "releaseNotes": "Notes de version",
+    "publicData": "Données publiques officielles"
+  },
+  "signaler": {
+    "fabLabel": "Une idée ? Un problème ?",
+    "fabTooltip": "Proposer une idée ou signaler un problème",
+    "chooseTitle": "Comment pouvons-nous vous aider ?",
+    "chooseDesc": "Choisissez ce que vous souhaitez nous partager.",
+    "reportProblem": "Signaler un problème",
+    "reportProblemDesc": "Erreur, bug, donnée incorrecte…",
+    "suggestIdea": "Proposer une idée",
+    "suggestIdeaDesc": "Nouvelle fonctionnalité, amélioration…",
+    "problemTitle": "Signaler un problème",
+    "problemDesc": "Aidez-nous à améliorer LoiClair en signalant une erreur ou un dysfonctionnement.",
+    "problemTypeLabel": "Type de problème",
+    "ideaTitle": "Proposer une idée",
+    "ideaDesc": "Une fonctionnalité qui vous manque ? Une amélioration à suggérer ? Dites-nous tout !",
+    "ideaTypeLabel": "Type d'idée",
+    "typePlaceholder": "Sélectionner un type...",
+    "typeIncorrectData": "Donnée incorrecte",
+    "typeDisplay": "Problème d'affichage",
+    "typeBrokenLink": "Lien cassé",
+    "typeAI": "Résumé IA incorrect",
+    "typeOtherProblem": "Autre",
+    "typeNewFeature": "Nouvelle fonctionnalité",
+    "typeImprovement": "Amélioration existante",
+    "typeOtherIdea": "Autre idée",
+    "descriptionLabel": "Description",
+    "problemDescPlaceholder": "Décrivez le problème rencontré...",
+    "ideaDescPlaceholder": "Décrivez votre idée...",
+    "emailLabel": "Email",
+    "emailOptional": "(optionnel)",
+    "emailPlaceholder": "Pour vous recontacter si besoin",
+    "sending": "Envoi...",
+    "send": "Envoyer",
+    "back": "Retour",
+    "errorGeneric": "Une erreur est survenue.",
+    "errorServer": "Impossible de contacter le serveur. Réessayez plus tard.",
+    "problemSuccess": "Merci pour votre signalement !",
+    "problemSuccessDetail": "Votre signalement a été enregistré. Vous pouvez suivre son traitement :",
+    "problemGithubLabel": "Voir le signalement sur GitHub",
+    "ideaSuccess": "Merci pour votre suggestion !",
+    "ideaSuccessDetail": "Votre idée a été enregistrée. Vous pouvez suivre son évolution :",
+    "ideaGithubLabel": "Voir la suggestion sur GitHub"
+  },
+  "about": {
+    "pageTitle": "À propos de LoiClair",
+    "backHome": "← Retour à l'accueil",
+    "constat": {
+      "heading": "Pourquoi si peu de participation aux décisions du pays ?",
+      "stat1Value": "54%",
+      "stat1Label": "d'abstention aux législatives 2022",
+      "stat1Source": "Source : Ministère de l'Intérieur",
+      "stat2Value": "74%",
+      "stat2Label": "des Français estiment les politiques corrompus",
+      "stat2Source": "Source : CEVIPOF 2025",
+      "stat3Value": "16%",
+      "stat3Label": "des inscrits n'ont voté à aucun tour",
+      "stat3Source": "Source : Analyse post-électorale 2022",
+      "problem1Title": "Dispersion des sources",
+      "problem1Desc": "Assemblée, Sénat, Légifrance, JO… tout est éparpillé, introuvable pour le citoyen ordinaire.",
+      "problem2Title": "Langage très technique",
+      "problem2Desc": "Écrit pour des juristes, pas pour le citoyen moyen. Comprendre devient un effort.",
+      "problem3Title": "Volume écrasant",
+      "problem3Desc": "Des dizaines de textes votés chaque mois. Impossible de tout suivre, on finit par abandonner."
+    },
+    "whatIs": {
+      "heading": "Qu'est-ce que LoiClair ?",
+      "para1": "LoiClair est un site web qui rend le droit et la politique française vraiment accessibles à tous. Nous permettons à chacun de traduire et simplifier les textes de loi, amendements, débats parlementaires et processus institutionnels en explications simples, concrètes et imagées, grâce a l'intelligence artificielle. Nous produisons aussi des statistiques directement depuis les données officielles des institutions.",
+      "para2": "Notre but : répondre aux vraies questions des citoyens (« Mais en vrai qui décide ? », « Est-ce que ça va changer ma vie ? ») en expliquant les étapes réelles (souvent très différentes de la théorie), les acteurs impliqués et les impacts quotidiens."
+    },
+    "howBuilt": {
+      "heading": "Comment le site a été construit",
+      "para1": "LoiClair est un projet independant rendu possible grâce à l'utilisation",
+      "para1Strong": "de l'IA",
+      "para1Suffix": ": depuis l'écriture du code jusqu'à l'analyse et la mise en forme des données brutes, en passant par les résumés intelligents des textes de loi et des débats parlementaires.",
+      "techIntro": "Technologies utilisées :",
+      "tech1Desc": "interface moderne et rapide",
+      "tech2Desc": "design minimaliste, 100% responsive (desktop → mobile)",
+      "tech3Desc": "base de données PostgreSQL hébergée pour stocker toutes les données législatives",
+      "tech4Desc": "hébergement et déploiement automatique à chaque mise à jour du code",
+      "tech5Desc": "import quotidien automatique des données depuis les sources officielles",
+      "tech6Prefix": "IA avancée :",
+      "tech6Mid": "pour les résumés de lois,",
+      "tech6Suffix": "pour le développement"
+    },
+    "sources": {
+      "heading": "Nos Sources Officielles",
+      "intro": "Toutes les infos viennent directement des institutions, sans modification ni interprétation partisane. Mise à jour automatique via API/open data.",
+      "source1Label": "Open Data Assemblée nationale",
+      "source1Desc": "Dossiers législatifs, députés, amendements, scrutins, comptes rendus",
+      "source2Label": "Assemblée nationale",
+      "source2Desc": "Textes et documents officiels",
+      "source3Label": "Sénat",
+      "source3Desc": "Textes et documents officiels",
+      "source4Label": "Open Data Sénat",
+      "source4Desc": "Questions, scrutins, sénateurs",
+      "source4Soon": "Bientôt",
+      "source5Label": "Légifrance",
+      "source5Desc": "Textes intégraux des lois, versions consolidées des codes, décrets d'application (via API PISTE / DILA)",
+      "source6Label": "Baromètre de l'application des lois",
+      "source6Desc": "Suivi de l'application des lois promulguées : taux d'application, mesures attendues, décrets publiés (Assemblée nationale)",
+      "source7Label": "Conseil constitutionnel",
+      "source7Desc": "Contrôle des lois, décisions",
+      "source7Soon": "Bientôt"
+    },
+    "feedback": {
+      "heading": "Donnez votre feedback et contribuez !",
+      "desc": "LoiClair vit grâce à vous. Feedback, idées de fonctionnalités, lois à vulgariser en priorité, signalement d'erreurs — toute contribution est la bienvenue, technique ou non.",
+      "contactBtn": "Contactez l'équipe LoiClair",
+      "githubBtn": "Contribuer au code sur GitHub",
+      "license": "Projet open source sous licence AGPL v3",
+      "sourceCode": "Code source sur GitHub"
+    }
+  },
+  "process": {
+    "pageTitle": "Le Processus Législatif en France",
+    "pageDesc": "Comprendre comment naissent les lois : des organes impliqués au parcours complet d'un texte législatif.",
+    "organes": {
+      "heading": "Les Principaux Organes et Leurs Rôles",
+      "assemblee": {
+        "trigger": "Assemblée Nationale",
+        "content": "L'Assemblée Nationale est la chambre basse du Parlement, composée de 577 députés élus au suffrage universel direct pour 5 ans. Son rôle principal est de voter les lois, contrôler le Gouvernement et débattre des politiques publiques. Elle a le dernier mot en cas de désaccord avec le Sénat sur la plupart des lois."
+      },
+      "senat": {
+        "trigger": "Sénat",
+        "content": "Le Sénat est la chambre haute, avec 348 sénateurs élus au suffrage indirect pour 6 ans. Il représente les territoires (régions, départements). Il examine les lois après l'Assemblée, propose des amendements, et assure un équilibre entre les intérêts nationaux et locaux. Il ne peut pas être dissous."
+      },
+      "gouvernement": {
+        "trigger": "Gouvernement",
+        "content": "Dirigé par le Premier Ministre, le Gouvernement initie la majorité des projets de loi (environ 90%). Il exécute les lois, gère l'administration, et peut engager sa responsabilité sur un texte (article 49-3). Il est responsable devant l'Assemblée Nationale."
+      },
+      "president": {
+        "trigger": "Président de la République",
+        "content": "Le Président promulgue les lois adoptées par le Parlement. Il peut demander une seconde délibération ou saisir le Conseil Constitutionnel. Il nomme le Premier Ministre et peut dissoudre l'Assemblée Nationale."
+      },
+      "conseil": {
+        "trigger": "Conseil Constitutionnel",
+        "content": "Composé de 9 membres, il vérifie la constitutionnalité des lois avant promulgation (saisi par le Président, Premier Ministre, présidents des assemblées ou 60 parlementaires). Il protège les droits fondamentaux et l'équilibre des pouvoirs."
+      }
+    },
+    "parcours": {
+      "heading": "Le parcours d'une loi",
+      "stepLabel": "Étape {number}",
+      "finalNote": "Durée moyenne : 6 à 12 mois • Procédures accélérées possibles (article 49-3, urgence…)",
+      "step1Title": "Dépôt",
+      "step1Desc": "Initiative gouvernementale ou parlementaire",
+      "step1Details": "Le texte est déposé soit par le Gouvernement (projet), soit par un parlementaire (proposition).",
+      "step2Title": "Commission",
+      "step2Desc": "Analyse approfondie et amendements",
+      "step2Details": "Étude détaillée, auditions, rapporteur nommé, modifications proposées.",
+      "step3Title": "Séance publique",
+      "step3Desc": "Débat et vote en hémicycle",
+      "step3Details": "Discussion article par article, puis vote sur l'ensemble.",
+      "step4Title": "Navette & CMP",
+      "step4Desc": "Harmonisation entre Assemblée et Sénat",
+      "step4Details": "Allers-retours ou compromis en Commission Mixte Paritaire.",
+      "step5Title": "Vote final",
+      "step5Desc": "Dernier mot à l'Assemblée",
+      "step5Details": "L'Assemblée tranche définitivement (sauf cas particuliers).",
+      "step6Title": "Contrôle constitutionnel",
+      "step6Desc": "Optionnel – Conseil constitutionnel",
+      "step6Details": "Vérification de conformité à la Constitution.",
+      "step7Title": "Promulgation",
+      "step7Desc": "Signature et publication",
+      "step7Details": "Le Président signe et publie au Journal Officiel."
+    }
+  },
+  "textTypes": {
+    "pageTitle": "Les Différents Types de Textes Législatifs",
+    "pageDesc": "Comprendre les différentes catégories de textes produits par le Parlement et le Gouvernement.",
+    "projetLoi": {
+      "trigger": "Projet de Loi",
+      "content": "Initié par le Gouvernement. Exemples : budgets (PLF), réformes sociales. Il suit la procédure législative complète."
+    },
+    "propositionLoi": {
+      "trigger": "Proposition de Loi",
+      "content": "Initiée par un parlementaire (député ou sénateur). Souvent sur des sujets spécifiques, comme des lois locales ou thématiques."
+    },
+    "propositionLoiOrganique": {
+      "trigger": "Proposition de Loi Organique",
+      "content": "Variante très spécifique visant à modifier ou compléter les lois organiques (textes qui précisent l'application de la Constitution).",
+      "reinforcedLabel": "Procédure renforcée :",
+      "reinforced1": "Majorité absolue dans chaque assemblée (289 voix à l'Assemblée, 174 au Sénat)",
+      "reinforced2": "Sénat a un pouvoir égal (pas de dernier mot exclusif)",
+      "reinforced3": "Contrôle obligatoire du Conseil Constitutionnel",
+      "reinforced4": "Délai de 15 jours avant examen en séance",
+      "examples": "Exemples : règlement des assemblées, statut des parlementaires."
+    },
+    "rapport": {
+      "trigger": "Rapport",
+      "content": "Document d'analyse produit par une commission parlementaire ou un rapporteur."
+    },
+    "resolution": {
+      "trigger": "Résolution",
+      "content": "Texte non contraignant exprimant une position (ex : résolution européenne)."
+    },
+    "autres": {
+      "trigger": "Autres (Avis, Étude d'Impact...)",
+      "avis": "Avis : Opinion d'une commission",
+      "etudeImpact": "Étude d'Impact : Analyse des effets",
+      "accordInternational": "Accord International : Ratification de traités"
+    }
+  },
+  "landing": {
+    "heroBadge": "Bêta privée — Gratuit · Indépendant · Neutre",
+    "heroTitle": "Chaque mois, des lois sont votées <highlight>en votre nom.</highlight>",
+    "heroSubtitle": "Savez-vous ce qui a été décidé en votre nom dernièrement ?",
+    "heroDescription": "LoiClair traduit l'activité législative française en langage simple — pour comprendre, suivre, et participer.",
+    "heroCta": "Fil d'actu parlementaire",
+
+    "hero2Title": "Avec LoiClair, la politique française est <highlight>enfin lisible.</highlight>",
+    "hero2Description": "Une boîte à outils citoyenne qui transforme le jargon législatif en langage clair. Des statistiques clés sur l'activité parlementaire, une vue simplifiée pour chaque dossier, un fil d'actualité pour suivre au jour le jour tout ce qui se passe au Parlement : nouveaux textes, décisions, votes…",
+
+    "trustFree": "Gratuit",
+    "trustOpenSource": "Open source",
+    "trustIndependent": "Indépendant",
+    "trustOfficialData": "Données officielles",
+
+    "feedLabelNewText": "Nouveau texte",
+    "feedLabelDecision": "Décision",
+    "feedLabelEnacted": "Loi promulguée",
+    "feedContext": "Assemblée",
+    "feedDate1": "3 mar",
+    "feedDate2": "28 fév",
+    "feedDate3": "25 fév",
+    "feedTitle1": "Projet de loi relatif à la transition énergétique",
+    "feedTitle2": "Budget 2026 — Article 7",
+    "feedTitle3": "Loi n° 2026-142 relative à la protection des données personnelles",
+    "feedFooterIa": "Résumé IA",
+    "feedFooterAdopted": "Adopté",
+    "feedFooterLaw": "Loi n° 2026-142",
+
+    "feedPillAll": "Tous",
+    "feedPillTexts": "Textes",
+    "feedPillDecisions": "Décisions",
+    "feedPillEnacted": "Promulg.",
+
+    "dossierSearch": "Rechercher un dossier…",
+    "dossierFilterAll": "Tous",
+    "dossierFilterOngoing": "En cours",
+    "dossierFilterAdopted": "Adoptés",
+    "dossierFilterRejected": "Rejetés",
+    "dossierItem1Title": "Projet de loi de finances 2026",
+    "dossierItem1Chamber": "Assemblée",
+    "dossierItem1Status": "En cours",
+    "dossierItem1Date": "3 mar 2026",
+    "dossierItem2Title": "Proposition de loi relative au droit au logement",
+    "dossierItem2Chamber": "Sénat",
+    "dossierItem2Status": "Adopté",
+    "dossierItem2Date": "28 fév 2026",
+    "dossierItem3Title": "Projet de loi sur la transition énergétique",
+    "dossierItem3Chamber": "Assemblée",
+    "dossierItem3Status": "En commission",
+    "dossierItem3Date": "15 fév 2026",
+
+    "dossierOverline": "Tous les textes au même endroit",
+    "dossierSectionTitle": "Les dossiers législatifs, <highlight>simplifiés.</highlight>",
+    "dossierDescription": "Un dossier législatif, c'est le parcours complet d'un texte de loi, du dépôt au vote final. Recherchez, filtrez et suivez chaque projet ou proposition de loi. Statut, chambre, résumé IA — tout est là, à jour.",
+    "dossierCta": "Voir les dossiers",
+
+    "feedOverline": "Votre fil d'actualité",
+    "feedSectionTitle": "Suivez l'activité parlementaire journalière, <highlight>étape par étape.</highlight>",
+    "feedDescription": "Aussi simple qu'un fil d'actualité sur un réseau social. Chaque mois, LoiClair rassemble les textes déposés, les votes en séance et les lois promulguées dans un fil clair et chronologique. Plus besoin de chercher.",
+    "feedCta": "Explorer le fil d'actualité",
+
+    "dashboardOverline": "Vue d'ensemble",
+    "dashboardSectionTitle": "Un tableau de bord <highlight>pour tout comprendre.</highlight>",
+    "dashboardDescription": "Composition de l'Assemblée, répartition des groupes, parité, âge moyen — les chiffres clés du Parlement en un coup d'œil.",
+    "dashboardCta": "Explorer le tableau de bord",
+    "dashboardKpi1Label": "Députés",
+    "dashboardKpi2Label": "Taux de participation",
+    "dashboardKpi3Label": "Textes votés ce mois",
+    "dashboardChartTitle": "Textes déposés par mois",
+    "dashboardMonthOct": "Oct",
+    "dashboardMonthNov": "Nov",
+    "dashboardMonthDec": "Déc",
+    "dashboardMonthJan": "Jan",
+    "dashboardMonthFeb": "Fév",
+    "dashboardMonthMar": "Mar",
+
+    "beforeAfterTitle": "L'IA résume chaque texte de loi pour vous",
+    "beforeAfterDescription": "Plus besoin de décrypter le jargon juridique. Notre IA analyse et résume chaque dossier législatif en langage clair, en quelques secondes.",
+    "beforeLabel": "Avant",
+    "beforeSourcesBadge": "Sources officielles",
+    "beforeLine1": "Article L. 432-1 du Code civil — Vu le décret n°2024-1138",
+    "beforeLine2": "du 4 octobre 2024 portant modification des dispositions",
+    "beforeLine3": "relatives aux modalités d'application de l'alinéa 3",
+    "beforeLine4": "conformément aux dispositions de l'ordonnance n° 2023-389",
+    "beforeLine5": "du 12 mai 2023 relative à l'exercice des compétences des...",
+    "beforeLine6": "collectivités territoriales en matière de gestion publique",
+    "beforeLine7": "...susvisées et après avis du Conseil d'État...",
+    "beforeLine8": "§ 4 — Les conditions cumulatives définies à l'art. 7",
+    "beforeLine9": "doivent faire l'objet d'une appréciation au cas par cas...",
+    "beforeLine10": "tenant compte des circonstances mentionnées à l'art. 12 bis",
+    "beforeCaption": "Incompréhensible pour la plupart des citoyens",
+    "afterLabel": "Après",
+    "afterTitle": "Projet de loi de finances 2026",
+    "afterDescription": "Ce texte fixe le budget de l'État pour 2026. Il détermine combien l'État peut dépenser, et d'où vient l'argent (impôts, emprunts…). Chaque ministère reçoit une enveloppe.",
+    "afterBullet1": "Budget total : 492 milliards d'euros",
+    "afterBullet2": "Présenté par le gouvernement en septembre",
+    "afterBullet3": "Doit être voté avant le 31 décembre",
+    "afterCaption": "Compris en 30 secondes",
+
+    "featuresTitle": "LoiClair, votre boîte à outils citoyenne",
+    "featuresDescription": "Tout ce dont vous avez besoin pour comprendre, suivre et participer à ce qui se passe au Parlement.",
+    "feature1Title": "Données en temps réel",
+    "feature1Description": "Mise à jour quotidienne depuis les sources officielles.",
+    "feature2Title": "Résumés par l'IA",
+    "feature2Description": "Chaque texte traduit en langage courant, sans jargon.",
+    "feature3Title": "Statistiques",
+    "feature3Description": "Parité, groupes politiques, votes — tout en chiffres.",
+    "feature4Title": "Trouver vos élus",
+    "feature4Description": "Retrouvez votre député ou sénateur en secondes.",
+    "feature5Title": "Vote citoyen",
+    "feature5Description": "Donnez votre avis et comparez-le aux votes du Parlement.",
+    "feature6Title": "Fil d'actualité",
+    "feature6Description": "L'essentiel de l'activité parlementaire chaque mois.",
+    "feature7Title": "Alertes personnalisées",
+    "feature7Description": "Suivez un texte ou un élu, soyez alerté.",
+    "feature8Title": "Newsletter IA",
+    "feature8Description": "Chaque semaine, l'activité parlementaire résumée par email.",
+
+    "ctaTitle": "Et si on rendait la politique lisible ?",
+    "ctaDescription": "Comprendre, c'est le premier pas. Suivre, c'est reprendre le contrôle. Participer, c'est changer les choses.",
+    "ctaPrimary": "Explorer le fil d'actualité",
+    "ctaSecondary": "Voir les dossiers",
+    "ctaFootnote": "Bêta privée — Données officielles de l'Assemblée nationale"
+  },
+  "dossiers": {
+    "pageTitle": "Liste des textes",
+    "pageDesc": "Les textes sont organisés par dossiers législatifs. Un dossier législatif, c'est le parcours complet d'une proposition ou d'un projet de loi, depuis son dépôt jusqu'à sa promulgation (ou son abandon).",
+    "dataSource": "Données de la 17ième legislature, mise à jours quotidiennement, provenant de",
+    "dataSourceLink": "data.assemblee-nationale.fr",
+    "filterStatutLabel": "Statut du dossier",
+    "filterStatutPlaceholder": "Filtrer par statut",
+    "filterStatutAll": "Tous les statuts",
+    "statutEnCours": "En cours d'examen",
+    "statutAdopteAssemblee": "Adopté par l'Assemblée nationale",
+    "statutAdopteSenat": "Adopté par le Sénat",
+    "statutAdopteParlement": "Adopté par le Parlement",
+    "statutRejete": "Rejeté",
+    "statutPromulguee": "Promulguée",
+    "statutAppliquee": "Appliquée",
+    "filterAgeLabel": "Âge du dossier",
+    "filterAgePlaceholder": "Sélectionner une tranche d'âge",
+    "filterAgeAll": "Toutes les dates",
+    "ageMoins6m": "Moins de 6 mois",
+    "age6m1a": "Entre 6 mois et 1 an",
+    "agePlus1a": "Plus d'1 an",
+    "filterTypeLabel": "Type de procédure",
+    "filterTypePlaceholder": "Type de procédure",
+    "filterTypeAll": "Tous les types",
+    "filterGroupeLabel": "Groupe politique",
+    "filterGroupePlaceholder": "Groupe politique",
+    "filterGroupeAll": "Tous les groupes",
+    "filterThemeLabel": "Thème",
+    "filterThemePlaceholder": "Filtrer par thème",
+    "filterThemeAll": "Tous les thèmes",
+    "resultCount": "{count} {count, plural, one {dossier trouvé} other {dossiers trouvés}}.",
+    "noResults": "Aucun dossier législatif trouvé avec ces filtres.",
+    "statutInconnu": "Statut inconnu",
+    "promulgatedIn": "promulguée en {count} {count, plural, one {jour} other {jours}}",
+    "filedAgo": "déposé il y a {count} {count, plural, one {jour} other {jours}}",
+    "mandatTermine": "Mandat terminé",
+    "texteNonPublie": "Texte non encore publié",
+    "aucunTexte": "Aucun texte",
+    "aiSummaryBadge": "Dossier LoiClair avec résumé IA"
+  },
+  "kpis": {
+    "pageTitle": "Indicateurs clés",
+    "pageSubtitle": "Activité de la 17ᵉ législature en temps réel",
+    "filterTypeLabel": "Type de procédure",
+    "filterTypePlaceholder": "Type de procédure",
+    "filterTypeAll": "Tous les types",
+    "filterTypeTooltipTitle": "Filtre par type de procédure",
+    "filterTypeTooltipDesc": "Ex : procédure législative ordinaire, projet de loi de finances, etc.",
+    "filterGroupeLabel": "Groupe politique",
+    "filterGroupePlaceholder": "Groupe politique",
+    "filterGroupeAll": "Tous les groupes",
+    "filterGroupeTooltipTitle": "Filtre par groupe politique initiateur",
+    "filterGroupeTooltipDesc": "Ex : La France insoumise, Renaissance, Les Républicains...",
+    "funnelStep1Label": "Déposés",
+    "funnelStep1Desc": "Tous les dossiers législatifs déposés",
+    "funnelStep2Label": "À vocation législative",
+    "funnelStep2Desc": "Textes destinés à devenir des lois",
+    "funnelStep3Label": "Adoptés par ≥1 chambre",
+    "funnelStep3Desc": "Au moins une chambre a voté pour",
+    "funnelStep4Label": "Promulgués",
+    "funnelStep4Desc": "Signés par le Président de la République",
+    "funnelStep5Label": "Appliquées",
+    "funnelStep5Desc": "Loi en vigueur, décrets publiés ou application directe",
+    "funnelTitle": "Parcours législatif",
+    "funnelDesc": "Du dépôt à l'application : comment les dossiers progressent à travers le processus législatif",
+    "ofTotal": "{rate} % du total",
+    "cardTotalTitle": "Total",
+    "cardTotalDesc": "Dossiers législatifs",
+    "cardMonthTitle": "Ce mois-ci",
+    "cardMonthDesc": "Dossiers déposés",
+    "cardAvgTitle": "Moyenne mensuelle",
+    "cardAvgDesc": "Sur les 24 derniers mois",
+    "chartTitle": "Évolution mensuelle",
+    "chartDescription": "Nombre de dossiers législatifs déposés — 24 derniers mois",
+    "chartTooltipLabel": "Dossiers déposés",
+    "chartTrendUp": "En hausse de {rate} %",
+    "chartTrendDown": "En baisse de {rate} %",
+    "chartTrendStable": "Stable",
+    "chartComparison": "Comparaison avec le mois précédent",
+    "statusSectionTitle": "État des dossiers",
+    "statusEnTraitementTitle": "En traitement",
+    "statusEnTraitementDesc": "Le texte a été déposé au parlement (Assemblée Nationale ou Sénat) et est étudié pour décision",
+    "statusAdoptesANTitle": "Adoptés par l'Assemblée Nationale",
+    "statusAdoptesANDesc": "L'Assemblée Nationale a adopté. Prochaine étape : étude par le Sénat",
+    "statusAdoptesSNTitle": "Adoptés par le Sénat",
+    "statusAdoptesSNDesc": "Le Sénat a adopté. Prochaine étape : étude par l'Assemblée Nationale",
+    "statusAdoptesParlemTitle": "Adoptés par le Parlement",
+    "statusAdoptesParlemDesc": "Les deux assemblées ont adopté le texte. Prochaine étape : promulgation",
+    "statusPromulguesTitle": "Promulgués",
+    "statusPromulguesDesc": "Le Président a promulgué la loi. Publication au Journal officiel",
+    "statusAppliquéesTitle": "Appliquées",
+    "statusAppliquéesDesc": "Loi en vigueur : application directe ou décrets d'application publiés",
+    "statusRejétésTitle": "Rejetés",
+    "statusRejétésDesc": "Le texte est abandonnée (sauf nouveau dépôt ou version modifiée)",
+    "efficiencySectionTitle": "Efficacité du processus",
+    "tauxPromulgationTitle": "Taux de promulgation",
+    "tauxPromulgationDesc": "Part des dossiers terminés qui ont abouti à une loi signée par le Président",
+    "promulgatedCount": "{count} promulgués sur {total} textes à vocation législative",
+    "tauxApplicationTitle": "Taux d'application",
+    "tauxApplicationDesc": "Part des textes à vocation législative effectivement appliqués (décrets publiés ou application directe)",
+    "appliedCount": "{count} appliquées sur {total} textes à vocation législative",
+    "delaiApplicationTitle": "Délai moyen d'application",
+    "delaiApplicationDesc": "Temps moyen pour publier tous les décrets d'application d'une loi",
+    "delaiApplicationSubtitle": "Pour les {count} lois nécessitant des décrets",
+    "delaiPromulgationTitle": "Délai moyen de promulgation",
+    "delaiPromulgationDesc": "Temps moyen entre le dépôt du texte et sa promulgation en loi",
+    "delaiPromulgationSubtitle": "Du dépôt au Journal officiel",
+    "delaiANTitle": "Délai moyen à l'Assemblée",
+    "delaiANDesc": "Du dépôt à l'AN jusqu'à la décision d'adoption par l'Assemblée nationale",
+    "delaiANSubtitle": "Par texte adopté à l'AN",
+    "delaiSNTitle": "Délai moyen au Sénat",
+    "delaiSNDesc": "Du dépôt au Sénat jusqu'à la décision d'adoption par le Sénat",
+    "delaiSNSubtitle": "Par texte adopté au Sénat",
+    "minMax": "Min {min} j — Max {max} j",
+    "methodologyLink": "Comment c'est calculé →",
+    "groupeActivityTitle": "Activité par groupe politique",
+    "textesProposes": "Textes proposés",
+    "textesProposesDDesc": "Nombre de dossiers législatifs déposés par groupe politique",
+    "textesProposesDLabel": "Dossiers",
+    "loisPromulguees": "Lois promulguées",
+    "loisPromulgueesDesc": "Nombre de lois effectivement promulguées par groupe politique",
+    "loisPromulgueesLabel": "Promulguées",
+    "successLegislatifTitle": "Succès législatif par groupe",
+    "successLegislatifDesc": "Adoption Assemblé Nationale et Sénat : sur tous les textes pertinents aux deux chambres. Promulgation : sur les textes à vocation législative uniquement (par exemple certains texte étudiés au parlement n'ont pas vocation à être promulgués; comme les résolution par exemple).",
+    "parlementairesTitle": "Parlementaires les plus actifs",
+    "parlementairesDesc": "Classement des 20 députés et sénateurs les plus impliqués dans les textes législatifs, en tant qu'auteur/co-auteur ou rapporteur.",
+    "methodologyLinkAlt": "→ Comment c'est calculé"
+  },
+  "month": {
+    "pageTitle": "Fil d'actualité — LoiClair",
+    "pageDescription": "Les evenements legislatifs du mois : votes, depots, promulgations et plus encore.",
+    "lawFullyApplied": "Loi pleinement appliquée",
+    "eventType": {
+      "newText": "Nouveau texte",
+      "report": "Rapport",
+      "decision": "Décision",
+      "shuttle": "Navette",
+      "cmpConvocation": "Convocation d'une Commission Mixte Paritaire",
+      "motionCensure": "Motion de censure",
+      "govDeclaration": "Déclaration gouv.",
+      "motionVote": "Vote motion",
+      "ccSaisine": "Cons. const.",
+      "promulgation": "Loi promulguée",
+      "decree": "Décret d'application",
+      "lawApplied": "Loi pleinement appliquée",
+      "other": "Autre"
+    },
+    "filter": {
+      "all": "Tous",
+      "texts": "Textes",
+      "decisions": "Décisions",
+      "reports": "Rapports",
+      "shuttles": "Navettes",
+      "cmp": "CMP",
+      "ccSaisine": "Cons. const.",
+      "promulgations": "Promulgations",
+      "decrees": "Décrets",
+      "appliedLaws": "Lois appliquées",
+      "motions": "Motions"
+    },
+    "institution": {
+      "assemblee": "Assemblée",
+      "senat": "Sénat",
+      "cmp": "Commission mixte paritaire",
+      "cconstit": "Conseil constitutionnel",
+      "gouvernement": "Gouvernement"
+    },
+    "vote": {
+      "for": "Pour : {count}",
+      "against": "Contre : {count}",
+      "abstentions": "Abstentions : {count}",
+      "nonVoting": "Non-votants : {count}",
+      "absent": "Absents : {count}",
+      "majorityRequired": "Majorité requise : {count} voix"
+    },
+    "ccSaisine": {
+      "AN": "60 députés ou plus ont saisi le Conseil constitutionnel.",
+      "SN": "60 sénateurs ou plus ont saisi le Conseil constitutionnel.",
+      "PM": "Le Premier ministre a saisi le Conseil constitutionnel.",
+      "auto": "Saisine automatique (loi organique ou loi de finances)."
+    },
+    "lawNumber": "Loi n° {code}",
+    "directApplication": "Application directe",
+    "allDecreesPublished": "Tous les décrets publiés",
+    "measuresApplied": "{count} {count, plural, one {mesure appliquée} other {mesures appliquées}}",
+    "decreeCount": "{count} {count, plural, one {décret} other {décrets}}",
+    "monthsAfterPromulgation": "{count} mois après promulgation",
+    "daysAfterPromulgation": "{count} jours après promulgation",
+    "forThe": "Pour la {denomination}",
+    "rapporteur": "Rapporteur(s) : ",
+    "andColleagues": "(et collègues)",
+    "prefixDep": "Dep. ",
+    "prefixSen": "Sén. ",
+    "prefixMin": "Min. ",
+    "shuttleToSenat": "Assemblée → Sénat",
+    "shuttleToAssemblee": "Sénat → Assemblée",
+    "texteCMP": "Texte CMP",
+    "fullDossier": "Dossier complet",
+    "notYetPublished": "Non encore publié",
+    "aiSummary": "Résumé IA",
+    "learnMore": "En savoir plus",
+    "aiSummaryLabel": "Résumé IA :",
+    "report": "Rapport",
+    "adoptedText": "Texte adopté",
+    "modifiedText": "Texte modifié",
+    "plusTomes": "(+ tomes)",
+    "adoptedTextFallback": "Texte adopté",
+    "backToDossier": "Retour au dossier",
+    "legislativeDossier": "Dossier législatif",
+    "timelineComplete": "Timeline complète · {count} {count, plural, one {étape} other {étapes}}",
+    "newsFeedTitle": "Fil d'actualité",
+    "backToCurrentMonth": "Revenir au mois en cours",
+    "noEventsOfType": "Aucun événement de ce type en {month}.",
+    "loading": "Chargement…",
+    "loadPreviousMonth": "Charger le mois précédent",
+    "monthsLoaded": "{count} mois chargés.",
+    "viewOlderMonths": "Voir les mois antérieurs",
+    "noEventsType": "Aucun événement de ce type.",
+    "viewAll": "Voir tous les événements",
+    "quietMonth": "Mois calme au Parlement",
+    "noEventsRecorded": "Aucun événement législatif enregistré. Essayez un autre mois.",
+    "source": "Source :",
+    "ariaApprove": "J'approuve",
+    "ariaDisapprove": "Je désapprouve",
+    "ariaSave": "Sauvegarder",
+    "ariaShare": "Partager"
+  },
+  "definitions": {
+    "categoryStatuts": "Statuts",
+    "categoryProcedures": "Types de procédures",
+    "categoryEtapes": "Étapes législatives",
+    "categoryProvenance": "Provenance des textes",
+    "fallback": "Définition à venir.",
+    "adopteAN": {
+      "term": "Adopté par l'Assemblée nationale",
+      "definition": "L'Assemblée nationale a voté le texte. Le Sénat doit encore se prononcer."
+    },
+    "adopteParlement": {
+      "term": "Adopté par le Parlement",
+      "definition": "Les deux chambres ont voté le texte dans les mêmes termes. Il attend la promulgation par le Président."
+    },
+    "adopteSenat": {
+      "term": "Adopté par le Sénat",
+      "definition": "Le Sénat a voté le texte. L'Assemblée nationale doit encore se prononcer."
+    },
+    "enCoursExamen": {
+      "term": "En cours d'examen",
+      "definition": "Le texte est encore en discussion au Parlement. Il n'a pas encore été adopté définitivement."
+    },
+    "promulguee": {
+      "term": "Promulguée",
+      "definition": "Le texte a été signé par le Président de la République et publié au Journal officiel. Il a force de loi."
+    },
+    "rejete": {
+      "term": "Rejeté",
+      "definition": "Le texte a été rejeté par l'une des chambres ou les deux. Un nouveau dépôt reste possible."
+    },
+    "allocutionPresident": {
+      "term": "Allocution du Président de l'Assemblée nationale",
+      "definition": "Discours officiel prononcé par le président de l'Assemblée nationale en séance. Ce n'est pas un texte législatif."
+    },
+    "commissionEnquete": {
+      "term": "Commission d'enquête",
+      "definition": "Enquête parlementaire sur un sujet d'intérêt public, menée par un groupe de députés. Elle aboutit à un rapport, pas à une loi."
+    },
+    "engagementResponsabilite": {
+      "term": "Engagement de la responsabilité gouvernementale",
+      "definition": "Procédure par laquelle le Premier ministre engage la responsabilité du gouvernement devant l'Assemblée (article 49 de la Constitution). Elle peut entraîner l'adoption d'un texte sans vote ou le renversement du gouvernement."
+    },
+    "missionInformation": {
+      "term": "Mission d'information",
+      "definition": "Groupe de travail parlementaire chargé d'étudier un sujet précis et de produire un rapport. Elle n'a pas de pouvoir contraignant."
+    },
+    "petitions": {
+      "term": "Pétitions",
+      "definition": "Demande adressée par des citoyens au Parlement sur un sujet d'intérêt général. Elle est examinée par une commission mais ne produit pas de loi."
+    },
+    "projetFinancementSecu": {
+      "term": "Projet de loi de financement de la sécurité sociale",
+      "definition": "Budget annuel de la Sécurité sociale, déposé par le gouvernement chaque automne. Il fixe les objectifs de dépenses et de recettes pour l'année suivante."
+    },
+    "projetFinancesAnnee": {
+      "term": "Projet de loi de finances de l'année",
+      "definition": "Budget annuel de l'État, déposé par le gouvernement chaque automne. Il autorise les dépenses et les recettes pour l'année suivante."
+    },
+    "projetFinancesRectificative": {
+      "term": "Projet de loi de finances rectificative",
+      "definition": "Modification du budget de l'État en cours d'année. Il corrige les prévisions initiales en fonction de la conjoncture."
+    },
+    "projetLoiOrdinaire": {
+      "term": "Projet de loi ordinaire",
+      "definition": "Texte préparé et déposé par le gouvernement, soumis ensuite au vote du Parlement. C'est le type de texte législatif le plus courant."
+    },
+    "projetRatificationTraites": {
+      "term": "Projet de ratification des traités et conventions",
+      "definition": "Autorisation donnée par le Parlement pour que le Président ratifie un traité international. Le Parlement ne peut pas modifier le texte du traité."
+    },
+    "projetLoiConstitutionnelle": {
+      "term": "Projet ou proposition de loi constitutionnelle",
+      "definition": "Texte visant à modifier la Constitution. Son adoption nécessite une procédure spéciale (référendum ou vote du Congrès)."
+    },
+    "projetLoiOrganique": {
+      "term": "Projet ou proposition de loi organique",
+      "definition": "Texte qui précise les modalités d'application de la Constitution. Son adoption suit une procédure renforcée avec contrôle obligatoire du Conseil constitutionnel."
+    },
+    "propositionLoiOrdinaire": {
+      "term": "Proposition de loi ordinaire",
+      "definition": "Texte déposé par un ou plusieurs parlementaires (député ou sénateur). Contrairement au projet de loi, il n'émane pas du gouvernement."
+    },
+    "rapportInformation": {
+      "term": "Rapport d'information sans mission",
+      "definition": "Rapport produit par un ou plusieurs parlementaires sur un sujet de leur choix. Il informe le Parlement mais n'a aucune valeur contraignante."
+    },
+    "resolution": {
+      "term": "Résolution",
+      "definition": "Texte exprimant une position du Parlement, sans valeur législative. Elle ne crée ni obligation ni droit."
+    },
+    "resolutionArticle34": {
+      "term": "Résolution Article 34-1",
+      "definition": "Résolution adoptée sur le fondement de l'article 34-1 de la Constitution, permettant au Parlement d'exprimer un souhait ou une orientation. Elle n'a pas de force de loi."
+    },
+    "responsabilitePenale": {
+      "term": "Responsabilité pénale du président de la république",
+      "definition": "Procédure exceptionnelle prévue par la Constitution pour engager la responsabilité pénale du chef de l'État. Elle passe par la Haute Cour."
+    },
+    "premierDepot": {
+      "term": "1er dépôt d'une initiative.",
+      "definition": "Première étape : l'auteur (gouvernement ou parlementaire) dépose officiellement son texte au Parlement. C'est le point de départ de la procédure."
+    },
+    "premiereRecture1": {
+      "term": "1ère lecture (1ère assemblée saisie)",
+      "definition": "Premier examen complet du texte par la chambre qui l'a reçu en premier. Elle comprend le travail en commission puis le débat en séance publique."
+    },
+    "premiereRecture2": {
+      "term": "1ère lecture (2ème assemblée saisie)",
+      "definition": "Premier examen du texte par la seconde chambre, après adoption par la première. La navette parlementaire commence."
+    },
+    "accordInternational": {
+      "term": "Accord international",
+      "definition": "Traité ou convention internationale associé au dossier. Le Parlement autorise sa ratification mais ne peut pas en modifier le contenu."
+    },
+    "avisConseilEtat": {
+      "term": "Avis du Conseil d'Etat",
+      "definition": "Avis consultatif rendu par le Conseil d'État sur un projet de loi avant son dépôt au Parlement. Il est obligatoire pour les projets de loi."
+    },
+    "commissionMixteParity": {
+      "term": "Commission Mixte Paritaire",
+      "definition": "Réunion de 7 députés et 7 sénateurs chargés de trouver un texte de compromis quand les deux chambres ne sont pas d'accord. Son résultat est ensuite soumis au vote des deux assemblées."
+    },
+    "conclusionConseilConstitutionnel": {
+      "term": "Conclusion du conseil constitutionnel",
+      "definition": "Décision finale du Conseil constitutionnel sur la conformité du texte à la Constitution. Elle peut valider, censurer partiellement ou totalement le texte."
+    },
+    "conseilConstitutionnel": {
+      "term": "Conseil constitutionnel",
+      "definition": "Phase de contrôle de constitutionnalité du texte. Le Conseil vérifie que la loi respecte la Constitution."
+    },
+    "convocationCMP": {
+      "term": "Convocation d'une CMP",
+      "definition": "Le Premier ministre (ou les présidents des deux assemblées pour une proposition de loi) demande la réunion d'une Commission Mixte Paritaire. C'est le début de la procédure de conciliation."
+    },
+    "creationCommissionEnquete": {
+      "term": "Création d'une commission d'enquête",
+      "definition": "Décision de l'Assemblée nationale de lancer une enquête parlementaire. La commission dispose de pouvoirs d'investigation étendus."
+    },
+    "creationMissionInformation": {
+      "term": "Création d'une mission d'information",
+      "definition": "Décision de créer un groupe de travail parlementaire sur un sujet donné. La mission produira un rapport à l'issue de ses travaux."
+    },
+    "debat": {
+      "term": "Débat",
+      "definition": "Discussion en séance publique sur le texte ou un sujet lié. Les parlementaires exposent leurs positions et examinent les amendements."
+    },
+    "decision": {
+      "term": "Décision",
+      "definition": "Vote final de la chambre sur le texte en séance publique. Le texte est adopté, rejeté, ou adopté avec modifications."
+    },
+    "decisionCMP": {
+      "term": "Décision de la CMP",
+      "definition": "Résultat des travaux de la Commission Mixte Paritaire. Elle peut aboutir à un accord (texte commun) ou à un échec (désaccord)."
+    },
+    "decisionMotionCensure": {
+      "term": "Décision sur une motion de censure",
+      "definition": "Vote de l'Assemblée nationale sur une motion de censure contre le gouvernement. Si elle est adoptée, le gouvernement est renversé."
+    },
+    "depotProjetLoi": {
+      "term": "Dépôt d'un projet de loi",
+      "definition": "Le gouvernement dépose officiellement un texte au Parlement. Il est accompagné d'une étude d'impact et de l'avis du Conseil d'État."
+    },
+    "depotDeclarationGouvernement": {
+      "term": "Dépôt d'une déclaration du gouvernement",
+      "definition": "Le gouvernement soumet une déclaration officielle au Parlement, pouvant donner lieu à un débat. Elle n'a pas de valeur législative."
+    },
+    "depotInitiativeNavette": {
+      "term": "Dépôt d'une initiative en navette",
+      "definition": "Transmission du texte d'une chambre à l'autre après un premier vote. La navette se poursuit jusqu'à l'adoption d'un texte identique."
+    },
+    "depotLettreRectificative": {
+      "term": "Dépôt d'une lettre rectificative.",
+      "definition": "Le gouvernement modifie son propre projet de loi avant ou pendant son examen. Cela permet d'actualiser le texte sans le retirer."
+    },
+    "depotRapport": {
+      "term": "Dépôt de rapport",
+      "definition": "Le rapporteur dépose le rapport de la commission auprès de l'assemblée. Ce document résume les travaux de la commission et ses recommandations."
+    },
+    "depotRapportCMP": {
+      "term": "Dépôt du rapport d'une CMP",
+      "definition": "Publication du texte de compromis élaboré par la Commission Mixte Paritaire. Il sera soumis au vote des deux chambres."
+    },
+    "deuxiemeLecture": {
+      "term": "deuxième lecture",
+      "definition": "Deuxième examen du texte par une chambre, après que l'autre chambre l'a modifié. Le débat porte uniquement sur les points de désaccord restants."
+    },
+    "discussionSeancePublique": {
+      "term": "Discussion en séance publique",
+      "definition": "Examen du texte par l'ensemble des parlementaires dans l'hémicycle. C'est lors de cette phase que les amendements sont débattus et votés."
+    },
+    "etudeImpact": {
+      "term": "Etude d'impact",
+      "definition": "Document obligatoire accompagnant les projets de loi, évaluant les conséquences économiques, sociales et juridiques du texte. Il est publié avant le début de l'examen."
+    },
+    "procedureAcceleree": {
+      "term": "Le gouvernement déclare l'urgence / engage la procédure accélérée",
+      "definition": "Le gouvernement demande un examen rapide du texte, limitant la navette à une seule lecture par chambre. Cela accélère considérablement le processus."
+    },
+    "lectureDefinitive": {
+      "term": "Lecture définitive",
+      "definition": "Dernier vote de l'Assemblée nationale quand la CMP a échoué et que le gouvernement lui donne le dernier mot. Le Sénat ne peut plus s'y opposer."
+    },
+    "lectureUnique": {
+      "term": "Lecture unique",
+      "definition": "Le texte est examiné en une seule lecture par une chambre, sans possibilité de navette. C'est le cas pour certaines résolutions ou textes spéciaux."
+    },
+    "miseEnApplication": {
+      "term": "Mise en application de la loi",
+      "definition": "Publication des décrets et arrêtés nécessaires pour que la loi entre concrètement en vigueur. Sans ces textes, certaines dispositions restent inapplicables."
+    },
+    "motionCensure": {
+      "term": "Motion de censure",
+      "definition": "Procédure par laquelle l'Assemblée nationale peut renverser le gouvernement. Elle nécessite la signature d'au moins un dixième des députés pour être déposée."
+    },
+    "motionProcedure": {
+      "term": "Motion de procédure",
+      "definition": "Demande formulée en séance pour modifier le déroulement de l'examen d'un texte. Elle peut viser à rejeter le texte sans débat ou à le renvoyer en commission."
+    },
+    "nominationRapporteur": {
+      "term": "Nomination de rapporteur",
+      "definition": "La commission désigne un de ses membres pour étudier le texte en détail et rédiger un rapport. Le rapporteur devient le référent du texte en commission et en séance."
+    },
+    "nominationRapporteurBudgetaire": {
+      "term": "Nomination de rapporteur budgétaire",
+      "definition": "La commission désigne un rapporteur spécialisé pour examiner une partie du budget. Chaque rapporteur budgétaire suit un domaine précis (défense, éducation, santé, etc.)."
+    },
+    "nouvelleLecture": {
+      "term": "Nouvelle Lecture",
+      "definition": "Reprise de l'examen du texte par une chambre après l'échec de la Commission Mixte Paritaire. Les deux chambres tentent de se mettre d'accord sur un texte commun."
+    },
+    "promulgationLoi1": {
+      "term": "Promulgation d'une loi",
+      "definition": "Le Président de la République signe la loi et ordonne sa publication au Journal officiel. La loi entre en vigueur le lendemain de sa publication, sauf disposition contraire."
+    },
+    "promulgationLoi2": {
+      "term": "Promulgation de la loi",
+      "definition": "Le Président de la République signe la loi et ordonne sa publication au Journal officiel. La loi entre en vigueur le lendemain de sa publication, sauf disposition contraire."
+    },
+    "rapportApplicationLois": {
+      "term": "Rapport sur l'application des lois",
+      "definition": "Bilan établi par le Parlement sur la mise en œuvre effective d'une loi votée. Il vérifie si les décrets d'application ont été publiés."
+    },
+    "renvoiCommissionFond": {
+      "term": "Renvoi en commission au fond",
+      "definition": "Le texte est transmis à la commission principale chargée de l'examiner. C'est elle qui rédigera le rapport et proposera des amendements."
+    },
+    "renvoiPrealable": {
+      "term": "Renvoi préalable",
+      "definition": "Procédure par laquelle le texte est renvoyé en commission avant d'être débattu en séance. Cela permet un examen approfondi avant le débat public."
+    },
+    "renvoiPrealableCAE": {
+      "term": "Renvoi préalable à la CAE",
+      "definition": "Le texte est renvoyé à la Commission des affaires étrangères pour examen. C'est le cas notamment pour les traités et conventions internationales."
+    },
+    "retraitInitiative": {
+      "term": "Retrait d'une initiative",
+      "definition": "L'auteur du texte (gouvernement ou parlementaire) retire son propre projet ou proposition. Le dossier est clos."
+    },
+    "reunionCommission": {
+      "term": "Réunion de commission",
+      "definition": "Séance de travail de la commission parlementaire chargée d'examiner le texte. Les amendements y sont discutés et votés avant le passage en séance publique."
+    },
+    "saisineConseilConstitutionnel": {
+      "term": "Saisine du conseil constitutionnel",
+      "definition": "Des parlementaires, le Président ou le Premier ministre demandent au Conseil constitutionnel de vérifier la conformité du texte à la Constitution. Cette étape peut intervenir avant la promulgation."
+    },
+    "saisiePourAvisCommission": {
+      "term": "Saisine pour avis d'une commission",
+      "definition": "Une commission est consultée pour donner son avis sur un texte qui relève principalement d'une autre commission. Son avis est consultatif."
+    },
+    "travaux": {
+      "term": "Travaux",
+      "definition": "Ensemble des activités liées à l'examen d'un dossier. Ce terme générique regroupe les réunions, auditions et discussions."
+    },
+    "travauxCommissionSaisieAvis": {
+      "term": "Travaux d'une commission saisie pour avis",
+      "definition": "Travaux menés par une commission consultée pour avis sur un texte. Elle peut proposer des amendements mais la décision finale revient à la commission au fond."
+    },
+    "travauxCommissionFond": {
+      "term": "Travaux de la commission saisie au fond",
+      "definition": "Travaux de la commission principale chargée d'examiner le texte. C'est elle qui rédige le rapport et les amendements soumis à l'ensemble de l'assemblée."
+    },
+    "travauxCommissions": {
+      "term": "Travaux des commissions",
+      "definition": "Phase d'examen du texte par les commissions parlementaires. Les commissaires auditionnent des experts, débattent et proposent des modifications."
+    },
+    "texteDepose": {
+      "term": "Texte Déposé",
+      "definition": "Version initiale du texte, telle que déposée par son auteur (parlementaire ou gouvernement). C'est le point de départ de la procédure."
+    },
+    "commission": {
+      "term": "Commission",
+      "definition": "Version du texte modifiée par la commission parlementaire chargée de l'examiner. Elle intègre les amendements adoptés en commission."
+    },
+    "seance": {
+      "term": "Séance",
+      "definition": "Version du texte adoptée en séance publique, après débats et amendements dans l'hémicycle. C'est le texte tel que voté par la chambre."
+    },
+    "legifrance": {
+      "term": "LEGIFRANCE",
+      "definition": "Version officielle publiée au Journal officiel après promulgation. C'est le texte de loi définitif, tel que référencé sur Légifrance."
+    }
+  },
+  "steps": {
+    "AN1": "Ass. nat.",
+    "SN1": "Sénat",
+    "ANLUNI": "AN (unique)",
+    "CMP": "CMP",
+    "AN2": "AN (2ᵉ)",
+    "SN2": "Sénat (2ᵉ)",
+    "ANNLEC": "AN (nouv.)",
+    "SNNLEC": "Sénat (nouv.)",
+    "ANLDEF": "AN (déf.)",
+    "CC": "Cons. const.",
+    "PROM": "Promulguée",
+    "DECAPP": "Décrets d'application",
+    "AN-APPLI": "Application"
+  },
+  "docs": {
+    "guideTitle": "Guide d'utilisation",
+    "guideDesc": "Comment lire et utiliser les tableaux de bord, indicateurs et dossiers législatifs de LoiClair.",
+    "methodeTitle": "Méthodologie",
+    "methodeDesc": "Comment sont calculés les indicateurs, d'où viennent les données et quelles sont leurs limites."
+  },
+  "resumeIA": {
+    "dossierLabel": "Dossier LoiClair",
+    "aiSummary": "Résumé IA",
+    "analyzing": "analyse en cours…",
+    "noTextAvailable": "Aucun texte disponible pour ce dossier.",
+    "textNotAvailable": "Ce texte n'est pas encore disponible en ligne. Changez de version ci-dessous.",
+    "consolidatedOnLegifrance": "La version consolidée est consultable directement sur Légifrance.",
+    "aiSummaryComingSoon": "Le résumé IA de cette version sera disponible prochainement.",
+    "generationFailed": "Le résumé n'a pas pu être généré.",
+    "retry": "Réessayer →",
+    "whatChanges": "Ce qui change",
+    "keyTakeaway": "À retenir",
+    "discussWithAI": "Discuter de ce texte avec l'IA",
+    "summarizedText": "Texte résumé :",
+    "officialText": "Texte officiel",
+    "changeVersion": "Changer",
+    "consolidatedVersion": "Version consolidée",
+    "aboutThisLaw": "À propos de cette loi",
+    "labelStatus": "Statut",
+    "labelProcedure": "Procédure",
+    "labelAuthor": "Auteur",
+    "labelGroup": "Groupe",
+    "labelFiledOn": "Déposé le",
+    "labelSources": "Sources",
+    "assemblee": "Assemblée nationale",
+    "senat": "Sénat",
+    "legifrance": "Légifrance",
+    "dossierFeed": "Fil d'actu de ce dossier →",
+    "lawJourney": "Parcours de la loi",
+    "aiGenerated": "Contenu généré par intelligence artificielle",
+    "aiActCompliance": "Conformité AI Act →",
+    "generationParams": "Paramètres de génération",
+    "labelModel": "Modèle",
+    "labelProvider": "Fournisseur",
+    "labelTemperature": "Température",
+    "tempScale": "(0 = strict, 1 = créatif)",
+    "labelMaxTokens": "Tokens max (sortie)",
+    "labelMaxChars": "Caractères max (entrée)",
+    "approxTokens": "(≈ {count} tokens)",
+    "systemPromptLabel": "Prompt système (instructions données à l'IA)",
+    "unknownText": "Texte inconnu",
+    "text": "Texte",
+    "perplexityPromptFr": "Analyse et explique ce texte législatif français pour en discuter avec moi : \"{title}\". Voici le lien officiel : {link}. Résume les points clés, les objectifs, les impacts concrets et le contexte politique.",
+    "perplexityPromptEn": "Analyze and explain this French legislative text so we can discuss it: \"{title}\". Here is the official link: {link}. Summarize the key points, objectives, concrete impacts and political context.",
+    "adopted": "Adopté",
+    "rejected": "Rejeté",
+    "vote": "Vote",
+    "voteFor": "Pour : {count}",
+    "voteAgainst": "Contre : {count}",
+    "voteAbstentions": "Abstentions : {count}",
+    "voteNonVoting": "Non-votants : {count}",
+    "voteAbsent": "Absents : {count}",
+    "votersOutOf": "{count} votants sur 577",
+    "majorityRequired": "Majorité requise : {count} voix",
+    "pending": "en attente",
+    "promulgatedAndApplied": "Promulgué et appliqué en {count} j",
+    "promulgatedIn": "Promulgué en {count} j",
+    "appliedIn": "Appliquée en {count} j",
+    "ongoingSince": "en cours depuis {duration}",
+    "durationMonths": "{count} mois",
+    "durationDays": "{count} j"
+  },
+  "errors": {
+    "notFoundBadge": "Erreur 404 — Page introuvable",
+    "notFoundTitle": "Cette page n'existe pas <highlight>dans nos archives.</highlight>",
+    "notFoundSubtitle": "Le lien est peut-être invalide, ou la page a été déplacée.",
+    "notFoundJoke": "Elle a probablement été renvoyée en commission.",
+    "notFoundHelp": "Retrouvez les dossiers législatifs, le fil d'actualité et les indicateurs clés sur LoiClair.",
+    "home": "Accueil",
+    "viewDossiers": "Voir les dossiers",
+    "errorBadge": "Erreur de chargement",
+    "errorTitle": "Les données n'ont pas<br></br><highlight>pu être chargées.</highlight>",
+    "errorSubtitle": "Une erreur est survenue lors de la connexion à la base de données. Vérifiez votre connexion et réessayez.",
+    "errorJoke": "La base de données est peut-être en commission, elle aussi.",
+    "retry": "Réessayer",
+    "reportBug": "Signaler un bug"
+  }
+}

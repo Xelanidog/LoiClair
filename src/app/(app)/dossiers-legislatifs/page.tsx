@@ -5,6 +5,7 @@ export const revalidate = 3600; // Cache 1h — données mises à jour une fois 
 // C'est un Server Component : fetch des données côté serveur pour sécurité et perf.
 // On utilise Tailwind pour un style basique : liste en colonne, cartes sans bordure avec hover.
 
+import { getTranslations, getLocale } from 'next-intl/server';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import { Sparkles } from 'lucide-react';
@@ -14,7 +15,7 @@ import ResetButton from '@/components/ResetButton';
 import SearchInput from '@/components/SearchInput';
 import FilterDrawer from '@/components/FilterDrawer';
 import ProcedureTooltip from '@/components/ProcedureTooltip';
-import { DEFINITIONS } from '@/lib/definitions';
+import { getDefinition } from '@/lib/definitions';
 import {
   Pagination,
   PaginationContent,
@@ -29,30 +30,33 @@ import {
 // Fonction utilitaire pour générer une URL avec un nouveau 'page', en gardant tous les autres params.
 function generatePageUrl(currentParams: { [key: string]: string | string[] | undefined }, newPage: number) {
   const params = new URLSearchParams();
-  
+
   // Copie tous les params existants (statut, age, type, etc.)
   Object.entries(currentParams).forEach(([key, value]) => {
     if (key !== 'page' && value !== undefined) {  // Ignore 'page' et les undefined
       params.set(key, Array.isArray(value) ? value.join(',') : value);  // Gère les arrays si besoin futur
     }
   });
-  
+
   // Ajoute le nouveau 'page'
   if (newPage > 1) {  // Pas besoin de 'page=1' dans l'URL
     params.set('page', newPage.toString());
   }
-  
+
   return `?${params.toString()}`;
 }
 
 // Signature avec await pour searchParams (Server Component).
 export default async function DossiersLegislatifsPage({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
   const resolvedParams = await searchParams; // Unwrap la Promise.
+  const t = await getTranslations('dossiers');
+  const tDef = await getTranslations('definitions');
+  const locale = await getLocale();
   const ITEMS_PER_PAGE = 10; // On peut ajuster ça plus tard, ex. 20 si tu veux plus d'items visibles.
 
   // === NOUVEAU : Mapping des slugs URL vers les vraies valeurs en base ===
-  const statutSlug = typeof resolvedParams.statut === 'string' 
-    ? resolvedParams.statut.toLowerCase() 
+  const statutSlug = typeof resolvedParams.statut === 'string'
+    ? resolvedParams.statut.toLowerCase()
     : undefined;
 
   const statutMap: { [key: string]: string } = {
@@ -77,11 +81,11 @@ let oneYearAgo: Date | undefined;
 
 if (age) {
   const today = new Date(); // Date actuelle (serveur-side, donc UTC par défaut, mais ça marche pour des filtres approximatifs).
-  
+
   // Calcul pour 6 mois en arrière
   sixMonthsAgo = new Date(today);
   sixMonthsAgo.setDate(today.getDate() - 180); // Soustrait 180 jours (approximation simple).
-  
+
   // Calcul pour 1 an en arrière
   oneYearAgo = new Date(today);
   oneYearAgo.setDate(today.getDate() - 365); // Soustrait 365 jours.
@@ -235,21 +239,20 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
     }
   }
 
-  // Helper : calcul du texte de durée pour l'en-tête de la carte
-  function getDaysInfo(dossier: typeof sortedDossiers[0]): string {
+  // Helper : calcul du nombre de jours pour l'en-tête de la carte
+  function getDaysInfo(dossier: typeof sortedDossiers[0]): number | null {
     const depotDateRaw: string | null = dossier.date_depot;
-    if (!depotDateRaw) return '';
+    if (!depotDateRaw) return null;
     const depotDate = new Date(depotDateRaw);
-    if (isNaN(depotDate.getTime())) return '';
+    if (isNaN(depotDate.getTime())) return null;
 
     if ((dossier.statut_final === "Promulguée" || dossier.statut_final === "Appliquée") && dossier.date_promulgation) {
       const promulDate = new Date(dossier.date_promulgation);
-      if (isNaN(promulDate.getTime())) return '';
-      const days = Math.floor((promulDate.getTime() - depotDate.getTime()) / 86400000);
-      return `${days} jour${days > 1 ? 's' : ''}`;
+      if (isNaN(promulDate.getTime())) return null;
+      return Math.floor((promulDate.getTime() - depotDate.getTime()) / 86400000);
     }
     const days = Math.floor((Date.now() - depotDate.getTime()) / 86400000);
-    return `${days >= 0 ? days : 0} jour${days > 1 ? 's' : ''}`;
+    return days >= 0 ? days : 0;
   }
 
   // Helper : date de dépôt formatée
@@ -257,22 +260,22 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
     if (!dateRaw) return '';
     const d = new Date(dateRaw);
     if (isNaN(d.getTime())) return '';
-    return new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long', timeZone: 'Europe/Paris' }).format(d);
+    return new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeZone: 'Europe/Paris' }).format(d);
   }
 
   return (
     <div className="container mx-auto p-6 max-w-7xl">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold mb-3">Liste des textes</h1>
+        <h1 className="text-2xl font-bold mb-3">{t('pageTitle')}</h1>
         <p className="text-muted-foreground">
-          Les textes sont organisés par dossiers législatifs. Un dossier législatif, c’est le parcours complet d’une proposition ou d’un projet de loi, depuis son dépôt jusqu’à sa promulgation (ou son abandon).
+          {t('pageDesc')}
         </p>
       </div>
 
       <p className="text-xs text-muted-foreground mb-8">
-        Données de la 17ième legislature, mise à jours quotidiennement, provenant de{' '}
+        {t('dataSource')}{' '}
         <a href="https://data.assemblee-nationale.fr/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-          data.assemblee-nationale.fr
+          {t('dataSourceLink')}
         </a>
       </p>
 
@@ -281,61 +284,62 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
           <SearchInput />
           <GenericFilter
             paramName="statut"
-            label="Statut du dossier"
-            placeholder="Filtrer par statut"
-            allLabel="Tous les statuts"
+            label={t('filterStatutLabel')}
+            placeholder={t('filterStatutPlaceholder')}
+            allLabel={t('filterStatutAll')}
             options={[
-              { slug: 'en_cours_d_examen', libelle: "En cours d'examen" },
-              { slug: 'adopte_par_assemblee', libelle: "Adopté par l'Assemblée nationale" },
-              { slug: 'adopte_par_senat', libelle: "Adopté par le Sénat" },
-              { slug: 'adopte_par_parlement', libelle: "Adopté par le Parlement" },
-              { slug: 'rejetee', libelle: "Rejeté" },
-              { slug: 'promulguee', libelle: "Promulguée" },
-              { slug: 'appliquee', libelle: "Appliquée" },
+              { slug: 'en_cours_d_examen', libelle: t('statutEnCours') },
+              { slug: 'adopte_par_assemblee', libelle: t('statutAdopteAssemblee') },
+              { slug: 'adopte_par_senat', libelle: t('statutAdopteSenat') },
+              { slug: 'adopte_par_parlement', libelle: t('statutAdopteParlement') },
+              { slug: 'rejetee', libelle: t('statutRejete') },
+              { slug: 'promulguee', libelle: t('statutPromulguee') },
+              { slug: 'appliquee', libelle: t('statutAppliquee') },
             ]}
           />
           <GenericFilter
             paramName="age"
-            label="Âge du dossier"
-            placeholder="Sélectionner une tranche d'âge"
-            allLabel="Toutes les dates"
+            label={t('filterAgeLabel')}
+            placeholder={t('filterAgePlaceholder')}
+            allLabel={t('filterAgeAll')}
             options={[
-              { slug: 'moins_6m', libelle: 'Moins de 6 mois' },
-              { slug: '6m_1a', libelle: 'Entre 6 mois et 1 an' },
-              { slug: 'plus_1a', libelle: "Plus d'1 an" },
+              { slug: 'moins_6m', libelle: t('ageMoins6m') },
+              { slug: '6m_1a', libelle: t('age6m1a') },
+              { slug: 'plus_1a', libelle: t('agePlus1a') },
             ]}
             validValues={['moins_6m', '6m_1a', 'plus_1a']}
           />
           <GenericFilter
             paramName="type"
-            label="Type de procédure"
-            placeholder="Type de procédure"
-            allLabel="Tous les types"
+            label={t('filterTypeLabel')}
+            placeholder={t('filterTypePlaceholder')}
+            allLabel={t('filterTypeAll')}
             options={typeOptions}
           />
           <GenericFilter
             paramName="groupe"
-            label="Groupe politique"
-            placeholder="Groupe politique"
-            allLabel="Tous les groupes"
+            label={t('filterGroupeLabel')}
+            placeholder={t('filterGroupePlaceholder')}
+            allLabel={t('filterGroupeAll')}
             options={groupeOptions}
           />
           <GenericFilter
             paramName="theme"
-            label="Thème"
-            placeholder="Filtrer par thème"
-            allLabel="Tous les thèmes"
+            label={t('filterThemeLabel')}
+            placeholder={t('filterThemePlaceholder')}
+            allLabel={t('filterThemeAll')}
             options={themeOptions}
           />
           <ResetButton />
       </FilterDrawer>
 
       <div className="mb-4 text-sm text-muted-foreground">
-      {finalTotalCount} dossier{(totalCount || 0) > 1 ? 's' : ''} trouvé{(totalCount || 0) > 1 ? 's' : ''}.      </div>
+        {t('resultCount', { count: finalTotalCount })}
+      </div>
 
 
       {sortedDossiers.length === 0 ? (
-  <div className="text-center text-muted-foreground mb-4">Aucun dossier législatif trouvé avec ces filtres.</div>
+  <div className="text-center text-muted-foreground mb-4">{t('noResults')}</div>
 ) : (
   <>
     <ul className="divide-y divide-border">
@@ -364,8 +368,8 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
                 <div className="flex items-center gap-2 mb-2">
                   <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: bulletColor }} />
                   <span className="text-xs text-muted-foreground">
-                    {dossier.statut_final ?? 'Statut inconnu'}
-                    {daysInfo && <> · {(dossier.statut_final === 'Promulguée' || dossier.statut_final === 'Appliquée') ? `promulguée en ${daysInfo}` : `déposé il y a ${daysInfo}`}</>}
+                    {dossier.statut_final ?? t('statutInconnu')}
+                    {daysInfo !== null && <> · {(dossier.statut_final === 'Promulguée' || dossier.statut_final === 'Appliquée') ? t('promulgatedIn', { count: daysInfo }) : t('filedAgo', { count: daysInfo })}</>}
                   </span>
                 </div>
 
@@ -375,11 +379,12 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
                 {/* Ligne 3 : méta + CTA */}
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                   <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground flex-1 min-w-0">
-                    {dossier.procedure_libelle && (
-                      DEFINITIONS[dossier.procedure_libelle]
-                        ? <ProcedureTooltip label={dossier.procedure_libelle} description={DEFINITIONS[dossier.procedure_libelle]} />
-                        : <span className="font-medium uppercase tracking-wide">{dossier.procedure_libelle}</span>
-                    )}
+                    {dossier.procedure_libelle && (() => {
+                      const def = getDefinition(dossier.procedure_libelle, tDef);
+                      return def
+                        ? <ProcedureTooltip label={def.term} description={def.definition} />
+                        : <span className="font-medium uppercase tracking-wide">{dossier.procedure_libelle}</span>;
+                    })()}
                     {displayActeur && (
                       <>
                         <span className="text-border">·</span>
@@ -391,7 +396,7 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
                         {displayActeur.groupe && (
                           <>
                             <span className="text-border">·</span>
-                            <span>{displayActeur.groupe.libelle ?? 'Mandat terminé'}</span>
+                            <span>{displayActeur.groupe.libelle ?? t('mandatTermine')}</span>
                           </>
                         )}
                       </>
@@ -405,7 +410,7 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
                     {!hasAccessibleTexte && (
                       <>
                         <span className="text-border">·</span>
-                        <span className="text-destructive font-medium">{textesCount > 0 ? 'Texte non encore publié' : 'Aucun texte'}</span>
+                        <span className="text-destructive font-medium">{textesCount > 0 ? t('texteNonPublie') : t('aucunTexte')}</span>
                       </>
                     )}
                   </div>
@@ -415,7 +420,7 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
                     className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border border-primary/30 hover:border-primary/60 hover:scale-105 transition-all duration-200 group shrink-0"
                   >
                     <Sparkles className="w-3.5 h-3.5 text-primary group-hover:rotate-12 transition-transform duration-200" />
-                    <ShimmerText>Dossier LoiClair avec résumé IA</ShimmerText>
+                    <ShimmerText>{t('aiSummaryBadge')}</ShimmerText>
                   </Link>
                 </div>
 

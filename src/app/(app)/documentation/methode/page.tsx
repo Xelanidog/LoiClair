@@ -1,5 +1,6 @@
 import fs from 'fs/promises'
 import path from 'path'
+import { getLocale, getTranslations } from 'next-intl/server'
 import MethodeTabs from '@/components/MethodeTabs'
 import type { MethoSection } from '@/components/MethodeTabs'
 
@@ -45,18 +46,30 @@ function parseSections(markdown: string): MethoSection[] {
 }
 
 export default async function MethodePage() {
-  const raw = await fs.readFile(
-    path.join(process.cwd(), 'src/content/methode.md'),
-    'utf-8'
-  )
+  const locale = await getLocale()
+  const t = await getTranslations('docs')
+
+  let raw: string
+  try {
+    raw = await fs.readFile(
+      path.join(process.cwd(), `src/content/${locale}/methode.md`),
+      'utf-8'
+    )
+  } catch {
+    raw = await fs.readFile(
+      path.join(process.cwd(), 'src/content/fr/methode.md'),
+      'utf-8'
+    )
+  }
+
   const sections = parseSections(raw)
 
   return (
     <div className="container mx-auto p-6 max-w-7xl">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold mb-3">Méthodologie</h1>
+        <h1 className="text-2xl font-bold mb-3">{t('methodeTitle')}</h1>
         <p className="text-muted-foreground">
-          Comment sont calculés les indicateurs, d&apos;où viennent les données et quelles sont leurs limites.
+          {t('methodeDesc')}
         </p>
       </div>
       <MethodeTabs sections={sections} />

@@ -3,8 +3,10 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { Search, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 export default function SearchInput() {
+  const t = useTranslations('common');
   const searchParams = useSearchParams();
   const router = useRouter();
   const [value, setValue] = useState(searchParams.get('q') || '');
@@ -46,7 +48,7 @@ export default function SearchInput() {
       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
       <input
         type="text"
-        placeholder="Rechercher par titre ou auteur…"
+        placeholder={t('searchPlaceholder')}
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onFocus={e => e.currentTarget.style.borderColor = 'oklch(0.55 0.28 320)'}
@@ -57,7 +59,7 @@ export default function SearchInput() {
         <button
           onClick={handleClear}
           className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-          aria-label="Effacer la recherche"
+          aria-label={t('clearSearch')}
         >
           <X className="h-4 w-4" />
         </button>

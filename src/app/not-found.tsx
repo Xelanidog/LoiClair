@@ -2,8 +2,10 @@
 
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { ArrowRight, Home } from "lucide-react"
+import { ArrowRight, Bug, Home } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useTranslations } from "next-intl"
+import SignalerProbleme from "@/components/SignalerProbleme"
 
 const fadeUp = {
   hidden: { opacity: 0, y: 28 },
@@ -11,6 +13,8 @@ const fadeUp = {
 }
 
 export default function NotFound() {
+  const t = useTranslations('errors');
+
   return (
     <div className="flex flex-col items-center justify-center px-6 text-center" style={{ minHeight: "100dvh" }}>
       <motion.div
@@ -26,25 +30,26 @@ export default function NotFound() {
             <span className="relative inline-flex h-2 w-2 rounded-full bg-destructive" />
           </span>
           <span className="text-xs font-medium text-muted-foreground">
-            Erreur 404 — Page introuvable
+            {t('notFoundBadge')}
           </span>
         </div>
 
         {/* Title */}
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight leading-[1.12]">
-          Cette page n&apos;existe pas <span className="text-primary">dans nos archives.</span>
+          {t.rich('notFoundTitle', {
+            highlight: (chunks) => <span className="text-primary">{chunks}</span>,
+          })}
         </h1>
 
         {/* Subtitle */}
         <p className="text-lg text-muted-foreground leading-relaxed">
-          Le lien est peut-être invalide, ou la page a été déplacée.
+          {t('notFoundSubtitle')}
         </p>
         <p className="text-sm text-muted-foreground leading-relaxed italic" style={{ opacity: 0.6 }}>
-          Elle a probablement été renvoyée en commission.
+          {t('notFoundJoke')}
         </p>
         <p className="text-sm text-muted-foreground leading-relaxed" style={{ opacity: 0.7 }}>
-          Retrouvez les dossiers législatifs, le fil d&apos;actualité et les indicateurs clés
-          sur LoiClair.
+          {t('notFoundHelp')}
         </p>
 
         {/* CTAs */}
@@ -52,17 +57,26 @@ export default function NotFound() {
           <Link href="/">
             <Button size="lg" className="rounded-full gap-2 hover:scale-105">
               <Home className="h-4 w-4" />
-              Accueil
+              {t('home')}
             </Button>
           </Link>
           <Link href="/dossiers-legislatifs">
             <Button variant="ghost" size="lg" className="rounded-full gap-2 text-primary hover:text-primary">
-              Voir les dossiers
+              {t('viewDossiers')}
               <ArrowRight className="h-4 w-4" />
             </Button>
           </Link>
         </div>
+
+        <button
+          onClick={() => window.dispatchEvent(new Event("open-signaler"))}
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+        >
+          <Bug className="h-3.5 w-3.5" />
+          {t('reportBug')}
+        </button>
       </motion.div>
+      <SignalerProbleme />
     </div>
   )
 }

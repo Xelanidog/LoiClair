@@ -8,6 +8,10 @@ interface FunnelStep {
 
 interface LegislativeFunnelProps {
   steps: FunnelStep[];
+  title: string;
+  description: string;
+  ofTotalLabel: (rate: string) => string;
+  locale: string;
 }
 
 const STEP_COLORS = [
@@ -18,7 +22,7 @@ const STEP_COLORS = [
   { bg: '#1E8C4D', text: '#FFFFFF' },
 ];
 
-export function LegislativeFunnel({ steps }: LegislativeFunnelProps) {
+export function LegislativeFunnel({ steps, title, description, ofTotalLabel, locale }: LegislativeFunnelProps) {
   const maxSqrt = Math.sqrt(steps[0].count);
   const getBarWidth = (count: number) => {
     const raw = (Math.sqrt(count) / maxSqrt) * 100;
@@ -28,9 +32,9 @@ export function LegislativeFunnel({ steps }: LegislativeFunnelProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Parcours législatif</CardTitle>
+        <CardTitle>{title}</CardTitle>
         <CardDescription>
-          Du dépôt à l'application : comment les dossiers progressent à travers le processus législatif
+          {description}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -67,7 +71,7 @@ export function LegislativeFunnel({ steps }: LegislativeFunnelProps) {
                     <span className="font-semibold text-sm">{step.label}</span>
                     {totalRate && (
                       <span className="text-xs text-muted-foreground ml-auto">
-                        {totalRate} % du total
+                        {ofTotalLabel(totalRate)}
                       </span>
                     )}
                   </div>
@@ -86,7 +90,7 @@ export function LegislativeFunnel({ steps }: LegislativeFunnelProps) {
                         className="text-sm font-bold whitespace-nowrap"
                         style={{ color: color.text }}
                       >
-                        {step.count.toLocaleString('fr-FR')}
+                        {step.count.toLocaleString(locale)}
                       </span>
                     </div>
                   </div>

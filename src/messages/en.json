@@ -1,0 +1,999 @@
+{
+  "meta": {
+    "title": "LoiClair – Clear laws, accessible Republic",
+    "description": "Easily understand French legislative activity"
+  },
+  "common": {
+    "appName": "LoiClair",
+    "tagline": "Clear laws, accessible Republic",
+    "contribute": "Contribute",
+    "contributeDesc": "Report a bug or suggest an improvement on GitHub.",
+    "openMenu": "Open menu",
+    "navMenu": "Navigation menu",
+    "searchPlaceholder": "Search by title or author…",
+    "clearSearch": "Clear search"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "newsFeed": "News feed",
+    "keyIndicators": "Key indicators",
+    "composition": "Composition",
+    "allTexts": "All texts",
+    "legislativeBodies": "Legislative bodies",
+    "legislativeProcess": "Legislative process",
+    "textTypes": "Text types",
+    "nationalAssembly": "National Assembly",
+    "senate": "Senate",
+    "government": "Government",
+    "constitutionalCouncil": "Constitutional Council",
+    "documentation": "Documentation",
+    "userGuide": "User guide",
+    "glossary": "Glossary",
+    "methodology": "Methodology",
+    "aiCompliance": "AI Act compliance",
+    "about": "About",
+    "dossiers": "Dossiers",
+    "newsFeedShort": "News feed"
+  },
+  "footer": {
+    "about": "About",
+    "contactUs": "Contact us",
+    "contributeGithub": "Contribute on GitHub",
+    "releaseNotes": "Release notes",
+    "publicData": "Official public data"
+  },
+  "signaler": {
+    "fabLabel": "Idea? Problem?",
+    "fabTooltip": "Suggest an idea or report a problem",
+    "chooseTitle": "How can we help?",
+    "chooseDesc": "Choose what you'd like to share with us.",
+    "reportProblem": "Report a problem",
+    "reportProblemDesc": "Error, bug, incorrect data…",
+    "suggestIdea": "Suggest an idea",
+    "suggestIdeaDesc": "New feature, improvement…",
+    "problemTitle": "Report a problem",
+    "problemDesc": "Help us improve LoiClair by reporting an error or malfunction.",
+    "problemTypeLabel": "Problem type",
+    "ideaTitle": "Suggest an idea",
+    "ideaDesc": "Missing a feature? Have a suggestion? Tell us everything!",
+    "ideaTypeLabel": "Idea type",
+    "typePlaceholder": "Select a type...",
+    "typeIncorrectData": "Incorrect data",
+    "typeDisplay": "Display issue",
+    "typeBrokenLink": "Broken link",
+    "typeAI": "Incorrect AI summary",
+    "typeOtherProblem": "Other",
+    "typeNewFeature": "New feature",
+    "typeImprovement": "Existing improvement",
+    "typeOtherIdea": "Other idea",
+    "descriptionLabel": "Description",
+    "problemDescPlaceholder": "Describe the problem you encountered...",
+    "ideaDescPlaceholder": "Describe your idea...",
+    "emailLabel": "Email",
+    "emailOptional": "(optional)",
+    "emailPlaceholder": "So we can follow up if needed",
+    "sending": "Sending...",
+    "send": "Send",
+    "back": "Back",
+    "errorGeneric": "An error occurred.",
+    "errorServer": "Unable to reach the server. Please try again later.",
+    "problemSuccess": "Thanks for your report!",
+    "problemSuccessDetail": "Your report has been recorded. You can track its progress:",
+    "problemGithubLabel": "View report on GitHub",
+    "ideaSuccess": "Thanks for your suggestion!",
+    "ideaSuccessDetail": "Your idea has been recorded. You can track its progress:",
+    "ideaGithubLabel": "View suggestion on GitHub"
+  },
+  "about": {
+    "pageTitle": "About LoiClair",
+    "backHome": "← Back to home",
+    "constat": {
+      "heading": "Why so little participation in the country's decisions?",
+      "stat1Value": "54%",
+      "stat1Label": "abstention rate in the 2022 legislative elections",
+      "stat1Source": "Source: Ministry of the Interior",
+      "stat2Value": "74%",
+      "stat2Label": "of French people believe politicians are corrupt",
+      "stat2Source": "Source: CEVIPOF 2025",
+      "stat3Value": "16%",
+      "stat3Label": "of registered voters did not vote in any round",
+      "stat3Source": "Source: 2022 post-election analysis",
+      "problem1Title": "Scattered sources",
+      "problem1Desc": "Assemblée Nationale, Senate, Légifrance, Official Journal… everything is spread out and impossible to find for the average citizen.",
+      "problem2Title": "Highly technical language",
+      "problem2Desc": "Written for lawyers, not everyday citizens. Understanding it requires real effort.",
+      "problem3Title": "Overwhelming volume",
+      "problem3Desc": "Dozens of texts voted on every month. Impossible to keep up — most people eventually give up."
+    },
+    "whatIs": {
+      "heading": "What is LoiClair?",
+      "para1": "LoiClair is a website that makes French law and politics genuinely accessible to everyone. We allow anyone to translate and simplify legislative texts, amendments, parliamentary debates and institutional processes into clear, concrete, relatable explanations — powered by artificial intelligence. We also produce statistics directly from official institutional data.",
+      "para2": "Our goal: to answer the real questions citizens have ('But who actually decides?', 'Will this change my daily life?') by explaining the actual steps involved (often very different from the theory), the key players, and the day-to-day impacts."
+    },
+    "howBuilt": {
+      "heading": "How the site was built",
+      "para1": "LoiClair is an independent project made possible through the use of",
+      "para1Strong": "AI",
+      "para1Suffix": ": from writing the code to analysing and structuring raw data, including intelligent summaries of legislative texts and parliamentary debates.",
+      "techIntro": "Technologies used:",
+      "tech1Desc": "modern, fast interface",
+      "tech2Desc": "minimalist design, fully responsive (desktop → mobile)",
+      "tech3Desc": "hosted PostgreSQL database storing all legislative data",
+      "tech4Desc": "hosting and automatic deployment on every code update",
+      "tech5Desc": "daily automated import of data from official sources",
+      "tech6Prefix": "Advanced AI:",
+      "tech6Mid": "for law summaries,",
+      "tech6Suffix": "for development"
+    },
+    "sources": {
+      "heading": "Our Official Sources",
+      "intro": "All information comes directly from institutions, without modification or partisan interpretation. Automatically updated via API/open data.",
+      "source1Label": "Assemblée Nationale Open Data",
+      "source1Desc": "Legislative dossiers, MPs, amendments, votes, proceedings",
+      "source2Label": "Assemblée Nationale",
+      "source2Desc": "Official texts and documents",
+      "source3Label": "Senate",
+      "source3Desc": "Official texts and documents",
+      "source4Label": "Senate Open Data",
+      "source4Desc": "Questions, votes, senators",
+      "source4Soon": "Coming soon",
+      "source5Label": "Légifrance",
+      "source5Desc": "Full legislative texts, consolidated versions of legal codes, implementation decrees (via PISTE / DILA API)",
+      "source6Label": "Law Implementation Barometer",
+      "source6Desc": "Tracking the implementation of enacted laws: implementation rates, expected measures, published decrees (Assemblée Nationale)",
+      "source7Label": "Constitutional Council",
+      "source7Desc": "Law review, decisions",
+      "source7Soon": "Coming soon"
+    },
+    "feedback": {
+      "heading": "Share your feedback and contribute!",
+      "desc": "LoiClair lives thanks to you. Feedback, feature ideas, laws to prioritise, error reports — all contributions are welcome, technical or not.",
+      "contactBtn": "Contact the LoiClair team",
+      "githubBtn": "Contribute code on GitHub",
+      "license": "Open source project under AGPL v3 licence",
+      "sourceCode": "Source code on GitHub"
+    }
+  },
+  "process": {
+    "pageTitle": "The French Legislative Process",
+    "pageDesc": "Understanding how laws are born: from the institutions involved to the full journey of a legislative text.",
+    "organes": {
+      "heading": "The Main Institutions and Their Roles",
+      "assemblee": {
+        "trigger": "Assemblée Nationale",
+        "content": "The Assemblée Nationale is the lower house of Parliament, made up of 577 MPs elected by direct universal suffrage for 5 years. Its main role is to vote on laws, scrutinise the Government and debate public policy. It has the final say in the event of disagreement with the Senate on most legislation."
+      },
+      "senat": {
+        "trigger": "Senate",
+        "content": "The Senate is the upper house, with 348 senators elected by indirect suffrage for 6 years. It represents the territories (regions, departments). It examines laws after the Assemblée Nationale, proposes amendments, and balances national and local interests. It cannot be dissolved."
+      },
+      "gouvernement": {
+        "trigger": "Government",
+        "content": "Led by the Prime Minister, the Government initiates the majority of bills (around 90%). It enforces laws, manages the administration, and can stake its responsibility on a text (article 49-3). It is accountable to the Assemblée Nationale."
+      },
+      "president": {
+        "trigger": "President of the Republic",
+        "content": "The President promulgates laws passed by Parliament. They can request a second reading or refer a law to the Constitutional Council. They appoint the Prime Minister and can dissolve the Assemblée Nationale."
+      },
+      "conseil": {
+        "trigger": "Constitutional Council",
+        "content": "Made up of 9 members, it verifies the constitutionality of laws before promulgation (referred by the President, Prime Minister, speakers of the assemblies, or 60 members of Parliament). It protects fundamental rights and the balance of powers."
+      }
+    },
+    "parcours": {
+      "heading": "A law's journey",
+      "stepLabel": "Step {number}",
+      "finalNote": "Average duration: 6 to 12 months • Fast-track procedures possible (article 49-3, emergency…)",
+      "step1Title": "Filing",
+      "step1Desc": "Government or parliamentary initiative",
+      "step1Details": "The text is filed either by the Government (bill) or by a member of Parliament (private member's bill).",
+      "step2Title": "Committee",
+      "step2Desc": "In-depth analysis and amendments",
+      "step2Details": "Detailed study, hearings, rapporteur appointed, proposed changes.",
+      "step3Title": "Plenary session",
+      "step3Desc": "Debate and vote in the chamber",
+      "step3Details": "Discussion article by article, then a vote on the whole text.",
+      "step4Title": "Shuttle & CMP",
+      "step4Desc": "Harmonisation between Assemblée and Senate",
+      "step4Details": "Back-and-forth exchanges or compromise in the Joint Committee (Commission Mixte Paritaire).",
+      "step5Title": "Final vote",
+      "step5Desc": "Last word to the Assemblée Nationale",
+      "step5Details": "The Assemblée Nationale makes the final decision (except in special cases).",
+      "step6Title": "Constitutional review",
+      "step6Desc": "Optional – Constitutional Council",
+      "step6Details": "Verification of compliance with the Constitution.",
+      "step7Title": "Promulgation",
+      "step7Desc": "Signature and publication",
+      "step7Details": "The President signs and publishes the law in the Official Journal."
+    }
+  },
+  "textTypes": {
+    "pageTitle": "The Different Types of Legislative Texts",
+    "pageDesc": "Understanding the different categories of texts produced by Parliament and the Government.",
+    "projetLoi": {
+      "trigger": "Government Bill (Projet de Loi)",
+      "content": "Initiated by the Government. Examples: budgets (PLF), social reforms. It follows the full legislative procedure."
+    },
+    "propositionLoi": {
+      "trigger": "Private Member's Bill (Proposition de Loi)",
+      "content": "Initiated by a member of Parliament (MP or senator). Often on specific topics, such as local or thematic legislation."
+    },
+    "propositionLoiOrganique": {
+      "trigger": "Organic Private Member's Bill (Proposition de Loi Organique)",
+      "content": "A very specific variant aimed at amending or supplementing organic laws (texts that specify how the Constitution is applied).",
+      "reinforcedLabel": "Reinforced procedure:",
+      "reinforced1": "Absolute majority in each assembly (289 votes in the Assemblée Nationale, 174 in the Senate)",
+      "reinforced2": "Senate has equal power (no exclusive last word)",
+      "reinforced3": "Mandatory review by the Constitutional Council",
+      "reinforced4": "15-day waiting period before examination in plenary session",
+      "examples": "Examples: rules of procedure of the assemblies, status of members of Parliament."
+    },
+    "rapport": {
+      "trigger": "Report",
+      "content": "An analytical document produced by a parliamentary committee or rapporteur."
+    },
+    "resolution": {
+      "trigger": "Resolution",
+      "content": "A non-binding text expressing a position (e.g., a European resolution)."
+    },
+    "autres": {
+      "trigger": "Other (Opinions, Impact Assessments...)",
+      "avis": "Opinion: A committee's view",
+      "etudeImpact": "Impact Assessment: Analysis of effects",
+      "accordInternational": "International Agreement: Treaty ratification"
+    }
+  },
+  "landing": {
+    "heroBadge": "Private beta — Free · Independent · Neutral",
+    "heroTitle": "Every month, laws are passed <highlight>in your name.</highlight>",
+    "heroSubtitle": "Do you know what has been decided in your name lately?",
+    "heroDescription": "LoiClair translates French legislative activity into plain language — to understand, follow, and participate.",
+    "heroCta": "Parliamentary news feed",
+
+    "hero2Title": "With LoiClair, French politics is <highlight>finally readable.</highlight>",
+    "hero2Description": "A civic toolbox that turns legislative jargon into plain language. Key statistics on parliamentary activity, a simplified view of every dossier, a news feed to follow day by day everything happening in Parliament: new bills, decisions, votes…",
+
+    "trustFree": "Free",
+    "trustOpenSource": "Open source",
+    "trustIndependent": "Independent",
+    "trustOfficialData": "Official data",
+
+    "feedLabelNewText": "New bill",
+    "feedLabelDecision": "Decision",
+    "feedLabelEnacted": "Law enacted",
+    "feedContext": "Assembly",
+    "feedDate1": "3 Mar",
+    "feedDate2": "28 Feb",
+    "feedDate3": "25 Feb",
+    "feedTitle1": "Bill on the energy transition",
+    "feedTitle2": "Budget 2026 — Article 7",
+    "feedTitle3": "Law no. 2026-142 on the protection of personal data",
+    "feedFooterIa": "AI Summary",
+    "feedFooterAdopted": "Adopted",
+    "feedFooterLaw": "Law no. 2026-142",
+
+    "feedPillAll": "All",
+    "feedPillTexts": "Bills",
+    "feedPillDecisions": "Decisions",
+    "feedPillEnacted": "Enacted",
+
+    "dossierSearch": "Search a dossier…",
+    "dossierFilterAll": "All",
+    "dossierFilterOngoing": "Ongoing",
+    "dossierFilterAdopted": "Adopted",
+    "dossierFilterRejected": "Rejected",
+    "dossierItem1Title": "Finance Bill 2026",
+    "dossierItem1Chamber": "Assembly",
+    "dossierItem1Status": "Ongoing",
+    "dossierItem1Date": "3 Mar 2026",
+    "dossierItem2Title": "Bill on the right to housing",
+    "dossierItem2Chamber": "Senate",
+    "dossierItem2Status": "Adopted",
+    "dossierItem2Date": "28 Feb 2026",
+    "dossierItem3Title": "Bill on the energy transition",
+    "dossierItem3Chamber": "Assembly",
+    "dossierItem3Status": "In committee",
+    "dossierItem3Date": "15 Feb 2026",
+
+    "dossierOverline": "All texts in one place",
+    "dossierSectionTitle": "Legislative dossiers, <highlight>simplified.</highlight>",
+    "dossierDescription": "A legislative dossier is the complete journey of a bill, from filing to final vote. Search, filter and track every bill or proposition. Status, chamber, AI summary — all there, up to date.",
+    "dossierCta": "Browse dossiers",
+
+    "feedOverline": "Your news feed",
+    "feedSectionTitle": "Follow daily parliamentary activity, <highlight>step by step.</highlight>",
+    "feedDescription": "As simple as a social media feed. Every month, LoiClair gathers filed bills, floor votes and enacted laws into a clear, chronological feed. No more hunting for information.",
+    "feedCta": "Explore the news feed",
+
+    "dashboardOverline": "Overview",
+    "dashboardSectionTitle": "A dashboard <highlight>to understand everything.</highlight>",
+    "dashboardDescription": "Assembly composition, group breakdown, gender parity, average age — Parliament's key figures at a glance.",
+    "dashboardCta": "Explore the dashboard",
+    "dashboardKpi1Label": "MPs",
+    "dashboardKpi2Label": "Participation rate",
+    "dashboardKpi3Label": "Texts voted this month",
+    "dashboardChartTitle": "Bills filed per month",
+    "dashboardMonthOct": "Oct",
+    "dashboardMonthNov": "Nov",
+    "dashboardMonthDec": "Dec",
+    "dashboardMonthJan": "Jan",
+    "dashboardMonthFeb": "Feb",
+    "dashboardMonthMar": "Mar",
+
+    "beforeAfterTitle": "AI summarises every bill for you",
+    "beforeAfterDescription": "No more deciphering legal jargon. Our AI analyses and summarises each legislative dossier in plain language, in seconds.",
+    "beforeLabel": "Before",
+    "beforeSourcesBadge": "Official sources",
+    "beforeLine1": "Article L. 432-1 of the Civil Code — Pursuant to Decree no. 2024-1138",
+    "beforeLine2": "of 4 October 2024 amending the provisions",
+    "beforeLine3": "relating to the terms of application of paragraph 3",
+    "beforeLine4": "in accordance with the provisions of Order no. 2023-389",
+    "beforeLine5": "of 12 May 2023 on the exercise of powers of...",
+    "beforeLine6": "local authorities in matters of public management",
+    "beforeLine7": "...referred to above, after opinion of the Council of State...",
+    "beforeLine8": "§ 4 — The cumulative conditions defined in Art. 7",
+    "beforeLine9": "must be assessed on a case-by-case basis...",
+    "beforeLine10": "taking into account the circumstances referred to in Art. 12 bis",
+    "beforeCaption": "Incomprehensible to most citizens",
+    "afterLabel": "After",
+    "afterTitle": "Finance Bill 2026",
+    "afterDescription": "This text sets the State budget for 2026. It determines how much the State can spend and where the money comes from (taxes, borrowing…). Each ministry receives an allocation.",
+    "afterBullet1": "Total budget: €492 billion",
+    "afterBullet2": "Presented by the government in September",
+    "afterBullet3": "Must be voted on before 31 December",
+    "afterCaption": "Understood in 30 seconds",
+
+    "featuresTitle": "LoiClair, your civic toolbox",
+    "featuresDescription": "Everything you need to understand, follow and engage with what is happening in Parliament.",
+    "feature1Title": "Real-time data",
+    "feature1Description": "Daily updates from official sources.",
+    "feature2Title": "AI summaries",
+    "feature2Description": "Every bill translated into everyday language, jargon-free.",
+    "feature3Title": "Statistics",
+    "feature3Description": "Gender parity, political groups, votes — all in numbers.",
+    "feature4Title": "Find your representatives",
+    "feature4Description": "Locate your MP or Senator in seconds.",
+    "feature5Title": "Civic vote",
+    "feature5Description": "Share your opinion and compare it to Parliament's votes.",
+    "feature6Title": "News feed",
+    "feature6Description": "The essentials of parliamentary activity each month.",
+    "feature7Title": "Personalised alerts",
+    "feature7Description": "Follow a bill or a representative, get notified.",
+    "feature8Title": "AI newsletter",
+    "feature8Description": "Every week, parliamentary activity summarised by email.",
+
+    "ctaTitle": "What if politics were finally readable?",
+    "ctaDescription": "Understanding is the first step. Following is taking back control. Participating is changing things.",
+    "ctaPrimary": "Explore the news feed",
+    "ctaSecondary": "Browse dossiers",
+    "ctaFootnote": "Private beta — Official data from the Assemblée nationale"
+  },
+  "dossiers": {
+    "pageTitle": "List of bills",
+    "pageDesc": "Bills are organised by legislative dossiers. A legislative dossier is the complete journey of a bill or government proposal, from its filing to its enactment (or withdrawal).",
+    "dataSource": "Data from the 17th legislature, updated daily, sourced from",
+    "dataSourceLink": "data.assemblee-nationale.fr",
+    "filterStatutLabel": "Dossier status",
+    "filterStatutPlaceholder": "Filter by status",
+    "filterStatutAll": "All statuses",
+    "statutEnCours": "Under examination",
+    "statutAdopteAssemblee": "Adopted by the National Assembly",
+    "statutAdopteSenat": "Adopted by the Senate",
+    "statutAdopteParlement": "Adopted by Parliament",
+    "statutRejete": "Rejected",
+    "statutPromulguee": "Enacted",
+    "statutAppliquee": "In force",
+    "filterAgeLabel": "Dossier age",
+    "filterAgePlaceholder": "Select an age range",
+    "filterAgeAll": "All dates",
+    "ageMoins6m": "Less than 6 months",
+    "age6m1a": "Between 6 months and 1 year",
+    "agePlus1a": "More than 1 year",
+    "filterTypeLabel": "Procedure type",
+    "filterTypePlaceholder": "Procedure type",
+    "filterTypeAll": "All types",
+    "filterGroupeLabel": "Political group",
+    "filterGroupePlaceholder": "Political group",
+    "filterGroupeAll": "All groups",
+    "filterThemeLabel": "Theme",
+    "filterThemePlaceholder": "Filter by theme",
+    "filterThemeAll": "All themes",
+    "resultCount": "{count} {count, plural, one {dossier found} other {dossiers found}}.",
+    "noResults": "No legislative dossier found with these filters.",
+    "statutInconnu": "Unknown status",
+    "promulgatedIn": "enacted in {count} {count, plural, one {day} other {days}}",
+    "filedAgo": "filed {count} {count, plural, one {day} other {days}} ago",
+    "mandatTermine": "Term ended",
+    "texteNonPublie": "Text not yet published",
+    "aucunTexte": "No text",
+    "aiSummaryBadge": "LoiClair dossier with AI summary"
+  },
+  "kpis": {
+    "pageTitle": "Key indicators",
+    "pageSubtitle": "17th legislature activity in real time",
+    "filterTypeLabel": "Procedure type",
+    "filterTypePlaceholder": "Procedure type",
+    "filterTypeAll": "All types",
+    "filterTypeTooltipTitle": "Filter by procedure type",
+    "filterTypeTooltipDesc": "E.g. ordinary legislative procedure, finance bill, etc.",
+    "filterGroupeLabel": "Political group",
+    "filterGroupePlaceholder": "Political group",
+    "filterGroupeAll": "All groups",
+    "filterGroupeTooltipTitle": "Filter by initiating political group",
+    "filterGroupeTooltipDesc": "E.g. La France Insoumise, Renaissance, Les Républicains...",
+    "funnelStep1Label": "Filed",
+    "funnelStep1Desc": "All legislative dossiers filed",
+    "funnelStep2Label": "Legislative scope",
+    "funnelStep2Desc": "Texts intended to become laws",
+    "funnelStep3Label": "Adopted by ≥1 chamber",
+    "funnelStep3Desc": "At least one chamber voted in favour",
+    "funnelStep4Label": "Enacted",
+    "funnelStep4Desc": "Signed by the President of the Republic",
+    "funnelStep5Label": "Implemented",
+    "funnelStep5Desc": "Law in force: decrees published or directly applicable",
+    "funnelTitle": "Legislative journey",
+    "funnelDesc": "From filing to implementation: how dossiers progress through the legislative process",
+    "ofTotal": "{rate}% of total",
+    "cardTotalTitle": "Total",
+    "cardTotalDesc": "Legislative dossiers",
+    "cardMonthTitle": "This month",
+    "cardMonthDesc": "Dossiers filed",
+    "cardAvgTitle": "Monthly average",
+    "cardAvgDesc": "Over the last 24 months",
+    "chartTitle": "Monthly trend",
+    "chartDescription": "Legislative dossiers filed — last 24 months",
+    "chartTooltipLabel": "Dossiers filed",
+    "chartTrendUp": "Up {rate}%",
+    "chartTrendDown": "Down {rate}%",
+    "chartTrendStable": "Stable",
+    "chartComparison": "Compared to previous month",
+    "statusSectionTitle": "Dossier status",
+    "statusEnTraitementTitle": "Under review",
+    "statusEnTraitementDesc": "The text has been filed in Parliament (Assemblée Nationale or Senate) and is being examined for a decision",
+    "statusAdoptesANTitle": "Adopted by the Assemblée Nationale",
+    "statusAdoptesANDesc": "The Assemblée Nationale has adopted it. Next step: examination by the Senate",
+    "statusAdoptesSNTitle": "Adopted by the Senate",
+    "statusAdoptesSNDesc": "The Senate has adopted it. Next step: examination by the Assemblée Nationale",
+    "statusAdoptesParlemTitle": "Adopted by Parliament",
+    "statusAdoptesParlemDesc": "Both chambers have adopted the text. Next step: enactment",
+    "statusPromulguesTitle": "Enacted",
+    "statusPromulguesDesc": "The President has signed the law into force. Published in the Official Journal",
+    "statusAppliquéesTitle": "Implemented",
+    "statusAppliquéesDesc": "Law in force: directly applicable or implementing decrees published",
+    "statusRejétésTitle": "Rejected",
+    "statusRejétésDesc": "The text has been abandoned (unless re-filed or revised)",
+    "efficiencySectionTitle": "Process efficiency",
+    "tauxPromulgationTitle": "Enactment rate",
+    "tauxPromulgationDesc": "Share of completed dossiers that resulted in a law signed by the President",
+    "promulgatedCount": "{count} enacted out of {total} legislative-scope texts",
+    "tauxApplicationTitle": "Implementation rate",
+    "tauxApplicationDesc": "Share of legislative-scope texts that are effectively implemented (decrees published or directly applicable)",
+    "appliedCount": "{count} implemented out of {total} legislative-scope texts",
+    "delaiApplicationTitle": "Average implementation delay",
+    "delaiApplicationDesc": "Average time to publish all implementing decrees for a law",
+    "delaiApplicationSubtitle": "For the {count} laws requiring decrees",
+    "delaiPromulgationTitle": "Average enactment delay",
+    "delaiPromulgationDesc": "Average time between filing and enactment of a law",
+    "delaiPromulgationSubtitle": "From filing to the Official Journal",
+    "delaiANTitle": "Average delay in the Assemblée Nationale",
+    "delaiANDesc": "From filing at the AN to the adoption decision by the Assemblée Nationale",
+    "delaiANSubtitle": "Per text adopted by the AN",
+    "delaiSNTitle": "Average delay in the Senate",
+    "delaiSNDesc": "From filing at the Senate to the adoption decision by the Senate",
+    "delaiSNSubtitle": "Per text adopted by the Senate",
+    "minMax": "Min {min} d — Max {max} d",
+    "methodologyLink": "How it's calculated →",
+    "groupeActivityTitle": "Activity by political group",
+    "textesProposes": "Bills proposed",
+    "textesProposesDDesc": "Number of legislative dossiers filed by political group",
+    "textesProposesDLabel": "Dossiers",
+    "loisPromulguees": "Laws enacted",
+    "loisPromulgueesDesc": "Number of laws effectively enacted by political group",
+    "loisPromulgueesLabel": "Enacted",
+    "successLegislatifTitle": "Legislative success by group",
+    "successLegislatifDesc": "Adoption by the Assemblée Nationale and Senate: across all texts relevant to both chambers. Enactment: across legislative-scope texts only (some texts examined by Parliament are not intended to be enacted, such as resolutions).",
+    "parlementairesTitle": "Most active parliamentarians",
+    "parlementairesDesc": "Ranking of the 20 most involved MPs and senators in legislative texts, as authors, co-authors, or rapporteurs.",
+    "methodologyLinkAlt": "→ How it's calculated"
+  },
+  "month": {
+    "pageTitle": "News feed — LoiClair",
+    "pageDescription": "Monthly legislative events: votes, filings, enactments and more.",
+    "lawFullyApplied": "Law fully applied",
+    "eventType": {
+      "newText": "New text",
+      "report": "Report",
+      "decision": "Decision",
+      "shuttle": "Shuttle",
+      "cmpConvocation": "Joint Committee convocation",
+      "motionCensure": "Motion of censure",
+      "govDeclaration": "Gov. declaration",
+      "motionVote": "Motion vote",
+      "ccSaisine": "Const. Council",
+      "promulgation": "Law enacted",
+      "decree": "Application decree",
+      "lawApplied": "Law fully applied",
+      "other": "Other"
+    },
+    "filter": {
+      "all": "All",
+      "texts": "Texts",
+      "decisions": "Decisions",
+      "reports": "Reports",
+      "shuttles": "Shuttles",
+      "cmp": "CMP",
+      "ccSaisine": "Const. Council",
+      "promulgations": "Enactments",
+      "decrees": "Decrees",
+      "appliedLaws": "Applied laws",
+      "motions": "Motions"
+    },
+    "institution": {
+      "assemblee": "Assembly",
+      "senat": "Senate",
+      "cmp": "Joint committee",
+      "cconstit": "Constitutional Council",
+      "gouvernement": "Government"
+    },
+    "vote": {
+      "for": "For: {count}",
+      "against": "Against: {count}",
+      "abstentions": "Abstentions: {count}",
+      "nonVoting": "Non-voting: {count}",
+      "absent": "Absent: {count}",
+      "majorityRequired": "Majority required: {count} votes"
+    },
+    "ccSaisine": {
+      "AN": "60 or more MPs referred the case to the Constitutional Council.",
+      "SN": "60 or more senators referred the case to the Constitutional Council.",
+      "PM": "The Prime Minister referred the case to the Constitutional Council.",
+      "auto": "Automatic referral (organic law or finance law)."
+    },
+    "lawNumber": "Law no. {code}",
+    "directApplication": "Direct application",
+    "allDecreesPublished": "All decrees published",
+    "measuresApplied": "{count} {count, plural, one {measure applied} other {measures applied}}",
+    "decreeCount": "{count} {count, plural, one {decree} other {decrees}}",
+    "monthsAfterPromulgation": "{count} {count, plural, one {month} other {months}} after enactment",
+    "daysAfterPromulgation": "{count} {count, plural, one {day} other {days}} after enactment",
+    "forThe": "For {denomination}",
+    "rapporteur": "Rapporteur(s): ",
+    "andColleagues": "(and colleagues)",
+    "prefixDep": "MP ",
+    "prefixSen": "Sen. ",
+    "prefixMin": "Min. ",
+    "shuttleToSenat": "Assembly → Senate",
+    "shuttleToAssemblee": "Senate → Assembly",
+    "texteCMP": "CMP text",
+    "fullDossier": "Full dossier",
+    "notYetPublished": "Not yet published",
+    "aiSummary": "AI Summary",
+    "learnMore": "Learn more",
+    "aiSummaryLabel": "AI Summary:",
+    "report": "Report",
+    "adoptedText": "Adopted text",
+    "modifiedText": "Modified text",
+    "plusTomes": "(+ volumes)",
+    "adoptedTextFallback": "Adopted text",
+    "backToDossier": "Back to dossier",
+    "legislativeDossier": "Legislative dossier",
+    "timelineComplete": "Complete timeline · {count} {count, plural, one {step} other {steps}}",
+    "newsFeedTitle": "News feed",
+    "backToCurrentMonth": "Back to current month",
+    "noEventsOfType": "No events of this type in {month}.",
+    "loading": "Loading…",
+    "loadPreviousMonth": "Load previous month",
+    "monthsLoaded": "{count} months loaded.",
+    "viewOlderMonths": "View older months",
+    "noEventsType": "No events of this type.",
+    "viewAll": "View all events",
+    "quietMonth": "Quiet month in Parliament",
+    "noEventsRecorded": "No legislative events recorded. Try another month.",
+    "source": "Source:",
+    "ariaApprove": "I approve",
+    "ariaDisapprove": "I disapprove",
+    "ariaSave": "Save",
+    "ariaShare": "Share"
+  },
+  "definitions": {
+    "categoryStatuts": "Statuses",
+    "categoryProcedures": "Procedure types",
+    "categoryEtapes": "Legislative steps",
+    "categoryProvenance": "Text origins",
+    "fallback": "Definition coming soon.",
+    "adopteAN": {
+      "term": "Adopted by the National Assembly",
+      "definition": "The National Assembly has voted on the text. The Senate must still weigh in."
+    },
+    "adopteParlement": {
+      "term": "Adopted by Parliament",
+      "definition": "Both chambers have voted on the text in identical terms. It now awaits promulgation by the President."
+    },
+    "adopteSenat": {
+      "term": "Adopted by the Senate",
+      "definition": "The Senate has voted on the text. The National Assembly must still weigh in."
+    },
+    "enCoursExamen": {
+      "term": "Under examination",
+      "definition": "The text is still being debated in Parliament. It has not yet been definitively adopted."
+    },
+    "promulguee": {
+      "term": "Enacted",
+      "definition": "The text has been signed by the President and published in the Official Journal. It has the force of law."
+    },
+    "rejete": {
+      "term": "Rejected",
+      "definition": "The text was rejected by one or both chambers. A new filing remains possible."
+    },
+    "allocutionPresident": {
+      "term": "Address by the President of the National Assembly",
+      "definition": "An official speech delivered by the Speaker of the National Assembly during a session. This is not a legislative text."
+    },
+    "commissionEnquete": {
+      "term": "Committee of inquiry",
+      "definition": "A parliamentary inquiry into a matter of public interest, conducted by a group of MPs. It produces a report, not a law."
+    },
+    "engagementResponsabilite": {
+      "term": "Government confidence vote",
+      "definition": "A procedure by which the Prime Minister puts the government's survival on the line before the National Assembly (article 49 of the Constitution). It can result in a text being adopted without a vote, or the government being brought down."
+    },
+    "missionInformation": {
+      "term": "Fact-finding mission",
+      "definition": "A parliamentary working group tasked with studying a specific topic and producing a report. It has no binding power."
+    },
+    "petitions": {
+      "term": "Petitions",
+      "definition": "A request addressed by citizens to Parliament on a matter of general interest. It is examined by a committee but does not produce a law."
+    },
+    "projetFinancementSecu": {
+      "term": "Social security financing bill",
+      "definition": "The annual Social Security budget, filed by the government each autumn. It sets spending and revenue targets for the following year."
+    },
+    "projetFinancesAnnee": {
+      "term": "Annual finance bill",
+      "definition": "The annual State budget, filed by the government each autumn. It authorises spending and revenue for the following year."
+    },
+    "projetFinancesRectificative": {
+      "term": "Amending finance bill",
+      "definition": "A mid-year revision to the State budget. It adjusts the initial forecasts based on economic conditions."
+    },
+    "projetLoiOrdinaire": {
+      "term": "Ordinary government bill",
+      "definition": "A text prepared and filed by the government, then submitted for a parliamentary vote. It is the most common type of legislative text."
+    },
+    "projetRatificationTraites": {
+      "term": "Treaty ratification bill",
+      "definition": "Parliamentary authorisation for the President to ratify an international treaty. Parliament cannot amend the treaty text itself."
+    },
+    "projetLoiConstitutionnelle": {
+      "term": "Constitutional bill",
+      "definition": "A text aiming to amend the Constitution. Its adoption requires a special procedure (referendum or Congress vote)."
+    },
+    "projetLoiOrganique": {
+      "term": "Organic law bill",
+      "definition": "A text specifying how the Constitution is applied in practice. Its adoption follows a reinforced procedure with mandatory review by the Constitutional Council."
+    },
+    "propositionLoiOrdinaire": {
+      "term": "Private member's bill",
+      "definition": "A text filed by one or more members of Parliament (MP or senator). Unlike a government bill, it does not originate from the executive."
+    },
+    "rapportInformation": {
+      "term": "Information report (no mission)",
+      "definition": "A report produced by one or more members of Parliament on a topic of their choosing. It informs Parliament but has no binding value."
+    },
+    "resolution": {
+      "term": "Resolution",
+      "definition": "A text expressing a position of Parliament, with no legislative value. It creates neither obligation nor right."
+    },
+    "resolutionArticle34": {
+      "term": "Article 34-1 Resolution",
+      "definition": "A resolution passed under article 34-1 of the Constitution, allowing Parliament to express a wish or a policy direction. It has no force of law."
+    },
+    "responsabilitePenale": {
+      "term": "Criminal liability of the President of the Republic",
+      "definition": "An exceptional constitutional procedure to initiate criminal proceedings against the head of state. It goes through the High Court."
+    },
+    "premierDepot": {
+      "term": "First filing of an initiative.",
+      "definition": "The first step: the author (government or MP) formally files their text with Parliament. This marks the start of the legislative procedure."
+    },
+    "premiereRecture1": {
+      "term": "First reading (first chamber seized)",
+      "definition": "The first full examination of the text by the chamber that received it first. It includes committee work followed by a plenary debate."
+    },
+    "premiereRecture2": {
+      "term": "First reading (second chamber seized)",
+      "definition": "The first examination of the text by the second chamber, after adoption by the first. The parliamentary shuttle begins."
+    },
+    "accordInternational": {
+      "term": "International agreement",
+      "definition": "A treaty or international convention linked to the dossier. Parliament authorises ratification but cannot amend the treaty text."
+    },
+    "avisConseilEtat": {
+      "term": "Council of State opinion",
+      "definition": "An advisory opinion issued by the Council of State on a government bill before it is filed with Parliament. It is mandatory for all government bills."
+    },
+    "commissionMixteParity": {
+      "term": "Joint Committee (CMP)",
+      "definition": "A meeting of 7 MPs and 7 senators tasked with finding a compromise text when both chambers disagree. The result is then put to a vote in both assemblies."
+    },
+    "conclusionConseilConstitutionnel": {
+      "term": "Constitutional Council ruling",
+      "definition": "The final decision of the Constitutional Council on whether the text complies with the Constitution. It may validate, partially strike down, or fully strike down the text."
+    },
+    "conseilConstitutionnel": {
+      "term": "Constitutional Council",
+      "definition": "The stage where the text is reviewed for constitutional compliance. The Council verifies that the law respects the Constitution."
+    },
+    "convocationCMP": {
+      "term": "Convening of a Joint Committee",
+      "definition": "The Prime Minister (or the speakers of both assemblies for a private member's bill) requests the convening of a Joint Committee. This marks the start of the conciliation procedure."
+    },
+    "creationCommissionEnquete": {
+      "term": "Creation of a committee of inquiry",
+      "definition": "The National Assembly's decision to launch a parliamentary inquiry. The committee has extensive investigative powers."
+    },
+    "creationMissionInformation": {
+      "term": "Creation of a fact-finding mission",
+      "definition": "The decision to create a parliamentary working group on a given topic. The mission will produce a report at the end of its work."
+    },
+    "debat": {
+      "term": "Debate",
+      "definition": "A discussion in plenary session on the text or a related topic. MPs set out their positions and examine amendments."
+    },
+    "decision": {
+      "term": "Decision",
+      "definition": "The chamber's final vote on the text in plenary session. The text is adopted, rejected, or adopted with modifications."
+    },
+    "decisionCMP": {
+      "term": "Joint Committee outcome",
+      "definition": "The result of the Joint Committee's work. It can lead to an agreement (shared text) or a failure (deadlock)."
+    },
+    "decisionMotionCensure": {
+      "term": "Vote on a motion of no confidence",
+      "definition": "The National Assembly's vote on a motion of no confidence against the government. If passed, the government falls."
+    },
+    "depotProjetLoi": {
+      "term": "Filing of a government bill",
+      "definition": "The government formally files a text with Parliament. It is accompanied by an impact assessment and the Council of State's opinion."
+    },
+    "depotDeclarationGouvernement": {
+      "term": "Filing of a government declaration",
+      "definition": "The government submits an official declaration to Parliament, which may give rise to a debate. It has no legislative value."
+    },
+    "depotInitiativeNavette": {
+      "term": "Filing of an initiative in the shuttle",
+      "definition": "Transmission of the text from one chamber to the other after a first vote. The shuttle continues until both chambers adopt identical text."
+    },
+    "depotLettreRectificative": {
+      "term": "Filing of an amending letter.",
+      "definition": "The government amends its own bill before or during examination. This allows the text to be updated without withdrawing it."
+    },
+    "depotRapport": {
+      "term": "Report filing",
+      "definition": "The rapporteur submits the committee report to the assembly. This document summarises the committee's work and recommendations."
+    },
+    "depotRapportCMP": {
+      "term": "Filing of a Joint Committee report",
+      "definition": "Publication of the compromise text produced by the Joint Committee. It will be put to a vote in both chambers."
+    },
+    "deuxiemeLecture": {
+      "term": "Second reading",
+      "definition": "A second examination of the text by a chamber, after the other chamber has made changes. The debate focuses only on the remaining points of disagreement."
+    },
+    "discussionSeancePublique": {
+      "term": "Plenary debate",
+      "definition": "Examination of the text by all members of Parliament in the chamber. This is where amendments are debated and voted on."
+    },
+    "etudeImpact": {
+      "term": "Impact assessment",
+      "definition": "A mandatory document accompanying government bills, assessing the economic, social and legal consequences of the text. It is published before examination begins."
+    },
+    "procedureAcceleree": {
+      "term": "Government declares urgency / fast-track procedure",
+      "definition": "The government requests a fast examination of the text, limiting the shuttle to a single reading per chamber. This significantly speeds up the process."
+    },
+    "lectureDefinitive": {
+      "term": "Final reading",
+      "definition": "The National Assembly's last vote when the Joint Committee has failed and the government gives it the final say. The Senate can no longer oppose it."
+    },
+    "lectureUnique": {
+      "term": "Single reading",
+      "definition": "The text is examined in a single reading by one chamber, with no possibility of a shuttle. This applies to certain resolutions or special texts."
+    },
+    "miseEnApplication": {
+      "term": "Implementation of the law",
+      "definition": "Publication of the decrees and orders needed for the law to take concrete effect. Without these texts, some provisions remain unenforceable."
+    },
+    "motionCensure": {
+      "term": "Motion of no confidence",
+      "definition": "A procedure by which the National Assembly can bring down the government. It requires the signature of at least one tenth of MPs to be filed."
+    },
+    "motionProcedure": {
+      "term": "Procedural motion",
+      "definition": "A request made during a session to change the course of a text's examination. It may aim to reject the text without debate or refer it back to committee."
+    },
+    "nominationRapporteur": {
+      "term": "Appointment of a rapporteur",
+      "definition": "The committee designates one of its members to study the text in detail and write a report. The rapporteur becomes the key reference for the text in committee and in plenary."
+    },
+    "nominationRapporteurBudgetaire": {
+      "term": "Appointment of a budget rapporteur",
+      "definition": "The committee designates a specialist rapporteur to examine a part of the budget. Each budget rapporteur covers a specific policy area (defence, education, health, etc.)."
+    },
+    "nouvelleLecture": {
+      "term": "New reading",
+      "definition": "Resumption of the examination of the text by one chamber after the Joint Committee has failed. Both chambers try to agree on a common text."
+    },
+    "promulgationLoi1": {
+      "term": "Promulgation of a law",
+      "definition": "The President of the Republic signs the law and orders its publication in the Official Journal. The law takes effect the day after publication, unless stated otherwise."
+    },
+    "promulgationLoi2": {
+      "term": "Promulgation of the law",
+      "definition": "The President of the Republic signs the law and orders its publication in the Official Journal. The law takes effect the day after publication, unless stated otherwise."
+    },
+    "rapportApplicationLois": {
+      "term": "Report on the implementation of laws",
+      "definition": "An assessment drawn up by Parliament on the effective implementation of a passed law. It checks whether the implementing decrees have been published."
+    },
+    "renvoiCommissionFond": {
+      "term": "Referral to the lead committee",
+      "definition": "The text is referred to the main committee responsible for examining it. This committee will write the report and propose amendments."
+    },
+    "renvoiPrealable": {
+      "term": "Prior referral",
+      "definition": "A procedure by which the text is sent back to committee before being debated in plenary. This allows for thorough examination before the public debate."
+    },
+    "renvoiPrealableCAE": {
+      "term": "Prior referral to the Foreign Affairs Committee",
+      "definition": "The text is referred to the Foreign Affairs Committee for examination. This applies notably to treaties and international conventions."
+    },
+    "retraitInitiative": {
+      "term": "Withdrawal of an initiative",
+      "definition": "The author of the text (government or MP) withdraws their own bill or proposal. The dossier is closed."
+    },
+    "reunionCommission": {
+      "term": "Committee meeting",
+      "definition": "A working session of the parliamentary committee tasked with examining the text. Amendments are debated and voted on before the plenary debate."
+    },
+    "saisineConseilConstitutionnel": {
+      "term": "Referral to the Constitutional Council",
+      "definition": "MPs, the President or the Prime Minister ask the Constitutional Council to verify the text's compliance with the Constitution. This step can occur before promulgation."
+    },
+    "saisiePourAvisCommission": {
+      "term": "Advisory referral to a committee",
+      "definition": "A committee is consulted to give its opinion on a text that falls mainly within the remit of another committee. Its opinion is advisory."
+    },
+    "travaux": {
+      "term": "Work",
+      "definition": "The set of activities related to the examination of a dossier. This generic term covers meetings, hearings and discussions."
+    },
+    "travauxCommissionSaisieAvis": {
+      "term": "Work of an advisory committee",
+      "definition": "Work carried out by a committee consulted for an advisory opinion on a text. It may propose amendments but the final decision rests with the lead committee."
+    },
+    "travauxCommissionFond": {
+      "term": "Work of the lead committee",
+      "definition": "Work of the main committee responsible for examining the text. It writes the report and amendments submitted to the full assembly."
+    },
+    "travauxCommissions": {
+      "term": "Committee work",
+      "definition": "The phase where the text is examined by parliamentary committees. Committee members hear experts, debate and propose changes."
+    },
+    "texteDepose": {
+      "term": "Filed text",
+      "definition": "The initial version of the text, as filed by its author (MP or government). This marks the start of the procedure."
+    },
+    "commission": {
+      "term": "Committee",
+      "definition": "The version of the text amended by the parliamentary committee responsible for examining it. It incorporates the amendments adopted in committee."
+    },
+    "seance": {
+      "term": "Plenary",
+      "definition": "The version of the text adopted in plenary session, after debates and amendments in the chamber. This is the text as voted by the chamber."
+    },
+    "legifrance": {
+      "term": "LÉGIFRANCE",
+      "definition": "The official version published in the Official Journal after promulgation. This is the definitive law text, as referenced on Légifrance."
+    }
+  },
+  "steps": {
+    "AN1": "Nat. Ass.",
+    "SN1": "Senate",
+    "ANLUNI": "NA (single)",
+    "CMP": "JC",
+    "AN2": "NA (2nd)",
+    "SN2": "Senate (2nd)",
+    "ANNLEC": "NA (new)",
+    "SNNLEC": "Senate (new)",
+    "ANLDEF": "NA (final)",
+    "CC": "Const. Council",
+    "PROM": "Enacted",
+    "DECAPP": "Application decrees",
+    "AN-APPLI": "Application"
+  },
+  "docs": {
+    "guideTitle": "User guide",
+    "guideDesc": "How to read and use LoiClair's dashboards, indicators and legislative dossiers.",
+    "methodeTitle": "Methodology",
+    "methodeDesc": "How indicators are calculated, where the data comes from, and what their limitations are."
+  },
+  "resumeIA": {
+    "dossierLabel": "LoiClair Dossier",
+    "aiSummary": "AI Summary",
+    "analyzing": "analyzing…",
+    "noTextAvailable": "No text available for this dossier.",
+    "textNotAvailable": "This text is not yet available online. Change version below.",
+    "consolidatedOnLegifrance": "The consolidated version can be viewed directly on Légifrance.",
+    "aiSummaryComingSoon": "AI summary of this version will be available soon.",
+    "generationFailed": "The summary could not be generated.",
+    "retry": "Retry →",
+    "whatChanges": "What changes",
+    "keyTakeaway": "Key takeaway",
+    "discussWithAI": "Discuss this text with AI",
+    "summarizedText": "Summarized text:",
+    "officialText": "Official text",
+    "changeVersion": "Change",
+    "consolidatedVersion": "Consolidated version",
+    "aboutThisLaw": "About this law",
+    "labelStatus": "Status",
+    "labelProcedure": "Procedure",
+    "labelAuthor": "Author",
+    "labelGroup": "Group",
+    "labelFiledOn": "Filed on",
+    "labelSources": "Sources",
+    "assemblee": "National Assembly",
+    "senat": "Senate",
+    "legifrance": "Légifrance",
+    "dossierFeed": "Dossier news feed →",
+    "lawJourney": "Law journey",
+    "aiGenerated": "Content generated by artificial intelligence",
+    "aiActCompliance": "AI Act Compliance →",
+    "generationParams": "Generation parameters",
+    "labelModel": "Model",
+    "labelProvider": "Provider",
+    "labelTemperature": "Temperature",
+    "tempScale": "(0 = strict, 1 = creative)",
+    "labelMaxTokens": "Max tokens (output)",
+    "labelMaxChars": "Max characters (input)",
+    "approxTokens": "(≈ {count} tokens)",
+    "systemPromptLabel": "System prompt (instructions given to AI)",
+    "unknownText": "Unknown text",
+    "text": "Text",
+    "perplexityPromptFr": "Analyse et explique ce texte législatif français pour en discuter avec moi : \"{title}\". Voici le lien officiel : {link}. Résume les points clés, les objectifs, les impacts concrets et le contexte politique.",
+    "perplexityPromptEn": "Analyze and explain this French legislative text so we can discuss it: \"{title}\". Here is the official link: {link}. Summarize the key points, objectives, concrete impacts and political context.",
+    "adopted": "Adopted",
+    "rejected": "Rejected",
+    "vote": "Vote",
+    "voteFor": "For: {count}",
+    "voteAgainst": "Against: {count}",
+    "voteAbstentions": "Abstentions: {count}",
+    "voteNonVoting": "Non-voting: {count}",
+    "voteAbsent": "Absent: {count}",
+    "votersOutOf": "{count} voters out of 577",
+    "majorityRequired": "Majority required: {count} votes",
+    "pending": "pending",
+    "promulgatedAndApplied": "Enacted and applied in {count} d",
+    "promulgatedIn": "Enacted in {count} d",
+    "appliedIn": "Applied in {count} d",
+    "ongoingSince": "ongoing for {duration}",
+    "durationMonths": "{count} {count, plural, one {month} other {months}}",
+    "durationDays": "{count} d"
+  },
+  "errors": {
+    "notFoundBadge": "Error 404 — Page not found",
+    "notFoundTitle": "This page does not exist <highlight>in our archives.</highlight>",
+    "notFoundSubtitle": "The link may be invalid, or the page has been moved.",
+    "notFoundJoke": "It was probably sent back to committee.",
+    "notFoundHelp": "Find legislative dossiers, the news feed and key indicators on LoiClair.",
+    "home": "Home",
+    "viewDossiers": "View dossiers",
+    "errorBadge": "Loading error",
+    "errorTitle": "The data could not<br></br><highlight>be loaded.</highlight>",
+    "errorSubtitle": "An error occurred while connecting to the database. Check your connection and try again.",
+    "errorJoke": "The database is probably in committee too.",
+    "retry": "Retry",
+    "reportBug": "Report a bug"
+  }
+}

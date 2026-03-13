@@ -24,6 +24,8 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { useTranslations } from "next-intl"
+import LocaleToggle from "@/components/LocaleToggle"
 import type { LucideIcon } from "lucide-react"
 
 interface NavItem {
@@ -121,51 +123,54 @@ function CollapsibleSection({ label, items, onNavigation }: { label: string; ite
   )
 }
 
-const dashboardItems: NavItem[] = [
-  { href: "/Month", label: "Fil d'actualité", icon: Calendar },
-  { href: "/KPIs", label: "Indicateurs clés", icon: BarChart3 },
-  { href: "/Composition", label: "Composition", icon: Users },
-  { href: "/dossiers-legislatifs", label: "Tous les textes", icon: ScrollText },
-]
-
-const organeItems: NavItem[] = [
-  { href: "/processus-legislatif", label: "Processus législatif", icon: GitBranch },
-  { href: "/type-textes", label: "Types de texte", icon: Layers },
-  { href: "/organes/assemblee", label: "Assemblée nationale", icon: Landmark },
-  { href: "/organes/senat", label: "Sénat", icon: Building },
-  { href: "/organes/gouvernement", label: "Gouvernement", icon: Flag },
-  { href: "/organes/conseil-constitutionnel", label: "Conseil constitutionnel", icon: Scale },
-]
-
-const docItems: NavItem[] = [
-  { href: "/documentation/guide", label: "Guide d'utilisation", icon: BookOpen },
-  { href: "/documentation/glossaire", label: "Glossaire", icon: BookMarked },
-  { href: "/documentation/methode", label: "Méthodologie", icon: ClipboardList },
-  { href: "/documentation/conformite-ia", label: "Conformité AI Act", icon: ShieldCheck },
-]
-
 export function SidebarNavContent({ onNavigation }: { onNavigation?: () => void }) {
+  const t = useTranslations("nav")
+  const tc = useTranslations("common")
+
+  const dashboardItems: NavItem[] = [
+    { href: "/Month", label: t("newsFeed"), icon: Calendar },
+    { href: "/KPIs", label: t("keyIndicators"), icon: BarChart3 },
+    { href: "/Composition", label: t("composition"), icon: Users },
+    { href: "/dossiers-legislatifs", label: t("allTexts"), icon: ScrollText },
+  ]
+
+  const organeItems: NavItem[] = [
+    { href: "/processus-legislatif", label: t("legislativeProcess"), icon: GitBranch },
+    { href: "/type-textes", label: t("textTypes"), icon: Layers },
+    { href: "/organes/assemblee", label: t("nationalAssembly"), icon: Landmark },
+    { href: "/organes/senat", label: t("senate"), icon: Building },
+    { href: "/organes/gouvernement", label: t("government"), icon: Flag },
+    { href: "/organes/conseil-constitutionnel", label: t("constitutionalCouncil"), icon: Scale },
+  ]
+
+  const docItems: NavItem[] = [
+    { href: "/documentation/guide", label: t("userGuide"), icon: BookOpen },
+    { href: "/documentation/glossaire", label: t("glossary"), icon: BookMarked },
+    { href: "/documentation/methode", label: t("methodology"), icon: ClipboardList },
+    { href: "/documentation/conformite-ia", label: t("aiCompliance"), icon: ShieldCheck },
+  ]
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="px-5 pt-6 pb-5">
         <Link href="/" onClick={onNavigation}>
-          <span className="font-bold text-lg tracking-tight">LoiClair</span>
+          <span className="font-bold text-lg tracking-tight">{tc("appName")}</span>
         </Link>
         <p className="text-xs text-muted-foreground mt-1.5">
-          Lois claires, République accessible
+          {tc("tagline")}
         </p>
       </div>
 
       {/* Nav */}
       <nav className="flex-1 px-3 pt-4 pb-4 space-y-6">
-        <SidebarSection label="Tableau de bord" items={dashboardItems} onNavigation={onNavigation} />
-        <CollapsibleSection label="Organes législatifs" items={organeItems} onNavigation={onNavigation} />
-        <CollapsibleSection label="Documentation" items={docItems} onNavigation={onNavigation} />
+        <SidebarSection label={t("dashboard")} items={dashboardItems} onNavigation={onNavigation} />
+        <CollapsibleSection label={t("legislativeBodies")} items={organeItems} onNavigation={onNavigation} />
+        <CollapsibleSection label={t("documentation")} items={docItems} onNavigation={onNavigation} />
       </nav>
 
       {/* Bottom card */}
-      <div className="px-4 pb-5">
+      <div className="px-4 pb-3">
         <a
           href="https://github.com/Xelanidog/LoiClair/issues"
           target="_blank"
@@ -176,12 +181,17 @@ export function SidebarNavContent({ onNavigation }: { onNavigation?: () => void 
             <div className="h-8 w-8 rounded-lg bg-foreground flex items-center justify-center shrink-0">
               <Github className="h-4 w-4 text-background" />
             </div>
-            <p className="text-sm font-medium">Contribuer</p>
+            <p className="text-sm font-medium">{tc("contribute")}</p>
           </div>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            Signaler un bug ou proposer une amélioration sur GitHub.
+            {tc("contributeDesc")}
           </p>
         </a>
+      </div>
+
+      {/* Locale toggle */}
+      <div className="px-4 pb-5 flex">
+        <LocaleToggle />
       </div>
     </div>
   )

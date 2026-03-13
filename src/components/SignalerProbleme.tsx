@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
   MessageSquare,
   Loader2,
@@ -11,6 +11,7 @@ import {
   Lightbulb,
   ArrowLeft,
 } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -33,49 +34,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 
 type Category = "probleme" | "idee"
-
-const TYPES_PROBLEME = [
-  { value: "donnee-incorrecte", label: "Donnée incorrecte" },
-  { value: "affichage", label: "Problème d'affichage" },
-  { value: "lien-casse", label: "Lien cassé" },
-  { value: "ia", label: "Résumé IA incorrect" },
-  { value: "autre-probleme", label: "Autre" },
-] as const
-
-const TYPES_IDEE = [
-  { value: "nouvelle-fonctionnalite", label: "Nouvelle fonctionnalité" },
-  { value: "amelioration", label: "Amélioration existante" },
-  { value: "autre-idee", label: "Autre idée" },
-] as const
-
-const CATEGORY_CONFIG = {
-  probleme: {
-    title: "Signaler un problème",
-    description: "Aidez-nous à améliorer LoiClair en signalant une erreur ou un dysfonctionnement.",
-    typeLabel: "Type de problème",
-    typePlaceholder: "Sélectionner un type...",
-    descriptionPlaceholder: "Décrivez le problème rencontré...",
-    types: TYPES_PROBLEME,
-    successMessage: "Merci pour votre signalement !",
-    successDetail: "Votre signalement a été enregistré. Vous pouvez suivre son traitement :",
-    githubLabel: "Voir le signalement sur GitHub",
-  },
-  idee: {
-    title: "Proposer une idée",
-    description: "Une fonctionnalité qui vous manque ? Une amélioration à suggérer ? Dites-nous tout !",
-    typeLabel: "Type d'idée",
-    typePlaceholder: "Sélectionner un type...",
-    descriptionPlaceholder: "Décrivez votre idée...",
-    types: TYPES_IDEE,
-    successMessage: "Merci pour votre suggestion !",
-    successDetail: "Votre idée a été enregistrée. Vous pouvez suivre son évolution :",
-    githubLabel: "Voir la suggestion sur GitHub",
-  },
-} as const
-
 type FormState = "idle" | "submitting" | "success" | "error"
 
 export default function SignalerProbleme() {
+  const t = useTranslations("signaler")
   const [open, setOpen] = useState(false)
   const [category, setCategory] = useState<Category | null>(null)
   const [formState, setFormState] = useState<FormState>("idle")
@@ -84,6 +46,51 @@ export default function SignalerProbleme() {
   const [email, setEmail] = useState("")
   const [issueUrl, setIssueUrl] = useState("")
   const [errorMessage, setErrorMessage] = useState("")
+
+  useEffect(() => {
+    const handler = () => setOpen(true)
+    window.addEventListener("open-signaler", handler)
+    return () => window.removeEventListener("open-signaler", handler)
+  }, [])
+
+  const TYPES_PROBLEME = [
+    { value: "donnee-incorrecte", label: t("typeIncorrectData") },
+    { value: "affichage", label: t("typeDisplay") },
+    { value: "lien-casse", label: t("typeBrokenLink") },
+    { value: "ia", label: t("typeAI") },
+    { value: "autre-probleme", label: t("typeOtherProblem") },
+  ]
+
+  const TYPES_IDEE = [
+    { value: "nouvelle-fonctionnalite", label: t("typeNewFeature") },
+    { value: "amelioration", label: t("typeImprovement") },
+    { value: "autre-idee", label: t("typeOtherIdea") },
+  ]
+
+  const CATEGORY_CONFIG = {
+    probleme: {
+      title: t("problemTitle"),
+      description: t("problemDesc"),
+      typeLabel: t("problemTypeLabel"),
+      typePlaceholder: t("typePlaceholder"),
+      descriptionPlaceholder: t("problemDescPlaceholder"),
+      types: TYPES_PROBLEME,
+      successMessage: t("problemSuccess"),
+      successDetail: t("problemSuccessDetail"),
+      githubLabel: t("problemGithubLabel"),
+    },
+    idee: {
+      title: t("ideaTitle"),
+      description: t("ideaDesc"),
+      typeLabel: t("ideaTypeLabel"),
+      typePlaceholder: t("typePlaceholder"),
+      descriptionPlaceholder: t("ideaDescPlaceholder"),
+      types: TYPES_IDEE,
+      successMessage: t("ideaSuccess"),
+      successDetail: t("ideaSuccessDetail"),
+      githubLabel: t("ideaGithubLabel"),
+    },
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -106,7 +113,7 @@ export default function SignalerProbleme() {
       const data = await res.json()
 
       if (!res.ok) {
-        setErrorMessage(data.error || "Une erreur est survenue.")
+        setErrorMessage(data.error || t("errorGeneric"))
         setFormState("error")
         return
       }
@@ -114,9 +121,7 @@ export default function SignalerProbleme() {
       setIssueUrl(data.issueUrl)
       setFormState("success")
     } catch {
-      setErrorMessage(
-        "Impossible de contacter le serveur. Réessayez plus tard."
-      )
+      setErrorMessage(t("errorServer"))
       setFormState("error")
     }
   }
@@ -155,14 +160,14 @@ export default function SignalerProbleme() {
             <button
               onClick={() => setOpen(true)}
               className="flex items-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground shadow-lg transition-all hover:scale-105 hover:shadow-xl active:opacity-80 cursor-pointer"
-              aria-label="Une idée ? Un problème ?"
+              aria-label={t("fabLabel")}
             >
               <MessageSquare className="h-4 w-4" />
-              <span className="hidden sm:inline">Une idée ? Un problème ?</span>
+              <span className="hidden sm:inline">{t("fabLabel")}</span>
             </button>
           </TooltipTrigger>
           <TooltipContent side="left" sideOffset={8}>
-            Proposer une idée ou signaler un problème
+            {t("fabTooltip")}
           </TooltipContent>
         </Tooltip>
       </div>
@@ -174,9 +179,9 @@ export default function SignalerProbleme() {
           {!category && formState !== "success" && (
             <>
               <DialogHeader>
-                <DialogTitle>Comment pouvons-nous vous aider ?</DialogTitle>
+                <DialogTitle>{t("chooseTitle")}</DialogTitle>
                 <DialogDescription>
-                  Choisissez ce que vous souhaitez nous partager.
+                  {t("chooseDesc")}
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-3 py-4">
@@ -188,9 +193,9 @@ export default function SignalerProbleme() {
                     <AlertTriangle className="h-5 w-5 text-destructive" />
                   </div>
                   <div>
-                    <p className="font-medium">Signaler un problème</p>
+                    <p className="font-medium">{t("reportProblem")}</p>
                     <p className="text-sm text-muted-foreground">
-                      Erreur, bug, donnée incorrecte…
+                      {t("reportProblemDesc")}
                     </p>
                   </div>
                 </button>
@@ -202,9 +207,9 @@ export default function SignalerProbleme() {
                     <Lightbulb className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <p className="font-medium">Proposer une idée</p>
+                    <p className="font-medium">{t("suggestIdea")}</p>
                     <p className="text-sm text-muted-foreground">
-                      Nouvelle fonctionnalité, amélioration…
+                      {t("suggestIdeaDesc")}
                     </p>
                   </div>
                 </button>
@@ -220,7 +225,7 @@ export default function SignalerProbleme() {
                   <button
                     onClick={handleBack}
                     className="rounded-md p-1 hover:bg-muted transition-colors cursor-pointer"
-                    aria-label="Retour"
+                    aria-label={t("back")}
                   >
                     <ArrowLeft className="h-4 w-4" />
                   </button>
@@ -239,9 +244,9 @@ export default function SignalerProbleme() {
                       <SelectValue placeholder={config.typePlaceholder} />
                     </SelectTrigger>
                     <SelectContent>
-                      {config.types.map((t) => (
-                        <SelectItem key={t.value} value={t.value}>
-                          {t.label}
+                      {config.types.map((item) => (
+                        <SelectItem key={item.value} value={item.value}>
+                          {item.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -249,7 +254,7 @@ export default function SignalerProbleme() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
+                  <Label htmlFor="description">{t("descriptionLabel")}</Label>
                   <Textarea
                     id="description"
                     placeholder={config.descriptionPlaceholder}
@@ -266,15 +271,15 @@ export default function SignalerProbleme() {
 
                 <div className="space-y-2">
                   <Label htmlFor="email">
-                    Email{" "}
+                    {t("emailLabel")}{" "}
                     <span className="text-muted-foreground font-normal">
-                      (optionnel)
+                      {t("emailOptional")}
                     </span>
                   </Label>
                   <Input
                     id="email"
                     type="email"
-                    placeholder="Pour vous recontacter si besoin"
+                    placeholder={t("emailPlaceholder")}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
@@ -297,12 +302,12 @@ export default function SignalerProbleme() {
                     {formState === "submitting" ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        Envoi...
+                        {t("sending")}
                       </>
                     ) : (
                       <>
                         <Send className="h-4 w-4" />
-                        Envoyer
+                        {t("send")}
                       </>
                     )}
                   </Button>

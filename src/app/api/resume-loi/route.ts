@@ -8,7 +8,7 @@ import { streamText } from 'ai'; // Core AI SDK (Vercel) pour appels IA unifiés
 import { createXai } from '@ai-sdk/xai'; // Provider xAI/Grok spécifique
 import * as cheerio from 'cheerio';
 import pdfParse from 'pdf-parse';
-import { SYSTEM_PROMPT_RESUME_LOI, USER_PROMPT_TEMPLATE_RESUME_LOI, PARAMS_RESUME_LOI, MODEL_RESUME_LOI, MAX_INPUT_CHARS_RESUME_LOI, PROMPT_VERSION_RESUME_LOI } from '@/lib/prompts';
+import { getSystemPrompt, getUserPromptTemplate, getPromptVersion, PARAMS_RESUME_LOI, MODEL_RESUME_LOI, MAX_INPUT_CHARS_RESUME_LOI } from '@/lib/prompts';
 import { supabase } from '@/lib/supabase';
 
 const xai = createXai({ apiKey: process.env.XAI_API_KEY });
@@ -61,6 +61,7 @@ export async function POST(request: NextRequest) {
     let titre_texte: string | undefined = raw.titre_texte;
     let texte_uid: string | undefined = raw.texte_uid;
     let contenu_legifrance: string | undefined = raw.contenu_legifrance;
+    let locale: string = raw.locale || 'fr';
 
     // Support pour useCompletion : parse si 'prompt' est un JSON stringifié.
     if (typeof raw.prompt === 'string') {
@@ -70,11 +71,15 @@ export async function POST(request: NextRequest) {
         titre_texte = parsed.titre_texte || titre_texte;
         texte_uid = parsed.texte_uid || texte_uid;
         contenu_legifrance = parsed.contenu_legifrance || contenu_legifrance;
+        locale = parsed.locale || locale;
       } catch (parseError) {
         console.error('Erreur parse prompt:', parseError);
         return NextResponse.json({ error: 'Payload invalide.' }, { status: 400 });
       }
     }
+
+    // Normalise locale: only 'en' or 'fr' accepted.
+    if (locale !== 'en') locale = 'fr';
 
     // Guard : il faut au moins un contenu ou un lien.
     if (!lien && !contenu_legifrance) {
@@ -94,11 +99,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Lien erroné ou contenu non encore disponible.' }, { status: 500 });
     }
 
+    // Cache column depends on locale: 'resume_ia' for FR, 'resume_ia_en' for EN.
+    const cacheColumn = locale === 'en' ? 'resume_ia_en' : 'resume_ia';
+    const promptVersion = getPromptVersion(locale);
+
     // Génération résumé loi en streaming + sauvegarde cache après complétion.
     const result = await streamText({
       model: xai(MODEL_RESUME_LOI),
-      system: SYSTEM_PROMPT_RESUME_LOI,
-      prompt: USER_PROMPT_TEMPLATE_RESUME_LOI
+      system: getSystemPrompt(locale),
+      prompt: getUserPromptTemplate(locale)
         .replace('{titre_texte}', titre_texte || 'Titre inconnu')
         .replace('{texteComplet}', texteComplet || 'Texte non disponible'),
       ...PARAMS_RESUME_LOI,
@@ -106,8 +115,8 @@ export async function POST(request: NextRequest) {
         if (texte_uid && text) {
           try {
             await supabase.from('textes').update({
-              resume_ia: text,
-              resume_ia_prompt_version: PROMPT_VERSION_RESUME_LOI,
+              [cacheColumn]: text,
+              resume_ia_prompt_version: promptVersion,
               resume_ia_created_at: new Date().toISOString(),
             }).eq('uid', texte_uid);
           } catch (err) {

@@ -3,6 +3,7 @@
 export const revalidate = 3600; // Cache 1h — données mises à jour une fois par nuit
 
 import Link from 'next/link';
+import { getTranslations, getLocale } from 'next-intl/server';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { MonthlyDossiersChart } from '@/components/ui/MonthlyDossiersChart';
@@ -13,20 +14,22 @@ import { GroupeBarChart } from '@/components/ui/GroupeBarChart';
 import { LegislativeFunnel } from '@/components/ui/LegislativeFunnel';
 import { ParlementairesTable } from '@/components/ParlementairesTable';
 
-export default async function KpisPage({ 
-  searchParams 
-}: { 
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }> 
+export default async function KpisPage({
+  searchParams
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
   const resolvedParams = await searchParams;
+  const t = await getTranslations('kpis');
+  const locale = await getLocale();
 
   // === Extraction du filtre type (exactement comme dans dossiers-legislatifs) ===
-  const typeFilter = typeof resolvedParams.type === 'string' 
-    ? resolvedParams.type.toLowerCase() 
+  const typeFilter = typeof resolvedParams.type === 'string'
+    ? resolvedParams.type.toLowerCase()
     : undefined;
 
-    const groupeFilter = typeof resolvedParams.groupe === 'string' 
-   ? resolvedParams.groupe.toLowerCase() 
+    const groupeFilter = typeof resolvedParams.groupe === 'string'
+   ? resolvedParams.groupe.toLowerCase()
    : undefined;
 
 
@@ -111,8 +114,6 @@ const groupeMap: { [key: string]: string } = {};
 uniqueGroupesLibelles.forEach(libelle => { groupeMap[toSlug(libelle)] = libelle; });
 const groupeOptions = uniqueGroupesLibelles.map(libelle => ({ slug: toSlug(libelle), libelle }));
 const groupe = groupeFilter ? groupeMap[groupeFilter] : undefined;
-
-
 
 
 
@@ -292,8 +293,8 @@ try {
     .sort((a, b) => a.mois.localeCompare(b.mois));
 
   const totalSur24Mois = statsData.historique.reduce((sum, item) => sum + item.count, 0);
-  statsData.moyenne_mensuelle = statsData.historique.length 
-    ? Math.round(totalSur24Mois / statsData.historique.length) 
+  statsData.moyenne_mensuelle = statsData.historique.length
+    ? Math.round(totalSur24Mois / statsData.historique.length)
     : 0;
 
 } catch (error) {
@@ -414,9 +415,9 @@ const organesNomMap = new Map<string, string>(
 
 const auteurCount = new Map<string, number>();
 const rappCount = new Map<string, number>();
-for (const t of (textesImplicationResult.data || [])) {
-  for (const uid of (t.auteurs_refs || [])) auteurCount.set(uid, (auteurCount.get(uid) || 0) + 1);
-  for (const uid of (t.rapporteurs_refs || [])) rappCount.set(uid, (rappCount.get(uid) || 0) + 1);
+for (const texte of (textesImplicationResult.data || [])) {
+  for (const uid of (texte.auteurs_refs || [])) auteurCount.set(uid, (auteurCount.get(uid) || 0) + 1);
+  for (const uid of (texte.rapporteurs_refs || [])) rappCount.set(uid, (rappCount.get(uid) || 0) + 1);
 }
 
 const allParlementaires = (acteursParlemResult.data || [])
@@ -434,7 +435,7 @@ const allParlementaires = (acteursParlemResult.data || [])
 // Données graphique
 const chartData = statsData.historique.slice(-24).map(({ mois, count }) => {
   const [year, month] = mois.split('-').map(Number);
-  const monthName = new Intl.DateTimeFormat('fr-FR', { month: 'short' }).format(new Date(year, month - 1));
+  const monthName = new Intl.DateTimeFormat(locale, { month: 'short' }).format(new Date(year, month - 1));
   return { month: `${monthName}-${year}`, dossiers: count, year };
 });
 
@@ -444,9 +445,9 @@ return (
     {/* Titre + filtre en haut – même style que la page dossiers */}
     <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
       <div>
-        <h1 className="text-2xl font-bold mb-3">Indicateurs clés</h1>
+        <h1 className="text-2xl font-bold mb-3">{t('pageTitle')}</h1>
         <p className="text-muted-foreground">
-          Activité de la 17ᵉ législature en temps réel
+          {t('pageSubtitle')}
           {procedure && <span className="ml-2 font-medium text-sm text-primary">[ {procedure} ]</span>}
           {groupe && <span className="ml-2 font-medium text-sm text-primary">[ {groupe} ]</span>}
         </p>
@@ -456,20 +457,20 @@ return (
       <div className="flex items-center gap-3 flex-nowrap overflow-x-auto pb-1">
         <GenericFilter
           paramName="type"
-          label="Type de procédure"
-          placeholder="Type de procédure"
-          allLabel="Tous les types"
-          tooltipTitle="Filtre par type de procédure"
-          tooltipDescription="Ex : procédure législative ordinaire, projet de loi de finances, etc."
+          label={t('filterTypeLabel')}
+          placeholder={t('filterTypePlaceholder')}
+          allLabel={t('filterTypeAll')}
+          tooltipTitle={t('filterTypeTooltipTitle')}
+          tooltipDescription={t('filterTypeTooltipDesc')}
           options={typeOptions}
         />
         <GenericFilter
           paramName="groupe"
-          label="Groupe politique"
-          placeholder="Groupe politique"
-          allLabel="Tous les groupes"
-          tooltipTitle="Filtre par groupe politique initiateur"
-          tooltipDescription="Ex : La France insoumise, Renaissance, Les Républicains..."
+          label={t('filterGroupeLabel')}
+          placeholder={t('filterGroupePlaceholder')}
+          allLabel={t('filterGroupeAll')}
+          tooltipTitle={t('filterGroupeTooltipTitle')}
+          tooltipDescription={t('filterGroupeTooltipDesc')}
           options={groupeOptions}
         />
         <ResetButton />
@@ -478,46 +479,52 @@ return (
 
       {/* Funnel législatif */}
       <div className="mb-6">
-        <LegislativeFunnel steps={[
-          { label: 'Déposés', count: statsData.total_dossiers, description: 'Tous les dossiers législatifs déposés' },
-          { label: 'À vocation législative', count: statsData.total_promulgables, description: 'Textes destinés à devenir des lois' },
-          { label: 'Adoptés par ≥1 chambre', count: statsData.adoptes_an + statsData.adoptes_senat + statsData.adoptes_parlement + statsData.promulgues, description: 'Au moins une chambre a voté pour' },
-          { label: 'Promulgués', count: statsData.promulgues, description: 'Signés par le Président de la République' },
-          { label: 'Appliquées', count: statsData.lois_appliquees, description: 'Loi en vigueur, décrets publiés ou application directe' },
-        ]} />
+        <LegislativeFunnel
+          title={t('funnelTitle')}
+          description={t('funnelDesc')}
+          ofTotalLabel={(rate) => t('ofTotal', { rate })}
+          locale={locale}
+          steps={[
+            { label: t('funnelStep1Label'), count: statsData.total_dossiers, description: t('funnelStep1Desc') },
+            { label: t('funnelStep2Label'), count: statsData.total_promulgables, description: t('funnelStep2Desc') },
+            { label: t('funnelStep3Label'), count: statsData.adoptes_an + statsData.adoptes_senat + statsData.adoptes_parlement + statsData.promulgues, description: t('funnelStep3Desc') },
+            { label: t('funnelStep4Label'), count: statsData.promulgues, description: t('funnelStep4Desc') },
+            { label: t('funnelStep5Label'), count: statsData.lois_appliquees, description: t('funnelStep5Desc') },
+          ]}
+        />
       </div>
 
       {/* Cartes de synthèse */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        
+
         <Card>
           <CardHeader>
-            <CardTitle>Total</CardTitle>
-            <CardDescription>Dossiers législatifs</CardDescription>
+            <CardTitle>{t('cardTotalTitle')}</CardTitle>
+            <CardDescription>{t('cardTotalDesc')}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="text-4xl font-bold text-primary">
-              {statsData.total_dossiers.toLocaleString('fr-FR')}
+              {statsData.total_dossiers.toLocaleString(locale)}
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Ce mois-ci</CardTitle>
-            <CardDescription>Dossiers déposés</CardDescription>
+            <CardTitle>{t('cardMonthTitle')}</CardTitle>
+            <CardDescription>{t('cardMonthDesc')}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="text-4xl font-bold text-primary">
-              {statsData.mois_courant.toLocaleString('fr-FR')}
+              {statsData.mois_courant.toLocaleString(locale)}
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Moyenne mensuelle</CardTitle>
-            <CardDescription>Sur les 24 derniers mois</CardDescription>
+            <CardTitle>{t('cardAvgTitle')}</CardTitle>
+            <CardDescription>{t('cardAvgDesc')}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="text-4xl font-bold text-primary">
@@ -528,24 +535,33 @@ return (
       </div>
 
       {/* Graphique principal */}
-      <MonthlyDossiersChart data={chartData} />
+      <MonthlyDossiersChart
+        data={chartData}
+        title={t('chartTitle')}
+        description={t('chartDescription')}
+        tooltipLabel={t('chartTooltipLabel')}
+        trendUpTemplate={t('chartTrendUp', { rate: '__RATE__' })}
+        trendDownTemplate={t('chartTrendDown', { rate: '__RATE__' })}
+        trendStable={t('chartTrendStable')}
+        comparisonLabel={t('chartComparison')}
+      />
 
             {/* Nouvelles cartes par statut */}
       <div className="mt-6">
-  <h2 className="text-lg font-semibold mb-4">État des dossiers</h2>
+  <h2 className="text-lg font-semibold mb-4">{t('statusSectionTitle')}</h2>
   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3 md:gap-4">
 
     {/* Carte 1 - En traitement */}
     <Card className="grid grid-rows-[auto_1fr_auto] gap-2 text-center">
       <CardHeader className="pb-1">
-        <CardTitle className="text-base font-medium">En traitement</CardTitle>
+        <CardTitle className="text-base font-medium">{t('statusEnTraitementTitle')}</CardTitle>
         <CardDescription className="text-sm text-muted-foreground leading-tight">
-          Le texte a été déposé au parlement (Assemblée Nationale ou Sénat) et est étudié pour décision
+          {t('statusEnTraitementDesc')}
         </CardDescription>
       </CardHeader>
       <div className="flex items-end justify-center mt-6 md:mt-8">
         <div className="text-4xl font-bold">
-          {statsData.en_cours.toLocaleString('fr-FR')}
+          {statsData.en_cours.toLocaleString(locale)}
         </div>
       </div>
     </Card>
@@ -553,14 +569,14 @@ return (
     {/* Carte 2 - Adoptés par l'Assemblée Nationale */}
     <Card className="grid grid-rows-[auto_1fr_auto] gap-2 text-center">
       <CardHeader className="pb-1">
-        <CardTitle className="text-base font-medium">Adoptés par l'Assemblée Nationale</CardTitle>
+        <CardTitle className="text-base font-medium">{t('statusAdoptesANTitle')}</CardTitle>
         <CardDescription className="text-sm text-muted-foreground leading-tight">
-          L'Assemblée Nationale a adopté. Prochaine étape : étude par le Sénat
+          {t('statusAdoptesANDesc')}
         </CardDescription>
       </CardHeader>
       <div className="flex items-end justify-center mt-6 md:mt-8">
         <div className="text-4xl font-bold text-[#27AE60]">
-          {statsData.adoptes_an.toLocaleString('fr-FR')}
+          {statsData.adoptes_an.toLocaleString(locale)}
         </div>
       </div>
     </Card>
@@ -568,14 +584,14 @@ return (
     {/* Carte 3 - Adoptés par le Sénat */}
     <Card className="grid grid-rows-[auto_1fr_auto] gap-2 text-center">
       <CardHeader className="pb-1">
-        <CardTitle className="text-base font-medium">Adoptés par le Sénat</CardTitle>
+        <CardTitle className="text-base font-medium">{t('statusAdoptesSNTitle')}</CardTitle>
         <CardDescription className="text-sm text-muted-foreground leading-tight">
-          Le Sénat a adopté. Prochaine étape : étude par l'Assemblée Nationale
+          {t('statusAdoptesSNDesc')}
         </CardDescription>
       </CardHeader>
       <div className="flex items-end justify-center mt-6 md:mt-8">
         <div className="text-4xl font-bold text-[#27AE60]">
-          {statsData.adoptes_senat.toLocaleString('fr-FR')}
+          {statsData.adoptes_senat.toLocaleString(locale)}
         </div>
       </div>
     </Card>
@@ -583,14 +599,14 @@ return (
     {/* Carte 4 - Adoptés par le Parlement */}
     <Card className="grid grid-rows-[auto_1fr_auto] gap-2 text-center">
       <CardHeader className="pb-1">
-        <CardTitle className="text-base font-medium">Adoptés par le Parlement</CardTitle>
+        <CardTitle className="text-base font-medium">{t('statusAdoptesParlemTitle')}</CardTitle>
         <CardDescription className="text-sm text-muted-foreground leading-tight">
-          Les deux assemblées ont adopté le texte. Prochaine étape : promulgation
+          {t('statusAdoptesParlemDesc')}
         </CardDescription>
       </CardHeader>
       <div className="flex items-end justify-center mt-6 md:mt-8">
         <div className="text-4xl font-bold text-[#27AE60]">
-          {statsData.adoptes_parlement.toLocaleString('fr-FR')}
+          {statsData.adoptes_parlement.toLocaleString(locale)}
         </div>
       </div>
     </Card>
@@ -598,14 +614,14 @@ return (
     {/* Carte 5 - Promulgués */}
     <Card className="grid grid-rows-[auto_1fr_auto] gap-2 text-center">
       <CardHeader className="pb-1">
-        <CardTitle className="text-base font-medium">Promulgués</CardTitle>
+        <CardTitle className="text-base font-medium">{t('statusPromulguesTitle')}</CardTitle>
         <CardDescription className="text-sm text-muted-foreground leading-tight">
-          Le Président a promulgué la loi. Publication au Journal officiel
+          {t('statusPromulguesDesc')}
         </CardDescription>
       </CardHeader>
       <div className="flex items-end justify-center mt-6 md:mt-8">
         <div className="text-4xl font-bold text-violet-600">
-          {statsData.promulgues.toLocaleString('fr-FR')}
+          {statsData.promulgues.toLocaleString(locale)}
         </div>
       </div>
     </Card>
@@ -613,14 +629,14 @@ return (
     {/* Carte 6 - Appliquées */}
     <Card className="grid grid-rows-[auto_1fr_auto] gap-2 text-center">
       <CardHeader className="pb-1">
-        <CardTitle className="text-base font-medium">Appliquées</CardTitle>
+        <CardTitle className="text-base font-medium">{t('statusAppliquéesTitle')}</CardTitle>
         <CardDescription className="text-sm text-muted-foreground leading-tight">
-          Loi en vigueur : application directe ou décrets d'application publiés
+          {t('statusAppliquéesDesc')}
         </CardDescription>
       </CardHeader>
       <div className="flex items-end justify-center mt-6 md:mt-8">
         <div className="text-4xl font-bold text-[#27AE60]">
-          {statsData.lois_appliquees.toLocaleString('fr-FR')}
+          {statsData.lois_appliquees.toLocaleString(locale)}
         </div>
       </div>
     </Card>
@@ -628,14 +644,14 @@ return (
     {/* Carte 7 - Rejetés */}
     <Card className="grid grid-rows-[auto_1fr_auto] gap-2 text-center">
       <CardHeader className="pb-1">
-        <CardTitle className="text-base font-medium">Rejetés</CardTitle>
+        <CardTitle className="text-base font-medium">{t('statusRejétésTitle')}</CardTitle>
         <CardDescription className="text-sm text-muted-foreground leading-tight">
-          Le texte est abandonnée (sauf nouveau dépôt ou version modifiée)
+          {t('statusRejétésDesc')}
         </CardDescription>
       </CardHeader>
       <div className="flex items-end justify-center mt-6 md:mt-8">
         <div className="text-4xl font-bold text-[#E74C3C]">
-          {statsData.rejetes.toLocaleString('fr-FR')}
+          {statsData.rejetes.toLocaleString(locale)}
         </div>
       </div>
     </Card>
@@ -645,14 +661,14 @@ return (
 
       {/* Efficacité du processus */}
       <div className="mt-6">
-        <h2 className="text-lg font-semibold mb-4">Efficacité du processus</h2>
+        <h2 className="text-lg font-semibold mb-4">{t('efficiencySectionTitle')}</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
 
           <Card className="text-center">
             <CardHeader>
-              <CardTitle>Taux de promulgation</CardTitle>
+              <CardTitle>{t('tauxPromulgationTitle')}</CardTitle>
               <CardDescription>
-                Part des dossiers terminés qui ont abouti à une loi signée par le Président
+                {t('tauxPromulgationDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -660,19 +676,19 @@ return (
                 {statsData.taux_promulgation} %
               </div>
               <p className="text-sm text-muted-foreground mt-2">
-                {statsData.promulgues} promulgués sur {statsData.total_promulgables} textes à vocation législative
+                {t('promulgatedCount', { count: statsData.promulgues, total: statsData.total_promulgables })}
               </p>
               <Link href="/documentation/methode#taux-de-promulgation" className="text-xs text-muted-foreground/60 hover:text-foreground transition-colors mt-3 inline-block">
-                Comment c'est calculé →
+                {t('methodologyLink')}
               </Link>
             </CardContent>
           </Card>
 
           <Card className="text-center">
             <CardHeader>
-              <CardTitle>Taux d'application</CardTitle>
+              <CardTitle>{t('tauxApplicationTitle')}</CardTitle>
               <CardDescription>
-                Part des textes à vocation législative effectivement appliqués (décrets publiés ou application directe)
+                {t('tauxApplicationDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -680,19 +696,19 @@ return (
                 {statsData.taux_application} %
               </div>
               <p className="text-sm text-muted-foreground mt-2">
-                {statsData.lois_appliquees} appliquées sur {statsData.total_promulgables} textes à vocation législative
+                {t('appliedCount', { count: statsData.lois_appliquees, total: statsData.total_promulgables })}
               </p>
               <Link href="/documentation/methode#taux-d-application" className="text-xs text-muted-foreground/60 hover:text-foreground transition-colors mt-3 inline-block">
-                Comment c'est calculé →
+                {t('methodologyLink')}
               </Link>
             </CardContent>
           </Card>
 
           <Card className="text-center">
             <CardHeader>
-              <CardTitle>Délai moyen d'application</CardTitle>
+              <CardTitle>{t('delaiApplicationTitle')}</CardTitle>
               <CardDescription>
-                Temps moyen pour publier tous les décrets d'application d'une loi
+                {t('delaiApplicationDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -700,22 +716,22 @@ return (
                 {statsData.delai_moyen_application_jours} j
               </div>
               <p className="text-sm text-muted-foreground mt-2">
-                Pour les {statsData.nb_lois_avec_decrets} lois nécessitant des décrets
+                {t('delaiApplicationSubtitle', { count: statsData.nb_lois_avec_decrets })}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                Min {statsData.delai_min_application_jours} j — Max {statsData.delai_max_application_jours} j
+                {t('minMax', { min: statsData.delai_min_application_jours, max: statsData.delai_max_application_jours })}
               </p>
               <Link href="/documentation/methode#delai-moyen-d-application" className="text-xs text-muted-foreground/60 hover:text-foreground transition-colors mt-3 inline-block">
-                Comment c'est calculé →
+                {t('methodologyLink')}
               </Link>
             </CardContent>
           </Card>
 
           <Card className="text-center">
             <CardHeader>
-              <CardTitle>Délai moyen de promulgation</CardTitle>
+              <CardTitle>{t('delaiPromulgationTitle')}</CardTitle>
               <CardDescription>
-                Temps moyen entre le dépôt du texte et sa promulgation en loi
+                {t('delaiPromulgationDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -723,22 +739,22 @@ return (
                 {statsData.delai_moyen_jours} j
               </div>
               <p className="text-sm text-muted-foreground mt-2">
-                Du dépôt au Journal officiel
+                {t('delaiPromulgationSubtitle')}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                Min {statsData.delai_min_jours} j — Max {statsData.delai_max_jours} j
+                {t('minMax', { min: statsData.delai_min_jours, max: statsData.delai_max_jours })}
               </p>
               <Link href="/documentation/methode#delai-moyen-de-promulgation" className="text-xs text-muted-foreground/60 hover:text-foreground transition-colors mt-3 inline-block">
-                Comment c'est calculé →
+                {t('methodologyLink')}
               </Link>
             </CardContent>
           </Card>
 
           <Card className="text-center">
             <CardHeader>
-              <CardTitle>Délai moyen à l'Assemblée</CardTitle>
+              <CardTitle>{t('delaiANTitle')}</CardTitle>
               <CardDescription>
-                Du dépôt à l'AN jusqu'à la décision d'adoption par l'Assemblée nationale
+                {t('delaiANDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -746,22 +762,22 @@ return (
                 {statsData.delai_moyen_an_jours} j
               </div>
               <p className="text-sm text-muted-foreground mt-2">
-                Par texte adopté à l'AN
+                {t('delaiANSubtitle')}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                Min {statsData.delai_min_an_jours} j — Max {statsData.delai_max_an_jours} j
+                {t('minMax', { min: statsData.delai_min_an_jours, max: statsData.delai_max_an_jours })}
               </p>
               <Link href="/documentation/methode#delai-moyen-a-l-assemblee-nationale" className="text-xs text-muted-foreground/60 hover:text-foreground transition-colors mt-3 inline-block">
-                Comment c'est calculé →
+                {t('methodologyLink')}
               </Link>
             </CardContent>
           </Card>
 
           <Card className="text-center">
             <CardHeader>
-              <CardTitle>Délai moyen au Sénat</CardTitle>
+              <CardTitle>{t('delaiSNTitle')}</CardTitle>
               <CardDescription>
-                Du dépôt au Sénat jusqu'à la décision d'adoption par le Sénat
+                {t('delaiSNDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -769,14 +785,14 @@ return (
                 {statsData.delai_moyen_sn_jours} j
               </div>
               <p className="text-sm text-muted-foreground mt-2">
-                Par texte adopté au Sénat
+                {t('delaiSNSubtitle')}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                Min {statsData.delai_min_sn_jours} j — Max {statsData.delai_max_sn_jours} j
+                {t('minMax', { min: statsData.delai_min_sn_jours, max: statsData.delai_max_sn_jours })}
               </p>
-            
+
               <Link href="/documentation/methode#delai-moyen-au-senat" className="text-xs text-muted-foreground/60 hover:text-foreground transition-colors mt-3 inline-block">
-                Comment c'est calculé →
+                {t('methodologyLink')}
               </Link>
             </CardContent>
           </Card>
@@ -787,14 +803,14 @@ return (
       {/* Activité par groupe politique */}
       {groupeStats.length > 0 && (
         <div className="mt-6">
-          <h2 className="text-lg font-semibold mb-4">Activité par groupe politique</h2>
+          <h2 className="text-lg font-semibold mb-4">{t('groupeActivityTitle')}</h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <GroupeBarChart
               data={groupeStats.map(g => ({ groupe: g.groupe, value: g.total }))}
-              title="Textes proposés"
-              description="Nombre de dossiers législatifs déposés par groupe politique"
+              title={t('textesProposes')}
+              description={t('textesProposesDDesc')}
               color="var(--chart-1)"
-              valueLabel="Dossiers"
+              valueLabel={t('textesProposesDLabel')}
               link="/documentation/methode#activite-par-groupe-politique"
             />
             <GroupeBarChart
@@ -802,10 +818,10 @@ return (
                 .filter(g => g.promulgues > 0)
                 .sort((a, b) => b.promulgues - a.promulgues)
                 .map(g => ({ groupe: g.groupe, value: g.promulgues }))}
-              title="Lois promulguées"
-              description="Nombre de lois effectivement promulguées par groupe politique"
+              title={t('loisPromulguees')}
+              description={t('loisPromulgueesDesc')}
               color="var(--chart-5)"
-              valueLabel="Promulguées"
+              valueLabel={t('loisPromulgueesLabel')}
               link="/documentation/methode#activite-par-groupe-politique"
             />
           </div>
@@ -815,12 +831,12 @@ return (
       {/* Taux de succès par groupe politique */}
       {groupeStats.length > 0 && (
         <div className="mt-6">
-          <h2 className="text-lg font-semibold mb-2">Succès législatif par groupe</h2>
+          <h2 className="text-lg font-semibold mb-2">{t('successLegislatifTitle')}</h2>
           <p className="text-muted-foreground mb-2">
-            Adoption Assemblé Nationale et Sénat : sur tous les textes pertinents aux deux chambres. Promulgation : sur les textes à vocation législative uniquement (par exemple certains texte étudiés au parlement n'ont pas vocation à être promulgués; comme les résolution par exemple).
+            {t('successLegislatifDesc')}
           </p>
           <Link href="/documentation/methode#succes-legislatif-par-groupe-politique" className="text-xs text-muted-foreground/60 hover:text-foreground transition-colors mb-6 inline-block">
-            Comment c'est calculé →
+            {t('methodologyLink')}
           </Link>
           <GroupeStatsTable data={groupeStats} />
         </div>
@@ -829,12 +845,12 @@ return (
       {/* Parlementaires les plus actifs */}
       {allParlementaires.length > 0 && (
         <div className="mt-6">
-          <h2 className="text-lg font-semibold mb-2">Parlementaires les plus actifs</h2>
+          <h2 className="text-lg font-semibold mb-2">{t('parlementairesTitle')}</h2>
           <p className="text-muted-foreground mb-2">
-            Classement des 20 députés et sénateurs les plus impliqués dans les textes législatifs, en tant qu'auteur/co-auteur ou rapporteur.
+            {t('parlementairesDesc')}
           </p>
           <Link href="/documentation/methode#parlementaires-les-plus-actifs" className="text-xs text-muted-foreground/60 hover:text-foreground transition-colors mb-6 inline-block">
-            → Comment c&apos;est calculé
+            {t('methodologyLinkAlt')}
           </Link>
           <ParlementairesTable data={allParlementaires} />
         </div>

@@ -1,21 +1,28 @@
+"use client";
+
+import { useLocale, useTranslations } from 'next-intl';
 import { getStatusBadgeClass } from '@/lib/statusMapping';
 import type { ScrutinData } from './ResumeIAClient';
 
 const TOTAL_DEPUTES = 577;
 
 export default function ScrutinResult({ scrutin }: { scrutin: ScrutinData }) {
+  const t = useTranslations('resumeIA');
+  const locale = useLocale();
   const resultLower = scrutin.sortLibelle.toLowerCase();
   const isRejected = resultLower.includes('rejet') || resultLower.includes("n'a pas adopt") || resultLower.includes('pas adopté');
   const isAdopted = !isRejected && resultLower.includes('adopt');
   const absents = Math.max(TOTAL_DEPUTES - scrutin.votants - scrutin.nonVotants, 0);
-  const dateStr = scrutin.date ? new Date(scrutin.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Paris' }) : null;
+  const dateStr = scrutin.date ? new Date(scrutin.date).toLocaleDateString(locale === 'en' ? 'en-GB' : 'fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Paris' }) : null;
   const majorityPct = scrutin.suffragesRequis > 0 ? (scrutin.suffragesRequis / TOTAL_DEPUTES) * 100 : 0;
+
+  const badgeLabel = isAdopted ? t('adopted') : isRejected ? t('rejected') : t('vote');
 
   return (
     <div className="mb-6 rounded-lg border px-4 py-3 flex flex-col gap-2.5">
       <div className="flex flex-wrap items-center gap-2">
         <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${getStatusBadgeClass(isAdopted ? 'Adopté' : isRejected ? 'Rejeté' : null)}`}>
-          {isAdopted ? 'Adopté' : isRejected ? 'Rejeté' : 'Vote'}
+          {badgeLabel}
         </span>
         <div className="flex items-center gap-1.5 flex-1 min-w-0">
           <div className="relative flex-1 h-2 rounded-full overflow-hidden isolate" style={{ display: 'flex', backgroundColor: 'var(--color-muted)' }}>
@@ -26,7 +33,7 @@ export default function ScrutinResult({ scrutin }: { scrutin: ScrutinData }) {
             <div style={{ width: `${(absents / TOTAL_DEPUTES) * 100}%`, backgroundColor: '#F0EDEA' }} className="h-full dark:hidden" />
             <div style={{ width: `${(absents / TOTAL_DEPUTES) * 100}%`, backgroundColor: '#44403C' }} className="h-full hidden dark:block" />
             {majorityPct > 0 && (
-              <div className="absolute top-0 h-full w-0.5 bg-foreground/60" style={{ left: `${majorityPct}%` }} title={`Majorité requise : ${scrutin.suffragesRequis}`} />
+              <div className="absolute top-0 h-full w-0.5 bg-foreground/60" style={{ left: `${majorityPct}%` }} title={t('majorityRequired', { count: scrutin.suffragesRequis })} />
             )}
           </div>
           <span className="text-xs text-muted-foreground tabular-nums shrink-0 font-medium">
@@ -36,11 +43,11 @@ export default function ScrutinResult({ scrutin }: { scrutin: ScrutinData }) {
       </div>
 
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-        <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: '#27AE60' }} />Pour : {scrutin.pour}</div>
-        <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: '#E74C3C' }} />Contre : {scrutin.contre}</div>
-        <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: '#A8A29E' }} />Abstentions : {scrutin.abstentions}</div>
-        <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: '#F39C12' }} />Non-votants : {scrutin.nonVotants}</div>
-        <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full shrink-0 bg-[#F0EDEA] dark:bg-[#44403C]" />Absents : {absents}</div>
+        <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: '#27AE60' }} />{t('voteFor', { count: scrutin.pour })}</div>
+        <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: '#E74C3C' }} />{t('voteAgainst', { count: scrutin.contre })}</div>
+        <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: '#A8A29E' }} />{t('voteAbstentions', { count: scrutin.abstentions })}</div>
+        <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: '#F39C12' }} />{t('voteNonVoting', { count: scrutin.nonVotants })}</div>
+        <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full shrink-0 bg-[#F0EDEA] dark:bg-[#44403C]" />{t('voteAbsent', { count: absents })}</div>
       </div>
 
       <div className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
@@ -48,11 +55,11 @@ export default function ScrutinResult({ scrutin }: { scrutin: ScrutinData }) {
         {scrutin.type && dateStr && <span>·</span>}
         {dateStr && <span>{dateStr}</span>}
         <span>·</span>
-        <span>{scrutin.votants} votants sur 577</span>
+        <span>{t('votersOutOf', { count: scrutin.votants })}</span>
         {scrutin.suffragesRequis > 0 && (
           <>
             <span>·</span>
-            <span>Majorité requise : {scrutin.suffragesRequis} voix</span>
+            <span>{t('majorityRequired', { count: scrutin.suffragesRequis })}</span>
           </>
         )}
       </div>

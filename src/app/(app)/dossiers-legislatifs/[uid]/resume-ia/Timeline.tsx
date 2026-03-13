@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Check, Flag, FileText, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLocale, useTranslations } from 'next-intl';
 import type { TexteEtape } from './ResumeIAClient';
 
 interface TimelineStep {
@@ -29,24 +30,33 @@ interface TimelineProps {
 
 const toDateStr = (s: string) => s.slice(0, 10);
 
-function formatDate(iso: string) {
-  const d = new Date(toDateStr(iso) + 'T00:00:00');
-  return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
-}
-
-function daysBetween(a: string, b: string) {
-  const diff = Math.round((new Date(toDateStr(b) + 'T00:00:00').getTime() - new Date(toDateStr(a) + 'T00:00:00').getTime()) / 86400000);
-  if (diff > 60) return `${Math.round(diff / 30)} mois`;
-  return `${diff} j`;
-}
-
 export default function Timeline({ uid, steps, statutFinal, datePromulgation, dureeTotal, dureeApplication, isAppDirecte, textesParEtape, selectedTexteUid, onSelectTexte, liensStatus }: TimelineProps) {
+  const t = useTranslations('resumeIA');
+  const locale = useLocale();
   const today = new Date().toISOString().slice(0, 10);
   const isRejected = statutFinal === 'Rejeté';
   const lastDoneIdx = steps.reduce((acc, s, i) => s.done ? i : acc, -1);
   const hasPendingSteps = steps.some(s => !s.done);
   const isOngoing = !datePromulgation && !isRejected;
   const [expandedStep, setExpandedStep] = useState<string | null>(null);
+
+  const formatDate = (iso: string) => {
+    const d = new Date(toDateStr(iso) + 'T00:00:00');
+    return d.toLocaleDateString(locale === 'en' ? 'en-GB' : 'fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+  };
+
+  const formatDuration = (diff: number): string => {
+    if (diff > 60) {
+      const months = Math.round(diff / 30);
+      return t('durationMonths', { count: months });
+    }
+    return t('durationDays', { count: diff });
+  };
+
+  const daysBetween = (a: string, b: string): string => {
+    const diff = Math.round((new Date(toDateStr(b) + 'T00:00:00').getTime() - new Date(toDateStr(a) + 'T00:00:00').getTime()) / 86400000);
+    return formatDuration(diff);
+  };
 
   // Trouver l'étape qui contient le texte sélectionné
   const stepWithSelected = textesParEtape && selectedTexteUid
@@ -72,7 +82,7 @@ export default function Timeline({ uid, steps, statutFinal, datePromulgation, du
           const lineStyle = isNextPending || !step.done ? 'dashed' : 'solid';
 
           const stepTextes = textesParEtape?.[step.code] ?? [];
-          const validTextes = stepTextes.filter(t => liensStatus?.[t.texteUid] !== 'invalide');
+          const validTextes = stepTextes.filter(tx => liensStatus?.[tx.texteUid] !== 'invalide');
           const hasTextes = validTextes.length > 0;
           const isStepActive = stepWithSelected === step.code;
           const isExpanded = expandedStep === step.code;
@@ -152,31 +162,31 @@ export default function Timeline({ uid, steps, statutFinal, datePromulgation, du
                     />
                   )}
                   <span className="text-xs text-muted-foreground">
-                    {step.date ? formatDate(step.date) : step.done ? '' : 'en attente'}
+                    {step.date ? formatDate(step.date) : step.done ? '' : t('pending')}
                   </span>
                 </div>
 
                 {/* Zone d'expansion accordéon : liste des textes */}
                 {isExpanded && validTextes.length >= 1 && (
                   <div className="mt-1.5 mb-1 rounded-md space-y-0.5" style={{ backgroundColor: 'hsl(var(--muted) / 0.5)', padding: '6px' }}>
-                    {validTextes.map(t => (
+                    {validTextes.map(tx => (
                       <button
-                        key={t.texteUid}
+                        key={tx.texteUid}
                         onClick={() => {
-                          onSelectTexte?.(t.texteUid);
+                          onSelectTexte?.(tx.texteUid);
                           setExpandedStep(null);
                         }}
                         className={cn(
                           "flex items-center gap-2 text-xs py-1.5 px-2.5 rounded-md transition-colors w-full text-left",
-                          selectedTexteUid === t.texteUid
+                          selectedTexteUid === tx.texteUid
                             ? "text-primary font-medium"
                             : "text-muted-foreground hover:text-foreground"
                         )}
-                        style={selectedTexteUid === t.texteUid ? { backgroundColor: 'hsl(var(--primary) / 0.1)' } : undefined}
+                        style={selectedTexteUid === tx.texteUid ? { backgroundColor: 'hsl(var(--primary) / 0.1)' } : undefined}
                       >
                         <FileText className="h-3 w-3 shrink-0" />
-                        <span className="flex-1">{t.label}</span>
-                        {selectedTexteUid === t.texteUid && (
+                        <span className="flex-1">{tx.label}</span>
+                        {selectedTexteUid === tx.texteUid && (
                           <Check className="h-3 w-3 shrink-0" style={{ color: 'hsl(var(--primary))' }} />
                         )}
                       </button>
@@ -186,12 +196,12 @@ export default function Timeline({ uid, steps, statutFinal, datePromulgation, du
 
                 {step.code === 'PROM' && step.done && dureeTotal !== null && (
                   <span className="text-xs font-semibold" style={{ color: '#27AE60' }}>
-                    {isAppDirecte ? `Promulgué et appliqué en ${dureeTotal} j` : `Promulgué en ${dureeTotal} j`}
+                    {isAppDirecte ? t('promulgatedAndApplied', { count: dureeTotal }) : t('promulgatedIn', { count: dureeTotal })}
                   </span>
                 )}
                 {step.code === 'AN-APPLI' && step.done && dureeApplication !== null && (
                   <span className="text-xs font-semibold" style={{ color: '#27AE60' }}>
-                    Appliquée en {dureeApplication} j
+                    {t('appliedIn', { count: dureeApplication })}
                   </span>
                 )}
                 {!isLast && (
@@ -203,7 +213,7 @@ export default function Timeline({ uid, steps, statutFinal, datePromulgation, du
                     )}
                     {isCurrent && step.date && !step.detail && (
                       <span className="text-xs" style={{ color: '#F39C12' }}>
-                        en cours depuis {daysBetween(step.date, today)}
+                        {t('ongoingSince', { duration: daysBetween(step.date, today) })}
                       </span>
                     )}
                     {step.detail && (
