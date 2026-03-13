@@ -391,7 +391,7 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
                     {lienTexte && (
                       <>
                         <a href={lienTexte} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline">
-                          Lire le texte <ExternalLink className="h-3 w-3" />
+                          Texte officiel <ExternalLink className="h-3 w-3" />
                         </a>
                         <span style={{ opacity: 0.3 }}>·</span>
                       </>
