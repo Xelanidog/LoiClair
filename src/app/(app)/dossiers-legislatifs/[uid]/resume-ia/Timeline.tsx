@@ -33,6 +33,7 @@ function daysBetween(a: string, b: string) {
 }
 
 export default function Timeline({ uid, steps, statutFinal, datePromulgation, dureeTotal, dureeApplication, isAppDirecte }: TimelineProps) {
+  const today = new Date().toISOString().slice(0, 10);
   const isRejected = statutFinal === 'Rejeté';
   const lastDoneIdx = steps.reduce((acc, s, i) => s.done ? i : acc, -1);
   const hasPendingSteps = steps.some(s => !s.done);
@@ -128,7 +129,7 @@ export default function Timeline({ uid, steps, statutFinal, datePromulgation, du
                     )}
                     {isCurrent && step.date && !step.detail && (
                       <span className="text-xs" style={{ color: '#F39C12' }}>
-                        en cours depuis {daysBetween(step.date, new Date().toISOString().slice(0, 10))}
+                        en cours depuis {daysBetween(step.date, today)}
                       </span>
                     )}
                     {step.detail && (

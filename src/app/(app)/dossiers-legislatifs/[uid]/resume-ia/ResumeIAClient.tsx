@@ -96,7 +96,7 @@ function formatTexteDate(dateCreation: string | null, datePublication: string | 
 
 
 export default function ResumeIAClient({ uid, titreDossier, initialTextes, statutFinal, procedureLibelle, dateDepot, datePromulgation, lienAN, lienSenat, lienLegifrance, dureeTotal, dureeApplication, isAppDirecte, auteurNom, auteurGroupe, timelineSteps, scrutinsParTexte, initialTexteUid, cachedResumes }: ResumeIAClientProps) {
-  const [textes] = useState<Texte[]>(initialTextes);
+  const textes = initialTextes;
   const [selectedUid, setSelectedUid] = useState<string | null>(() => {
     if (initialTexteUid && initialTextes.some(t => t.uid === initialTexteUid)) return initialTexteUid;
     return initialTextes.length > 0 ? initialTextes[initialTextes.length - 1].uid : null;
@@ -190,10 +190,12 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
 
   return (
     <div className="container mx-auto p-4 md:p-6 max-w-7xl">
-      <h1 className="text-xl md:text-2xl font-bold mb-1">
-        Résumé IA — {titreDossier || `dossier ${uid}`}
-      </h1>
-      <p className="text-xs font-mono text-muted-foreground/50 mb-4">{uid}</p>
+      {/* Bandeau gradient doux */}
+      <div className="rounded-xl px-0 py-4 md:py-6 mb-6" style={{ background: 'linear-gradient(135deg, hsl(var(--primary) / 0.12), transparent)' }}>
+        <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'hsl(var(--primary))' }}>Dossier LoiClair</span>
+        <h1 className="text-xl md:text-2xl font-bold mt-1">{titreDossier || `dossier ${uid}`}</h1>
+        <p className="text-xs font-mono mt-1" style={{ opacity: 0.4 }}>{uid}</p>
+      </div>
 
       {/* Métadonnées du dossier */}
       <div className="mb-6 space-y-3">

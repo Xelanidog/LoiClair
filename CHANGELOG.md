@@ -1,8 +1,12 @@
 ## 13 mars 2026 (après-midi)
 
+### Ajouté
+- **Bandeau titre sur la page résumé IA** — un bandeau avec dégradé subtil habille désormais le titre du dossier pour une meilleure lisibilité
+
 ### Modifié
 - **Chargement plus rapide de la page résumé IA** — les données de vote sont maintenant récupérées en une seule requête au lieu de deux, ce qui réduit le temps de chargement
 - **Code interne réorganisé** — la timeline et les résultats de vote sont maintenant des composants indépendants, ce qui facilite la maintenance et les futures améliorations
+- **Optimisations de performance** — suppression de calculs redondants et recherches accélérées dans le traitement des actes législatifs
 
 ---
 

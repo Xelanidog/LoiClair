@@ -12,7 +12,7 @@ export default function ScrutinResult({ scrutin }: { scrutin: ScrutinData }) {
   const majorityPct = scrutin.suffragesRequis > 0 ? (scrutin.suffragesRequis / TOTAL_DEPUTES) * 100 : 0;
 
   return (
-    <div className="mb-6 rounded-lg border px-4 py-3" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+    <div className="mb-6 rounded-lg border px-4 py-3 flex flex-col gap-2.5">
       <div className="flex flex-wrap items-center gap-2">
         <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${getStatusBadgeClass(isAdopted ? 'Adopté' : isRejected ? 'Rejeté' : null)}`}>
           {isAdopted ? 'Adopté' : isRejected ? 'Rejeté' : 'Vote'}

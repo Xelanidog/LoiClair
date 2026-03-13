@@ -82,6 +82,7 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
   const actesAvecVote: { vote_refs: string[]; textes_associes: string[] }[] = [];
   let decappLastDate: Date | null = null;
   const depotDate = dossier?.date_depot ? new Date(dossier.date_depot) : null;
+  const milestoneSet = new Set(MILESTONE_CODES);
 
   for (const acte of actesResult.data ?? []) {
     const code: string = acte.code_acte;
@@ -93,7 +94,7 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
     }
 
     // Milestone parent codes (actes racines uniquement)
-    if (acte.parent_uid === null && MILESTONE_CODES.includes(code)) {
+    if (acte.parent_uid === null && milestoneSet.has(code)) {
       actesCodes.add(code);
     }
 
@@ -117,21 +118,20 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
   const toDays = (from: Date | null, to: Date | null) =>
     from && to && to >= from ? Math.round((to.getTime() - from.getTime()) / 86400000) : null;
   const today = new Date();
-  const dateDepotDate = dossier?.date_depot ? new Date(dossier.date_depot) : null;
   const datePromDate = dossier?.date_promulgation ? new Date(dossier.date_promulgation) : null;
-  const dureeTotal = toDays(dateDepotDate, datePromDate ?? today);
+  const dureeTotal = toDays(depotDate, datePromDate ?? today);
 
   const isProm = actesCodes.has('PROM');
   const isRejected = dossier?.statut_final === 'Rejeté';
   const isAppDirecte = allActesCodes.has('AN-APPLI-DIRECTE');
   const isAppAppliquee = allActesCodes.has('AN-APPLI-COMPLETE');
-  const dureeApplication = isAppAppliquee && !isAppDirecte && dateDepotDate && decappLastDate
-    ? toDays(dateDepotDate, decappLastDate)
+  const dureeApplication = isAppAppliquee && !isAppDirecte && depotDate && decappLastDate
+    ? toDays(depotDate, decappLastDate)
     : null;
 
   const isLectureUnique = actesCodes.has('ANLUNI');
-  const hasANSteps = [...actesCodes].some(c => c.startsWith('AN') && MILESTONE_CODES.includes(c));
-  const hasSNSteps = [...actesCodes].some(c => c.startsWith('SN') && MILESTONE_CODES.includes(c));
+  const hasANSteps = [...actesCodes].some(c => c.startsWith('AN'));
+  const hasSNSteps = [...actesCodes].some(c => c.startsWith('SN'));
   const bothChambersPresent = (hasANSteps || isLectureUnique) && (hasSNSteps || isLectureUnique);
   const proc = (dossier?.procedure_libelle ?? '').toLowerCase();
   const canBePromulgated = proc.includes('loi') || proc.includes('ratification');
