@@ -96,17 +96,17 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
   const textes = initialTextes;
   const [selectedUid, setSelectedUid] = useState<string | null>(defaultTexteUid);
   const [openSection, setOpenSection] = useState<string | null>('pourquoi');
-  const liensStatus = useMemo(() =>
-    initialTextes.reduce((acc, t) => {
+  const liensStatus = useMemo(() => {
+    const result: Record<string, 'valide' | 'invalide' | 'lien-seul'> = {};
+    for (const t of initialTextes) {
       if (t.uid.endsWith('-VC') && !t.contenu_legifrance && t.lien_texte) {
-        return { ...acc, [t.uid]: 'lien-seul' as const };
+        result[t.uid] = 'lien-seul';
+      } else {
+        result[t.uid] = (t.contenu_legifrance || (t.url_accessible === true && t.lien_texte)) ? 'valide' : 'invalide';
       }
-      return {
-        ...acc,
-        [t.uid]: (t.contenu_legifrance || (t.url_accessible === true && t.lien_texte)) ? 'valide' : 'invalide',
-      };
-    }, {} as Record<string, 'valide' | 'invalide' | 'lien-seul'>)
-  , [initialTextes]);
+    }
+    return result;
+  }, [initialTextes]);
 
   const [isStreamingCache, setIsStreamingCache] = useState(false);
   const [cachedCompletion, setCachedCompletion] = useState('');
