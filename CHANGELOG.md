@@ -1,3 +1,22 @@
+## 13 mars 2026 (nuit)
+
+### Ajouté
+- **Carte IA avec bordure lumineuse** — le résumé est présenté dans une carte avec une bordure teal lumineuse qui lui donne une identité visuelle distinctive
+- **Lien « Discuter de ce texte avec l'IA »** — un lien doré animé en pied de carte permet d'ouvrir une discussion approfondie sur le texte via Perplexity, avec le contexte législatif pré-rempli
+- **Encart « À retenir »** — la phrase-clé de chaque résumé est mise en valeur dans un encart coloré en bas du résumé
+- **Pastilles teal sur les changements** — chaque point de la section « Ce qui change » est accompagné d'une icône check sur fond teal
+
+### Modifié
+- **Nouveau prompt IA — 3 sections conversationnelles** — le résumé passe de 4 sections techniques à 3 sections en langage courant : « Ce que dit ce texte », « Ce qui change concrètement » et « À retenir ». L'IA tutoie désormais le lecteur pour une explication plus naturelle
+- **Sélecteur de texte intégré en pied de carte** — le sélecteur est maintenant directement dans le pied de la carte IA (« Texte résumé : [version] · Lire le texte · Changer ») au lieu d'une section séparée en haut de page
+- **Carte toujours accessible** — même sur un texte invalide ou une version consolidée, la carte reste visible et le bouton « Changer » est toujours accessible
+
+### Supprimé
+- **Accordéon mobile / grille desktop** — remplacés par un affichage unique, fluide et vertical sur tous les écrans
+- **Section séparée « Sélecteur de texte »** — intégrée dans le pied de carte IA
+
+---
+
 ## 13 mars 2026 (soir)
 
 ### Ajouté

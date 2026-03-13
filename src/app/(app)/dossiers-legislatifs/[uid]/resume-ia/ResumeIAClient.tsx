@@ -1,13 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { HelpCircle, ListChecks, TrendingUp, ExternalLink, ChevronDown, Bot, Sparkles } from "lucide-react";
+import { ExternalLink, ChevronDown, Bot, Sparkles, Check } from "lucide-react";
 import Link from 'next/link';
-import ReactMarkdown from 'react-markdown';
 import { SYSTEM_PROMPT_RESUME_LOI, PARAMS_RESUME_LOI, MODEL_RESUME_LOI, MAX_INPUT_CHARS_RESUME_LOI } from '@/lib/prompts';
 import { useCompletion } from '@ai-sdk/react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import ProcedureTooltip from '@/components/ProcedureTooltip';
 import { DEFINITIONS } from '@/lib/definitions';
@@ -72,30 +69,30 @@ interface ResumeIAClientProps {
   cachedResumes: Record<string, string>;
 }
 
-const CARDS = [
-  { key: 'pourquoi',    Icon: HelpCircle,  title: 'Pourquoi cette loi ?' },
-  { key: 'changements', Icon: ListChecks,  title: 'Changements clés' },
-  { key: 'impact',      Icon: TrendingUp,  title: 'Impact attendu' },
-] as const;
+// Pre-compiled regexes for section extraction
+const RE_TRAILING_HEADER = /\n#{2}[^\n]*$/;
+const SECTION_REGEXES = {
+  ceQueDit:    /## Ce que dit ce texte([\s\S]*?)(?=## |$)/,
+  ceQuiChange: /## Ce qui change concrètement([\s\S]*?)(?=## |$)/,
+  aRetenir:    /## À retenir([\s\S]*?)(?=## |$)/,
+} as const;
 
 function parseCompletion(text: string): Record<string, string> {
-  const cleaned = text.replace(/\n#{2}[^\n]*$/, '');
-  const extract = (header: string) => {
-    const match = cleaned.match(new RegExp(`## ${header}([\\s\\S]*?)(?=## |$)`));
-    return match?.[1]?.trim() || '';
-  };
+  const cleaned = text.replace(RE_TRAILING_HEADER, '');
   return {
-    enBref:      extract('En bref'),
-    pourquoi:    extract('Pourquoi cette loi \\?'),
-    changements: extract('Changements clés'),
-    impact:      extract('Impact attendu'),
+    ceQueDit:    cleaned.match(SECTION_REGEXES.ceQueDit)?.[1]?.trim() || '',
+    ceQuiChange: cleaned.match(SECTION_REGEXES.ceQuiChange)?.[1]?.trim() || '',
+    aRetenir:    cleaned.match(SECTION_REGEXES.aRetenir)?.[1]?.trim() || '',
   };
 }
 
+function fmtDate(t: Texte | undefined): string {
+  const raw = t?.date_creation || t?.date_publication;
+  return raw ? new Date(raw).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+}
+
 export default function ResumeIAClient({ uid, titreDossier, initialTextes, statutFinal, procedureLibelle, dateDepot, datePromulgation, lienAN, lienSenat, lienLegifrance, dureeTotal, dureeApplication, isAppDirecte, auteurNom, auteurRole, auteurGroupe, timelineSteps, textesParEtape, scrutinsParTexte, defaultTexteUid, cachedResumes }: ResumeIAClientProps) {
-  const textes = initialTextes;
   const [selectedUid, setSelectedUid] = useState<string | null>(defaultTexteUid);
-  const [openSection, setOpenSection] = useState<string | null>('pourquoi');
   const liensStatus = useMemo(() => {
     const result: Record<string, 'valide' | 'invalide' | 'lien-seul'> = {};
     for (const t of initialTextes) {
@@ -107,6 +104,8 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
     }
     return result;
   }, [initialTextes]);
+
+  const textesByUid = useMemo(() => new Map(initialTextes.map(t => [t.uid, t])), [initialTextes]);
 
   const [isStreamingCache, setIsStreamingCache] = useState(false);
   const [cachedCompletion, setCachedCompletion] = useState('');
@@ -173,7 +172,7 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
       };
     }
 
-    const selectedTexte = textes.find(t => t.uid === selectedUid);
+    const selectedTexte = textesByUid.get(selectedUid);
     if (!selectedTexte?.lien_texte && !selectedTexte?.contenu_legifrance) return;
 
     complete(JSON.stringify({
@@ -184,76 +183,57 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
     }));
     return () => { completedForRef.current = null; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedUid, textes, liensStatus, cachedResumes]);
+  }, [selectedUid, initialTextes, liensStatus, cachedResumes]);
 
-  const selectedTexte = selectedUid ? textes.find((t) => t.uid === selectedUid) : null;
+  const selectedTexte = selectedUid ? textesByUid.get(selectedUid) ?? null : null;
+  const lienTexte = selectedTexte?.lien_texte ?? null;
   const sections = useMemo(() => parseCompletion(completion), [completion]);
   const hasContent = Object.values(sections).some(v => v.length > 0);
   const isLoading = isLoadingResume || isStreamingCache;
   const isValid = selectedTexte && liensStatus[selectedTexte.uid] === 'valide';
 
+  // Footer derived values — memoized to avoid recalculation during streaming renders
+  const selectedLabel = useMemo(() => {
+    if (!selectedUid) return '';
+    const fromEtape = Object.entries(textesParEtape).flatMap(([code, ts]) =>
+      ts.filter(t => t.texteUid === selectedUid).map(t => {
+        const step = timelineSteps.find(s => s.code === code);
+        const texteData = textesByUid.get(t.texteUid);
+        const dateStr = fmtDate(texteData);
+        const shortStep = step?.label.replace(/ \(.*\)$/, '') ?? code;
+        return `${t.label} (${shortStep})${dateStr ? ` — ${dateStr}` : ''}`;
+      })
+    )[0];
+    if (fromEtape) return fromEtape;
+    const name = selectedTexte?.denomination || selectedTexte?.titre_principal_court || 'Texte';
+    const dateStr = fmtDate(selectedTexte ?? undefined);
+    return `${name}${dateStr ? ` — ${dateStr}` : ''}`;
+  }, [selectedUid, textesParEtape, timelineSteps, textesByUid, selectedTexte]);
+
+  const vcTextes = useMemo(() => {
+    const mappedUids = new Set(Object.values(textesParEtape).flatMap(ts => ts.map(t => t.texteUid)));
+    return initialTextes.filter(t => t.uid.endsWith('-VC') && t.lien_texte && !mappedUids.has(t.uid));
+  }, [textesParEtape, initialTextes]);
+
   return (
     <div className="container mx-auto p-4 md:p-6 max-w-7xl">
       {/* ═══ 1. Bandeau titre ═══ */}
-      <div className="rounded-xl px-0 py-4 md:py-6 mb-6" style={{ background: 'linear-gradient(135deg, hsl(var(--primary) / 0.12), transparent)' }}>
-        <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'hsl(var(--primary))' }}>Dossier LoiClair</span>
+      <div className="rounded-xl px-0 py-4 md:py-6 mb-6">
+        <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#06B6D4' }}>Dossier LoiClair</span>
         <h1 className="text-xl md:text-2xl font-bold mt-1">{titreDossier || `dossier ${uid}`}</h1>
         <p className="text-xs font-mono mt-1" style={{ opacity: 0.4 }}>{uid}</p>
       </div>
 
-      {/* ═══ 1b. Texte sélectionné ═══ */}
-      {Object.keys(textesParEtape).length > 0 && (
-        <section className="mb-6">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-2">Texte sélectionné</h2>
-          <div className="flex flex-wrap items-center gap-2">
-            <Select value={selectedUid || undefined} onValueChange={(val) => handleTimelineSelectTexte(val)}>
-              <SelectTrigger size="sm" className="text-xs" style={{ maxWidth: '340px' }}>
-                <SelectValue placeholder="Choisir un texte…" />
-              </SelectTrigger>
-              <SelectContent>
-                {timelineSteps.filter(s => textesParEtape[s.code]?.some(t => liensStatus[t.texteUid] !== 'invalide')).map(step => {
-                  const stepTextes = textesParEtape[step.code]
-                    .filter(t => liensStatus[t.texteUid] !== 'invalide')
-                    .sort((a, b) => {
-                      const da = textes.find(x => x.uid === a.texteUid)?.date_creation || '';
-                      const db = textes.find(x => x.uid === b.texteUid)?.date_creation || '';
-                      return da.localeCompare(db);
-                    });
-                  return (
-                    <SelectGroup key={step.code}>
-                      <SelectLabel>{step.label}</SelectLabel>
-                      {stepTextes.map(t => {
-                        const texteData = textes.find(x => x.uid === t.texteUid);
-                        const dateStr = texteData?.date_creation ? new Date(texteData.date_creation).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
-                        const shortStep = step.label.replace(/ \(.*\)$/, '');
-                        return (
-                          <SelectItem key={t.texteUid} value={t.texteUid} className="text-xs">
-                            {t.label} ({shortStep}){dateStr ? ` — ${dateStr}` : ''}
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectGroup>
-                  );
-                })}
-              </SelectContent>
-            </Select>
-            {selectedTexte?.lien_texte && (
-              <a href={selectedTexte.lien_texte} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:underline shrink-0">
-                Lire le texte <ExternalLink className="h-3 w-3" />
-              </a>
-            )}
-          </div>
-        </section>
-      )}
-
-      {/* ═══ 2. Résumé IA — section héroïque ═══ */}
+      {/* ═══ 2. Résumé IA — container assistant ═══ */}
       <section className="mb-8">
         <h2 className="flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-          <Sparkles className="h-3.5 w-3.5" style={{ color: 'hsl(var(--primary))' }} />
+          <Sparkles className="h-3.5 w-3.5" style={{ color: '#06B6D4' }} />
           Résumé IA
-          <span className={cn("text-xs font-normal normal-case tracking-normal transition-opacity duration-300 ml-2", isLoading && !error ? "opacity-100" : "opacity-0")}>
-            Génération en cours…
-          </span>
+          {isLoading && !error && (
+            <span className="text-xs font-normal normal-case tracking-normal ml-2" style={{ opacity: 0.6 }}>
+              analyse en cours…
+            </span>
+          )}
         </h2>
 
         {/* État : pas de texte sélectionné */}
@@ -261,155 +241,217 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
           <p className="text-muted-foreground">Aucun texte disponible pour ce dossier.</p>
         )}
 
-        {/* État : lien invalide */}
-        {selectedTexte && liensStatus[selectedTexte.uid] === 'invalide' && (
-          <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            <span className="shrink-0 mt-0.5">⚠️</span>
-            <p>Ce texte n&apos;est pas encore disponible en ligne. Sélectionnez un autre texte depuis le parcours ci-dessous.</p>
-          </div>
-        )}
+        {/* Container AI — glowing border, toujours visible quand un texte est sélectionné */}
+        {selectedTexte && (
+          <div
+            className="rounded-2xl"
+            style={{
+              padding: '2px',
+              background: 'linear-gradient(135deg, rgba(6,182,212,0.4), rgba(6,182,212,0.15) 30%, rgba(6,182,212,0.08) 50%, rgba(6,182,212,0.15) 70%, rgba(6,182,212,0.4))',
+              boxShadow: '0 0 20px rgba(6,182,212,0.1), 0 0 40px rgba(6,182,212,0.05)',
+            }}
+          >
+            <div className="rounded-[14px] bg-background px-4 pt-5 pb-5">
 
-        {/* État : version consolidée */}
-        {selectedTexte && liensStatus[selectedTexte.uid] === 'lien-seul' && (
-          <div className="flex items-start gap-2 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm">
-            <ExternalLink className="h-4 w-4 shrink-0 mt-0.5 text-primary" />
-            <div>
-              <p className="text-foreground">La version consolidée est consultable directement sur Légifrance.</p>
-              <p className="text-muted-foreground mt-1">Le résumé IA de cette version sera disponible prochainement.</p>
-            </div>
-          </div>
-        )}
+              {/* État : lien invalide */}
+              {liensStatus[selectedTexte.uid] === 'invalide' && (
+                <div className="flex items-start gap-2 rounded-lg px-3 py-3 text-sm text-muted-foreground mb-2" style={{ backgroundColor: 'rgba(239,68,68,0.06)' }}>
+                  <span className="shrink-0 mt-0.5">⚠️</span>
+                  <p>Ce texte n&apos;est pas encore disponible en ligne. Changez de version ci-dessous.</p>
+                </div>
+              )}
 
-        {/* État : erreur */}
-        {error && (
-          <div className="flex items-center gap-3 text-sm mb-4">
-            <p className="text-destructive">Le résumé n&apos;a pas pu être généré (source inaccessible ou mauvaise connexion).</p>
-            <button
-              onClick={() => {
-                completedForRef.current = null;
-                const t = textes.find(t => t.uid === selectedUid);
-                if (t?.lien_texte) {
-                  setCompletion('');
-                  complete(JSON.stringify({
-                    lien: t.lien_texte,
-                    titre_texte: t.titre_principal_court || t.denomination || 'Texte inconnu',
-                    texte_uid: selectedUid,
-                  }));
-                }
-              }}
-              className="text-xs text-primary hover:underline shrink-0"
-            >
-              Réessayer →
-            </button>
-          </div>
-        )}
-
-
-        {/* En bref */}
-        {isValid && !error && (
-          <>
-            {sections.enBref ? (
-              <div className="mb-6">
-                <p className="text-base font-medium leading-relaxed">{sections.enBref}</p>
-              </div>
-            ) : isLoading ? (
-              <div className="mb-6 space-y-2">
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-4/5" />
-              </div>
-            ) : null}
-
-            {/* Accordéon mobile / Grid desktop pour les 3 sections */}
-            {/* Mobile : accordéon */}
-            <div className="md:hidden space-y-2">
-              {CARDS.map(({ key, Icon, title }) => {
-                const isOpen = openSection === key;
-                return (
-                  <div key={key} className="border rounded-lg overflow-hidden">
-                    <button
-                      onClick={() => setOpenSection(isOpen ? null : key)}
-                      className="flex items-center gap-2 w-full px-4 py-3 text-left"
-                    >
-                      <Icon className="h-4 w-4 text-primary shrink-0" />
-                      <span className="text-sm font-medium flex-1">{title}</span>
-                      <ChevronDown
-                        className={cn("h-4 w-4 text-muted-foreground transition-transform", isOpen && "rotate-180")}
-                      />
-                    </button>
-                    {isOpen && (
-                      <div className="px-4 pb-4 text-sm prose prose-sm max-w-none dark:prose-invert">
-                        {sections[key] ? (
-                          <ReactMarkdown>{sections[key]}</ReactMarkdown>
-                        ) : isLoading ? (
-                          <div className="space-y-2">
-                            <Skeleton className="h-3 w-full" />
-                            <Skeleton className="h-3 w-5/6" />
-                            <Skeleton className="h-3 w-4/6" />
-                          </div>
-                        ) : null}
-                      </div>
-                    )}
+              {/* État : version consolidée */}
+              {liensStatus[selectedTexte.uid] === 'lien-seul' && (
+                <div className="flex items-start gap-2 rounded-lg px-3 py-3 text-sm mb-2" style={{ backgroundColor: 'rgba(6,182,212,0.06)' }}>
+                  <ExternalLink className="h-4 w-4 shrink-0 mt-0.5" style={{ color: '#06B6D4' }} />
+                  <div>
+                    <p className="text-foreground">La version consolidée est consultable directement sur Légifrance.</p>
+                    <p className="text-muted-foreground mt-1">Le résumé IA de cette version sera disponible prochainement.</p>
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              )}
 
-            {/* Desktop : grid 3 colonnes */}
-            <div className="max-md:hidden grid grid-cols-3 gap-4">
-              {CARDS.map(({ key, Icon, title }) => (
-                <Card key={key}>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <Icon className="h-4 w-4 text-primary shrink-0" />
-                      {title}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="text-sm prose prose-sm max-w-none dark:prose-invert">
-                    {sections[key] ? (
-                      <ReactMarkdown>{sections[key]}</ReactMarkdown>
-                    ) : isLoading ? (
-                      <div className="space-y-2">
-                        <Skeleton className="h-3 w-full" />
-                        <Skeleton className="h-3 w-5/6" />
-                        <Skeleton className="h-3 w-4/6" />
-                        <Skeleton className="h-3 w-full" />
-                        <Skeleton className="h-3 w-3/6" />
+              {/* État : erreur */}
+              {error && isValid && (
+                <div className="flex items-center gap-3 text-sm mb-2">
+                  <p className="text-destructive">Le résumé n&apos;a pas pu être généré.</p>
+                  <button
+                    onClick={() => {
+                      completedForRef.current = null;
+                      const t = textesByUid.get(selectedUid!);
+                      if (t?.lien_texte) {
+                        setCompletion('');
+                        complete(JSON.stringify({
+                          lien: t.lien_texte,
+                          titre_texte: t.titre_principal_court || t.denomination || 'Texte inconnu',
+                          texte_uid: selectedUid,
+                          contenu_legifrance: t.contenu_legifrance || undefined,
+                        }));
+                      }
+                    }}
+                    className="text-xs text-primary hover:underline shrink-0"
+                  >
+                    Réessayer →
+                  </button>
+                </div>
+              )}
+
+              {/* Contenu AI */}
+              {isValid && !error && (
+                <div className="space-y-4">
+                  {sections.ceQueDit ? (
+                    <p className="text-sm leading-relaxed text-muted-foreground">{sections.ceQueDit}</p>
+                  ) : isLoading ? (
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-4/5" />
+                    </div>
+                  ) : null}
+
+                  {sections.ceQuiChange ? (
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2.5">Ce qui change</p>
+                      <div className="space-y-2.5">
+                        {sections.ceQuiChange
+                          .split('\n')
+                          .map(line => line.replace(/^[-*•]\s*/, '').trim())
+                          .filter(line => line.length > 0)
+                          .map((line, i) => (
+                            <div key={i} className="flex items-start gap-3 text-sm">
+                              <div
+                                className="flex items-center justify-center rounded-full shrink-0"
+                                style={{ width: '26px', height: '26px', backgroundColor: 'rgba(6,182,212,0.12)' }}
+                              >
+                                <Check className="h-3.5 w-3.5" style={{ color: '#06B6D4' }} />
+                              </div>
+                              <span className="text-muted-foreground" style={{ lineHeight: '1.6', paddingTop: '3px' }}>{line}</span>
+                            </div>
+                          ))}
                       </div>
-                    ) : null}
-                  </CardContent>
-                </Card>
-              ))}
+                    </div>
+                  ) : isLoading && sections.ceQueDit ? (
+                    <div className="space-y-2">
+                      <Skeleton className="h-3 w-24" />
+                      <Skeleton className="h-3 w-full" />
+                      <Skeleton className="h-3 w-5/6" />
+                      <Skeleton className="h-3 w-4/6" />
+                    </div>
+                  ) : null}
+
+                  {sections.aRetenir ? (
+                    <div className="rounded-lg px-3.5 py-3" style={{ backgroundColor: 'rgba(6,182,212,0.08)' }}>
+                      <p className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: '#06B6D4', opacity: 0.7 }}>À retenir</p>
+                      <p className="text-sm font-medium" style={{ color: '#06B6D4' }}>{sections.aRetenir}</p>
+                    </div>
+                  ) : isLoading && sections.ceQuiChange ? (
+                    <div className="rounded-lg px-3.5 py-2.5" style={{ backgroundColor: 'rgba(6,182,212,0.06)' }}>
+                      <Skeleton className="h-4 w-3/4" />
+                    </div>
+                  ) : null}
+
+                </div>
+              )}
+
+              {/* Footer unique : version du texte + Perplexity */}
+              {selectedUid && (
+                <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2" style={{ borderTop: '1px solid var(--color-border)', marginTop: '16px', paddingTop: '12px' }}>
+                  {/* Gauche : Perplexity */}
+                  {lienTexte && (hasContent || (!isLoading && !error)) ? (
+                    <button
+                      onClick={() => handleDiscussWithAI(
+                        selectedTexte.titre_principal_court || selectedTexte.denomination || 'Texte inconnu',
+                        lienTexte
+                      )}
+                      className="inline-flex items-center gap-2 text-sm cursor-pointer"
+                      style={{ color: '#D4A54A' }}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
+                        <path d="M12 2L2 8.5V15.5L12 22L22 15.5V8.5L12 2Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+                        <path d="M12 2V22" stroke="currentColor" strokeWidth="1.5" />
+                        <path d="M2 8.5L22 15.5" stroke="currentColor" strokeWidth="1.5" />
+                        <path d="M22 8.5L2 15.5" stroke="currentColor" strokeWidth="1.5" />
+                      </svg>
+                      <span style={{
+                        backgroundImage: 'linear-gradient(90deg, #D4A54A, #F0C674, #D4A54A)',
+                        backgroundSize: '200% 100%',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text',
+                        animation: 'shimmer-text 3s ease-in-out infinite',
+                      }}>
+                        Discuter de ce texte avec l&apos;IA
+                      </span>
+                    </button>
+                  ) : <div />}
+                  {/* Droite : version du texte */}
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground ml-auto">
+                    <span>Texte résumé : <span className="text-foreground font-medium">{selectedLabel}</span></span>
+                    <span style={{ opacity: 0.3 }}>·</span>
+                    {lienTexte && (
+                      <>
+                        <a href={lienTexte} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline">
+                          Lire le texte <ExternalLink className="h-3 w-3" />
+                        </a>
+                        <span style={{ opacity: 0.3 }}>·</span>
+                      </>
+                    )}
+                    <span className="relative inline-block text-primary hover:underline cursor-pointer">
+                      Changer
+                      <select
+                        value={selectedUid || ''}
+                        onChange={(e) => handleTimelineSelectTexte(e.target.value)}
+                        className="absolute inset-0 cursor-pointer"
+                        style={{ opacity: 0, width: '100%', height: '100%' }}
+                      >
+                        {timelineSteps.filter(s => textesParEtape[s.code]?.some(t => liensStatus[t.texteUid] !== 'invalide')).map(step => {
+                          const stepTextes = textesParEtape[step.code]
+                            .filter(t => liensStatus[t.texteUid] !== 'invalide')
+                            .sort((a, b) => {
+                              const da = textesByUid.get(a.texteUid)?.date_creation || textesByUid.get(a.texteUid)?.date_publication || '';
+                              const db = textesByUid.get(b.texteUid)?.date_creation || textesByUid.get(b.texteUid)?.date_publication || '';
+                              return da.localeCompare(db);
+                            });
+                          return (
+                            <optgroup key={step.code} label={step.label}>
+                              {stepTextes.map(t => {
+                                const texteData = textesByUid.get(t.texteUid);
+                                const dateStr = fmtDate(texteData);
+                                return (
+                                  <option key={t.texteUid} value={t.texteUid}>
+                                    {t.label}{dateStr ? ` — ${dateStr}` : ''}
+                                  </option>
+                                );
+                              })}
+                            </optgroup>
+                          );
+                        })}
+                        {vcTextes.length > 0 && (
+                          <optgroup label="Version consolidée">
+                            {vcTextes.map(t => {
+                              const dateStr = fmtDate(t);
+                              return (
+                                <option key={t.uid} value={t.uid}>
+                                  {t.denomination || 'Version consolidée'}{dateStr ? ` — ${dateStr}` : ''}
+                                </option>
+                              );
+                            })}
+                          </optgroup>
+                        )}
+                      </select>
+                    </span>
+                  </div>
+                </div>
+              )}
+
             </div>
-          </>
+          </div>
         )}
 
         {/* Scrutin */}
         {selectedUid && scrutinsParTexte[selectedUid] && (
-          <div className="mt-6">
+          <div className="mt-4">
             <ScrutinResult scrutin={scrutinsParTexte[selectedUid]} />
-          </div>
-        )}
-
-        {/* Bouton Perplexity */}
-        {selectedTexte && selectedTexte.lien_texte && (hasContent || (!isLoading && !error)) && isValid && (
-          <div className="flex justify-center mt-8">
-            <button
-              onClick={() => handleDiscussWithAI(
-                selectedTexte.titre_principal_court || selectedTexte.denomination || 'Texte inconnu',
-                selectedTexte.lien_texte!
-              )}
-              className="cursor-pointer hover:scale-105 active:scale-95 transition-transform rounded-xl"
-              style={{
-                background: 'conic-gradient(from var(--rainbow-angle), #0891B2, #06B6D4, #22D3EE, #D4A54A, #06B6D4, #0891B2)',
-                animation: 'rainbow-rotate 4s linear infinite',
-                padding: '2px',
-              }}
-            >
-              <span className="flex items-center gap-2 px-5 py-2.5 rounded-[10px] bg-background text-foreground font-medium text-sm">
-                <ExternalLink className="h-4 w-4" />
-                Approfondir avec Perplexity
-              </span>
-            </button>
           </div>
         )}
       </section>
