@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { HelpCircle, ListChecks, TrendingUp, ExternalLink, ChevronDown, Bot, Sparkles } from "lucide-react";
+import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 import { SYSTEM_PROMPT_RESUME_LOI, PARAMS_RESUME_LOI, MODEL_RESUME_LOI, MAX_INPUT_CHARS_RESUME_LOI } from '@/lib/prompts';
 import { useCompletion } from '@ai-sdk/react';
@@ -224,9 +225,10 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
                       {stepTextes.map(t => {
                         const texteData = textes.find(x => x.uid === t.texteUid);
                         const dateStr = texteData?.date_creation ? new Date(texteData.date_creation).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+                        const shortStep = step.label.replace(/ \(.*\)$/, '');
                         return (
                           <SelectItem key={t.texteUid} value={t.texteUid} className="text-xs">
-                            {t.label}{dateStr ? ` — ${dateStr}` : ''}
+                            {t.label} ({shortStep}){dateStr ? ` — ${dateStr}` : ''}
                           </SelectItem>
                         );
                       })}
@@ -249,6 +251,9 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
         <h2 className="flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
           <Sparkles className="h-3.5 w-3.5" style={{ color: 'hsl(var(--primary))' }} />
           Résumé IA
+          <span className={cn("text-xs font-normal normal-case tracking-normal transition-opacity duration-300 ml-2", isLoading && !error ? "opacity-100" : "opacity-0")}>
+            Génération en cours…
+          </span>
         </h2>
 
         {/* État : pas de texte sélectionné */}
@@ -299,10 +304,6 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
           </div>
         )}
 
-        {/* Indicateur de génération */}
-        <p className={cn("text-xs mb-3 text-muted-foreground transition-opacity duration-300", isLoading && !error ? "opacity-100" : "opacity-0")}>
-          Génération du résumé en cours…
-        </p>
 
         {/* En bref */}
         {isValid && !error && (
@@ -455,6 +456,9 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
               )}
             </div>
           )}
+          <Link href={`/Month?dossier=${uid}`} className="text-xs text-primary hover:underline mt-2 inline-block">
+            Fil d&apos;actu de ce dossier →
+          </Link>
         </div>
       </section>
 

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { Check, Flag, FileText, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { TexteEtape } from './ResumeIAClient';
@@ -219,9 +218,6 @@ export default function Timeline({ uid, steps, statutFinal, datePromulgation, du
           );
         })}
       </div>
-      <Link href={`/Month?dossier=${uid}`} className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-1">
-        Voir le fil d&apos;actu de ce dossier →
-      </Link>
     </>
   );
 }

@@ -13,6 +13,11 @@
 - **Accordéon mobile** — les 3 sections du résumé (Pourquoi, Changements, Impact) sont présentées en accordéon sur mobile pour un affichage plus compact
 - **Grille 3 colonnes sur desktop** — les mêmes sections s'affichent côte à côte en carte sur grand écran
 
+### Amélioré
+- **Indicateur de génération** — le message « Génération en cours… » s'affiche à côté du titre « Résumé IA » au lieu d'occuper une ligne séparée
+- **Provenance dans le sélecteur** — chaque texte indique son étape d'origine (Ass. nat., Sénat, CMP…) dans le menu déroulant
+- **Lien fil d'actu** — déplacé dans la section « À propos de cette loi » avec les sources officielles
+
 ### Supprimé
 - **Ancien menu déroulant** — l'ancien sélecteur de texte (dropdown confus) a été remplacé par le nouveau sélecteur groupé par étape
 
