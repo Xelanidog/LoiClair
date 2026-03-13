@@ -1,3 +1,11 @@
+## 13 mars 2026 (après-midi)
+
+### Modifié
+- **Chargement plus rapide de la page résumé IA** — les données de vote sont maintenant récupérées en une seule requête au lieu de deux, ce qui réduit le temps de chargement
+- **Code interne réorganisé** — la timeline et les résultats de vote sont maintenant des composants indépendants, ce qui facilite la maintenance et les futures améliorations
+
+---
+
 ## 13 mars 2026
 
 ### Ajouté

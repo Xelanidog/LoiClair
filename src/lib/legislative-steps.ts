@@ -18,3 +18,16 @@ export const STEP_CONFIG: Record<string, { label: string; priority: number }> = 
 };
 
 export const MILESTONE_CODES = Object.keys(STEP_CONFIG);
+
+// Codes d'actes détaillés utilisés pour les KPIs et le mapping timeline
+export const KPI_ACTE_CODES = [
+  'AN1-DEPOT', 'AN2-DEPOT', 'ANLDEF-DEPOT', 'ANLUNI-DEPOT', 'ANNLEC-DEPOT',
+  'AN1-DEBATS-DEC', 'AN2-DEBATS-DEC', 'ANLDEF-DEBATS-DEC', 'ANLUNI-DEBATS-DEC', 'ANNLEC-DEBATS-DEC',
+  'CMP-DEBATS-AN-DEC', 'CMP-SAISIE', 'CMP-DEC',
+  'SN1-DEPOT', 'SN2-DEPOT', 'SNNLEC-DEPOT',
+  'PROM-PUB',
+  'SN1-DEBATS-DEC', 'SN2-DEBATS-DEC', 'SNNLEC-DEBATS-DEC',
+  'CMP-DEBATS-SN-DEC',
+  'CC-SAISIE-PM', 'CC-SAISIE-AN', 'CC-SAISIE-SN', 'CC-SAISIE-DROIT', 'CC-CONCLUSION',
+  'DECAPP-PUB', 'AN-APPLI-RAPPORT', 'AN-APPLI-DIRECTE', 'AN-APPLI-COMPLETE',
+];

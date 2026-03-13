@@ -4,6 +4,7 @@ Importe les données d'application des lois depuis le baromètre de l'Assemblée
 
 Phase 1 : CSV baromètre AN → table application_lois (stats par loi)
 Phase 2 : API Légifrance → tables textes + actes_legislatifs (contenu des décrets)
+Phase 6 : Création d'actes synthétiques d'application (application directe / complète)
 
 Usage : python import_application_lois.py
 """
@@ -432,6 +433,117 @@ def import_decrets(mesures_rows: list[dict], loi_dossier_map: dict):
     print(f"  Erreurs DB      : {stats['db_errors']}")
 
 
+# ── Actes synthétiques d'application ─────────────────────────────────────────
+
+def insert_application_actes():
+    """
+    Phase 6 : Crée des actes synthétiques dans actes_legislatifs pour signaler
+    les jalons d'application des lois :
+    - AN-APPLI-DIRECTE  : loi d'application directe
+    - AN-APPLI-COMPLETE : loi entièrement appliquée (via décrets)
+    """
+    print("\n6. Création des actes d'application...")
+
+    # 6a. Récupérer toutes les lois avec un dossier_uid
+    rows = []
+    offset = 0
+    page_size = 1000
+    while True:
+        resp = (
+            supabase.table("application_lois")
+            .select("dossier_uid, application_directe, statut_application, date_publication")
+            .not_.is_("dossier_uid", "null")
+            .range(offset, offset + page_size - 1)
+            .execute()
+        )
+        if not resp.data:
+            break
+        rows.extend(resp.data)
+        if len(resp.data) < page_size:
+            break
+        offset += page_size
+
+    print(f"  → {len(rows)} lois avec dossier_uid trouvées")
+
+    # 6b. Pré-charger les dates max des DECAPP-PUB par dossier (une seule requête)
+    appliquee_uids = [r["dossier_uid"] for r in rows
+                      if r.get("statut_application") == "appliquee" and not r.get("application_directe")]
+    decapp_max_dates: dict[str, str] = {}
+    if appliquee_uids:
+        # Charger tous les DECAPP-PUB des dossiers appliqués
+        decapp_offset = 0
+        all_decapp = []
+        while True:
+            resp = (
+                supabase.table("actes_legislatifs")
+                .select("dossier_uid, date_acte")
+                .eq("code_acte", "DECAPP-PUB")
+                .not_.is_("date_acte", "null")
+                .in_("dossier_uid", appliquee_uids)
+                .range(decapp_offset, decapp_offset + page_size - 1)
+                .execute()
+            )
+            if not resp.data:
+                break
+            all_decapp.extend(resp.data)
+            if len(resp.data) < page_size:
+                break
+            decapp_offset += page_size
+        # Garder la date max par dossier
+        for d in all_decapp:
+            uid_d = d["dossier_uid"]
+            date_d = d["date_acte"]
+            if uid_d not in decapp_max_dates or date_d > decapp_max_dates[uid_d]:
+                decapp_max_dates[uid_d] = date_d
+        print(f"  → Dates max DECAPP-PUB trouvées pour {len(decapp_max_dates)} dossiers")
+
+    # 6c. Construire les actes à insérer
+    actes = []
+    for row in rows:
+        dossier_uid = row["dossier_uid"]
+        num_dossier_match = re.search(r"N(\d+)$", dossier_uid)
+        num_dossier = num_dossier_match.group(1) if num_dossier_match else dossier_uid
+
+        if row.get("application_directe"):
+            actes.append({
+                "uid": f"L17-APPLI-DIRECTE-{num_dossier}",
+                "dossier_uid": dossier_uid,
+                "code_acte": "AN-APPLI-DIRECTE",
+                "libelle_acte": "Loi d'application directe",
+                "date_acte": row.get("date_publication"),
+                "type_acte": "Application_Type",
+            })
+        elif row.get("statut_application") == "appliquee":
+            date_acte = decapp_max_dates.get(dossier_uid) or row.get("date_publication")
+            actes.append({
+                "uid": f"L17-APPLI-COMPLETE-{num_dossier}",
+                "dossier_uid": dossier_uid,
+                "code_acte": "AN-APPLI-COMPLETE",
+                "libelle_acte": "Application complète de la loi",
+                "date_acte": date_acte,
+                "type_acte": "Application_Type",
+            })
+
+    print(f"  → {len(actes)} actes à insérer (directe + complète)")
+
+    # 6d. Upsert par lots
+    stats = {"ok": 0, "errors": 0}
+    batch_size = 100
+    for i in range(0, len(actes), batch_size):
+        batch = actes[i : i + batch_size]
+        try:
+            supabase.table("actes_legislatifs").upsert(
+                batch, on_conflict="uid,dossier_uid"
+            ).execute()
+            stats["ok"] += len(batch)
+        except Exception as e:
+            print(f"  DB erreur batch {i}: {e}")
+            stats["errors"] += len(batch)
+
+    print(f"  Actes insérés  : {stats['ok']}")
+    print(f"  Erreurs DB     : {stats['errors']}")
+
+
 # ── Import principal ──────────────────────────────────────────────────────────
 
 def main():
@@ -531,7 +643,10 @@ def main():
     # 5. Import des décrets d'application via API Légifrance
     import_decrets(mesures_rows, loi_dossier_map)
 
-    # 6. Résumé
+    # 6. Création des actes synthétiques d'application
+    insert_application_actes()
+
+    # 7. Résumé
     print(f"\n{'=' * 60}")
     print("RÉSUMÉ")
     print(f"{'=' * 60}")

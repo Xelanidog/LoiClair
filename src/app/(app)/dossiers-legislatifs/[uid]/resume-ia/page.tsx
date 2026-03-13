@@ -3,7 +3,7 @@
 
 import { supabase } from '@/lib/supabase';
 import { MODEL_RESUME_LOI, PROMPT_VERSION_RESUME_LOI } from '@/lib/prompts';
-import { STEP_CONFIG, MILESTONE_CODES } from '@/lib/legislative-steps';
+import { STEP_CONFIG, MILESTONE_CODES, KPI_ACTE_CODES } from '@/lib/legislative-steps';
 import ResumeIAClient from './ResumeIAClient';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -22,20 +22,10 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
   const resolvedSearchParams = await searchParams;
   const initialTexteUid = typeof resolvedSearchParams.texte === 'string' ? resolvedSearchParams.texte : null;
 
-  const KPI_ACTE_CODES = [
-    'AN1-DEPOT', 'AN2-DEPOT', 'ANLDEF-DEPOT', 'ANLUNI-DEPOT', 'ANNLEC-DEPOT',
-    'AN1-DEBATS-DEC', 'AN2-DEBATS-DEC', 'ANLDEF-DEBATS-DEC', 'ANLUNI-DEBATS-DEC', 'ANNLEC-DEBATS-DEC',
-    'CMP-DEBATS-AN-DEC', 'CMP-SAISIE', 'CMP-DEC',
-    'SN1-DEPOT', 'SN2-DEPOT', 'SNNLEC-DEPOT',
-    'PROM-PUB',
-    'SN1-DEBATS-DEC', 'SN2-DEBATS-DEC', 'SNNLEC-DEBATS-DEC',
-    'CMP-DEBATS-SN-DEC',
-    'CC-SAISIE-PM', 'CC-SAISIE-AN', 'CC-SAISIE-SN', 'CC-SAISIE-DROIT', 'CC-CONCLUSION',
-    'DECAPP-PUB', 'AN-APPLI-RAPPORT',
-  ];
+  const allActeCodes = [...MILESTONE_CODES, ...KPI_ACTE_CODES];
 
-  // Fetch textes, dossier complet, actes législatifs et actes KPI en parallèle
-  const [textesResult, dossierResult, actesResult, actesKPIResult, appLoiResult] = await Promise.all([
+  // Fetch textes, dossier complet et actes législatifs en parallèle
+  const [textesResult, dossierResult, actesResult] = await Promise.all([
     supabase
       .from('textes')
       .select('uid, date_creation, date_publication, denomination, titre_principal_court, lien_texte, libelle_statut_adoption, provenance, url_accessible, contenu_legifrance, organe_auteur:organe_auteur_ref(libelle), resume_ia, resume_ia_prompt_version')
@@ -49,21 +39,9 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
       .limit(1),
     supabase
       .from('actes_legislatifs')
-      .select('code_acte')
+      .select('code_acte, date_acte, parent_uid, vote_refs, textes_associes')
       .eq('dossier_uid', uid)
-      .is('parent_uid', null)
-      .in('code_acte', MILESTONE_CODES),
-    supabase
-      .from('actes_legislatifs')
-      .select('code_acte, date_acte')
-      .eq('dossier_uid', uid)
-      .in('code_acte', KPI_ACTE_CODES)
-      .not('date_acte', 'is', null),
-    supabase
-      .from('application_lois')
-      .select('application_directe, statut_application, taux_application')
-      .eq('dossier_uid', uid)
-      .limit(1),
+      .or(`code_acte.in.(${allActeCodes.join(',')}),vote_refs.not.is.null`),
   ]);
 
   // Erreur Supabase sur la requête principale
@@ -97,17 +75,32 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
     }
   }
 
-  // Calcul de la durée totale et des dates par milestone
+  // Single-pass sur les actes : milestones, codes, dates, votes
   const milestoneDateMap = new Map<string, Date>();
+  const actesCodes = new Set<string>();
+  const allActesCodes = new Set<string>();
+  const actesAvecVote: { vote_refs: string[]; textes_associes: string[] }[] = [];
   let decappLastDate: Date | null = null;
-  for (const acte of actesKPIResult.data ?? []) {
-    const d = new Date(acte.date_acte);
+  const depotDate = dossier?.date_depot ? new Date(dossier.date_depot) : null;
+
+  for (const acte of actesResult.data ?? []) {
     const code: string = acte.code_acte;
-    // Map milestone code → earliest date (pour tri chronologique)
-    // Ignorer les dates antérieures au dépôt (données erronées, ex : décrets PLFSS antérieur)
-    const depotDate = dossier?.date_depot ? new Date(dossier.date_depot) : null;
+    allActesCodes.add(code);
+
+    // Collecter les actes avec votes
+    if (acte.vote_refs?.length > 0) {
+      actesAvecVote.push({ vote_refs: acte.vote_refs, textes_associes: acte.textes_associes ?? [] });
+    }
+
+    // Milestone parent codes (actes racines uniquement)
+    if (acte.parent_uid === null && MILESTONE_CODES.includes(code)) {
+      actesCodes.add(code);
+    }
+
+    // Date mapping : ignorer les dates antérieures au dépôt (données erronées)
+    if (!acte.date_acte) continue;
+    const d = new Date(acte.date_acte);
     if (!depotDate || d >= depotDate) {
-      // Tracker la date du dernier décret d'application
       if (code === 'DECAPP-PUB') {
         if (!decappLastDate || d > decappLastDate) decappLastDate = d;
       }
@@ -120,6 +113,7 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
       }
     }
   }
+
   const toDays = (from: Date | null, to: Date | null) =>
     from && to && to >= from ? Math.round((to.getTime() - from.getTime()) / 86400000) : null;
   const today = new Date();
@@ -127,32 +121,26 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
   const datePromDate = dossier?.date_promulgation ? new Date(dossier.date_promulgation) : null;
   const dureeTotal = toDays(dateDepotDate, datePromDate ?? today);
 
-  // Timeline : codes des actes présents, triés par date réelle (fallback : priority)
-  const actesCodes = new Set((actesResult.data ?? []).map((a: any) => a.code_acte));
   const isProm = actesCodes.has('PROM');
   const isRejected = dossier?.statut_final === 'Rejeté';
-  const appLoi = appLoiResult.data?.[0] ?? null;
-  const isAppDirecte = appLoi?.application_directe === true;
-  const isAppAppliquee = appLoi?.statut_application === 'appliquee';
-  // Durée d'application : dépôt → dernier décret (si appliquée)
+  const isAppDirecte = allActesCodes.has('AN-APPLI-DIRECTE');
+  const isAppAppliquee = allActesCodes.has('AN-APPLI-COMPLETE');
   const dureeApplication = isAppAppliquee && !isAppDirecte && dateDepotDate && decappLastDate
     ? toDays(dateDepotDate, decappLastDate)
     : null;
-  // Logique "étape suivante" : afficher l'étape immédiatement après la dernière étape en cours
+
   const isLectureUnique = actesCodes.has('ANLUNI');
   const hasANSteps = [...actesCodes].some(c => c.startsWith('AN') && MILESTONE_CODES.includes(c));
   const hasSNSteps = [...actesCodes].some(c => c.startsWith('SN') && MILESTONE_CODES.includes(c));
   const bothChambersPresent = (hasANSteps || isLectureUnique) && (hasSNSteps || isLectureUnique);
-  // Certaines procédures (résolutions, rapports, missions…) n'ont pas vocation à être promulguées
   const proc = (dossier?.procedure_libelle ?? '').toLowerCase();
   const canBePromulgated = proc.includes('loi') || proc.includes('ratification');
+
   const timelineSteps = MILESTONE_CODES
     .filter(code => {
-      // Promulgation : en attente seulement pour les procédures pouvant être promulguées
       if (code === 'PROM') return isProm || (!isRejected && canBePromulgated && bothChambersPresent);
       if (code === 'DECAPP') return isProm && !isAppDirecte;
       if (code === 'AN-APPLI') return isProm && !isAppDirecte;
-      // Chambre suivante en attente : afficher si l'autre chambre a des étapes mais pas celle-ci
       if (code === 'SN1' && !actesCodes.has('SN1')) return !isRejected && hasANSteps && !hasSNSteps && !isLectureUnique;
       if (code === 'AN1' && !actesCodes.has('AN1')) return !isRejected && hasSNSteps && !hasANSteps;
       return actesCodes.has(code);
@@ -163,7 +151,6 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
       return da - db;
     })
     .map(code => {
-      // Détail pour l'étape décrets : durée entre premier et dernier décret, ou "en cours"
       let detail: string | null = null;
       if (code === 'DECAPP' && milestoneDateMap.has('DECAPP')) {
         const firstDecapp = milestoneDateMap.get('DECAPP')!;
@@ -178,28 +165,15 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
       return {
         code,
         label: code === 'PROM' && isAppDirecte ? 'Promulguée (application directe)' : STEP_CONFIG[code].label,
-        date: (code === 'AN-APPLI' && isAppAppliquee && !isAppDirecte && decappLastDate)
-          ? decappLastDate.toISOString().slice(0, 10)
-          : (code === 'AN-APPLI' && isAppDirecte && datePromDate)
-            ? datePromDate.toISOString().slice(0, 10)
-            : milestoneDateMap.get(code)?.toISOString().slice(0, 10) ?? null,
+        date: milestoneDateMap.get(code)?.toISOString().slice(0, 10) ?? null,
         done: (code === 'AN-APPLI' && (isAppDirecte || isAppAppliquee)) ? true : actesCodes.has(code),
         detail,
       };
     });
-  // Ajouter "Dépôt" en tête avec la date du dossier
   timelineSteps.unshift({ code: 'DEPOT', label: 'Dépôt', date: dossier?.date_depot?.slice(0, 10) ?? null, done: true, detail: null });
 
-
-  // Scrutins associés aux textes via actes_legislatifs
-  // Un acte peut avoir textes_associes (→ texte uid) ET vote_refs (→ scrutin uid)
-  const { data: actesAvecVote } = await supabase
-    .from('actes_legislatifs')
-    .select('textes_associes, vote_refs')
-    .eq('dossier_uid', uid)
-    .not('vote_refs', 'is', null);
-
-  const voteRefsSet = new Set((actesAvecVote ?? []).flatMap(a => a.vote_refs ?? []));
+  // Scrutins : extraire vote_refs depuis les actes déjà chargés (pas de requête supplémentaire)
+  const voteRefsSet = new Set(actesAvecVote.flatMap(a => a.vote_refs));
   const voteRefs = [...voteRefsSet];
 
   let scrutinsParTexte: Record<string, {
@@ -215,9 +189,9 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
 
     const scrutinsMap = new Map((scrutinsData ?? []).map(s => [s.uid, s]));
 
-    for (const acte of actesAvecVote ?? []) {
-      const firstVoteRef = acte.vote_refs?.[0];
-      const firstTexteAssocie = acte.textes_associes?.[0];
+    for (const acte of actesAvecVote) {
+      const firstVoteRef = acte.vote_refs[0];
+      const firstTexteAssocie = acte.textes_associes[0];
       const s = firstVoteRef ? scrutinsMap.get(firstVoteRef) : undefined;
       if (s && firstTexteAssocie) {
         scrutinsParTexte[firstTexteAssocie] = {
@@ -236,7 +210,6 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
   }
 
   // Auteur : initiateur direct ou fallback via les textes
-  // Supabase renvoie les joins comme des arrays, on normalise
   function normalizeActeur(raw: any): { prenom: string | null; nom: string | null; groupe: { uid: string; libelle: string } | null } | null {
     if (!raw) return null;
     const a = Array.isArray(raw) ? raw[0] : raw;
@@ -251,7 +224,6 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
   let auteur = normalizeActeur(dossier?.initiateur_acteur_ref);
 
   if (!auteur) {
-    // Fallback : chercher l'auteur du premier texte associé
     const { data: textesWithAuthors } = await supabase
       .from('textes')
       .select('auteurs_refs')
