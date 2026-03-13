@@ -193,21 +193,30 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
   const isValid = selectedTexte && liensStatus[selectedTexte.uid] === 'valide';
 
   // Footer derived values — memoized to avoid recalculation during streaming renders
-  const selectedLabel = useMemo(() => {
-    if (!selectedUid) return '';
+  const { selectedLabel, selectedLabelShort } = useMemo(() => {
+    if (!selectedUid) return { selectedLabel: '', selectedLabelShort: '' };
     const fromEtape = Object.entries(textesParEtape).flatMap(([code, ts]) =>
       ts.filter(t => t.texteUid === selectedUid).map(t => {
         const step = timelineSteps.find(s => s.code === code);
         const texteData = textesByUid.get(t.texteUid);
         const dateStr = fmtDate(texteData);
         const shortStep = step?.label.replace(/ \(.*\)$/, '') ?? code;
-        return `${t.label} (${shortStep})${dateStr ? ` — ${dateStr}` : ''}`;
+        const labelIncludesStep = t.label.toLowerCase().includes(shortStep.toLowerCase()) || shortStep.toLowerCase().includes(t.label.toLowerCase());
+        return {
+          selectedLabel: labelIncludesStep
+            ? `${t.label}${dateStr ? ` — ${dateStr}` : ''}`
+            : `${t.label} (${shortStep})${dateStr ? ` — ${dateStr}` : ''}`,
+          selectedLabelShort: t.label,
+        };
       })
     )[0];
     if (fromEtape) return fromEtape;
     const name = selectedTexte?.denomination || selectedTexte?.titre_principal_court || 'Texte';
     const dateStr = fmtDate(selectedTexte ?? undefined);
-    return `${name}${dateStr ? ` — ${dateStr}` : ''}`;
+    return {
+      selectedLabel: `${name}${dateStr ? ` — ${dateStr}` : ''}`,
+      selectedLabelShort: name,
+    };
   }, [selectedUid, textesParEtape, timelineSteps, textesByUid, selectedTexte]);
 
   const vcTextes = useMemo(() => {
@@ -355,7 +364,7 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
 
               {/* Footer unique : version du texte + Perplexity */}
               {selectedUid && (
-                <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2" style={{ borderTop: '1px solid var(--color-border)', marginTop: '16px', paddingTop: '12px' }}>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2" style={{ borderTop: '1px solid var(--color-border)', marginTop: '16px', paddingTop: '12px' }}>
                   {/* Gauche : Perplexity */}
                   {lienTexte && (hasContent || (!isLoading && !error)) ? (
                     <button
@@ -383,10 +392,10 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
                         Discuter de ce texte avec l&apos;IA
                       </span>
                     </button>
-                  ) : <div />}
-                  {/* Droite : version du texte */}
-                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground ml-auto">
-                    <span>Texte résumé : <span className="text-foreground font-medium">{selectedLabel}</span></span>
+                  ) : null}
+                  {/* Version du texte */}
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                    <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: '4px', maxWidth: '100%' }}>Texte résumé : <span className="text-foreground font-medium" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 'clamp(140px, 40vw, 400px)' }}>{selectedLabel}</span></span>
                     <span style={{ opacity: 0.3 }}>·</span>
                     {lienTexte && (
                       <>
