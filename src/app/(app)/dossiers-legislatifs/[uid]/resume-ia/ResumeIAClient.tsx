@@ -468,48 +468,71 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
       {/* ═══ 3. À propos de cette loi ═══ */}
       <section className="mb-8">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">À propos de cette loi</h2>
-        <div className="rounded-xl px-0 py-4" style={{ background: 'linear-gradient(135deg, hsl(var(--primary) / 0.08), transparent)' }}>
-          <div className="flex flex-wrap items-center gap-2 mb-2">
+        <div>
+          {/* Grille de métadonnées */}
+          <div className="grid gap-y-2.5 text-sm" style={{ gridTemplateColumns: 'auto 1fr' }}>
             {statutFinal && (
-              <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${getStatusBadgeClass(statutFinal)}`}>
-                {statutFinal}
-              </span>
+              <>
+                <span className="text-muted-foreground text-xs font-medium pr-4" style={{ paddingTop: '2px' }}>Statut</span>
+                <span>{statutFinal}</span>
+              </>
             )}
             {procedureLibelle && (
-              DEFINITIONS[procedureLibelle]
-                ? <ProcedureTooltip label={procedureLibelle} description={DEFINITIONS[procedureLibelle]} />
-                : <span className="px-2 py-0.5 rounded-md bg-muted text-xs font-medium uppercase tracking-wide">{procedureLibelle}</span>
+              <>
+                <span className="text-muted-foreground text-xs font-medium pr-4" style={{ paddingTop: '2px' }}>Procédure</span>
+                <span>{DEFINITIONS[procedureLibelle]
+                  ? <ProcedureTooltip label={procedureLibelle} description={DEFINITIONS[procedureLibelle]} />
+                  : procedureLibelle
+                }</span>
+              </>
+            )}
+            {auteurNom && (
+              <>
+                <span className="text-muted-foreground text-xs font-medium pr-4" style={{ paddingTop: '2px' }}>Auteur</span>
+                <span>{auteurRole && <span className="text-muted-foreground">{auteurRole} </span>}{auteurNom}</span>
+              </>
+            )}
+            {auteurGroupe && (
+              <>
+                <span className="text-muted-foreground text-xs font-medium pr-4" style={{ paddingTop: '2px' }}>Groupe</span>
+                <span>{auteurGroupe}</span>
+              </>
+            )}
+            {dateDepot && (
+              <>
+                <span className="text-muted-foreground text-xs font-medium pr-4" style={{ paddingTop: '2px' }}>Déposé le</span>
+                <span>{new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long', timeZone: 'Europe/Paris' }).format(new Date(dateDepot))}</span>
+              </>
+            )}
+            {(lienAN || lienSenat || lienLegifrance) && (
+              <>
+                <span className="text-muted-foreground text-xs font-medium pr-4" style={{ paddingTop: '2px' }}>Sources</span>
+                <div className="flex flex-wrap items-center gap-3 text-xs">
+                  {lienAN && (
+                    <a href={lienAN} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors">
+                      <ExternalLink className="h-3 w-3" /> Assemblée nationale
+                    </a>
+                  )}
+                  {lienSenat && (
+                    <a href={lienSenat} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors">
+                      <ExternalLink className="h-3 w-3" /> Sénat
+                    </a>
+                  )}
+                  {lienLegifrance && (
+                    <a href={lienLegifrance} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors">
+                      <ExternalLink className="h-3 w-3" /> Légifrance
+                    </a>
+                  )}
+                </div>
+              </>
             )}
           </div>
-          <p className="text-sm text-muted-foreground">
-            {auteurNom && <>{auteurRole && <span className="text-xs font-medium">{auteurRole} </span>}{auteurNom}</>}
-            {auteurGroupe && <span className="text-xs ml-1">({auteurGroupe})</span>}
-            {auteurNom && dateDepot && <span className="mx-1.5 text-border">·</span>}
-            {dateDepot && <>Déposé le {new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long', timeZone: 'Europe/Paris' }).format(new Date(dateDepot))}</>}
-          </p>
-          {(lienAN || lienSenat || lienLegifrance) && (
-            <div className="flex flex-wrap items-center gap-3 mt-2 text-xs">
-              <span className="uppercase tracking-wide font-medium" style={{ opacity: 0.4 }}>Sources officielles</span>
-              {lienAN && (
-                <a href={lienAN} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors">
-                  <ExternalLink className="h-3 w-3" /> AN
-                </a>
-              )}
-              {lienSenat && (
-                <a href={lienSenat} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors">
-                  <ExternalLink className="h-3 w-3" /> Sénat
-                </a>
-              )}
-              {lienLegifrance && (
-                <a href={lienLegifrance} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors">
-                  <ExternalLink className="h-3 w-3" /> Légifrance
-                </a>
-              )}
-            </div>
-          )}
-          <Link href={`/Month?dossier=${uid}`} className="text-xs text-primary hover:underline mt-2 inline-block">
-            Fil d&apos;actu de ce dossier →
-          </Link>
+          {/* Lien fil d'actu */}
+          <div style={{ marginTop: '12px', paddingTop: '10px' }}>
+            <Link href={`/Month?dossier=${uid}`} className="text-xs text-primary hover:underline" style={{ borderTop: '1px solid var(--color-border)', paddingTop: '8px' }}>
+              Fil d&apos;actu de ce dossier →
+            </Link>
+          </div>
         </div>
       </section>
 

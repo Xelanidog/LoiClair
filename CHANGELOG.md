@@ -1,3 +1,19 @@
+## 14 mars 2026
+
+### Modifié
+- **Section « À propos de cette loi » restructurée** — les métadonnées (statut, procédure, auteur, groupe, date de dépôt, sources) sont désormais affichées dans une grille structurée avec des labels alignés, plus lisible qu'avant
+- **Lien « Texte officiel »** — le lien vers le texte sur Légifrance a été renommé de « Lire le texte » à « Texte officiel » pour plus de clarté
+- **Label du texte résumé tronqué sur mobile** — le nom du texte est raccourci avec des points de suspension quand l'écran est trop petit
+- **Footer toujours aligné à gauche** — le pied de carte IA s'aligne naturellement à gauche quand son contenu passe sur plusieurs lignes
+
+### Corrigé
+- **Label dupliqué corrigé** — le nom du texte n'est plus répété quand il correspond au nom de l'étape (ex : « Loi promulguée » n'apparaît plus deux fois)
+
+### Supprimé
+- **Badges statut et procédure** — remplacés par des lignes dans la grille de métadonnées pour une lecture plus uniforme
+
+---
+
 ## 13 mars 2026 (nuit)
 
 ### Ajouté
