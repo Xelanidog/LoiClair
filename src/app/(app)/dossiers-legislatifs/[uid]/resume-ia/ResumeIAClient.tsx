@@ -1,19 +1,13 @@
 "use client";
 
-import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { HelpCircle, ListChecks, TrendingUp, ExternalLink, Check, ChevronsUpDown, ChevronDown, Bot } from "lucide-react";
+import { HelpCircle, ListChecks, TrendingUp, ExternalLink, ChevronDown, Bot, Sparkles } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
 import { SYSTEM_PROMPT_RESUME_LOI, PARAMS_RESUME_LOI, MODEL_RESUME_LOI, MAX_INPUT_CHARS_RESUME_LOI } from '@/lib/prompts';
 import { useCompletion } from '@ai-sdk/react';
-import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import {
-  Command, CommandGroup, CommandItem, CommandList,
-} from '@/components/ui/command';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
 import ProcedureTooltip from '@/components/ProcedureTooltip';
 import { DEFINITIONS } from '@/lib/definitions';
 import { getStatusBadgeClass } from '@/lib/statusMapping';
@@ -47,6 +41,12 @@ export interface ScrutinData {
   date: string;
 }
 
+export interface TexteEtape {
+  label: string;
+  texteUid: string;
+  type: string;
+}
+
 interface ResumeIAClientProps {
   uid: string;
   titreDossier: string;
@@ -62,10 +62,12 @@ interface ResumeIAClientProps {
   dureeApplication: number | null;
   isAppDirecte: boolean;
   auteurNom: string | null;
+  auteurRole: string | null;
   auteurGroupe: string | null;
   timelineSteps: { code: string; label: string; date: string | null; done: boolean; detail: string | null }[];
+  textesParEtape: Record<string, TexteEtape[]>;
   scrutinsParTexte: Record<string, ScrutinData>;
-  initialTexteUid: string | null;
+  defaultTexteUid: string | null;
   cachedResumes: Record<string, string>;
 }
 
@@ -82,26 +84,18 @@ function parseCompletion(text: string): Record<string, string> {
     return match?.[1]?.trim() || '';
   };
   return {
+    enBref:      extract('En bref'),
     pourquoi:    extract('Pourquoi cette loi \\?'),
     changements: extract('Changements clés'),
     impact:      extract('Impact attendu'),
   };
 }
 
-function formatTexteDate(dateCreation: string | null, datePublication: string | null) {
-  const dateToUse = dateCreation || datePublication;
-  if (!dateToUse) return 'Inconnue';
-  return new Date(dateToUse).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-}
-
-
-export default function ResumeIAClient({ uid, titreDossier, initialTextes, statutFinal, procedureLibelle, dateDepot, datePromulgation, lienAN, lienSenat, lienLegifrance, dureeTotal, dureeApplication, isAppDirecte, auteurNom, auteurGroupe, timelineSteps, scrutinsParTexte, initialTexteUid, cachedResumes }: ResumeIAClientProps) {
+export default function ResumeIAClient({ uid, titreDossier, initialTextes, statutFinal, procedureLibelle, dateDepot, datePromulgation, lienAN, lienSenat, lienLegifrance, dureeTotal, dureeApplication, isAppDirecte, auteurNom, auteurRole, auteurGroupe, timelineSteps, textesParEtape, scrutinsParTexte, defaultTexteUid, cachedResumes }: ResumeIAClientProps) {
   const textes = initialTextes;
-  const [selectedUid, setSelectedUid] = useState<string | null>(() => {
-    if (initialTexteUid && initialTextes.some(t => t.uid === initialTexteUid)) return initialTexteUid;
-    return initialTextes.length > 0 ? initialTextes[initialTextes.length - 1].uid : null;
-  });
-  const [liensStatus] = useState<Record<string, 'valide' | 'invalide' | 'lien-seul' | null>>(
+  const [selectedUid, setSelectedUid] = useState<string | null>(defaultTexteUid);
+  const [openSection, setOpenSection] = useState<string | null>('pourquoi');
+  const liensStatus = useMemo(() =>
     initialTextes.reduce((acc, t) => {
       if (t.uid.endsWith('-VC') && !t.contenu_legifrance && t.lien_texte) {
         return { ...acc, [t.uid]: 'lien-seul' as const };
@@ -111,9 +105,8 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
         [t.uid]: (t.contenu_legifrance || (t.url_accessible === true && t.lien_texte)) ? 'valide' : 'invalide',
       };
     }, {} as Record<string, 'valide' | 'invalide' | 'lien-seul'>)
-  );
+  , [initialTextes]);
 
-  const [open, setOpen] = useState(false);
   const [isStreamingCache, setIsStreamingCache] = useState(false);
   const [cachedCompletion, setCachedCompletion] = useState('');
   const completedForRef = useRef<string | null>(null);
@@ -131,6 +124,16 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
     const prompt = `Analyse et explique ce texte législatif français pour en discuter avec moi : "${titre}". Voici le lien officiel : ${lien}. Résume les points clés, les objectifs, les impacts concrets et le contexte politique.`;
     const perplexityUrl = `https://www.perplexity.ai/search?q=${encodeURIComponent(prompt)}`;
     window.open(perplexityUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleTimelineSelectTexte = (texteUid: string) => {
+    if (texteUid !== selectedUid) {
+      completedForRef.current = null;
+      setCachedCompletion('');
+      setCompletion('');
+      setSelectedUid(texteUid);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   useEffect(() => {
@@ -182,83 +185,283 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedUid, textes, liensStatus, cachedResumes]);
 
-  const handleSelectChange = (uid: string) => setSelectedUid(uid);
-
   const selectedTexte = selectedUid ? textes.find((t) => t.uid === selectedUid) : null;
   const sections = useMemo(() => parseCompletion(completion), [completion]);
   const hasContent = Object.values(sections).some(v => v.length > 0);
+  const isLoading = isLoadingResume || isStreamingCache;
+  const isValid = selectedTexte && liensStatus[selectedTexte.uid] === 'valide';
 
   return (
     <div className="container mx-auto p-4 md:p-6 max-w-7xl">
-      {/* Bandeau gradient doux */}
+      {/* ═══ 1. Bandeau titre ═══ */}
       <div className="rounded-xl px-0 py-4 md:py-6 mb-6" style={{ background: 'linear-gradient(135deg, hsl(var(--primary) / 0.12), transparent)' }}>
         <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'hsl(var(--primary))' }}>Dossier LoiClair</span>
         <h1 className="text-xl md:text-2xl font-bold mt-1">{titreDossier || `dossier ${uid}`}</h1>
         <p className="text-xs font-mono mt-1" style={{ opacity: 0.4 }}>{uid}</p>
       </div>
 
-      {/* Métadonnées du dossier */}
-      <div className="mb-6 space-y-3">
-        {/* Ligne 1 : badge statut + type procédure + auteur + groupe + date */}
-        <div className="flex flex-wrap items-center gap-2 text-sm">
-          {statutFinal && (
-            <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${getStatusBadgeClass(statutFinal)}`}>
-              {statutFinal}
-            </span>
-          )}
-          {procedureLibelle && (
-            DEFINITIONS[procedureLibelle]
-              ? <ProcedureTooltip label={procedureLibelle} description={DEFINITIONS[procedureLibelle]} />
-              : <span className="px-2 py-0.5 rounded-md bg-muted text-xs font-medium uppercase tracking-wide">{procedureLibelle}</span>
-          )}
-          {auteurNom && (
-            <>
-              <span className="text-border">·</span>
-              <span className="text-muted-foreground">{auteurNom}</span>
-            </>
-          )}
-          {auteurGroupe && (
-            <>
-              <span className="text-border">·</span>
-              <span className="px-2 py-0.5 rounded-md bg-muted text-xs">{auteurGroupe}</span>
-            </>
-          )}
-          {dateDepot && (
-            <>
-              <span className="text-border">·</span>
-              <span className="text-muted-foreground text-xs">
-                Déposé le {new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long', timeZone: 'Europe/Paris' }).format(new Date(dateDepot))}
-              </span>
-            </>
-          )}
-        </div>
-
-        {/* Ligne 2 : liens externes */}
-        {(lienAN || lienSenat || lienLegifrance) && (
-          <div className="flex flex-wrap items-center gap-3 text-xs">
-            {lienAN && (
-              <a href={lienAN} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors">
-                <ExternalLink className="h-3 w-3" />
-                Assemblée nationale
-              </a>
-            )}
-            {lienSenat && (
-              <a href={lienSenat} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors">
-                <ExternalLink className="h-3 w-3" />
-                Sénat
-              </a>
-            )}
-            {lienLegifrance && (
-              <a href={lienLegifrance} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors">
-                <ExternalLink className="h-3 w-3" />
-                Légifrance
+      {/* ═══ 1b. Texte sélectionné ═══ */}
+      {Object.keys(textesParEtape).length > 0 && (
+        <section className="mb-6">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-2">Texte sélectionné</h2>
+          <div className="flex flex-wrap items-center gap-2">
+            <Select value={selectedUid || undefined} onValueChange={(val) => handleTimelineSelectTexte(val)}>
+              <SelectTrigger size="sm" className="text-xs" style={{ maxWidth: '340px' }}>
+                <SelectValue placeholder="Choisir un texte…" />
+              </SelectTrigger>
+              <SelectContent>
+                {timelineSteps.filter(s => textesParEtape[s.code]?.some(t => liensStatus[t.texteUid] !== 'invalide')).map(step => {
+                  const stepTextes = textesParEtape[step.code]
+                    .filter(t => liensStatus[t.texteUid] !== 'invalide')
+                    .sort((a, b) => {
+                      const da = textes.find(x => x.uid === a.texteUid)?.date_creation || '';
+                      const db = textes.find(x => x.uid === b.texteUid)?.date_creation || '';
+                      return da.localeCompare(db);
+                    });
+                  return (
+                    <SelectGroup key={step.code}>
+                      <SelectLabel>{step.label}</SelectLabel>
+                      {stepTextes.map(t => {
+                        const texteData = textes.find(x => x.uid === t.texteUid);
+                        const dateStr = texteData?.date_creation ? new Date(texteData.date_creation).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+                        return (
+                          <SelectItem key={t.texteUid} value={t.texteUid} className="text-xs">
+                            {t.label}{dateStr ? ` — ${dateStr}` : ''}
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectGroup>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+            {selectedTexte?.lien_texte && (
+              <a href={selectedTexte.lien_texte} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:underline shrink-0">
+                Lire le texte <ExternalLink className="h-3 w-3" />
               </a>
             )}
           </div>
+        </section>
+      )}
+
+      {/* ═══ 2. Résumé IA — section héroïque ═══ */}
+      <section className="mb-8">
+        <h2 className="flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
+          <Sparkles className="h-3.5 w-3.5" style={{ color: 'hsl(var(--primary))' }} />
+          Résumé IA
+        </h2>
+
+        {/* État : pas de texte sélectionné */}
+        {!selectedTexte && (
+          <p className="text-muted-foreground">Aucun texte disponible pour ce dossier.</p>
         )}
 
-        {/* Timeline verticale */}
-        {timelineSteps.length > 0 && (
+        {/* État : lien invalide */}
+        {selectedTexte && liensStatus[selectedTexte.uid] === 'invalide' && (
+          <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            <span className="shrink-0 mt-0.5">⚠️</span>
+            <p>Ce texte n&apos;est pas encore disponible en ligne. Sélectionnez un autre texte depuis le parcours ci-dessous.</p>
+          </div>
+        )}
+
+        {/* État : version consolidée */}
+        {selectedTexte && liensStatus[selectedTexte.uid] === 'lien-seul' && (
+          <div className="flex items-start gap-2 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm">
+            <ExternalLink className="h-4 w-4 shrink-0 mt-0.5 text-primary" />
+            <div>
+              <p className="text-foreground">La version consolidée est consultable directement sur Légifrance.</p>
+              <p className="text-muted-foreground mt-1">Le résumé IA de cette version sera disponible prochainement.</p>
+            </div>
+          </div>
+        )}
+
+        {/* État : erreur */}
+        {error && (
+          <div className="flex items-center gap-3 text-sm mb-4">
+            <p className="text-destructive">Le résumé n&apos;a pas pu être généré (source inaccessible ou mauvaise connexion).</p>
+            <button
+              onClick={() => {
+                completedForRef.current = null;
+                const t = textes.find(t => t.uid === selectedUid);
+                if (t?.lien_texte) {
+                  setCompletion('');
+                  complete(JSON.stringify({
+                    lien: t.lien_texte,
+                    titre_texte: t.titre_principal_court || t.denomination || 'Texte inconnu',
+                    texte_uid: selectedUid,
+                  }));
+                }
+              }}
+              className="text-xs text-primary hover:underline shrink-0"
+            >
+              Réessayer →
+            </button>
+          </div>
+        )}
+
+        {/* Indicateur de génération */}
+        <p className={cn("text-xs mb-3 text-muted-foreground transition-opacity duration-300", isLoading && !error ? "opacity-100" : "opacity-0")}>
+          Génération du résumé en cours…
+        </p>
+
+        {/* En bref */}
+        {isValid && !error && (
+          <>
+            {sections.enBref ? (
+              <div className="mb-6">
+                <p className="text-base font-medium leading-relaxed">{sections.enBref}</p>
+              </div>
+            ) : isLoading ? (
+              <div className="mb-6 space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-4/5" />
+              </div>
+            ) : null}
+
+            {/* Accordéon mobile / Grid desktop pour les 3 sections */}
+            {/* Mobile : accordéon */}
+            <div className="md:hidden space-y-2">
+              {CARDS.map(({ key, Icon, title }) => {
+                const isOpen = openSection === key;
+                return (
+                  <div key={key} className="border rounded-lg overflow-hidden">
+                    <button
+                      onClick={() => setOpenSection(isOpen ? null : key)}
+                      className="flex items-center gap-2 w-full px-4 py-3 text-left"
+                    >
+                      <Icon className="h-4 w-4 text-primary shrink-0" />
+                      <span className="text-sm font-medium flex-1">{title}</span>
+                      <ChevronDown
+                        className={cn("h-4 w-4 text-muted-foreground transition-transform", isOpen && "rotate-180")}
+                      />
+                    </button>
+                    {isOpen && (
+                      <div className="px-4 pb-4 text-sm prose prose-sm max-w-none dark:prose-invert">
+                        {sections[key] ? (
+                          <ReactMarkdown>{sections[key]}</ReactMarkdown>
+                        ) : isLoading ? (
+                          <div className="space-y-2">
+                            <Skeleton className="h-3 w-full" />
+                            <Skeleton className="h-3 w-5/6" />
+                            <Skeleton className="h-3 w-4/6" />
+                          </div>
+                        ) : null}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Desktop : grid 3 colonnes */}
+            <div className="max-md:hidden grid grid-cols-3 gap-4">
+              {CARDS.map(({ key, Icon, title }) => (
+                <Card key={key}>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Icon className="h-4 w-4 text-primary shrink-0" />
+                      {title}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-sm prose prose-sm max-w-none dark:prose-invert">
+                    {sections[key] ? (
+                      <ReactMarkdown>{sections[key]}</ReactMarkdown>
+                    ) : isLoading ? (
+                      <div className="space-y-2">
+                        <Skeleton className="h-3 w-full" />
+                        <Skeleton className="h-3 w-5/6" />
+                        <Skeleton className="h-3 w-4/6" />
+                        <Skeleton className="h-3 w-full" />
+                        <Skeleton className="h-3 w-3/6" />
+                      </div>
+                    ) : null}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* Scrutin */}
+        {selectedUid && scrutinsParTexte[selectedUid] && (
+          <div className="mt-6">
+            <ScrutinResult scrutin={scrutinsParTexte[selectedUid]} />
+          </div>
+        )}
+
+        {/* Bouton Perplexity */}
+        {selectedTexte && selectedTexte.lien_texte && (hasContent || (!isLoading && !error)) && isValid && (
+          <div className="flex justify-center mt-8">
+            <button
+              onClick={() => handleDiscussWithAI(
+                selectedTexte.titre_principal_court || selectedTexte.denomination || 'Texte inconnu',
+                selectedTexte.lien_texte!
+              )}
+              className="cursor-pointer hover:scale-105 active:scale-95 transition-transform rounded-xl"
+              style={{
+                background: 'conic-gradient(from var(--rainbow-angle), #0891B2, #06B6D4, #22D3EE, #D4A54A, #06B6D4, #0891B2)',
+                animation: 'rainbow-rotate 4s linear infinite',
+                padding: '2px',
+              }}
+            >
+              <span className="flex items-center gap-2 px-5 py-2.5 rounded-[10px] bg-background text-foreground font-medium text-sm">
+                <ExternalLink className="h-4 w-4" />
+                Approfondir avec Perplexity
+              </span>
+            </button>
+          </div>
+        )}
+      </section>
+
+      {/* ═══ 3. À propos de cette loi ═══ */}
+      <section className="mb-8">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">À propos de cette loi</h2>
+        <div className="rounded-xl px-0 py-4" style={{ background: 'linear-gradient(135deg, hsl(var(--primary) / 0.08), transparent)' }}>
+          <div className="flex flex-wrap items-center gap-2 mb-2">
+            {statutFinal && (
+              <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${getStatusBadgeClass(statutFinal)}`}>
+                {statutFinal}
+              </span>
+            )}
+            {procedureLibelle && (
+              DEFINITIONS[procedureLibelle]
+                ? <ProcedureTooltip label={procedureLibelle} description={DEFINITIONS[procedureLibelle]} />
+                : <span className="px-2 py-0.5 rounded-md bg-muted text-xs font-medium uppercase tracking-wide">{procedureLibelle}</span>
+            )}
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {auteurNom && <>{auteurRole && <span className="text-xs font-medium">{auteurRole} </span>}{auteurNom}</>}
+            {auteurGroupe && <span className="text-xs ml-1">({auteurGroupe})</span>}
+            {auteurNom && dateDepot && <span className="mx-1.5 text-border">·</span>}
+            {dateDepot && <>Déposé le {new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long', timeZone: 'Europe/Paris' }).format(new Date(dateDepot))}</>}
+          </p>
+          {(lienAN || lienSenat || lienLegifrance) && (
+            <div className="flex flex-wrap items-center gap-3 mt-2 text-xs">
+              <span className="uppercase tracking-wide font-medium" style={{ opacity: 0.4 }}>Sources officielles</span>
+              {lienAN && (
+                <a href={lienAN} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors">
+                  <ExternalLink className="h-3 w-3" /> AN
+                </a>
+              )}
+              {lienSenat && (
+                <a href={lienSenat} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors">
+                  <ExternalLink className="h-3 w-3" /> Sénat
+                </a>
+              )}
+              {lienLegifrance && (
+                <a href={lienLegifrance} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors">
+                  <ExternalLink className="h-3 w-3" /> Légifrance
+                </a>
+              )}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ═══ 4. Parcours de la loi ═══ */}
+      {timelineSteps.length > 0 && (
+        <section id="parcours" className="mb-8">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Parcours de la loi</h2>
           <Timeline
             uid={uid}
             steps={timelineSteps}
@@ -267,213 +470,15 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
             dureeTotal={dureeTotal}
             dureeApplication={dureeApplication}
             isAppDirecte={isAppDirecte}
+            textesParEtape={textesParEtape}
+            selectedTexteUid={selectedUid}
+            onSelectTexte={handleTimelineSelectTexte}
+            liensStatus={liensStatus}
           />
-        )}
-      </div>
-
-      {/* Combobox de sélection du texte */}
-      <div className="mb-2">
-        <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              role="combobox"
-              aria-expanded={open}
-              className="w-full max-w-xl justify-between font-normal"
-            >
-              <span className="truncate">
-                {selectedTexte
-                  ? `${selectedTexte.denomination || 'Texte'} — ${formatTexteDate(selectedTexte.date_creation, selectedTexte.date_publication)}`
-                  : 'Sélectionner un texte à analyser...'}
-              </span>
-              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-[520px] p-0" side="bottom" align="start">
-            <Command>
-              <CommandList>
-                <CommandGroup>
-                  {textes.map(t => (
-                    <CommandItem
-                      key={t.uid}
-                      value={t.uid}
-                      onSelect={() => { handleSelectChange(t.uid); setOpen(false); }}
-                      disabled={liensStatus[t.uid] === 'invalide'}
-                      className="flex items-center gap-2 py-2"
-                    >
-                      <div className="flex flex-col gap-0.5 flex-1 min-w-0">
-                        <span className="font-medium text-sm">
-                          {t.denomination || 'Texte'}
-                        </span>
-                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap">
-                          {t.provenance && <span>{t.provenance}</span>}
-                          {t.provenance && t.organe_auteur?.libelle && <span>·</span>}
-                          {t.organe_auteur?.libelle && <span>{t.organe_auteur.libelle}</span>}
-                          {t.libelle_statut_adoption && <span>·</span>}
-                          {t.libelle_statut_adoption && (
-                            <Badge variant="secondary" className="text-xs py-0 h-4">
-                              {t.libelle_statut_adoption}
-                            </Badge>
-                          )}
-                          <span>·</span>
-                          <span>{formatTexteDate(t.date_creation, t.date_publication)}</span>
-                          {liensStatus[t.uid] === 'invalide' && (
-                            <span className="text-destructive">· Non disponible</span>
-                          )}
-                        </div>
-                      </div>
-                      {selectedUid === t.uid && (
-                        <Check className="h-4 w-4 shrink-0 text-primary" />
-                      )}
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
-      </div>
-
-      {/* Metadata du texte sélectionné */}
-      {selectedTexte && (
-        <div className="flex flex-wrap items-center gap-3 mb-8 text-sm text-muted-foreground">
-          {selectedTexte.organe_auteur?.libelle && (
-            <span>{selectedTexte.organe_auteur.libelle}</span>
-          )}
-          {selectedTexte.libelle_statut_adoption && (
-            <>
-              <span>·</span>
-              <Badge variant="secondary">{selectedTexte.libelle_statut_adoption}</Badge>
-            </>
-          )}
-          {selectedTexte.lien_texte && liensStatus[selectedTexte.uid] !== 'invalide' && (
-            <>
-              <span>·</span>
-              <a
-                href={selectedTexte.lien_texte}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 text-primary hover:underline"
-              >
-                Voir le texte officiel
-                <ExternalLink className="h-3 w-3" />
-              </a>
-            </>
-          )}
-        </div>
+        </section>
       )}
 
-      {/* Résultat du scrutin */}
-      {selectedUid && scrutinsParTexte[selectedUid] && (
-        <ScrutinResult scrutin={scrutinsParTexte[selectedUid]} />
-      )}
-
-      {/* État : pas de texte sélectionné */}
-      {!selectedTexte && (
-        <p className="text-muted-foreground">Sélectionnez un texte pour générer le résumé IA.</p>
-      )}
-
-      {/* État : lien invalide */}
-      {selectedTexte && liensStatus[selectedTexte.uid] === 'invalide' && (
-        <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          <span className="shrink-0 mt-0.5">⚠️</span>
-          <p>Ce texte n&apos;est pas encore disponible en ligne. Sélectionnez un autre texte dans la liste ci-dessus.</p>
-        </div>
-      )}
-
-      {/* État : version consolidée (lien seul, pas de résumé IA) */}
-      {selectedTexte && liensStatus[selectedTexte.uid] === 'lien-seul' && (
-        <div className="flex items-start gap-2 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm">
-          <ExternalLink className="h-4 w-4 shrink-0 mt-0.5 text-primary" />
-          <div>
-            <p className="text-foreground">La version consolidée (version en vigueur avec les modifications ultérieures) est consultable directement sur Légifrance.</p>
-            <p className="text-muted-foreground mt-1">Le résumé IA de cette version sera disponible prochainement.</p>
-          </div>
-        </div>
-      )}
-
-      {/* État : erreur */}
-      {error && (
-        <div className="flex items-center gap-3 text-sm">
-          <p className="text-destructive">Le résumé n&apos;a pas pu être généré : le texte officiel n&apos;a pas pu être téléchargé (source inaccessible ou mauvaise connexion).</p>
-          <button
-            onClick={() => {
-              completedForRef.current = null;
-              const t = textes.find(t => t.uid === selectedUid);
-              if (t?.lien_texte) {
-                setCompletion('');
-                complete(JSON.stringify({
-                  lien: t.lien_texte,
-                  titre_texte: t.titre_principal_court || t.denomination || 'Texte inconnu',
-                  texte_uid: selectedUid,
-                }));
-              }
-            }}
-            className="text-xs text-primary hover:underline shrink-0"
-          >
-            Réessayer →
-          </button>
-        </div>
-      )}
-
-      {/* Indicateur de génération */}
-      <p className={cn("text-xs mb-3 text-muted-foreground transition-opacity duration-300", (isLoadingResume || isStreamingCache) && !error ? "opacity-100" : "opacity-0")}>
-        Génération du résumé en cours…
-      </p>
-
-      {/* 3 cartes structurées */}
-      {selectedTexte && liensStatus[selectedTexte.uid] === 'valide' && !error && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {CARDS.map(({ key, Icon, title }) => (
-            <Card key={key}>
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Icon className="h-4 w-4 text-primary shrink-0" />
-                  {title}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm prose prose-sm max-w-none dark:prose-invert">
-                {sections[key] ? (
-                  <ReactMarkdown>{sections[key]}</ReactMarkdown>
-                ) : (isLoadingResume || isStreamingCache) ? (
-                  <div className="space-y-2">
-                    <Skeleton className="h-3 w-full" />
-                    <Skeleton className="h-3 w-5/6" />
-                    <Skeleton className="h-3 w-4/6" />
-                    <Skeleton className="h-3 w-full" />
-                    <Skeleton className="h-3 w-3/6" />
-                  </div>
-                ) : null}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-
-      {/* Rainbow button Perplexity */}
-      {selectedTexte && selectedTexte.lien_texte && (hasContent || (!isLoadingResume && !isStreamingCache && !error)) && liensStatus[selectedTexte.uid] === 'valide' && (
-        <div className="flex justify-center mt-8">
-          <button
-            onClick={() => handleDiscussWithAI(
-              selectedTexte.titre_principal_court || selectedTexte.denomination || 'Texte inconnu',
-              selectedTexte.lien_texte!
-            )}
-            className="cursor-pointer hover:scale-105 active:scale-95 transition-transform rounded-xl"
-            style={{
-              background: 'conic-gradient(from var(--rainbow-angle), #0891B2, #06B6D4, #22D3EE, #D4A54A, #06B6D4, #0891B2)',
-              animation: 'rainbow-rotate 4s linear infinite',
-              padding: '2px',
-            }}
-          >
-            <span className="flex items-center gap-2 px-5 py-2.5 rounded-[10px] bg-background text-foreground font-medium text-sm">
-              <ExternalLink className="h-4 w-4" />
-              Approfondir avec Perplexity
-            </span>
-          </button>
-        </div>
-      )}
-
-      {/* Section transparence IA — Article 50 AI Act */}
+      {/* ═══ 5. Transparence IA ═══ */}
       <div className="mt-12 border-t pt-8">
         <div className="flex items-center gap-2 mb-4">
           <Bot className="h-4 w-4 text-muted-foreground" />

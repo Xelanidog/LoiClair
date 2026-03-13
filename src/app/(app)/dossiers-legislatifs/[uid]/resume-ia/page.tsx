@@ -20,8 +20,6 @@ export const metadata: Metadata = {
 export default async function ResumeIAPage({ params, searchParams }: { params: Promise<{ uid: string }>; searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
   const { uid } = await params;
   const resolvedSearchParams = await searchParams;
-  const initialTexteUid = typeof resolvedSearchParams.texte === 'string' ? resolvedSearchParams.texte : null;
-
   const allActeCodes = [...MILESTONE_CODES, ...KPI_ACTE_CODES];
 
   // Fetch textes, dossier complet et actes législatifs en parallèle
@@ -34,14 +32,14 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
       .order('date_creation', { ascending: true }),
     supabase
       .from('dossiers_legislatifs')
-      .select('titre, statut_final, procedure_libelle, date_depot, date_promulgation, lien_an, lien_senat, url_legifrance, initiateur_acteur_ref(uid, nom, prenom, groupe:organes(uid, libelle))')
+      .select('titre, statut_final, procedure_libelle, date_depot, date_promulgation, lien_an, lien_senat, url_legifrance, initiateur_acteur_ref(uid, nom, prenom, roles_text, groupe:organes(uid, libelle))')
       .eq('uid', uid)
       .limit(1),
     supabase
       .from('actes_legislatifs')
-      .select('code_acte, date_acte, parent_uid, vote_refs, textes_associes')
+      .select('code_acte, date_acte, parent_uid, vote_refs, textes_associes, texte_adopte')
       .eq('dossier_uid', uid)
-      .or(`code_acte.in.(${allActeCodes.join(',')}),vote_refs.not.is.null`),
+      .or(`code_acte.in.(${allActeCodes.join(',')}),vote_refs.not.is.null,textes_associes.not.is.null,texte_adopte.not.is.null`),
   ]);
 
   // Erreur Supabase sur la requête principale
@@ -172,6 +170,58 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
     });
   timelineSteps.unshift({ code: 'DEPOT', label: 'Dépôt', date: dossier?.date_depot?.slice(0, 10) ?? null, done: true, detail: null });
 
+  // Mapping textes → étapes timeline (pour sélection interactive dans la timeline)
+  const texteUidSet = new Set(textes.map((t: any) => t.uid));
+  const textesParEtape: Record<string, { label: string; texteUid: string; type: string }[]> = {};
+
+  for (const acte of actesResult.data ?? []) {
+    const code: string = acte.code_acte;
+    let milestone: string | null = null;
+    if (code === 'PROM-PUB') milestone = 'PROM';
+    else {
+      for (const m of MILESTONE_CODES) {
+        if (code.startsWith(m + '-')) { milestone = m; break; }
+      }
+    }
+    if (!milestone) continue;
+
+    const entries: { uid: string; type: string; label: string }[] = [];
+    if (code.endsWith('-DEPOT') && acte.textes_associes?.length) {
+      for (const u of acte.textes_associes) entries.push({ uid: u, type: 'depot', label: 'Texte déposé' });
+    } else if (code.includes('-COM-FOND-RAPPORT') && acte.texte_adopte) {
+      entries.push({ uid: acte.texte_adopte, type: 'commission', label: 'Texte de la commission' });
+    } else if (code.includes('-DEBATS-') && code.endsWith('-DEC') && acte.textes_associes?.length) {
+      for (const u of acte.textes_associes) entries.push({ uid: u, type: 'adopte', label: 'Texte adopté en séance' });
+    } else if (code === 'PROM-PUB' && acte.textes_associes?.length) {
+      for (const u of acte.textes_associes) entries.push({ uid: u, type: 'promulgue', label: 'Loi promulguée' });
+    }
+
+    if (!textesParEtape[milestone]) textesParEtape[milestone] = [];
+    for (const e of entries) {
+      if (texteUidSet.has(e.uid) && !textesParEtape[milestone].some(x => x.texteUid === e.uid)) {
+        textesParEtape[milestone].push({ label: e.label, texteUid: e.uid, type: e.type });
+      }
+    }
+  }
+
+  // Sélection par défaut du texte le plus pertinent
+  const urlTexteUid = typeof resolvedSearchParams.texte === 'string' ? resolvedSearchParams.texte : null;
+  let defaultTexteUid: string | null = null;
+  if (urlTexteUid && texteUidSet.has(urlTexteUid)) {
+    defaultTexteUid = urlTexteUid;
+  } else {
+    const priority = ['promulgue', 'adopte', 'commission', 'depot'];
+    outer: for (const type of priority) {
+      for (const steps of Object.values(textesParEtape)) {
+        const found = steps.find(t => t.type === type);
+        if (found) { defaultTexteUid = found.texteUid; break outer; }
+      }
+    }
+    if (!defaultTexteUid && textes.length > 0) {
+      defaultTexteUid = textes[textes.length - 1].uid;
+    }
+  }
+
   // Scrutins : extraire vote_refs depuis les actes déjà chargés (pas de requête supplémentaire)
   const voteRefsSet = new Set(actesAvecVote.flatMap(a => a.vote_refs));
   const voteRefs = [...voteRefsSet];
@@ -210,13 +260,14 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
   }
 
   // Auteur : initiateur direct ou fallback via les textes
-  function normalizeActeur(raw: any): { prenom: string | null; nom: string | null; groupe: { uid: string; libelle: string } | null } | null {
+  function normalizeActeur(raw: any): { prenom: string | null; nom: string | null; rolesText: string | null; groupe: { uid: string; libelle: string } | null } | null {
     if (!raw) return null;
     const a = Array.isArray(raw) ? raw[0] : raw;
     if (!a) return null;
     return {
       prenom: a.prenom ?? null,
       nom: a.nom ?? null,
+      rolesText: a.roles_text ?? null,
       groupe: Array.isArray(a.groupe) ? a.groupe[0] ?? null : a.groupe ?? null,
     };
   }
@@ -236,7 +287,7 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
     if (firstRef) {
       const { data: acteurData } = await supabase
         .from('acteurs')
-        .select('uid, nom, prenom, groupe:organes(uid, libelle)')
+        .select('uid, nom, prenom, roles_text, groupe:organes(uid, libelle)')
         .eq('uid', firstRef)
         .limit(1);
       auteur = normalizeActeur(acteurData?.[0]);
@@ -259,10 +310,12 @@ export default async function ResumeIAPage({ params, searchParams }: { params: P
       dureeApplication={dureeApplication}
       isAppDirecte={isAppDirecte}
       auteurNom={auteur ? `${auteur.prenom ?? ''} ${auteur.nom ?? ''}`.trim() : null}
+      auteurRole={auteur?.rolesText ? auteur.rolesText.split(',')[0].trim() : null}
       auteurGroupe={auteur?.groupe?.libelle ?? null}
       timelineSteps={timelineSteps}
+      textesParEtape={textesParEtape}
       scrutinsParTexte={scrutinsParTexte}
-      initialTexteUid={initialTexteUid}
+      defaultTexteUid={defaultTexteUid}
       cachedResumes={cachedResumes}
     />
   );

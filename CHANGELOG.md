@@ -1,3 +1,23 @@
+## 13 mars 2026 (soir)
+
+### Ajouté
+- **Section « En bref »** — un résumé en 2-3 phrases visible immédiatement en haut de la page, avant les sections détaillées
+- **Sélecteur de texte en haut de page** — un menu déroulant permet de choisir le texte à résumer directement sous le titre, avec les textes groupés par étape législative et triés par date
+- **Lien « Lire le texte »** — un accès direct au texte officiel sur Légifrance, visible à côté du sélecteur
+- **Label « Résumé IA »** — une icône ✨ et un intitulé identifient clairement la section comme contenu généré par intelligence artificielle
+- **Accordéons dans la timeline** — chaque étape ayant des textes associés peut être dépliée pour voir et sélectionner les textes disponibles
+- **Section « À propos de cette loi »** — les métadonnées du dossier (statut, procédure, auteur avec son rôle, sources officielles) sont regroupées dans une section dédiée avec un dégradé subtil
+
+### Modifié
+- **Nouvelle organisation de la page** — le résumé IA est désormais en haut (visible sans scroller), suivi des métadonnées, puis du parcours de la loi
+- **Accordéon mobile** — les 3 sections du résumé (Pourquoi, Changements, Impact) sont présentées en accordéon sur mobile pour un affichage plus compact
+- **Grille 3 colonnes sur desktop** — les mêmes sections s'affichent côte à côte en carte sur grand écran
+
+### Supprimé
+- **Ancien menu déroulant** — l'ancien sélecteur de texte (dropdown confus) a été remplacé par le nouveau sélecteur groupé par étape
+
+---
+
 ## 13 mars 2026 (après-midi)
 
 ### Ajouté
