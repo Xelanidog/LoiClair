@@ -15,34 +15,25 @@ interface LegislativeFunnelProps {
 }
 
 const STEP_COLORS = [
-  { bg: '#A8D5BA', text: '#1B4332' },
-  { bg: '#7BC89B', text: '#1B4332' },
-  { bg: '#4DB877', text: '#14532D' },
-  { bg: '#27AE60', text: '#FFFFFF' },
-  { bg: '#1E8C4D', text: '#FFFFFF' },
+  '#4ADE80', // vert clair
+  '#22C55E',
+  '#16A34A',
+  '#15803D',
+  '#166534', // vert foncé
 ];
 
 export function LegislativeFunnel({ steps, title, description, ofTotalLabel, locale }: LegislativeFunnelProps) {
-  const maxSqrt = Math.sqrt(steps[0].count);
-  const getBarWidth = (count: number) => {
-    const raw = (Math.sqrt(count) / maxSqrt) * 100;
-    return Math.max(raw, 15);
-  };
-
   return (
     <Card>
       <CardHeader>
         <CardTitle>{title}</CardTitle>
-        <CardDescription>
-          {description}
-        </CardDescription>
+        <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="flex flex-col">
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
           {steps.map((step, i) => {
-            const width = getBarWidth(step.count);
-            const color = STEP_COLORS[i] || STEP_COLORS[STEP_COLORS.length - 1];
             const isLast = i === steps.length - 1;
+            const color = STEP_COLORS[i] || STEP_COLORS[STEP_COLORS.length - 1];
 
             const conversionRate = !isLast && steps[i].count > 0
               ? ((steps[i + 1].count / steps[i].count) * 100).toFixed(1)
@@ -54,65 +45,50 @@ export function LegislativeFunnel({ steps, title, description, ofTotalLabel, loc
 
             return (
               <div key={step.label}>
-                <div className="py-2">
-                  {/* Label */}
-                  <div className="flex items-center gap-2 mb-1.5">
+                {/* Étape */}
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', padding: '0.25rem 0' }}>
+                  <span
+                    style={{
+                      fontSize: '1.25rem',
+                      fontWeight: 700,
+                      color,
+                      minWidth: '3.5rem',
+                      textAlign: 'right',
+                      fontVariantNumeric: 'tabular-nums',
+                    }}
+                  >
+                    {step.count.toLocaleString(locale)}
+                  </span>
+                  <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>
+                    {step.label}
+                  </span>
+                  {totalRate && (
                     <span
-                      className="flex-shrink-0 rounded-full flex items-center justify-center text-xs font-bold"
                       style={{
-                        width: '1.5rem',
-                        height: '1.5rem',
-                        backgroundColor: color.bg,
-                        color: color.text,
+                        fontSize: '0.75rem',
+                        opacity: 0.5,
+                        marginLeft: 'auto',
+                        whiteSpace: 'nowrap',
                       }}
                     >
-                      {i + 1}
+                      {ofTotalLabel(totalRate)}
                     </span>
-                    <span className="font-semibold text-sm">{step.label}</span>
-                    {totalRate && (
-                      <span className="text-xs text-muted-foreground ml-auto">
-                        {ofTotalLabel(totalRate)}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Barre + nombre */}
-                  <div className="flex items-center gap-3 ml-8">
-                    <div
-                      className="h-8 rounded-md flex items-center justify-end pr-3"
-                      style={{
-                        width: `${width}%`,
-                        backgroundColor: color.bg,
-                        minWidth: '3rem',
-                      }}
-                    >
-                      <span
-                        className="text-sm font-bold whitespace-nowrap"
-                        style={{ color: color.text }}
-                      >
-                        {step.count.toLocaleString(locale)}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Description */}
-                  <p className="text-xs text-muted-foreground mt-1 ml-8">
-                    {step.description}
-                  </p>
+                  )}
                 </div>
 
                 {/* Connecteur */}
                 {!isLast && conversionRate && (
-                  <div className="flex items-center gap-2 py-1 ml-10">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', paddingLeft: '1.25rem' }}>
                     <div
-                      className="h-4"
                       style={{
-                        width: '1px',
-                        backgroundColor: STEP_COLORS[Math.min(i + 1, STEP_COLORS.length - 1)].bg,
+                        width: '1.5px',
+                        height: '1.25rem',
+                        backgroundColor: STEP_COLORS[Math.min(i + 1, STEP_COLORS.length - 1)],
+                        opacity: 0.4,
                       }}
                     />
-                    <span className="text-xs text-muted-foreground">
-                      ↓ {conversionRate} %
+                    <span style={{ fontSize: '0.6875rem', opacity: 0.45 }}>
+                      ↓ {conversionRate}%
                     </span>
                   </div>
                 )}
