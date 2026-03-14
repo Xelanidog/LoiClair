@@ -81,6 +81,7 @@
 - **Titres de page réduits** — les titres H1 de toutes les pages sont plus compacts pour s'harmoniser avec la nouvelle navigation
 - **Plus d'espace avant le footer** — une marge confortable sépare le contenu du pied de page
 - **Fond chaud subtil** — le contenu des pages retrouve sa teinte chaude légère qui le distingue de la barre de navigation
+- **Entonnoir législatif compact** — le parcours législatif (« Legislative journey ») est désormais affiché en mode stepper vertical compact : chiffres colorés + labels + taux de conversion, sans barres horizontales — beaucoup plus lisible et compact
 
 ### Corrigé
 - **Cartes « boîte à outils » disparaissaient** — les cartes de fonctionnalités sur la page d'accueil restent visibles après un changement de langue
@@ -97,6 +98,7 @@
 - Correction du pipeline pour rattraper les lois enrichies sans lien de texte
 - **Fil d'actualité coupé sur mobile** — le contenu du fil d'actu débordait à gauche et à droite sur petit écran à cause de marges négatives
 - **Titres des dossiers écrasés sur mobile** — le panneau latéral « Résumé IA » masqué comprimait le titre sur certains navigateurs mobiles
+- **Scintillement du résumé IA en streaming** — le texte du résumé clignotait et se superposait pendant la génération en direct, causé par un double appel API en mode développement. Ajout d'un throttle pour lisser l'affichage
 
 ### Supprimé
 - L'ancien bouton "Dossier LoiClair avec résumé IA" (badge pill cyan) a été remplacé par la carte cliquable

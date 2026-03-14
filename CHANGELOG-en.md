@@ -81,6 +81,7 @@
 - **Smaller page titles** — H1 titles on all pages are more compact to harmonize with the new navigation
 - **More space before footer** — a comfortable margin separates content from the footer
 - **Subtle warm background** — page content regains its subtle warm tint that distinguishes it from the navigation bar
+- **Compact legislative funnel** — the legislative journey is now displayed as a compact vertical stepper: colored numbers + labels + conversion rates, without horizontal bars — much more readable and compact
 
 ### Fixed
 - **"Toolbox" cards disappeared** — feature cards on the landing page now remain visible after a language change
@@ -97,6 +98,7 @@
 - Fixed pipeline to catch enriched laws without text links
 - **News feed cut off on mobile** — news feed content was overflowing left and right on small screens due to negative margins
 - **Dossier titles squished on mobile** — the hidden "AI summary" side panel was compressing titles on some mobile browsers
+- **AI summary flickering during streaming** — the summary text was flickering and overlapping during live generation, caused by a duplicate API call in development mode. Added throttle for smoother display
 
 ### Removed
 - The old "LoiClair Dossier with AI summary" button (cyan pill badge) has been replaced by the clickable card

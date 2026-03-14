@@ -123,6 +123,7 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
   } = useCompletion({
     api: '/api/resume-loi',
     streamProtocol: 'text',
+    experimental_throttle: 50,
   });
 
   const completion = cachedCompletion || apiCompletion;
@@ -152,9 +153,12 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
   useEffect(() => {
     if (!selectedUid) return;
     if (liensStatus[selectedUid] !== 'valide') return;
-    if (completedForRef.current === selectedUid) return;
 
-    completedForRef.current = selectedUid;
+    // Guard key includes locale so changing language triggers re-generation
+    const effectKey = `${selectedUid}:${locale}`;
+    if (completedForRef.current === effectKey) return;
+
+    completedForRef.current = effectKey;
 
     setCachedCompletion('');
     setCompletion('');
@@ -195,7 +199,9 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
       contenu_legifrance: selectedTexte.contenu_legifrance || undefined,
       locale,
     }));
-    return () => { completedForRef.current = null; };
+    // No cleanup reset for API streaming — prevents StrictMode from firing
+    // complete() twice, which creates two concurrent streams updating the same
+    // SWR cache and causes text to flicker between two versions.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedUid, initialTextes, liensStatus, cachedResumes, locale]);
 
