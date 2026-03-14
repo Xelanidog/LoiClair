@@ -91,6 +91,7 @@
 - **"Text types" page reorganized** — the page is now divided into two sections (parliamentary texts / government texts) with a lightweight card grid design, and three new types added: Amendment, Ordinance and Decree
 - **"Legislative process" page redesigned** — institutions are presented in a grid of cards with building photos; clicking opens a modal with details. The law's journey becomes an interactive vertical stepper with 8 steps (adding "Implementing decrees"), dots and connecting lines, and expandable details on click
 - **AI summary navigation in same tab** — clicking a dossier navigates in the same tab (instead of opening a new tab) for a smoother transition with the loading skeleton
+- **Filters in a panel on KPIs page** — the "Type" and "Group" filters on the key indicators page are now grouped in a side panel ("Filters" button + active chips), aligned with the same design as the legislative dossiers page
 
 ### Fixed
 - **"Toolbox" cards disappeared** — feature cards on the landing page now remain visible after a language change

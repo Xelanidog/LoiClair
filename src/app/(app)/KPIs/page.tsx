@@ -8,7 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { MonthlyDossiersChart } from '@/components/ui/MonthlyDossiersChart';
 import GenericFilter from '@/components/GenericFilter';
-import ResetButton from '@/components/ResetButton';
+import FilterDrawer from '@/components/FilterDrawer';
 import { GroupeStatsTable } from '@/components/GroupeStatsTable';
 import { GroupeBarChart } from '@/components/ui/GroupeBarChart';
 import { LegislativeFunnel } from '@/components/ui/LegislativeFunnel';
@@ -442,40 +442,36 @@ const chartData = statsData.historique.slice(-24).map(({ mois, count }) => {
 
 return (
   <div className="container mx-auto p-6 max-w-7xl">
-    {/* Titre + filtre en haut – même style que la page dossiers */}
-    <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-      <div>
-        <h1 className="text-xl font-bold mb-3">{t('pageTitle')}</h1>
-        <p className="text-muted-foreground">
-          {t('pageSubtitle')}
-          {procedure && <span className="ml-2 font-medium text-sm text-primary">[ {procedure} ]</span>}
-          {groupe && <span className="ml-2 font-medium text-sm text-primary">[ {groupe} ]</span>}
-        </p>
-      </div>
-
-      {/* Barre de filtres : Type + Groupe + Reset */}
-      <div className="flex items-center gap-3 flex-nowrap overflow-x-auto pb-1">
-        <GenericFilter
-          paramName="type"
-          label={t('filterTypeLabel')}
-          placeholder={t('filterTypePlaceholder')}
-          allLabel={t('filterTypeAll')}
-          tooltipTitle={t('filterTypeTooltipTitle')}
-          tooltipDescription={t('filterTypeTooltipDesc')}
-          options={typeOptions}
-        />
-        <GenericFilter
-          paramName="groupe"
-          label={t('filterGroupeLabel')}
-          placeholder={t('filterGroupePlaceholder')}
-          allLabel={t('filterGroupeAll')}
-          tooltipTitle={t('filterGroupeTooltipTitle')}
-          tooltipDescription={t('filterGroupeTooltipDesc')}
-          options={groupeOptions}
-        />
-        <ResetButton />
-      </div>
+    {/* Titre */}
+    <div className="mb-8">
+      <h1 className="text-xl font-bold mb-3">{t('pageTitle')}</h1>
+      <p className="text-muted-foreground">{t('pageSubtitle')}</p>
     </div>
+
+    {/* Filtres avec FilterDrawer */}
+    <FilterDrawer filterLabels={{
+      type: Object.fromEntries(typeOptions.map(o => [o.slug, o.libelle])),
+      groupe: Object.fromEntries(groupeOptions.map(o => [o.slug, o.libelle])),
+    }}>
+      <GenericFilter
+        paramName="type"
+        label={t('filterTypeLabel')}
+        placeholder={t('filterTypePlaceholder')}
+        allLabel={t('filterTypeAll')}
+        tooltipTitle={t('filterTypeTooltipTitle')}
+        tooltipDescription={t('filterTypeTooltipDesc')}
+        options={typeOptions}
+      />
+      <GenericFilter
+        paramName="groupe"
+        label={t('filterGroupeLabel')}
+        placeholder={t('filterGroupePlaceholder')}
+        allLabel={t('filterGroupeAll')}
+        tooltipTitle={t('filterGroupeTooltipTitle')}
+        tooltipDescription={t('filterGroupeTooltipDesc')}
+        options={groupeOptions}
+      />
+    </FilterDrawer>
 
       {/* Funnel législatif */}
       <div className="mb-6">

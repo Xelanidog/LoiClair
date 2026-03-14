@@ -40,7 +40,7 @@ const hasFilters = searchParams.has('statut') || searchParams.has('age') || sear
             size="sm"
             onClick={handleReset}
             disabled={!hasFilters}
-            className="gap-1.5"
+            className="gap-1.5 shrink-0"
           >
             <RotateCcw className="h-4 w-4" />
             <span className="max-md:hidden">Réinitialiser</span>
