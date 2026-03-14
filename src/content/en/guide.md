@@ -297,17 +297,26 @@ Article 61 of the Constitution allows 60 deputies *or* 60 senators to refer a ma
 
 ## Types de textes législatifs
 
-The **Text types** (Types de textes) page explains the different categories of texts that can be tabled in Parliament.
+The **Text types** (Types de textes) page explains the different categories of texts produced by Parliament and the Government. It is organized in two sections.
 
-### The main types
+### Parliamentary texts
+
+Texts initiated or produced by Parliament (National Assembly / Senate):
+
+- **Private member's bill (Proposition de loi)** — tabled by one or more parliamentarians.
+- **Organic private member's bill (Proposition de loi organique)** — a law that specifies the conditions of application of the Constitution; enhanced procedure.
+- **Amendment (Amendement)** — a modification proposed on a text under discussion.
+- **Report (Rapport)** — an analytical document produced by a parliamentary committee.
+- **Resolution (Résolution)** — a text expressing Parliament's position, without the force of law.
+- **Other** — opinions, impact assessments, international agreements.
+
+### Government texts
+
+Texts initiated by the Government or executive branch:
 
 - **Government bill (Projet de loi)** — tabled by the government.
-- **Private member's bill (Proposition de loi)** — tabled by one or more parliamentarians.
-- **Organic law (Loi organique)** — a law that specifies the conditions of application of the Constitution; enhanced procedure.
-- **Constitutional law (Loi constitutionnelle)** — amends the Constitution itself; special procedure (referendum or Congress).
-- **Finance law (Loi de finances)** — the State's annual budget.
-- **Resolution (Résolution)** — a text expressing Parliament's position, without the force of law.
-- **Information report (Rapport d'information)** — an assessment or analysis produced by a parliamentary committee.
+- **Ordinance (Ordonnance)** — a measure taken by the Government with Parliament's authorization, in a domain normally reserved for law.
+- **Decree (Décret)** — a regulatory text specifying the implementation details of a law, without going through Parliament.
 
 ---
 

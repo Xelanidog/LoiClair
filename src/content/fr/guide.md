@@ -297,17 +297,26 @@ L'article 61 de la Constitution permet à 60 députés *ou* 60 sénateurs de sai
 
 ## Types de textes législatifs
 
-La page **Types de textes** explique les différentes catégories de textes qui peuvent être déposés au Parlement.
+La page **Types de textes** explique les différentes catégories de textes produits par le Parlement et le Gouvernement. Elle est organisée en deux sections.
 
-### Les principaux types
+### Textes parlementaires
+
+Textes initiés ou produits par le Parlement (Assemblée nationale / Sénat) :
+
+- **Proposition de loi** — déposée par un ou plusieurs parlementaires.
+- **Proposition de loi organique** — loi qui précise les modalités d'application de la Constitution ; procédure renforcée.
+- **Amendement** — modification proposée sur un texte en cours de discussion.
+- **Rapport** — document d'analyse produit par une commission parlementaire.
+- **Résolution** — texte exprimant une position du Parlement, sans force de loi.
+- **Autres** — avis, études d'impact, accords internationaux.
+
+### Textes gouvernementaux
+
+Textes initiés par le Gouvernement ou le pouvoir exécutif :
 
 - **Projet de loi** — déposé par le gouvernement.
-- **Proposition de loi** — déposée par un ou plusieurs parlementaires.
-- **Loi organique** — loi qui précise les modalités d'application de la Constitution ; procédure renforcée.
-- **Loi constitutionnelle** — modifie la Constitution elle-même ; procédure spéciale (référendum ou Congrès).
-- **Loi de finances** — budget annuel de l'État.
-- **Résolution** — texte exprimant une position du Parlement, sans force de loi.
-- **Rapport d'information** — bilan ou analyse produit par une commission parlementaire.
+- **Ordonnance** — mesure prise par le Gouvernement avec l'autorisation du Parlement, dans un domaine normalement réservé à la loi.
+- **Décret** — texte réglementaire précisant les modalités d'application d'une loi, sans passage par le Parlement.
 
 ---
 

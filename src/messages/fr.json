@@ -227,10 +227,10 @@
   "textTypes": {
     "pageTitle": "Les Différents Types de Textes Législatifs",
     "pageDesc": "Comprendre les différentes catégories de textes produits par le Parlement et le Gouvernement.",
-    "projetLoi": {
-      "trigger": "Projet de Loi",
-      "content": "Initié par le Gouvernement. Exemples : budgets (PLF), réformes sociales. Il suit la procédure législative complète."
-    },
+    "sectionParlementaire": "Textes parlementaires",
+    "sectionParlementaireDesc": "Textes initiés ou produits par le Parlement (Assemblée nationale / Sénat)",
+    "sectionGouvernemental": "Textes gouvernementaux",
+    "sectionGouvernementalDesc": "Textes initiés par le Gouvernement ou le pouvoir exécutif",
     "propositionLoi": {
       "trigger": "Proposition de Loi",
       "content": "Initiée par un parlementaire (député ou sénateur). Souvent sur des sujets spécifiques, comme des lois locales ou thématiques."
@@ -245,6 +245,10 @@
       "reinforced4": "Délai de 15 jours avant examen en séance",
       "examples": "Exemples : règlement des assemblées, statut des parlementaires."
     },
+    "amendement": {
+      "trigger": "Amendement",
+      "content": "Modification proposée par un parlementaire ou le Gouvernement sur un texte en cours de discussion. Un projet ou une proposition de loi peut recevoir des centaines d'amendements avant son vote final."
+    },
     "rapport": {
       "trigger": "Rapport",
       "content": "Document d'analyse produit par une commission parlementaire ou un rapporteur."
@@ -258,6 +262,18 @@
       "avis": "Avis : Opinion d'une commission",
       "etudeImpact": "Étude d'Impact : Analyse des effets",
       "accordInternational": "Accord International : Ratification de traités"
+    },
+    "projetLoi": {
+      "trigger": "Projet de Loi",
+      "content": "Initié par le Gouvernement. Exemples : budgets (PLF), réformes sociales. Il suit la procédure législative complète."
+    },
+    "ordonnance": {
+      "trigger": "Ordonnance",
+      "content": "Mesure prise par le Gouvernement, avec l'autorisation du Parlement (article 38 de la Constitution), dans un domaine normalement réservé à la loi. Elle doit être ratifiée par le Parlement pour avoir force de loi définitive. Exemple : réforme du Code du travail en 2017."
+    },
+    "decret": {
+      "trigger": "Décret",
+      "content": "Texte réglementaire pris par le Président de la République ou le Premier ministre pour préciser les modalités d'application d'une loi. Il ne passe pas par le Parlement. Exemples : décret d'application d'une loi, décret de nomination."
     }
   },
   "landing": {

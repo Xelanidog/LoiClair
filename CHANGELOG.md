@@ -84,6 +84,7 @@
 - **Fond chaud subtil** — le contenu des pages retrouve sa teinte chaude légère qui le distingue de la barre de navigation
 - **Entonnoir législatif compact** — le parcours législatif (« Legislative journey ») est désormais affiché en mode stepper vertical compact : chiffres colorés + labels + taux de conversion, sans barres horizontales — beaucoup plus lisible et compact
 - **Filtres repensés sur la page des dossiers** — la barre de recherche occupe toute la largeur, les filtres sont regroupés dans un panneau latéral (à droite sur desktop, en bas sur mobile) accessible via un bouton « Filtres » avec badge compteur. Les filtres actifs s'affichent comme des pastilles supprimables d'un clic
+- **Page « Types de textes » réorganisée** — la page est désormais divisée en deux sections (textes parlementaires / textes gouvernementaux) avec un design en grille de cartes légères, et trois nouveaux types ajoutés : Amendement, Ordonnance et Décret
 
 ### Corrigé
 - **Cartes « boîte à outils » disparaissaient** — les cartes de fonctionnalités sur la page d'accueil restent visibles après un changement de langue

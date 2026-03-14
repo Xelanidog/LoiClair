@@ -227,10 +227,10 @@
   "textTypes": {
     "pageTitle": "The Different Types of Legislative Texts",
     "pageDesc": "Understanding the different categories of texts produced by Parliament and the Government.",
-    "projetLoi": {
-      "trigger": "Government Bill (Projet de Loi)",
-      "content": "Initiated by the Government. Examples: budgets (PLF), social reforms. It follows the full legislative procedure."
-    },
+    "sectionParlementaire": "Parliamentary texts",
+    "sectionParlementaireDesc": "Texts initiated or produced by Parliament (National Assembly / Senate)",
+    "sectionGouvernemental": "Government texts",
+    "sectionGouvernementalDesc": "Texts initiated by the Government or executive branch",
     "propositionLoi": {
       "trigger": "Private Member's Bill (Proposition de Loi)",
       "content": "Initiated by a member of Parliament (MP or senator). Often on specific topics, such as local or thematic legislation."
@@ -245,6 +245,10 @@
       "reinforced4": "15-day waiting period before examination in plenary session",
       "examples": "Examples: rules of procedure of the assemblies, status of members of Parliament."
     },
+    "amendement": {
+      "trigger": "Amendment",
+      "content": "A modification proposed by a member of Parliament or the Government on a text under discussion. A bill can receive hundreds of amendments before its final vote."
+    },
     "rapport": {
       "trigger": "Report",
       "content": "An analytical document produced by a parliamentary committee or rapporteur."
@@ -258,6 +262,18 @@
       "avis": "Opinion: A committee's view",
       "etudeImpact": "Impact Assessment: Analysis of effects",
       "accordInternational": "International Agreement: Treaty ratification"
+    },
+    "projetLoi": {
+      "trigger": "Government Bill (Projet de Loi)",
+      "content": "Initiated by the Government. Examples: budgets (PLF), social reforms. It follows the full legislative procedure."
+    },
+    "ordonnance": {
+      "trigger": "Ordinance (Ordonnance)",
+      "content": "A measure taken by the Government, with Parliament's authorization (Article 38 of the Constitution), in a domain normally reserved for law. It must be ratified by Parliament to have permanent legal force. Example: labor code reform in 2017."
+    },
+    "decret": {
+      "trigger": "Decree (Décret)",
+      "content": "A regulatory text issued by the President of the Republic or the Prime Minister to specify the implementation details of a law. It does not go through Parliament. Examples: implementation decree, appointment decree."
     }
   },
   "landing": {
