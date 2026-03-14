@@ -31,12 +31,17 @@ export function useNavCategories(): NavCategory[] {
       key: "dashboard",
       label: t("dashboard"),
       href: "/KPIs",
-      prefixes: ["/KPIs", "/Composition", "/dossiers-legislatifs"],
+      prefixes: ["/KPIs", "/Composition"],
       subLinks: [
         { href: "/KPIs", label: t("keyIndicators") },
         { href: "/Composition", label: t("composition") },
-        { href: "/dossiers-legislatifs", label: t("allTexts") },
       ],
+    },
+    {
+      key: "textes",
+      label: t("textes"),
+      href: "/dossiers-legislatifs",
+      prefixes: ["/dossiers-legislatifs"],
     },
     {
       key: "organes",

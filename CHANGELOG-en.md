@@ -93,6 +93,7 @@
 - **AI summary navigation in same tab** — clicking a dossier navigates in the same tab (instead of opening a new tab) for a smoother transition with the loading skeleton
 - **Filters in a panel on KPIs page** — the "Type" and "Group" filters on the key indicators page are now grouped in a side panel ("Filters" button + active chips), aligned with the same design as the legislative dossiers page
 - **Footer recentered** — the footer content (link columns, copyright, language toggle) is now displayed in a narrower, centered container for better visual balance across all pages
+- **"The texts" promoted to top menu** — the legislative dossiers page moves out of the "Dashboard" submenu to become a top-level category in the navigation, directly accessible from the horizontal menu
 
 ### Fixed
 - **"Toolbox" cards disappeared** — feature cards on the landing page now remain visible after a language change

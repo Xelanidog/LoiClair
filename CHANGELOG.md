@@ -93,6 +93,7 @@
 - **Navigation vers le résumé IA dans le même onglet** — cliquer sur un dossier navigue dans le même onglet (au lieu d'ouvrir un nouvel onglet) pour une transition plus fluide avec le skeleton de chargement
 - **Filtres en panneau sur la page KPIs** — les filtres « Type » et « Groupe » de la page indicateurs clés sont désormais regroupés dans un panneau latéral (bouton « Filtres » + pastilles actives), aligné sur le même design que la page dossiers législatifs
 - **Footer recentré** — le contenu du pied de page (colonnes de liens, copyright, toggle langue) est désormais affiché dans un conteneur plus étroit et centré, pour un meilleur équilibre visuel sur toutes les pages
+- **« Les textes » promu dans le menu principal** — la page des dossiers législatifs quitte le sous-menu « Tableau de bord » pour devenir une catégorie de premier niveau dans la navigation, accessible directement depuis le menu horizontal
 
 ### Corrigé
 - **Cartes « boîte à outils » disparaissaient** — les cartes de fonctionnalités sur la page d'accueil restent visibles après un changement de langue
