@@ -43,6 +43,7 @@
 - **Light/dark toggle** — a sun/moon button in the menu switches themes with a smooth transition (View Transitions API)
 - **AI summaries open in new tab** — clicking on an AI summary opens the page in a new browser tab
 - **Enriched footer** — footer with columns organized by category (Explore, Resources, Legal, Contact)
+- **Redesigned changelog page** — release notes now use a clean style with colored pills (green = added, blue = changed, yellow = fixed, gray = removed) and are integrated into the Documentation sidebar
 
 ### Changed
 - **Dossier list — fully clickable cards** — each dossier in the list is now a clickable link across its entire surface, with an "AI summary › " sidebar that appears on hover

@@ -43,6 +43,7 @@
 - **Basculer clair/sombre** — un bouton lune/soleil dans le menu permet de changer le thème avec une transition fluide (View Transitions API)
 - **Résumés IA dans un nouvel onglet** — cliquer sur un résumé IA ouvre la page dans un nouvel onglet du navigateur
 - **Footer enrichi** — pied de page en colonnes avec liens organisés par catégorie (Explorer, Ressources, Légal, Contact)
+- **Page changelog redessinée** — les notes de version adoptent un style épuré avec des pastilles colorées (vert = ajouté, bleu = modifié, jaune = corrigé, gris = supprimé) et sont intégrées à la section Documentation dans la barre latérale
 
 ### Modifié
 - **Liste des dossiers — cartes entièrement cliquables** — chaque dossier dans la liste est désormais un lien cliquable sur toute sa surface, avec une bande latérale « Résumé IA › » qui apparaît au survol

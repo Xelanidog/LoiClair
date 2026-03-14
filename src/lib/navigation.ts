@@ -56,12 +56,13 @@ export function useNavCategories(): NavCategory[] {
       key: "documentation",
       label: t("documentation"),
       href: "/documentation/guide",
-      prefixes: ["/documentation"],
+      prefixes: ["/documentation", "/changelog"],
       subLinks: [
         { href: "/documentation/guide", label: t("userGuide") },
         { href: "/documentation/glossaire", label: t("glossary") },
         { href: "/documentation/methode", label: t("methodology") },
         { href: "/documentation/conformite-ia", label: t("aiCompliance") },
+        { href: "/changelog", label: "Changelog" },
       ],
     },
     {
