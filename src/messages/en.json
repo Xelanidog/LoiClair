@@ -406,7 +406,8 @@
     "mandatTermine": "Term ended",
     "texteNonPublie": "Text not yet published",
     "aucunTexte": "No text",
-    "aiSummaryBadge": "LoiClair dossier with AI summary"
+    "aiSummaryBadge": "LoiClair dossier with AI summary",
+    "aiSummaryShort": "AI Summary"
   },
   "kpis": {
     "pageTitle": "Key indicators",

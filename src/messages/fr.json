@@ -406,7 +406,8 @@
     "mandatTermine": "Mandat terminé",
     "texteNonPublie": "Texte non encore publié",
     "aucunTexte": "Aucun texte",
-    "aiSummaryBadge": "Dossier LoiClair avec résumé IA"
+    "aiSummaryBadge": "Dossier LoiClair avec résumé IA",
+    "aiSummaryShort": "Résumé IA"
   },
   "kpis": {
     "pageTitle": "Indicateurs clés",

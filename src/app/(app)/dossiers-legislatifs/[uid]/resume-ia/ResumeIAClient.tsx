@@ -267,17 +267,10 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
           <p className="text-muted-foreground">{t('noTextAvailable')}</p>
         )}
 
-        {/* Container AI — glowing border, toujours visible quand un texte est sélectionné */}
+        {/* Container AI — glowing border animé, toujours visible quand un texte est sélectionné */}
         {selectedTexte && (
-          <div
-            className="rounded-2xl"
-            style={{
-              padding: '2px',
-              background: 'linear-gradient(135deg, rgba(6,182,212,0.4), rgba(6,182,212,0.15) 30%, rgba(6,182,212,0.08) 50%, rgba(6,182,212,0.15) 70%, rgba(6,182,212,0.4))',
-              boxShadow: '0 0 20px rgba(6,182,212,0.1), 0 0 40px rgba(6,182,212,0.05)',
-            }}
-          >
-            <div className="rounded-[14px] bg-background px-4 pt-5 pb-5">
+          <GlowBorder>
+            <div className="bg-background px-4 pt-5 pb-5" style={{ borderRadius: '15px' }}>
 
               {/* État : lien invalide */}
               {liensStatus[selectedTexte.uid] === 'invalide' && (
@@ -472,7 +465,7 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
               )}
 
             </div>
-          </div>
+          </GlowBorder>
         )}
 
         {/* Scrutin */}
@@ -629,6 +622,40 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
           </div>
         </details>
       </div>
+    </div>
+  );
+}
+
+/** Bordure dorée avec glow pulsant autour de la carte résumé IA */
+function GlowBorder({ children }: { children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const t0 = performance.now();
+    let id: number;
+    const run = (t: number) => {
+      const pulse = 0.5 + 0.5 * Math.sin((t - t0) / 2000); // cycle ~12s
+      const a = (0.02 + pulse * 0.06).toFixed(3);
+      const b = (0.01 + pulse * 0.03).toFixed(3);
+      el.style.boxShadow = `0 0 24px rgba(218,165,32,${a}), 0 0 48px rgba(218,165,32,${b})`;
+      id = requestAnimationFrame(run);
+    };
+    id = requestAnimationFrame(run);
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      style={{
+        padding: '1px',
+        borderRadius: '16px',
+        background: 'linear-gradient(135deg, rgba(218,165,32,0.3), rgba(218,165,32,0.04) 30%, rgba(218,165,32,0.04) 70%, rgba(218,165,32,0.3))',
+      }}
+    >
+      {children}
     </div>
   );
 }

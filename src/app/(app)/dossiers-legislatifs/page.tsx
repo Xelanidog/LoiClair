@@ -8,8 +8,7 @@ export const revalidate = 3600; // Cache 1h — données mises à jour une fois 
 import { getTranslations, getLocale } from 'next-intl/server';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
-import { Sparkles } from 'lucide-react';
-import ShimmerText from '@/components/ShimmerText';
+import DossierCard from '@/components/DossierCard';
 import GenericFilter from '@/components/GenericFilter';
 import ResetButton from '@/components/ResetButton';
 import SearchInput from '@/components/SearchInput';
@@ -95,6 +94,7 @@ if (age) {
   const groupeFilter = typeof resolvedParams.groupe === 'string' ? resolvedParams.groupe.toLowerCase() : undefined;
   const themeFilter = typeof resolvedParams.theme === 'string' ? resolvedParams.theme.toLowerCase() : undefined;
   const keyword = typeof resolvedParams.q === 'string' ? resolvedParams.q.trim() : undefined;
+
 
 
   // Helper pour générer un slug à partir d'un libellé
@@ -360,76 +360,78 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
             return '#F39C12';
           })();
 
+          const dossierHref = `/dossiers-legislatifs/${dossier.uid}/resume-ia`;
+
+          // Contenu commun : statut, titre, métadonnées
+          const cardStatus = (
+            <div className="flex items-center gap-2 mb-2">
+              <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: bulletColor }} />
+              <span className="text-xs text-muted-foreground">
+                {dossier.statut_final ?? t('statutInconnu')}
+                {daysInfo !== null && <> · {(dossier.statut_final === 'Promulguée' || dossier.statut_final === 'Appliquée') ? t('promulgatedIn', { count: daysInfo }) : t('filedAgo', { count: daysInfo })}</>}
+              </span>
+            </div>
+          );
+
+          const cardTitle = (
+            <h2 className="text-base font-semibold leading-snug mb-2">{dossier.titre}</h2>
+          );
+
+          const cardMeta = (
+            <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground flex-1 min-w-0">
+              {dossier.procedure_libelle && (() => {
+                const def = getDefinition(dossier.procedure_libelle, tDef);
+                return def
+                  ? <ProcedureTooltip label={def.term} description={def.definition} />
+                  : <span className="font-medium uppercase tracking-wide">{dossier.procedure_libelle}</span>;
+              })()}
+              {displayActeur && (
+                <>
+                  <span className="text-border">·</span>
+                  <span>
+                    {(displayActeur as any).roles_text?.split(',')[0]?.trim()
+                      ? `${(displayActeur as any).roles_text.split(',')[0].trim()} `
+                      : ''}{displayActeur.prenom} {displayActeur.nom}
+                  </span>
+                  {displayActeur.groupe && (
+                    <>
+                      <span className="text-border">·</span>
+                      <span>{displayActeur.groupe.libelle ?? t('mandatTermine')}</span>
+                    </>
+                  )}
+                </>
+              )}
+              {depotDate && (
+                <>
+                  <span className="text-border">·</span>
+                  <span>{depotDate}</span>
+                </>
+              )}
+              {!hasAccessibleTexte && (
+                <>
+                  <span className="text-border">·</span>
+                  <span className="text-destructive font-medium">{textesCount > 0 ? t('texteNonPublie') : t('aucunTexte')}</span>
+                </>
+              )}
+            </div>
+          );
+
+          const cardDebug = (
+            <span className="font-mono text-[10px] text-muted-foreground select-all mt-1.5 block" style={{ opacity: 0.35 }}>
+              {dossier.uid}
+            </span>
+          );
+
           return (
             <li key={dossier.uid}>
-              <div className="py-5 px-4 hover:bg-muted transition-colors duration-150 rounded-sm">
-
-                {/* Ligne 1 : statut + durée */}
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: bulletColor }} />
-                  <span className="text-xs text-muted-foreground">
-                    {dossier.statut_final ?? t('statutInconnu')}
-                    {daysInfo !== null && <> · {(dossier.statut_final === 'Promulguée' || dossier.statut_final === 'Appliquée') ? t('promulgatedIn', { count: daysInfo }) : t('filedAgo', { count: daysInfo })}</>}
-                  </span>
-                </div>
-
-                {/* Ligne 2 : titre */}
-                <h2 className="text-base font-semibold leading-snug mb-2">{dossier.titre}</h2>
-
-                {/* Ligne 3 : méta + CTA */}
+              <DossierCard href={dossierHref} label={t('aiSummaryShort')}>
+                {cardStatus}
+                {cardTitle}
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                  <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground flex-1 min-w-0">
-                    {dossier.procedure_libelle && (() => {
-                      const def = getDefinition(dossier.procedure_libelle, tDef);
-                      return def
-                        ? <ProcedureTooltip label={def.term} description={def.definition} />
-                        : <span className="font-medium uppercase tracking-wide">{dossier.procedure_libelle}</span>;
-                    })()}
-                    {displayActeur && (
-                      <>
-                        <span className="text-border">·</span>
-                        <span>
-                          {(displayActeur as any).roles_text?.split(',')[0]?.trim()
-                            ? `${(displayActeur as any).roles_text.split(',')[0].trim()} `
-                            : ''}{displayActeur.prenom} {displayActeur.nom}
-                        </span>
-                        {displayActeur.groupe && (
-                          <>
-                            <span className="text-border">·</span>
-                            <span>{displayActeur.groupe.libelle ?? t('mandatTermine')}</span>
-                          </>
-                        )}
-                      </>
-                    )}
-                    {depotDate && (
-                      <>
-                        <span className="text-border">·</span>
-                        <span>{depotDate}</span>
-                      </>
-                    )}
-                    {!hasAccessibleTexte && (
-                      <>
-                        <span className="text-border">·</span>
-                        <span className="text-destructive font-medium">{textesCount > 0 ? t('texteNonPublie') : t('aucunTexte')}</span>
-                      </>
-                    )}
-                  </div>
-                  <Link
-                    href={`/dossiers-legislatifs/${dossier.uid}/resume-ia`}
-                    target="_blank"
-                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border border-primary/30 hover:border-primary/60 hover:scale-105 transition-all duration-200 group shrink-0"
-                  >
-                    <Sparkles className="w-3.5 h-3.5 text-primary group-hover:rotate-12 transition-transform duration-200" />
-                    <ShimmerText>{t('aiSummaryBadge')}</ShimmerText>
-                  </Link>
+                  {cardMeta}
                 </div>
-
-                {/* Debug : référence dossier */}
-                <span className="font-mono text-[10px] text-muted-foreground select-all mt-1.5 block" style={{ opacity: 0.35 }}>
-                  {dossier.uid}
-                </span>
-
-              </div>
+                {cardDebug}
+              </DossierCard>
             </li>
           );
         })}

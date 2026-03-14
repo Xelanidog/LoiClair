@@ -1,3 +1,14 @@
+## 13 mars 2026 (soir)
+
+### Modifié
+- **Liste des dossiers — cartes entièrement cliquables** — chaque dossier dans la liste est désormais un lien cliquable sur toute sa surface, avec une bande latérale « Résumé IA › » qui apparaît au survol
+- **Page résumé IA — bordure dorée** — la carte du résumé IA est encadrée d'une fine bordure dorée dégradée avec un glow qui pulse doucement, pour un effet « magique »
+
+### Supprimé
+- L'ancien bouton "Dossier LoiClair avec résumé IA" (badge pill cyan) a été remplacé par la carte cliquable
+
+---
+
 ## 13 mars 2026
 
 ### Ajouté
