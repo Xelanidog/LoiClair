@@ -2,11 +2,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export default function KpisLoading() {
   return (
-    <div className="container mx-auto p-6 max-w-7xl">
+    <div style={{ padding: "1.5rem" }}>
       {/* Titre + filtres */}
       <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <Skeleton className="h-8 w-48 mb-3" />
+          <Skeleton className="h-6 w-48 mb-3" />
           <Skeleton className="h-4 w-64" />
         </div>
         <div className="flex gap-3">

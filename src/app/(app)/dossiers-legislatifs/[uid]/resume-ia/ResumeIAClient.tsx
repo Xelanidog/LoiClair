@@ -83,8 +83,9 @@ const SECTION_REGEXES_EN = {
   aRetenir:    /## Key takeaway([\s\S]*?)(?=## |$)/,
 } as const;
 
-function parseCompletion(text: string, locale: string): Record<string, string> {
-  const cleaned = text.replace(RE_TRAILING_HEADER, '');
+function parseCompletion(text: string, locale: string, isStreaming = false): Record<string, string> {
+  // Only strip trailing partial headers when not streaming — during streaming it causes flicker
+  const cleaned = isStreaming ? text : text.replace(RE_TRAILING_HEADER, '');
   const regexes = locale === 'en' ? SECTION_REGEXES_EN : SECTION_REGEXES_FR;
   return {
     ceQueDit:    cleaned.match(regexes.ceQueDit)?.[1]?.trim() || '',
@@ -200,9 +201,9 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
 
   const selectedTexte = selectedUid ? textesByUid.get(selectedUid) ?? null : null;
   const lienTexte = selectedTexte?.lien_texte ?? null;
-  const sections = useMemo(() => parseCompletion(completion, locale), [completion, locale]);
-  const hasContent = Object.values(sections).some(v => v.length > 0);
   const isLoading = isLoadingResume || isStreamingCache;
+  const sections = useMemo(() => parseCompletion(completion, locale, isLoading), [completion, locale, isLoading]);
+  const hasContent = Object.values(sections).some(v => v.length > 0);
   const isValid = selectedTexte && liensStatus[selectedTexte.uid] === 'valide';
 
   // Footer derived values — memoized to avoid recalculation during streaming renders
@@ -244,9 +245,9 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
   return (
     <div className="container mx-auto p-4 md:p-6 max-w-7xl">
       {/* ═══ 1. Bandeau titre ═══ */}
-      <div className="rounded-xl px-0 py-4 md:py-6 mb-6">
+      <div className="rounded-xl px-0 pt-0 pb-4 md:pb-6 mb-6">
         <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#06B6D4' }}>{t('dossierLabel')}</span>
-        <h1 className="text-xl md:text-2xl font-bold mt-1">{titreDossier || `dossier ${uid}`}</h1>
+        <h1 className="text-lg md:text-xl font-bold mt-1">{titreDossier || `dossier ${uid}`}</h1>
         <p className="text-xs font-mono mt-1" style={{ opacity: 0.4 }}>{uid}</p>
       </div>
 
@@ -622,6 +623,7 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
           </div>
         </details>
       </div>
+
     </div>
   );
 }

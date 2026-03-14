@@ -36,11 +36,22 @@
     "newsFeedShort": "Fil d'actu"
   },
   "footer": {
+    "explore": "Explorer",
+    "dossiers": "Dossiers législatifs",
+    "composition": "Composition",
+    "legislativeProcess": "Processus législatif",
+    "resources": "Ressources",
+    "guide": "Guide d'utilisation",
+    "methodology": "Méthodologie",
+    "changelog": "Notes de version",
+    "legal": "Légal",
+    "aiCompliance": "Conformité IA",
     "about": "À propos",
-    "contactUs": "Contactez-nous",
-    "contributeGithub": "Contribuer sur GitHub",
-    "releaseNotes": "Notes de version",
-    "publicData": "Données publiques officielles"
+    "contact": "Contact",
+    "email": "Email",
+    "github": "GitHub Issues",
+    "publicData": "Données publiques officielles",
+    "language": "Langue"
   },
   "changelog": {
     "pageTitle": "Notes de version",

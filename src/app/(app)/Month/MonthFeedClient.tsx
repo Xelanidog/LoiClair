@@ -305,6 +305,7 @@ function ResumeIALink({ dossierUid, texteUid, texteUrlAccessible }: { dossierUid
     return (
       <Link
         href={`/dossiers-legislatifs/${dossierUid}/resume-ia`}
+        target="_blank"
         className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground hover:underline mt-1"
       >
         <FileText className="w-3 h-3" />
@@ -322,6 +323,7 @@ function ResumeIALink({ dossierUid, texteUid, texteUrlAccessible }: { dossierUid
         <span className="text-muted-foreground">·</span>
         <Link
           href={`/dossiers-legislatifs/${dossierUid}/resume-ia`}
+          target="_blank"
           className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground hover:underline"
         >
           <FileText className="w-3 h-3" />
@@ -333,6 +335,7 @@ function ResumeIALink({ dossierUid, texteUid, texteUrlAccessible }: { dossierUid
   return (
     <Link
       href={`/dossiers-legislatifs/${dossierUid}/resume-ia${texteUid ? `?texte=${texteUid}` : ""}`}
+      target="_blank"
       className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-1"
     >
       <Sparkles className="w-3 h-3" />
@@ -404,19 +407,19 @@ function RapportFooterLinks({ group }: { group: GroupedFeedEvent }) {
           <Sparkles className="w-3 h-3 shrink-0" />
           <span>{t("aiSummaryLabel")}</span>
           {an?.texteUid && (
-            <Link href={`/dossiers-legislatifs/${dossierUid}/resume-ia?texte=${an.texteUid}`} className="hover:underline">
+            <Link href={`/dossiers-legislatifs/${dossierUid}/resume-ia?texte=${an.texteUid}`} target="_blank" className="hover:underline">
               {t("institution.assemblee")}
             </Link>
           )}
           {an?.texteUid && sn?.texteUid && <span className="text-muted-foreground">|</span>}
           {sn?.texteUid && (
-            <Link href={`/dossiers-legislatifs/${dossierUid}/resume-ia?texte=${sn.texteUid}`} className="hover:underline">
+            <Link href={`/dossiers-legislatifs/${dossierUid}/resume-ia?texte=${sn.texteUid}`} target="_blank" className="hover:underline">
               {t("institution.senat")}
             </Link>
           )}
           {texteAdopteUid && <>
             <span className="text-muted-foreground">|</span>
-            <Link href={`/dossiers-legislatifs/${dossierUid}/resume-ia?texte=${texteAdopteUid}`} className="hover:underline text-muted-foreground">
+            <Link href={`/dossiers-legislatifs/${dossierUid}/resume-ia?texte=${texteAdopteUid}`} target="_blank" className="hover:underline text-muted-foreground">
               {t("adoptedText")}
             </Link>
           </>}
@@ -435,7 +438,7 @@ function RapportFooterLinks({ group }: { group: GroupedFeedEvent }) {
         <Sparkles className="w-3 h-3 shrink-0" />
         {hasSecondLink ? <span>{t("aiSummaryLabel")}</span> : null}
         {e.texteUid ? (
-          <Link href={`/dossiers-legislatifs/${dossierUid}/resume-ia?texte=${e.texteUid}`} className="hover:underline">
+          <Link href={`/dossiers-legislatifs/${dossierUid}/resume-ia?texte=${e.texteUid}`} target="_blank" className="hover:underline">
             {hasSecondLink ? <>{t("report")}{tomes && <span className="text-muted-foreground"> {t("plusTomes")}</span>}</> : <>{t("aiSummary")}{tomes && <span className="text-muted-foreground"> {t("plusTomes")}</span>}</>}
           </Link>
         ) : (
@@ -443,7 +446,7 @@ function RapportFooterLinks({ group }: { group: GroupedFeedEvent }) {
         )}
         {hasSecondLink && <>
           <span className="text-muted-foreground">|</span>
-          <Link href={`/dossiers-legislatifs/${dossierUid}/resume-ia?texte=${e.texteAdopteUid}`} className="hover:underline text-muted-foreground">
+          <Link href={`/dossiers-legislatifs/${dossierUid}/resume-ia?texte=${e.texteAdopteUid}`} target="_blank" className="hover:underline text-muted-foreground">
             {isCmp ? t("adoptedText") : t("modifiedText")}
           </Link>
         </>}
@@ -720,6 +723,7 @@ function GroupedEventCard({ group, index }: { group: GroupedFeedEvent; index: nu
             <div className="flex items-center gap-2 flex-wrap" style={{ flexShrink: 0, flexGrow: 1 }}>
               <Link
                 href={`/dossiers-legislatifs/${group.dossierUid}/resume-ia${e.texteUid ? `?texte=${e.texteUid}` : ''}`}
+                target="_blank"
                 className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-1"
               >
                 <Sparkles className="w-3 h-3" />
@@ -728,6 +732,7 @@ function GroupedEventCard({ group, index }: { group: GroupedFeedEvent; index: nu
               <span className="text-xs text-muted-foreground mt-1">·</span>
               <Link
                 href={`/dossiers-legislatifs/${group.dossierUid}/resume-ia`}
+                target="_blank"
                 className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground hover:underline mt-1"
               >
                 <FileText className="w-3 h-3" />
@@ -896,11 +901,12 @@ export function MonthFeedClient({
           <div className="mb-5 px-4 sm:px-0">
             <Link
               href={`/dossiers-legislatifs/${dossierUid}/resume-ia`}
+              target="_blank"
               className="inline-flex items-center gap-1 text-xs text-primary hover:underline mb-2"
             >
               <ArrowLeft className="w-3 h-3" />{t("backToDossier")}
             </Link>
-            <h1 className="text-2xl font-bold">
+            <h1 className="text-xl font-bold">
               {dossierTitre || t("legislativeDossier")}
             </h1>
             <p className="text-sm text-muted-foreground mt-0.5">
@@ -931,7 +937,7 @@ export function MonthFeedClient({
     <TooltipProvider>
       <div className="max-w-xl -mx-6 sm:mx-auto sm:px-4 py-6">
         <div className="mb-5 px-4 sm:px-0">
-          <h1 className="text-2xl font-bold">{t("newsFeedTitle")}</h1>
+          <h1 className="text-xl font-bold">{t("newsFeedTitle")}</h1>
           <p className="text-sm text-muted-foreground mt-0.5 capitalize">{visibleMonthFormatted}</p>
         </div>
 

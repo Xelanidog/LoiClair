@@ -266,7 +266,7 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
   return (
     <div className="container mx-auto p-6 max-w-7xl">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold mb-3">{t('pageTitle')}</h1>
+        <h1 className="text-xl font-bold mb-3">{t('pageTitle')}</h1>
         <p className="text-muted-foreground">
           {t('pageDesc')}
         </p>
@@ -424,7 +424,7 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
 
           return (
             <li key={dossier.uid}>
-              <DossierCard href={dossierHref} label={t('aiSummaryShort')}>
+              <DossierCard href={dossierHref} target="_blank" label={t('aiSummaryShort')}>
                 {cardStatus}
                 {cardTitle}
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2">

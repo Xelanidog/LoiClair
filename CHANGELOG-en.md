@@ -36,6 +36,13 @@
 - Automatic import of implementing decree content from Légifrance
 - Chronological sorting, decree naming, and consolidated version dates in AI summaries
 - "Release notes" page accessible from the footer — complete history of site updates, organized by week with collapsible sections
+- **Unified navigation** — a single horizontal menu at the top of all pages replaces the old fixed sidebar + separate header. Categories (News feed, Dashboard, Bodies, Documentation, About) are centered with the logo
+- **Contextual sidebar** — a minimal sidebar (text only, no icons) appears only on pages with sub-categories (KPIs, Composition, Documentation…)
+- **Redesigned mobile menu** — a burger button opens a panel with accordion categories and their sub-links
+- **"Contribute" button** — a GitHub pill in the menu invites users to report bugs or suggest improvements
+- **Light/dark toggle** — a sun/moon button in the menu switches themes with a smooth transition (View Transitions API)
+- **AI summaries open in new tab** — clicking on an AI summary opens the page in a new browser tab
+- **Enriched footer** — footer with columns organized by category (Explore, Resources, Legal, Contact)
 
 ### Changed
 - **Dossier list — fully clickable cards** — each dossier in the list is now a clickable link across its entire surface, with an "AI summary › " sidebar that appears on hover
@@ -70,6 +77,9 @@
 - The "Report" button becomes **"Have an idea? Found a problem?"** — it now allows you to suggest feature ideas in addition to reporting bugs
 - The modal opens with a choice screen between "Report a problem" and "Suggest an idea", with a form adapted to each case
 - The "Week Feed" has been renamed "News Feed" everywhere on the site for clarity
+- **Smaller page titles** — H1 titles on all pages are more compact to harmonize with the new navigation
+- **More space before footer** — a comfortable margin separates content from the footer
+- **Subtle warm background** — page content regains its subtle warm tint that distinguishes it from the navigation bar
 
 ### Fixed
 - **"Toolbox" cards disappeared** — feature cards on the landing page now remain visible after a language change
@@ -92,6 +102,8 @@
 - **Separate "Text selector" section** — integrated into the AI card footer
 - **Old dropdown menu** — the old confusing text selector (dropdown) has been replaced by the new selector grouped by stage
 - **Separate KPI badges** — duration indicators are now integrated directly into the timeline
+- **Old fixed sidebar** — replaced by the unified horizontal navigation and contextual sidebar
+- **Separate mobile menu** — replaced by the burger integrated into the TopNav
 
 ---
 

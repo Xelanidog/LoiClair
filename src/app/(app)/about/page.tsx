@@ -24,7 +24,7 @@ export default async function AboutPage() {
   return (
     <div className="container mx-auto p-6 max-w-7xl">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold">{t("pageTitle")}</h1>
+          <h1 className="text-xl font-bold">{t("pageTitle")}</h1>
         </div>
 
         {/* Section 1 : Le constat */}

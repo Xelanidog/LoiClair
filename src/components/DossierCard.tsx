@@ -6,10 +6,12 @@ import Link from 'next/link';
 export default function DossierCard({
   href,
   label,
+  target,
   children,
 }: {
   href: string;
   label: string;
+  target?: string;
   children: React.ReactNode;
 }) {
   const [hovered, setHovered] = useState(false);
@@ -17,6 +19,7 @@ export default function DossierCard({
   return (
     <Link
       href={href}
+      target={target}
       className="flex"
       style={{
         backgroundColor: hovered ? 'var(--color-muted)' : 'transparent',

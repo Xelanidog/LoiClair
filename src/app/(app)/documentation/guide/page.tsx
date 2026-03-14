@@ -23,7 +23,7 @@ export default async function GuidePage() {
   return (
     <div className="container mx-auto p-6 max-w-7xl">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold mb-3">{t('guideTitle')}</h1>
+        <h1 className="text-xl font-bold mb-3">{t('guideTitle')}</h1>
         <p className="text-muted-foreground">
           {t('guideDesc')}
         </p>

@@ -580,10 +580,7 @@ export default function LandingPage() {
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.12]">
               {t.rich("heroTitle", {
                 highlight: (chunks) => (
-                  <>
-                    <br />
-                    <span className="text-primary">{chunks}</span>
-                  </>
+                  <span className="text-primary"> {chunks}</span>
                 ),
               })}
             </h1>

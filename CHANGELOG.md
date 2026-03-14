@@ -36,6 +36,13 @@
 - Import automatique du contenu des décrets d'application depuis Légifrance
 - Tri chronologique, dénomination des décrets et date des versions consolidées dans les résumés IA
 - Page "Notes de version" accessible depuis le pied de page — historique complet des évolutions du site, organisé par semaine avec sections dépliables
+- **Navigation unifiée** — un menu horizontal unique en haut de toutes les pages remplace l'ancienne barre latérale fixe + header séparé. Les catégories (Fil d'actu, Tableau de bord, Organes, Documentation, À propos) sont centrées avec le logo
+- **Sidebar contextuelle** — une barre latérale minimaliste (texte seul, sans icônes) apparaît uniquement sur les pages ayant des sous-catégories (KPIs, Composition, Documentation…)
+- **Menu mobile repensé** — un bouton burger ouvre un panneau avec les catégories en accordéon et leurs sous-liens
+- **Bouton « Contribuer »** — un pill GitHub dans le menu appelle à signaler des bugs ou proposer des améliorations
+- **Basculer clair/sombre** — un bouton lune/soleil dans le menu permet de changer le thème avec une transition fluide (View Transitions API)
+- **Résumés IA dans un nouvel onglet** — cliquer sur un résumé IA ouvre la page dans un nouvel onglet du navigateur
+- **Footer enrichi** — pied de page en colonnes avec liens organisés par catégorie (Explorer, Ressources, Légal, Contact)
 
 ### Modifié
 - **Liste des dossiers — cartes entièrement cliquables** — chaque dossier dans la liste est désormais un lien cliquable sur toute sa surface, avec une bande latérale « Résumé IA › » qui apparaît au survol
@@ -70,6 +77,9 @@
 - Le bouton "Signaler" devient **"Une idée ? Un problème ?"** — il permet désormais de proposer des idées de fonctionnalités en plus de signaler des bugs
 - La modale s'ouvre sur un écran de choix entre "Signaler un problème" et "Proposer une idée", avec un formulaire adapté à chaque cas
 - Le "Fil du mois" a été renommé en "Fil d'actualité" partout sur le site pour plus de clarté
+- **Titres de page réduits** — les titres H1 de toutes les pages sont plus compacts pour s'harmoniser avec la nouvelle navigation
+- **Plus d'espace avant le footer** — une marge confortable sépare le contenu du pied de page
+- **Fond chaud subtil** — le contenu des pages retrouve sa teinte chaude légère qui le distingue de la barre de navigation
 
 ### Corrigé
 - **Cartes « boîte à outils » disparaissaient** — les cartes de fonctionnalités sur la page d'accueil restent visibles après un changement de langue
@@ -92,6 +102,8 @@
 - **Section séparée « Sélecteur de texte »** — intégrée dans le pied de carte IA
 - **Ancien menu déroulant** — l'ancien sélecteur de texte (dropdown confus) a été remplacé par le nouveau sélecteur groupé par étape
 - **Badges KPI séparés** — les indicateurs de durée sont désormais intégrés directement dans la timeline
+- **Ancienne barre latérale fixe** — remplacée par la navigation horizontale unifiée et la sidebar contextuelle
+- **Menu mobile séparé** — remplacé par le burger intégré au TopNav
 
 ---
 

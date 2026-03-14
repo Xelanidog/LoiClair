@@ -445,7 +445,7 @@ return (
     {/* Titre + filtre en haut – même style que la page dossiers */}
     <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
       <div>
-        <h1 className="text-2xl font-bold mb-3">{t('pageTitle')}</h1>
+        <h1 className="text-xl font-bold mb-3">{t('pageTitle')}</h1>
         <p className="text-muted-foreground">
           {t('pageSubtitle')}
           {procedure && <span className="ml-2 font-medium text-sm text-primary">[ {procedure} ]</span>}

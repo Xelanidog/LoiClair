@@ -67,7 +67,7 @@ export default async function MethodePage() {
   return (
     <div className="container mx-auto p-6 max-w-7xl">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold mb-3">{t('methodeTitle')}</h1>
+        <h1 className="text-xl font-bold mb-3">{t('methodeTitle')}</h1>
         <p className="text-muted-foreground">
           {t('methodeDesc')}
         </p>

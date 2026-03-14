@@ -1,208 +1,60 @@
-// src/components/Sidebar.tsx
 "use client"
 
-import { useState, useRef, useEffect, useLayoutEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { ChevronRight } from "lucide-react"
-import {
-  Calendar,
-  BarChart3,
-  Users,
-  ScrollText,
-  BookOpen,
-  BookMarked,
-  ClipboardList,
-  ShieldCheck,
-  GitBranch,
-  Layers,
-  Landmark,
-  Building,
-  Flag,
-  Scale,
-  Github,
-} from "lucide-react"
-import { cn } from "@/lib/utils"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { useTranslations } from "next-intl"
-import LocaleToggle from "@/components/LocaleToggle"
-import type { LucideIcon } from "lucide-react"
+import type { SubLink } from "@/lib/navigation"
 
-interface NavItem {
-  href: string
-  label: string
-  icon: LucideIcon
+interface SidebarProps {
+  subLinks: SubLink[]
 }
 
-function SidebarLink({ href, label, icon: Icon, onNavigation }: NavItem & { onNavigation?: () => void }) {
+export default function Sidebar({ subLinks }: SidebarProps) {
   const pathname = usePathname()
-  const isActive = pathname === href
 
   return (
-    <Link
-      href={href}
-      onClick={onNavigation}
-      className={cn(
-        "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors",
-        isActive
-          ? "text-primary font-medium"
-          : "text-muted-foreground hover:text-foreground hover:bg-accent"
-      )}
+    <nav
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "0.125rem",
+        padding: "1.5rem 2rem 1rem 0.75rem",
+        width: "100%",
+      }}
     >
-      <Icon className={cn("h-4 w-4 shrink-0", isActive ? "text-primary" : "text-muted-foreground")} />
-      <span>{label}</span>
-      {isActive && <span className="ml-auto text-primary text-[10px] leading-none tracking-[0.1em]" aria-hidden>||||||||||</span>}
-    </Link>
-  )
-}
-
-function SidebarSection({ label, items, onNavigation }: { label: string; items: NavItem[]; onNavigation?: () => void }) {
-  return (
-    <div>
-      <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 select-none">
-        {label}
-      </p>
-      <div className="space-y-0.5">
-        {items.map((item) => (
-          <SidebarLink key={item.href} {...item} onNavigation={onNavigation} />
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function CollapsibleSection({ label, items, onNavigation }: { label: string; items: NavItem[]; onNavigation?: () => void }) {
-  const pathname = usePathname()
-  const hasActiveChild = items.some((item) => pathname === item.href || pathname.startsWith(item.href + "/"))
-  const [open, setOpen] = useState(hasActiveChild)
-  const contentRef = useRef<HTMLDivElement>(null)
-  const [height, setHeight] = useState(0)
-
-  // Hauteur initiale sans animation (avant le premier paint)
-  useLayoutEffect(() => {
-    if (contentRef.current && open) {
-      setHeight(contentRef.current.scrollHeight)
-    }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Hauteur animée lors des toggles suivants
-  useEffect(() => {
-    if (contentRef.current) {
-      setHeight(open ? contentRef.current.scrollHeight : 0)
-    }
-  }, [open])
-
-  return (
-    <div>
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between px-3 pb-2 group cursor-pointer"
-      >
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 select-none">
-          {label}
-        </p>
-        <ChevronRight
-          className={cn(
-            "h-3 w-3 text-muted-foreground/40 transition-transform duration-200 group-hover:text-muted-foreground",
-            open && "rotate-90"
-          )}
-        />
-      </button>
-
-      <div style={{ height, overflow: "hidden", transition: "height 220ms ease" }}>
-        <div ref={contentRef}>
-          <div className="space-y-0.5 pb-0.5">
-            {items.map((item) => (
-              <SidebarLink key={item.href} {...item} onNavigation={onNavigation} />
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-export function SidebarNavContent({ onNavigation }: { onNavigation?: () => void }) {
-  const t = useTranslations("nav")
-  const tc = useTranslations("common")
-
-  const dashboardItems: NavItem[] = [
-    { href: "/Month", label: t("newsFeed"), icon: Calendar },
-    { href: "/KPIs", label: t("keyIndicators"), icon: BarChart3 },
-    { href: "/Composition", label: t("composition"), icon: Users },
-    { href: "/dossiers-legislatifs", label: t("allTexts"), icon: ScrollText },
-  ]
-
-  const organeItems: NavItem[] = [
-    { href: "/processus-legislatif", label: t("legislativeProcess"), icon: GitBranch },
-    { href: "/type-textes", label: t("textTypes"), icon: Layers },
-    { href: "/organes/assemblee", label: t("nationalAssembly"), icon: Landmark },
-    { href: "/organes/senat", label: t("senate"), icon: Building },
-    { href: "/organes/gouvernement", label: t("government"), icon: Flag },
-    { href: "/organes/conseil-constitutionnel", label: t("constitutionalCouncil"), icon: Scale },
-  ]
-
-  const docItems: NavItem[] = [
-    { href: "/documentation/guide", label: t("userGuide"), icon: BookOpen },
-    { href: "/documentation/glossaire", label: t("glossary"), icon: BookMarked },
-    { href: "/documentation/methode", label: t("methodology"), icon: ClipboardList },
-    { href: "/documentation/conformite-ia", label: t("aiCompliance"), icon: ShieldCheck },
-  ]
-
-  return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="px-5 pt-6 pb-5">
-        <Link href="/" onClick={onNavigation}>
-          <span className="font-bold text-lg tracking-tight">{tc("appName")}</span>
-        </Link>
-        <p className="text-xs text-muted-foreground mt-1.5">
-          {tc("tagline")}
-        </p>
-      </div>
-
-      {/* Nav */}
-      <nav className="flex-1 px-3 pt-4 pb-4 space-y-6">
-        <SidebarSection label={t("dashboard")} items={dashboardItems} onNavigation={onNavigation} />
-        <CollapsibleSection label={t("legislativeBodies")} items={organeItems} onNavigation={onNavigation} />
-        <CollapsibleSection label={t("documentation")} items={docItems} onNavigation={onNavigation} />
-      </nav>
-
-      {/* Bottom card */}
-      <div className="px-4 pb-3">
-        <a
-          href="https://github.com/Xelanidog/LoiClair/issues"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block rounded-xl bg-muted p-4 hover:bg-muted/80 transition-colors"
-        >
-          <div className="flex items-center gap-3 mb-2">
-            <div className="h-8 w-8 rounded-lg bg-foreground flex items-center justify-center shrink-0">
-              <Github className="h-4 w-4 text-background" />
-            </div>
-            <p className="text-sm font-medium">{tc("contribute")}</p>
-          </div>
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            {tc("contributeDesc")}
-          </p>
-        </a>
-      </div>
-
-      {/* Locale toggle */}
-      <div className="px-4 pb-5 flex">
-        <LocaleToggle />
-      </div>
-    </div>
-  )
-}
-
-export default function Sidebar() {
-  return (
-    <aside className="fixed inset-y-0 left-0 z-50 w-72">
-      <ScrollArea className="h-full">
-        <SidebarNavContent />
-      </ScrollArea>
-    </aside>
+      {subLinks.map((link) => {
+        const isActive = pathname === link.href || pathname.startsWith(link.href + "/")
+        return (
+          <Link
+            key={link.href}
+            href={link.href}
+            style={{
+              display: "block",
+              padding: "0.375rem 0.75rem",
+              fontSize: "0.875rem",
+              borderRadius: "0.375rem",
+              color: isActive ? "var(--foreground)" : "var(--muted-foreground)",
+              backgroundColor: isActive ? "var(--accent)" : "transparent",
+              fontWeight: isActive ? 500 : 400,
+              textDecoration: "none",
+              transition: "background-color 150ms, color 150ms",
+            }}
+            onMouseEnter={(e) => {
+              if (!isActive) {
+                e.currentTarget.style.color = "var(--foreground)"
+                e.currentTarget.style.backgroundColor = "var(--accent)"
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!isActive) {
+                e.currentTarget.style.color = "var(--muted-foreground)"
+                e.currentTarget.style.backgroundColor = "transparent"
+              }
+            }}
+          >
+            {link.label}
+          </Link>
+        )
+      })}
+    </nav>
   )
 }

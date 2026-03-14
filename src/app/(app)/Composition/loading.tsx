@@ -2,10 +2,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export default function CompositionLoading() {
   return (
-    <div className="container mx-auto p-6 max-w-7xl">
+    <div style={{ padding: "1.5rem" }}>
       {/* Titre */}
       <div className="mb-8">
-        <Skeleton className="h-8 w-64 mb-3" />
+        <Skeleton className="h-6 w-64 mb-3" />
         <Skeleton className="h-4 w-96" />
       </div>
 

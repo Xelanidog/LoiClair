@@ -47,6 +47,23 @@
   --radius-4xl: calc(var(--radius) + 16px);
 }
 
+/* Smooth theme transition via View Transitions API */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.25s;
+  animation-timing-function: ease-in-out;
+}
+
+/* When sidebar is visible, container fills available width (desktop only) */
+@media (min-width: 1024px) {
+  main[data-has-sidebar] .container {
+    padding-left: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    max-width: none !important;
+  }
+}
+
 :root {
   --radius: 0.625rem;
   --gold: oklch(0.73 0.12 80); /* Or Doux #D4A54A */
@@ -63,6 +80,7 @@
   --secondary: oklch(0.97 0.005 80); /* Gris Chaud #F7F5F2 */
   --secondary-foreground: oklch(0.22 0.01 75); /* Brun Profond */
   --muted: oklch(0.97 0.005 80); /* Gris Chaud #F7F5F2 */
+
   --muted-foreground: oklch(0.7 0.01 75); /* Texte Léger #A8A29E */
   --accent: oklch(0.97 0.005 80); /* Gris Chaud #F7F5F2 */
   --accent-foreground: oklch(0.22 0.01 75); /* Brun Profond */
@@ -100,6 +118,7 @@
   --secondary: oklch(0.28 0.005 60);
   --secondary-foreground: oklch(0.96 0.005 80);
   --muted: oklch(0.28 0.005 60);
+
   --muted-foreground: oklch(0.65 0.01 75);
   --accent: oklch(0.28 0.005 60);
   --accent-foreground: oklch(0.96 0.005 80);
@@ -151,6 +170,4 @@
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
-
-
 
