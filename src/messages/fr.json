@@ -962,6 +962,7 @@
     "methodeDesc": "Comment sont calculés les indicateurs, d'où viennent les données et quelles sont leurs limites."
   },
   "resumeIA": {
+    "allTexts": "Tous les textes",
     "dossierLabel": "Dossier LoiClair",
     "aiSummary": "Résumé IA",
     "analyzing": "analyse en cours…",

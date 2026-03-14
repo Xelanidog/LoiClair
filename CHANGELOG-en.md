@@ -41,7 +41,8 @@
 - **Redesigned mobile menu** — a burger button opens a panel with accordion categories and their sub-links
 - **"Contribute" button** — a GitHub pill in the menu invites users to report bugs or suggest improvements
 - **Light/dark toggle** — a sun/moon button in the menu switches themes with a smooth transition (View Transitions API)
-- **AI summaries open in new tab** — clicking on an AI summary opens the page in a new browser tab
+- **Breadcrumb on the AI summary page** — a "All texts / LoiClair Dossier" breadcrumb lets you easily navigate back to the dossier list
+- **Loading skeleton for AI summary** — an animated skeleton displays while the summary page loads, eliminating the white flash during transitions
 - **Enriched footer** — footer with columns organized by category (Explore, Resources, Legal, Contact)
 - **Redesigned changelog page** — release notes now use a clean style with colored pills (green = added, blue = changed, yellow = fixed, gray = removed) and are integrated into the Documentation sidebar
 - **Detailed pages per institution** — each legislative body now has its own page: Assemblée nationale, Sénat, Gouvernement and Conseil constitutionnel. Each page presents educational information, composition KPIs, political groups and a full members table
@@ -89,6 +90,7 @@
 - **Redesigned filters on the dossiers page** — the search bar spans the full width, filters are grouped in a side panel (right on desktop, bottom on mobile) accessible via a "Filters" button with a counter badge. Active filters appear as removable chips
 - **"Text types" page reorganized** — the page is now divided into two sections (parliamentary texts / government texts) with a lightweight card grid design, and three new types added: Amendment, Ordinance and Decree
 - **"Legislative process" page redesigned** — institutions are presented in a grid of cards with building photos; clicking opens a modal with details. The law's journey becomes an interactive vertical stepper with 8 steps (adding "Implementing decrees"), dots and connecting lines, and expandable details on click
+- **AI summary navigation in same tab** — clicking a dossier navigates in the same tab (instead of opening a new tab) for a smoother transition with the loading skeleton
 
 ### Fixed
 - **"Toolbox" cards disappeared** — feature cards on the landing page now remain visible after a language change

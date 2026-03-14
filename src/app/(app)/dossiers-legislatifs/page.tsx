@@ -444,7 +444,7 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
 
           return (
             <li key={dossier.uid}>
-              <DossierCard href={dossierHref} target="_blank" label={t('aiSummaryShort')}>
+              <DossierCard href={dossierHref} label={t('aiSummaryShort')}>
                 {cardStatus}
                 {cardTitle}
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2">

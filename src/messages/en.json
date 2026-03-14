@@ -962,6 +962,7 @@
     "methodeDesc": "How indicators are calculated, where the data comes from, and what their limitations are."
   },
   "resumeIA": {
+    "allTexts": "All texts",
     "dossierLabel": "LoiClair Dossier",
     "aiSummary": "AI Summary",
     "analyzing": "analyzing…",

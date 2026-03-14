@@ -41,7 +41,8 @@
 - **Menu mobile repensé** — un bouton burger ouvre un panneau avec les catégories en accordéon et leurs sous-liens
 - **Bouton « Contribuer »** — un pill GitHub dans le menu appelle à signaler des bugs ou proposer des améliorations
 - **Basculer clair/sombre** — un bouton lune/soleil dans le menu permet de changer le thème avec une transition fluide (View Transitions API)
-- **Résumés IA dans un nouvel onglet** — cliquer sur un résumé IA ouvre la page dans un nouvel onglet du navigateur
+- **Fil d'Ariane sur la page résumé IA** — un breadcrumb « Tous les textes / Dossier LoiClair » permet de revenir facilement à la liste des dossiers
+- **Squelette de chargement pour le résumé IA** — un skeleton animé s'affiche pendant le chargement de la page résumé, éliminant le flash blanc lors de la transition
 - **Footer enrichi** — pied de page en colonnes avec liens organisés par catégorie (Explorer, Ressources, Légal, Contact)
 - **Page changelog redessinée** — les notes de version adoptent un style épuré avec des pastilles colorées (vert = ajouté, bleu = modifié, jaune = corrigé, gris = supprimé) et sont intégrées à la section Documentation dans la barre latérale
 - **Pages détaillées par institution** — chaque organe législatif dispose désormais de sa propre page : Assemblée nationale, Sénat, Gouvernement et Conseil constitutionnel. Chaque page présente des informations pédagogiques, les KPIs de composition, les groupes politiques et un tableau complet des membres
@@ -89,6 +90,7 @@
 - **Filtres repensés sur la page des dossiers** — la barre de recherche occupe toute la largeur, les filtres sont regroupés dans un panneau latéral (à droite sur desktop, en bas sur mobile) accessible via un bouton « Filtres » avec badge compteur. Les filtres actifs s'affichent comme des pastilles supprimables d'un clic
 - **Page « Types de textes » réorganisée** — la page est désormais divisée en deux sections (textes parlementaires / textes gouvernementaux) avec un design en grille de cartes légères, et trois nouveaux types ajoutés : Amendement, Ordonnance et Décret
 - **Page « Processus législatif » redessinée** — les institutions sont présentées dans une grille de cartes avec photos des bâtiments ; un clic ouvre un modal avec le détail. Le parcours d'une loi devient un stepper vertical interactif avec 8 étapes (ajout des « Décrets d'application »), dots et lignes connectrices, et un détail dépliable par clic
+- **Navigation vers le résumé IA dans le même onglet** — cliquer sur un dossier navigue dans le même onglet (au lieu d'ouvrir un nouvel onglet) pour une transition plus fluide avec le skeleton de chargement
 
 ### Corrigé
 - **Cartes « boîte à outils » disparaissaient** — les cartes de fonctionnalités sur la page d'accueil restent visibles après un changement de langue

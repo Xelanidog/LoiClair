@@ -251,10 +251,14 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
 
   return (
     <div className="container mx-auto p-4 md:p-6 max-w-7xl">
-      {/* ═══ 1. Bandeau titre ═══ */}
+      {/* ═══ 1. Breadcrumb + titre ═══ */}
+      <nav className="flex items-center gap-1.5 text-xs text-muted-foreground mb-4">
+        <Link href="/dossiers-legislatifs" className="hover:text-foreground transition-colors">{t('allTexts')}</Link>
+        <span style={{ opacity: 0.4 }}>/</span>
+        <span className="font-medium text-primary">{t('dossierLabel')}</span>
+      </nav>
       <div className="rounded-xl px-0 pt-0 pb-4 md:pb-6 mb-6">
-        <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#06B6D4' }}>{t('dossierLabel')}</span>
-        <h1 className="text-lg md:text-xl font-bold mt-1">{titreDossier || `dossier ${uid}`}</h1>
+        <h1 className="text-lg md:text-xl font-bold">{titreDossier || `dossier ${uid}`}</h1>
         <p className="text-xs font-mono mt-1" style={{ opacity: 0.4 }}>{uid}</p>
       </div>
 
