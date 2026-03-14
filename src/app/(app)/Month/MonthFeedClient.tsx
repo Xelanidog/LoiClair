@@ -897,7 +897,7 @@ export function MonthFeedClient({
 
     return (
       <TooltipProvider>
-        <div className="max-w-xl -mx-6 sm:mx-auto sm:px-4 py-6">
+        <div className="max-w-xl sm:mx-auto sm:px-4 py-6">
           <div className="mb-5 px-4 sm:px-0">
             <Link
               href={`/dossiers-legislatifs/${dossierUid}/resume-ia`}
@@ -935,7 +935,7 @@ export function MonthFeedClient({
   // ── Month mode with infinite scroll ──
   return (
     <TooltipProvider>
-      <div className="max-w-xl -mx-6 sm:mx-auto sm:px-4 py-6">
+      <div className="max-w-xl sm:mx-auto sm:px-4 py-6">
         <div className="mb-5 px-4 sm:px-0">
           <h1 className="text-xl font-bold">{t("newsFeedTitle")}</h1>
           <p className="text-sm text-muted-foreground mt-0.5 capitalize">{visibleMonthFormatted}</p>

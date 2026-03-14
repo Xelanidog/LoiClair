@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { Sparkles } from 'lucide-react';
 
 export default function DossierCard({
   href,
@@ -20,44 +21,36 @@ export default function DossierCard({
     <Link
       href={href}
       target={target}
-      className="flex"
       style={{
-        backgroundColor: hovered ? 'var(--color-muted)' : 'transparent',
-        transition: 'background-color 0.15s ease',
-        WebkitTransition: 'background-color 0.15s ease',
-        overflow: 'hidden',
+        display: 'block',
+        backgroundColor: hovered ? 'var(--muted)' : 'transparent',
+        borderLeft: hovered ? '3px solid var(--primary)' : '3px solid transparent',
+        borderBottom: '1px solid var(--color-border)',
+        transition: 'background-color 0.15s ease, border-color 0.15s ease',
+        WebkitTransition: 'background-color 0.15s ease, border-color 0.15s ease',
       }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      <div className="flex-1 min-w-0 py-5 px-4">
+      <div style={{ padding: '20px 16px' }}>
         {children}
-      </div>
-      {/* Label + accent stripe — glisse depuis la droite au hover */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          flexShrink: 0,
-          transform: hovered ? 'translateX(0)' : 'translateX(100%)',
-          WebkitTransform: hovered ? 'translateX(0)' : 'translateX(100%)',
-          transition: 'transform 0.25s ease',
-          WebkitTransition: '-webkit-transform 0.25s ease',
-          whiteSpace: 'nowrap',
-        }}
-      >
-        {/* Texte sur fond normal */}
-        <span style={{ color: '#0891B2', fontSize: 12, fontWeight: 600, paddingRight: 8 }}>{label}</span>
-        <span style={{ color: '#0891B2', fontSize: 16, fontWeight: 'bold', lineHeight: 1, paddingRight: 10 }}>›</span>
-        {/* Fine bande accent */}
         <div
           style={{
-            width: 4,
-            alignSelf: 'stretch',
-            backgroundColor: '#0891B2',
-            opacity: 0.25,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            marginTop: '8px',
+            fontSize: '12px',
+            fontWeight: 500,
+            color: 'var(--primary)',
+            opacity: hovered ? 1 : 0,
+            transition: 'opacity 0.15s ease',
+            WebkitTransition: 'opacity 0.15s ease',
           }}
-        />
+        >
+          <Sparkles style={{ width: '12px', height: '12px' }} />
+          <span>{label} →</span>
+        </div>
       </div>
     </Link>
   );

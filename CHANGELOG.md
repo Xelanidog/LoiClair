@@ -46,7 +46,7 @@
 - **Page changelog redessinée** — les notes de version adoptent un style épuré avec des pastilles colorées (vert = ajouté, bleu = modifié, jaune = corrigé, gris = supprimé) et sont intégrées à la section Documentation dans la barre latérale
 
 ### Modifié
-- **Liste des dossiers — cartes entièrement cliquables** — chaque dossier dans la liste est désormais un lien cliquable sur toute sa surface, avec une bande latérale « Résumé IA › » qui apparaît au survol
+- **Liste des dossiers — cartes entièrement cliquables** — chaque dossier dans la liste est désormais un lien cliquable sur toute sa surface, avec un label « Résumé IA → » qui apparaît au survol (bordure gauche accent + fond coloré)
 - **Page résumé IA — bordure dorée** — la carte du résumé IA est encadrée d'une fine bordure dorée dégradée avec un glow qui pulse doucement
 - **Graphique mensuel localisé** — le titre, la description et les tendances du graphique d'évolution mensuelle s'adaptent à la langue
 - **Recherche et filtres localisés** — le placeholder de recherche, les labels de filtres et la pagination s'affichent dans la langue choisie
@@ -95,6 +95,8 @@
 - L'ordre du fil d'actualité dans les pages dossier affiche maintenant les événements récents en premier
 - Suppression du flickering lors du streaming des résumés IA (deux corrections successives pour les cas cachés et non-cachés)
 - Correction du pipeline pour rattraper les lois enrichies sans lien de texte
+- **Fil d'actualité coupé sur mobile** — le contenu du fil d'actu débordait à gauche et à droite sur petit écran à cause de marges négatives
+- **Titres des dossiers écrasés sur mobile** — le panneau latéral « Résumé IA » masqué comprimait le titre sur certains navigateurs mobiles
 
 ### Supprimé
 - L'ancien bouton "Dossier LoiClair avec résumé IA" (badge pill cyan) a été remplacé par la carte cliquable

@@ -46,7 +46,7 @@
 - **Redesigned changelog page** — release notes now use a clean style with colored pills (green = added, blue = changed, yellow = fixed, gray = removed) and are integrated into the Documentation sidebar
 
 ### Changed
-- **Dossier list — fully clickable cards** — each dossier in the list is now a clickable link across its entire surface, with an "AI summary › " sidebar that appears on hover
+- **Dossier list — fully clickable cards** — each dossier in the list is now a clickable link across its entire surface, with an "AI Summary →" label that appears on hover (left accent border + colored background)
 - **AI summary page — golden border** — the AI summary card is framed with a fine gradient golden border with a glow that pulses gently
 - **Localized monthly chart** — the title, description, and trends of the monthly activity chart adapt to the language
 - **Localized search and filters** — the search placeholder, filter labels, and pagination display in the chosen language
@@ -95,6 +95,8 @@
 - News feed order on dossier pages now displays recent events first
 - Removed flickering when streaming AI summaries (two successive fixes for hidden and non-hidden cases)
 - Fixed pipeline to catch enriched laws without text links
+- **News feed cut off on mobile** — news feed content was overflowing left and right on small screens due to negative margins
+- **Dossier titles squished on mobile** — the hidden "AI summary" side panel was compressing titles on some mobile browsers
 
 ### Removed
 - The old "LoiClair Dossier with AI summary" button (cyan pill badge) has been replaced by the clickable card
