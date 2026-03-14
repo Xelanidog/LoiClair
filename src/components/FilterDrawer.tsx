@@ -63,10 +63,10 @@ export default function FilterDrawer({ children, filterLabels }: FilterDrawerPro
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent
           side={isMobile ? 'bottom' : 'right'}
-          size="sm"
+          size={isMobile ? 'content' : 'sm'}
           className={isMobile ? 'max-h-[80vh] overflow-y-auto rounded-t-2xl' : 'overflow-y-auto'}
+          style={isMobile ? { width: '100%' } : { WebkitBackdropFilter: 'blur(12px)' }}
           onOpenAutoFocus={(e) => e.preventDefault()}
-          style={isMobile ? undefined : { WebkitBackdropFilter: 'blur(12px)' }}
         >
           <SheetHeader>
             <SheetTitle>Filtres</SheetTitle>

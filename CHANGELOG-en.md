@@ -112,6 +112,7 @@
 - **AI summary flickering during streaming** — the summary text was flickering and overlapping during live generation, caused by a duplicate API call in development mode. Added throttle for smoother display
 - **Markdown formatting in AI summaries** — bold, italic and other AI-generated formatting now renders correctly instead of showing raw characters (e.g. `**text**`)
 - **"Got an idea? A problem?" button cut off on mobile** — the text and icon of the feedback button in the mobile menu were misaligned and the text overflowed onto two lines
+- **Filter panel truncated on mobile** — on KPIs and text types pages, the filter panel only took up a small portion at the bottom left of the screen instead of displaying full width
 
 ### Removed
 - The old "LoiClair Dossier with AI summary" button (cyan pill badge) has been replaced by the clickable card

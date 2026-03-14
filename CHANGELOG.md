@@ -112,6 +112,7 @@
 - **Scintillement du résumé IA en streaming** — le texte du résumé clignotait et se superposait pendant la génération en direct, causé par un double appel API en mode développement. Ajout d'un throttle pour lisser l'affichage
 - **Formatage markdown dans les résumés IA** — le gras, l'italique et autres formats générés par l'IA s'affichent désormais correctement au lieu de montrer les caractères bruts (ex : `**texte**`)
 - **Bouton « Une idée ? Un problème ? » coupé sur mobile** — le texte et l'icône du bouton de signalement dans le menu mobile étaient mal alignés et le texte débordait sur deux lignes
+- **Panneau de filtres tronqué sur mobile** — sur les pages KPIs et Types de textes, le panneau de filtres ne prenait qu'une petite portion en bas à gauche de l'écran au lieu de s'afficher en pleine largeur
 
 ### Supprimé
 - L'ancien bouton "Dossier LoiClair avec résumé IA" (badge pill cyan) a été remplacé par la carte cliquable
