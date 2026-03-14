@@ -225,13 +225,17 @@ Chaque dossier est présenté sous forme de ligne compacte structurée en trois 
 
 ### Filtres et recherche
 
-Plusieurs filtres permettent de cibler les dossiers qui vous intéressent. Sur mobile, un bouton **Filtres** ouvre un panneau en bas de l'écran avec l'ensemble des filtres disponibles ; sur ordinateur, ils sont affichés directement sous le titre.
+La **barre de recherche** occupe toute la largeur en haut de la zone de filtres et permet de chercher un dossier par mot-clé dans le titre ou par nom d'auteur.
+
+En dessous, un bouton **Filtres** ouvre un panneau latéral (à droite sur ordinateur, en bas de l'écran sur mobile) avec les cinq filtres disponibles :
 
 - **Type de procédure** — pour isoler un type de texte en particulier.
 - **Statut** — pour ne voir que les textes appliqués, promulgués, en cours, rejetés, etc. Le statut **Appliquée** signifie que la loi a été promulguée et que ses décrets d'application sont publiés (ou qu'elle est d'application directe).
 - **Groupe politique** — pour filtrer par groupe initiateur.
 - **Thème** — pour afficher uniquement les dossiers portant sur un sujet donné (santé, éducation, transports, etc.). Les thèmes sont attribués automatiquement à partir du titre de chaque dossier (voir [Méthodologie — Classification thématique](/documentation/methode#classification-thematique)).
-- **Barre de recherche** — pour chercher un dossier par mot-clé dans le titre.
+- **Ancienneté** — pour filtrer par date de dépôt (moins de 6 mois, 6 mois à 1 an, plus d'un an).
+
+Un **badge compteur** sur le bouton indique le nombre de filtres actifs. Les filtres sélectionnés apparaissent sous forme de **pastilles** à côté du bouton : chaque pastille montre le libellé du filtre et un **×** pour le retirer d'un clic. Le bouton **Réinitialiser** efface tous les filtres d'un coup.
 
 La pagination en bas de page permet de naviguer entre les résultats (10 dossiers par page).
 

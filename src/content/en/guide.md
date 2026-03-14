@@ -225,13 +225,17 @@ Each dossier is presented as a compact row structured in three levels:
 
 ### Filters and search
 
-Several filters allow you to target the dossiers you are interested in. On mobile, a **Filters** button opens a panel at the bottom of the screen with all available filters; on desktop, they are displayed directly below the title.
+The **search bar** spans the full width at the top of the filter area and lets you search for a dossier by keyword in the title or by author name.
+
+Below it, a **Filters** button opens a side panel (on the right on desktop, from the bottom on mobile) with five available filters:
 
 - **Procedure type** — to isolate a particular type of text.
 - **Status** — to see only applied, enacted, in progress, rejected texts, etc. The **Applied** status means that the law has been enacted and its implementing decrees are published (or that it has direct application).
 - **Political group** — to filter by initiating group.
 - **Theme** — to display only dossiers on a given subject (health, education, transport, etc.). Themes are assigned automatically from the title of each dossier (see [Methodology — Thematic classification](/documentation/methode#classification-thematique)).
-- **Search bar** — to search for a dossier by keyword in the title.
+- **Age** — to filter by filing date (less than 6 months, 6 months to 1 year, more than 1 year).
+
+A **counter badge** on the button shows how many filters are active. Selected filters appear as **chips** next to the button: each chip shows the filter label and an **×** to remove it with one click. The **Reset** button clears all filters at once.
 
 The pagination at the bottom of the page allows you to navigate between results (10 dossiers per page).
 

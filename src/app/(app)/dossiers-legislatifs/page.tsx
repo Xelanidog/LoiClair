@@ -10,7 +10,6 @@ import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import DossierCard from '@/components/DossierCard';
 import GenericFilter from '@/components/GenericFilter';
-import ResetButton from '@/components/ResetButton';
 import SearchInput from '@/components/SearchInput';
 import FilterDrawer from '@/components/FilterDrawer';
 import ProcedureTooltip from '@/components/ProcedureTooltip';
@@ -279,9 +278,31 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
         </a>
       </p>
 
-      {/* Filtres */}
-      <FilterDrawer>
-          <SearchInput />
+      {/* Recherche pleine largeur */}
+      <div className="mb-3">
+        <SearchInput />
+      </div>
+
+      {/* Filtres : bouton + chips + reset */}
+      <FilterDrawer filterLabels={{
+        statut: Object.fromEntries([
+          ['en_cours_d_examen', t('statutEnCours')],
+          ['adopte_par_assemblee', t('statutAdopteAssemblee')],
+          ['adopte_par_senat', t('statutAdopteSenat')],
+          ['adopte_par_parlement', t('statutAdopteParlement')],
+          ['rejetee', t('statutRejete')],
+          ['promulguee', t('statutPromulguee')],
+          ['appliquee', t('statutAppliquee')],
+        ]),
+        age: Object.fromEntries([
+          ['moins_6m', t('ageMoins6m')],
+          ['6m_1a', t('age6m1a')],
+          ['plus_1a', t('agePlus1a')],
+        ]),
+        type: Object.fromEntries(typeOptions.map(o => [o.slug, o.libelle])),
+        groupe: Object.fromEntries(groupeOptions.map(o => [o.slug, o.libelle])),
+        theme: Object.fromEntries(themeOptions.map(o => [o.slug, o.libelle])),
+      }}>
           <GenericFilter
             paramName="statut"
             label={t('filterStatutLabel')}
@@ -330,7 +351,6 @@ if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
             allLabel={t('filterThemeAll')}
             options={themeOptions}
           />
-          <ResetButton />
       </FilterDrawer>
 
       <div className="mb-4 text-sm text-muted-foreground">

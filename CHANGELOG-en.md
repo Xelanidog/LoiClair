@@ -82,6 +82,7 @@
 - **More space before footer** — a comfortable margin separates content from the footer
 - **Subtle warm background** — page content regains its subtle warm tint that distinguishes it from the navigation bar
 - **Compact legislative funnel** — the legislative journey is now displayed as a compact vertical stepper: colored numbers + labels + conversion rates, without horizontal bars — much more readable and compact
+- **Redesigned filters on the dossiers page** — the search bar spans the full width, filters are grouped in a side panel (right on desktop, bottom on mobile) accessible via a "Filters" button with a counter badge. Active filters appear as removable chips
 
 ### Fixed
 - **"Toolbox" cards disappeared** — feature cards on the landing page now remain visible after a language change

@@ -36,13 +36,14 @@ const hasFilters = searchParams.has('statut') || searchParams.has('age') || sear
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
-            variant="ghost" // Style discret, sans fond.
-            size="icon" // Taille icône seule.
+            variant="ghost"
+            size="sm"
             onClick={handleReset}
-            disabled={!hasFilters} // Gris si pas de filtres.
-            className="h-10 w-10 " // Match la hauteur des Select pour alignement.
+            disabled={!hasFilters}
+            className="gap-1.5"
           >
-            <RotateCcw className="h-4 w-4" /> {/* Icône simple, taille standard. */}
+            <RotateCcw className="h-4 w-4" />
+            <span className="max-md:hidden">Réinitialiser</span>
           </Button>
         </TooltipTrigger>
         <TooltipContent>
