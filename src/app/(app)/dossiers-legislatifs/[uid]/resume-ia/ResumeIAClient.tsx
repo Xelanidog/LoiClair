@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { SYSTEM_PROMPT_RESUME_LOI, SYSTEM_PROMPT_RESUME_LOI_EN, PARAMS_RESUME_LOI, MODEL_RESUME_LOI, MAX_INPUT_CHARS_RESUME_LOI } from '@/lib/prompts';
 import { useCompletion } from '@ai-sdk/react';
 import { Skeleton } from '@/components/ui/skeleton';
+import ReactMarkdown from 'react-markdown';
 import { useTranslations, useLocale } from 'next-intl';
 import ProcedureTooltip from '@/components/ProcedureTooltip';
 import { getDefinition } from '@/lib/definitions';
@@ -328,7 +329,9 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
               {isValid && !error && (
                 <div className="space-y-4">
                   {sections.ceQueDit ? (
-                    <p className="text-sm leading-relaxed text-muted-foreground">{sections.ceQueDit}</p>
+                    <div className="text-sm leading-relaxed text-muted-foreground prose-strong:font-semibold prose-strong:text-foreground">
+                      <ReactMarkdown components={{ p: ({ children }) => <p>{children}</p> }}>{sections.ceQueDit}</ReactMarkdown>
+                    </div>
                   ) : isLoading ? (
                     <div className="space-y-2">
                       <Skeleton className="h-4 w-full" />
@@ -352,7 +355,9 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
                               >
                                 <Check className="h-3.5 w-3.5" style={{ color: '#06B6D4' }} />
                               </div>
-                              <span className="text-muted-foreground" style={{ lineHeight: '1.6', paddingTop: '3px' }}>{line}</span>
+                              <span className="text-muted-foreground prose-strong:font-semibold prose-strong:text-foreground" style={{ lineHeight: '1.6', paddingTop: '3px' }}>
+                                <ReactMarkdown components={{ p: ({ children }) => <>{children}</> }}>{line}</ReactMarkdown>
+                              </span>
                             </div>
                           ))}
                       </div>
@@ -369,7 +374,9 @@ export default function ResumeIAClient({ uid, titreDossier, initialTextes, statu
                   {sections.aRetenir ? (
                     <div className="rounded-lg px-3.5 py-3" style={{ backgroundColor: 'rgba(6,182,212,0.08)' }}>
                       <p className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: '#06B6D4', opacity: 0.7 }}>{t('keyTakeaway')}</p>
-                      <p className="text-sm font-medium" style={{ color: '#06B6D4' }}>{sections.aRetenir}</p>
+                      <div className="text-sm font-medium prose-strong:font-bold" style={{ color: '#06B6D4' }}>
+                        <ReactMarkdown components={{ p: ({ children }) => <p>{children}</p> }}>{sections.aRetenir}</ReactMarkdown>
+                      </div>
                     </div>
                   ) : isLoading && sections.ceQuiChange ? (
                     <div className="rounded-lg px-3.5 py-2.5" style={{ backgroundColor: 'rgba(6,182,212,0.06)' }}>

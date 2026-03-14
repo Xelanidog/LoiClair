@@ -101,6 +101,7 @@
 - **Fil d'actualité coupé sur mobile** — le contenu du fil d'actu débordait à gauche et à droite sur petit écran à cause de marges négatives
 - **Titres des dossiers écrasés sur mobile** — le panneau latéral « Résumé IA » masqué comprimait le titre sur certains navigateurs mobiles
 - **Scintillement du résumé IA en streaming** — le texte du résumé clignotait et se superposait pendant la génération en direct, causé par un double appel API en mode développement. Ajout d'un throttle pour lisser l'affichage
+- **Formatage markdown dans les résumés IA** — le gras, l'italique et autres formats générés par l'IA s'affichent désormais correctement au lieu de montrer les caractères bruts (ex : `**texte**`)
 
 ### Supprimé
 - L'ancien bouton "Dossier LoiClair avec résumé IA" (badge pill cyan) a été remplacé par la carte cliquable
