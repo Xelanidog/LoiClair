@@ -49,7 +49,7 @@ export default async function Footer() {
         backgroundColor: "var(--muted)",
       }}
     >
-      <div style={{ maxWidth: "64rem", margin: "0 auto" }}>
+      <div style={{ maxWidth: "48rem", margin: "0 auto" }}>
         {/* Grid — auto-fill responsive, no media query needed */}
         <div
           style={{
