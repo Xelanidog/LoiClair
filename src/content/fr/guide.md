@@ -163,29 +163,24 @@ Le bouton **Réinitialiser** efface les filtres et revient à la vue globale.
 
 ---
 
-## Composition du Parlement
+## Composition des institutions
 
-La page **Composition** présente la composition des trois institutions principales sous forme de statistiques animées.
+### Vue d'ensemble
 
-### Les trois onglets
+La page **Composition** présente un tableau de bord comparatif des trois institutions principales : Assemblée nationale, Sénat et Gouvernement. Pour chacune, vous voyez d'un coup d'œil le nombre de membres, la parité femmes et l'âge moyen. Un lien « Explorer » mène vers la page détaillée de chaque institution.
 
-- **Assemblée nationale** — 577 députés élus au suffrage universel direct.
-- **Sénat** — 348 sénateurs élus par les grands électeurs.
-- **Gouvernement** — ministres nommés par le Président de la République.
+### Pages détaillées par institution
 
-### Ce que vous pouvez y lire
+Chaque institution dispose de sa propre page dans la section **Organes législatifs** :
 
-Pour chaque institution, plusieurs indicateurs de composition sont affichés :
-
-- La répartition hommes/femmes (parité)
-- L'âge moyen et la distribution par tranches d'âge
-- Le nombre de membres par groupe politique
-
-Ces chiffres s'animent à l'ouverture de la page pour rendre la lecture plus agréable.
+- **[Assemblée nationale](/organes/assemblee)** — 577 députés élus au suffrage universel direct pour 5 ans. Page complète avec statistiques de vote, records individuels, groupes politiques et tableau de tous les députés.
+- **[Sénat](/organes/senat)** — 348 sénateurs élus au suffrage universel indirect pour 6 ans. Groupes politiques et tableau de tous les sénateurs.
+- **[Gouvernement](/organes/gouvernement)** — Le Gouvernement conduit la politique de la Nation. Membres, parité et tableau des membres.
+- **[Conseil constitutionnel](/organes/conseil-constitutionnel)** — 9 membres nommés pour 9 ans, garant de la conformité des lois avec la Constitution. Page pédagogique expliquant sa composition, ses missions et la QPC.
 
 ### Mobilisation de l'hémicycle lors des votes
 
-Pour l'Assemblée nationale, la page affiche combien de députés participent **en moyenne** à chaque type de scrutin :
+Sur la page de l'Assemblée nationale, vous pouvez voir combien de députés participent **en moyenne** à chaque type de scrutin :
 
 - **Scrutins ordinaires** (votes du quotidien : amendements, articles de loi…) : nombre moyen de votants et de non-participants sur l'ensemble des scrutins de la législature.
 - **Scrutins importants** (votes sur l'ensemble d'un texte de loi, motions de censure) : même lecture, sur ces votes considérés comme les plus importants.
@@ -198,11 +193,11 @@ Pour le détail des six types de scrutins et leurs règles de majorité, consult
 
 ### Records individuels de participation et cohésion
 
-Pour l'Assemblée nationale, la page affiche aussi les **records individuels** : le député ayant la meilleure et la moins bonne participation aux votes (tous votes, puis votes importants uniquement), ainsi que le député le plus et le moins aligné sur son groupe politique. Ces chiffres permettent de situer les extrêmes et de saisir l'étendue des différences de comportement de vote entre élus.
+La page Assemblée nationale affiche aussi les **records individuels** : le député ayant la meilleure et la moins bonne participation aux votes (tous votes, puis votes importants uniquement), ainsi que le député le plus et le moins aligné sur son groupe politique. Ces chiffres permettent de situer les extrêmes et de saisir l'étendue des différences de comportement de vote entre élus.
 
 ### Tableau détaillé des députés
 
-L'onglet Assemblée nationale propose aussi un tableau listant chaque député avec ses indicateurs individuels :
+La page Assemblée nationale propose aussi un tableau listant chaque député avec ses indicateurs individuels :
 
 - Son **taux de participation** aux votes (tous votes et votes importants), accompagné du détail **« X / Y »** : X votes exprimés sur Y scrutins tenus pendant son mandat.
 - Son **taux de cohésion** avec son groupe politique.

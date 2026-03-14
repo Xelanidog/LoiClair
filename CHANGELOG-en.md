@@ -44,8 +44,11 @@
 - **AI summaries open in new tab** — clicking on an AI summary opens the page in a new browser tab
 - **Enriched footer** — footer with columns organized by category (Explore, Resources, Legal, Contact)
 - **Redesigned changelog page** — release notes now use a clean style with colored pills (green = added, blue = changed, yellow = fixed, gray = removed) and are integrated into the Documentation sidebar
+- **Detailed pages per institution** — each legislative body now has its own page: Assemblée nationale, Sénat, Gouvernement and Conseil constitutionnel. Each page presents educational information, composition KPIs, political groups and a full members table
+- **Conseil constitutionnel page** — educational page explaining the Council's role, composition (9 members, 9-year non-renewable term, renewed by thirds), missions and the Priority Question of Constitutionality (QPC)
 
 ### Changed
+- **Composition page transformed into dashboard** — the old tabbed page is replaced by a comparative dashboard showing the three institutions side by side with summary KPIs and a link to each detailed page
 - **"Idea? Problem?" button in navigation** — the feedback/idea button moves from the bottom-right corner to the top navigation bar (pill on desktop, item in burger menu on mobile). The "Contribute" (GitHub) button moves to the footer
 - **Dossier list — fully clickable cards** — each dossier in the list is now a clickable link across its entire surface, with an "AI Summary →" label that appears on hover (left accent border + colored background)
 - **AI summary page — golden border** — the AI summary card is framed with a fine gradient golden border with a glow that pulses gently

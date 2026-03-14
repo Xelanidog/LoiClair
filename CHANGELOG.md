@@ -44,8 +44,11 @@
 - **Résumés IA dans un nouvel onglet** — cliquer sur un résumé IA ouvre la page dans un nouvel onglet du navigateur
 - **Footer enrichi** — pied de page en colonnes avec liens organisés par catégorie (Explorer, Ressources, Légal, Contact)
 - **Page changelog redessinée** — les notes de version adoptent un style épuré avec des pastilles colorées (vert = ajouté, bleu = modifié, jaune = corrigé, gris = supprimé) et sont intégrées à la section Documentation dans la barre latérale
+- **Pages détaillées par institution** — chaque organe législatif dispose désormais de sa propre page : Assemblée nationale, Sénat, Gouvernement et Conseil constitutionnel. Chaque page présente des informations pédagogiques, les KPIs de composition, les groupes politiques et un tableau complet des membres
+- **Page Conseil constitutionnel** — page pédagogique expliquant le rôle du Conseil, sa composition (9 membres, mandat de 9 ans non renouvelable, renouvellement par tiers), ses missions et la Question Prioritaire de Constitutionnalité (QPC)
 
 ### Modifié
+- **Page Composition transformée en dashboard** — l'ancienne page à onglets est remplacée par un tableau de bord comparatif affichant les trois institutions côte à côte avec leurs KPIs résumés et un lien vers chaque page détaillée
 - **Bouton « Une idée ? Un problème ? » dans la navigation** — le bouton de signalement/idée passe du coin bas droit de l'écran vers la barre de navigation en haut (pill sur desktop, item dans le menu burger sur mobile). Le bouton « Contribuer » (GitHub) est déplacé dans le pied de page
 - **Liste des dossiers — cartes entièrement cliquables** — chaque dossier dans la liste est désormais un lien cliquable sur toute sa surface, avec un label « Résumé IA → » qui apparaît au survol (bordure gauche accent + fond coloré)
 - **Page résumé IA — bordure dorée** — la carte du résumé IA est encadrée d'une fine bordure dorée dégradée avec un glow qui pulse doucement

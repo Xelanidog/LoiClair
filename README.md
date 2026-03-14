@@ -38,7 +38,12 @@ LoiClair rend les lois, débats et votes du Parlement compréhensibles par tous,
 src/
 ├── app/
 │   ├── (app)/                  # Routes principales
-│   │   ├── Composition/        # Composition des institutions
+│   │   ├── Composition/        # Dashboard comparatif des institutions
+│   │   ├── organes/            # Pages détaillées par institution
+│   │   │   ├── assemblee/      # Assemblée nationale
+│   │   │   ├── senat/          # Sénat
+│   │   │   ├── gouvernement/   # Gouvernement
+│   │   │   └── conseil-constitutionnel/ # Conseil constitutionnel
 │   │   ├── dossiers-legislatifs/
 │   │   │   └── [uid]/resume-ia # Résumés IA par dossier
 │   │   ├── KPIs/               # Indicateurs clés
@@ -55,6 +60,7 @@ src/
 │   └── layout.tsx              # Layout avec sidebar fixe
 ├── components/
 │   ├── ui/                     # Composants shadcn/ui
+│   ├── composition/            # Composants partagés (KpiItem, PieChart, tables)
 │   └── ...                     # Composants métier (Sidebar, filtres, charts)
 ├── lib/
 │   ├── supabase.ts             # Client Supabase

@@ -181,6 +181,44 @@ function buildGroupesList(
     });
 }
 
+// Version allégée pour le dashboard : pas d'acteursList ni de scrutins détaillés
+export interface DashboardKpis {
+  membres: number
+  ageMoyen: number | null
+  pariteFemmes: number | null
+  nombreGroupes: number | null
+  groupes: KpiMetrics['groupes']
+}
+
+export async function getDashboardKpis(institution: Institution): Promise<DashboardKpis> {
+  const baseFilter = getInstitutionFilter(institution);
+  const { data, error } = await supabase
+    .from('acteurs')
+    .select('age, civ, groupe')
+    .eq('en_exercice', true)
+    .match(baseFilter);
+
+  if (error || !data) throw new Error('db_unavailable');
+
+  const acteurs = data;
+  const membres = acteurs.length;
+  const ages = acteurs.map(a => a.age).filter((a): a is number => a != null && !isNaN(a));
+  const ageMoyen = ages.length > 0 ? Math.round(ages.reduce((a, b) => a + b, 0) / ages.length) : null;
+  const femmes = acteurs.filter(a => a.civ?.trim() === 'Mme').length;
+  const pariteFemmes = membres > 0 ? Math.round((femmes / membres) * 100) : null;
+
+  // Groupes pour le mini pie chart
+  let groupes: DashboardKpis['groupes'] = null;
+  let nombreGroupes: number | null = null;
+  if (institution === 'AN' || institution === 'Senat') {
+    const organesMap = await buildOrganesMap(acteurs);
+    groupes = buildGroupesData(acteurs, organesMap);
+    nombreGroupes = groupes ? groupes.length : null;
+  }
+
+  return { membres, ageMoyen, pariteFemmes, nombreGroupes, groupes };
+}
+
 export async function getKpiMetrics(
   institution: Institution,
   groupeFilter?: string

@@ -163,29 +163,24 @@ The **Reset** button clears the filters and returns to the global view.
 
 ---
 
-## Composition du Parlement
+## Institutional composition
 
-The **Composition** page presents the composition of the three main institutions as animated statistics.
+### Overview
 
-### The three tabs
+The **Composition** page presents a comparative dashboard of the three main institutions: Assemblée nationale, Sénat and Gouvernement. For each, you can see at a glance the number of members, gender parity and average age. An "Explorer" link leads to the detailed page for each institution.
 
-- **Assemblée nationale** — 577 deputies elected by direct universal suffrage.
-- **Sénat** — 348 senators elected by grand electors.
-- **Gouvernement** — ministers appointed by the President of the Republic.
+### Detailed pages by institution
 
-### What you can read there
+Each institution has its own page in the **Legislative bodies** section:
 
-For each institution, several composition indicators are displayed:
-
-- The male/female breakdown (parity)
-- The average age and distribution by age group
-- The number of members per political group
-
-These figures animate when the page opens to make reading more pleasant.
+- **[Assemblée nationale](/organes/assemblee)** — 577 deputies elected by direct universal suffrage for 5 years. Full page with voting statistics, individual records, political groups and a table of all deputies.
+- **[Sénat](/organes/senat)** — 348 senators elected by indirect universal suffrage for 6 years. Political groups and a table of all senators.
+- **[Gouvernement](/organes/gouvernement)** — The Government conducts the policy of the Nation. Members, parity and members table.
+- **[Conseil constitutionnel](/organes/conseil-constitutionnel)** — 9 members appointed for 9 years, guardian of the conformity of laws with the Constitution. Educational page explaining its composition, missions and the QPC.
 
 ### Assembly mobilisation during votes
 
-For the National Assembly, the page shows how many deputies participate **on average** in each type of vote:
+On the Assemblée nationale page, you can see how many deputies participate **on average** in each type of vote:
 
 - **Ordinary votes** (day-to-day votes: amendments, articles of law…): average number of voters and non-participants across all votes of the legislature.
 - **Important votes** (votes on an entire bill, motions of no confidence): same reading, for these votes considered the most important.
@@ -198,11 +193,11 @@ For details on the six types of votes and their majority rules, consult the [Met
 
 ### Individual participation and cohesion records
 
-For the National Assembly, the page also shows **individual records**: the deputy with the highest and lowest participation in votes (all votes, then important votes only), as well as the deputy most and least aligned with their political group. These figures allow you to identify the extremes and grasp the extent of differences in voting behaviour among elected representatives.
+The Assemblée nationale page also shows **individual records**: the deputy with the highest and lowest participation in votes (all votes, then important votes only), as well as the deputy most and least aligned with their political group. These figures allow you to identify the extremes and grasp the extent of differences in voting behaviour among elected representatives.
 
 ### Detailed table of deputies
 
-The National Assembly tab also offers a table listing each deputy with their individual indicators:
+The Assemblée nationale page also offers a table listing each deputy with their individual indicators:
 
 - Their **participation rate** in votes (all votes and important votes), accompanied by the detail **"X / Y"**: X votes cast out of Y votes held during their term.
 - Their **cohesion rate** with their political group.
