@@ -178,22 +178,27 @@
       "heading": "The Main Institutions and Their Roles",
       "assemblee": {
         "trigger": "Assemblée Nationale",
+        "role": "Lower house — 577 MPs",
         "content": "The Assemblée Nationale is the lower house of Parliament, made up of 577 MPs elected by direct universal suffrage for 5 years. Its main role is to vote on laws, scrutinise the Government and debate public policy. It has the final say in the event of disagreement with the Senate on most legislation."
       },
       "senat": {
         "trigger": "Senate",
+        "role": "Upper house — 348 senators",
         "content": "The Senate is the upper house, with 348 senators elected by indirect suffrage for 6 years. It represents the territories (regions, departments). It examines laws after the Assemblée Nationale, proposes amendments, and balances national and local interests. It cannot be dissolved."
       },
       "gouvernement": {
         "trigger": "Government",
+        "role": "Executive power — Prime Minister",
         "content": "Led by the Prime Minister, the Government initiates the majority of bills (around 90%). It enforces laws, manages the administration, and can stake its responsibility on a text (article 49-3). It is accountable to the Assemblée Nationale."
       },
       "president": {
         "trigger": "President of the Republic",
+        "role": "Head of State — Promulgates laws",
         "content": "The President promulgates laws passed by Parliament. They can request a second reading or refer a law to the Constitutional Council. They appoint the Prime Minister and can dissolve the Assemblée Nationale."
       },
       "conseil": {
         "trigger": "Constitutional Council",
+        "role": "Guardian of the Constitution — 9 members",
         "content": "Made up of 9 members, it verifies the constitutionality of laws before promulgation (referred by the President, Prime Minister, speakers of the assemblies, or 60 members of Parliament). It protects fundamental rights and the balance of powers."
       }
     },
@@ -221,7 +226,10 @@
       "step6Details": "Verification of compliance with the Constitution.",
       "step7Title": "Promulgation",
       "step7Desc": "Signature and publication",
-      "step7Details": "The President signs and publishes the law in the Official Journal."
+      "step7Details": "The President signs and publishes the law in the Official Journal.",
+      "step8Title": "Implementing decrees",
+      "step8Desc": "Concrete implementation of the law",
+      "step8Details": "The Government publishes the decrees needed for the law to be effectively applied. Without these decrees, the law remains unenforceable."
     }
   },
   "textTypes": {

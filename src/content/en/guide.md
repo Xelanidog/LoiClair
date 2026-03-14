@@ -263,9 +263,9 @@ At the bottom of each summary page, a **Transparency** section indicates that th
 
 The **Legislative process** (Processus législatif) page is an educational resource that explains how a law is created in France, from A to Z.
 
-### Parliament's bodies
+### Key actors in the legislative process
 
-An accordion presents the role of each of the 5 main actors:
+A grid of illustrated cards presents the 5 key institutions, each with a photo of its building and a summary of its role. Click on a card to view the full description in a modal:
 
 - **The National Assembly (Assemblée nationale)** — 577 deputies, the lower chamber of Parliament.
 - **The Senate (Sénat)** — 348 senators, the upper chamber of Parliament.
@@ -275,7 +275,7 @@ An accordion presents the role of each of the 5 main actors:
 
 ### The stages of a law
 
-A chronological timeline presents the 7 stages that an ordinary legislative text goes through:
+An interactive vertical stepper presents the 8 stages that an ordinary legislative text goes through. Click on each step to see the details:
 
 1. Tabling of the text
 2. Committee examination
@@ -284,6 +284,7 @@ A chronological timeline presents the 7 stages that an ordinary legislative text
 5. Final vote
 6. Constitutional review (if referred)
 7. Enactment and publication in the Official Journal
+8. Implementing decrees — the law can only take concrete effect once the decrees are published by the Government
 
 > On average, an ordinary law takes between 6 and 12 months to complete this journey.
 

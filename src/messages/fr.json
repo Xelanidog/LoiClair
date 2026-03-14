@@ -178,22 +178,27 @@
       "heading": "Les Principaux Organes et Leurs Rôles",
       "assemblee": {
         "trigger": "Assemblée Nationale",
+        "role": "Chambre basse — 577 députés",
         "content": "L'Assemblée Nationale est la chambre basse du Parlement, composée de 577 députés élus au suffrage universel direct pour 5 ans. Son rôle principal est de voter les lois, contrôler le Gouvernement et débattre des politiques publiques. Elle a le dernier mot en cas de désaccord avec le Sénat sur la plupart des lois."
       },
       "senat": {
         "trigger": "Sénat",
+        "role": "Chambre haute — 348 sénateurs",
         "content": "Le Sénat est la chambre haute, avec 348 sénateurs élus au suffrage indirect pour 6 ans. Il représente les territoires (régions, départements). Il examine les lois après l'Assemblée, propose des amendements, et assure un équilibre entre les intérêts nationaux et locaux. Il ne peut pas être dissous."
       },
       "gouvernement": {
         "trigger": "Gouvernement",
+        "role": "Pouvoir exécutif — Premier Ministre",
         "content": "Dirigé par le Premier Ministre, le Gouvernement initie la majorité des projets de loi (environ 90%). Il exécute les lois, gère l'administration, et peut engager sa responsabilité sur un texte (article 49-3). Il est responsable devant l'Assemblée Nationale."
       },
       "president": {
         "trigger": "Président de la République",
+        "role": "Chef de l'État — Promulgue les lois",
         "content": "Le Président promulgue les lois adoptées par le Parlement. Il peut demander une seconde délibération ou saisir le Conseil Constitutionnel. Il nomme le Premier Ministre et peut dissoudre l'Assemblée Nationale."
       },
       "conseil": {
         "trigger": "Conseil Constitutionnel",
+        "role": "Gardien de la Constitution — 9 membres",
         "content": "Composé de 9 membres, il vérifie la constitutionnalité des lois avant promulgation (saisi par le Président, Premier Ministre, présidents des assemblées ou 60 parlementaires). Il protège les droits fondamentaux et l'équilibre des pouvoirs."
       }
     },
@@ -221,7 +226,10 @@
       "step6Details": "Vérification de conformité à la Constitution.",
       "step7Title": "Promulgation",
       "step7Desc": "Signature et publication",
-      "step7Details": "Le Président signe et publie au Journal Officiel."
+      "step7Details": "Le Président signe et publie au Journal Officiel.",
+      "step8Title": "Décrets d'application",
+      "step8Desc": "Mise en œuvre concrète de la loi",
+      "step8Details": "Le Gouvernement publie les décrets nécessaires pour que la loi soit effectivement appliquée. Sans ces décrets, la loi reste inapplicable."
     }
   },
   "textTypes": {

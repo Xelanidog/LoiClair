@@ -85,6 +85,7 @@
 - **Compact legislative funnel** — the legislative journey is now displayed as a compact vertical stepper: colored numbers + labels + conversion rates, without horizontal bars — much more readable and compact
 - **Redesigned filters on the dossiers page** — the search bar spans the full width, filters are grouped in a side panel (right on desktop, bottom on mobile) accessible via a "Filters" button with a counter badge. Active filters appear as removable chips
 - **"Text types" page reorganized** — the page is now divided into two sections (parliamentary texts / government texts) with a lightweight card grid design, and three new types added: Amendment, Ordinance and Decree
+- **"Legislative process" page redesigned** — institutions are presented in a grid of cards with building photos; clicking opens a modal with details. The law's journey becomes an interactive vertical stepper with 8 steps (adding "Implementing decrees"), dots and connecting lines, and expandable details on click
 
 ### Fixed
 - **"Toolbox" cards disappeared** — feature cards on the landing page now remain visible after a language change

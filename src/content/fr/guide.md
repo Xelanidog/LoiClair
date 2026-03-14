@@ -263,11 +263,11 @@ En bas de chaque page de résumé, une section **Transparence** indique que le c
 
 La page **Processus législatif** est une ressource pédagogique qui explique comment une loi est créée en France, de A à Z.
 
-### Les organes du Parlement
+### Les acteurs du processus législatif
 
-Un accordéon présente le rôle de chacun des 5 acteurs principaux :
+Une grille de cartes illustrées présente les 5 institutions clés, avec pour chacune une photo de son bâtiment et un résumé de son rôle. Cliquez sur une carte pour afficher le détail dans une fenêtre :
 
-- **L'Assemblée nationale** — 577 députés, première chambre du Parlement.
+- **L'Assemblée nationale** — 577 députés, chambre basse du Parlement.
 - **Le Sénat** — 348 sénateurs, chambre haute du Parlement.
 - **Le Gouvernement** — peut déposer des projets de loi et engager sa responsabilité.
 - **Le Président de la République** — promulgue les lois et peut saisir le Conseil constitutionnel.
@@ -275,7 +275,7 @@ Un accordéon présente le rôle de chacun des 5 acteurs principaux :
 
 ### Les étapes d'une loi
 
-Une frise chronologique présente les 7 étapes que traverse un texte législatif ordinaire :
+Un stepper vertical interactif présente les 8 étapes que traverse un texte législatif ordinaire. Cliquez sur chaque étape pour voir le détail :
 
 1. Dépôt du texte
 2. Examen en commission
@@ -284,6 +284,7 @@ Une frise chronologique présente les 7 étapes que traverse un texte législati
 5. Vote final
 6. Contrôle constitutionnel (si saisine)
 7. Promulgation et publication au Journal officiel
+8. Décrets d'application — la loi ne peut entrer en vigueur concrètement qu'une fois les décrets publiés par le Gouvernement
 
 > En moyenne, une loi ordinaire prend entre 6 et 12 mois pour parcourir ce chemin.
 
