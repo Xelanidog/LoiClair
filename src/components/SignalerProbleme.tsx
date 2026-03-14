@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react"
 import {
-  MessageSquare,
   Loader2,
   ExternalLink,
   Send,
@@ -31,7 +30,6 @@ import {
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 
 type Category = "probleme" | "idee"
 type FormState = "idle" | "submitting" | "success" | "error"
@@ -153,26 +151,6 @@ export default function SignalerProbleme() {
 
   return (
     <>
-      {/* Bouton flottant — div fixe + bouton animé séparés pour Safari */}
-      <div style={{ position: "fixed", bottom: "1.5rem", right: "1.5rem", zIndex: 30 }}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              onClick={() => setOpen(true)}
-              className="flex items-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground shadow-lg transition-all hover:scale-105 hover:shadow-xl active:opacity-80 cursor-pointer"
-              aria-label={t("fabLabel")}
-            >
-              <MessageSquare className="h-4 w-4" />
-              <span className="hidden sm:inline">{t("fabLabel")}</span>
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="left" sideOffset={8}>
-            {t("fabTooltip")}
-          </TooltipContent>
-        </Tooltip>
-      </div>
-
-      {/* Modale */}
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent className="sm:max-w-md" style={{ maxWidth: "28rem" }}>
           {/* Étape 1 : choix de la catégorie */}

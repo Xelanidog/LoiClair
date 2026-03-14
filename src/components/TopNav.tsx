@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
-import { Menu, ChevronDown, Github, Sun, Moon } from "lucide-react"
+import { Menu, ChevronDown, MessageSquare, Sun, Moon } from "lucide-react"
 import { useTranslations } from "next-intl"
 import { useTheme } from "next-themes"
 import { motion, AnimatePresence } from "framer-motion"
@@ -201,10 +201,9 @@ export default function TopNav() {
           gap: "0.5rem",
         }}
       >
-        <a
-          href="https://github.com/Xelanidog/LoiClair/issues"
-          target="_blank"
-          rel="noopener noreferrer"
+        <button
+          type="button"
+          onClick={() => window.dispatchEvent(new Event("open-signaler"))}
           style={{
             display: "flex",
             alignItems: "center",
@@ -213,17 +212,18 @@ export default function TopNav() {
             fontSize: "0.8125rem",
             fontWeight: 500,
             color: "var(--primary-foreground)",
-            backgroundColor: "var(--foreground)",
+            backgroundColor: "var(--primary)",
             borderRadius: "9999px",
-            textDecoration: "none",
+            border: "none",
+            cursor: "pointer",
             transition: "opacity 150ms",
           }}
           onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.8" }}
           onMouseLeave={(e) => { e.currentTarget.style.opacity = "1" }}
         >
-          <Github style={{ width: "0.875rem", height: "0.875rem" }} />
-          {t("contribute")}
-        </a>
+          <MessageSquare style={{ width: "0.875rem", height: "0.875rem" }} />
+          {t("feedback")}
+        </button>
         <button
           type="button"
           onClick={() => {
@@ -285,6 +285,32 @@ export default function TopNav() {
               {categories.map((cat) => (
                 <MobileCategory key={cat.key} category={cat} onNavigation={() => setOpen(false)} />
               ))}
+              <div style={{ borderTop: "1px solid var(--border)", marginTop: "0.5rem", paddingTop: "0.75rem" }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpen(false)
+                    window.dispatchEvent(new Event("open-signaler"))
+                  }}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    width: "100%",
+                    padding: "0.5rem 0",
+                    fontSize: "0.9375rem",
+                    fontWeight: 500,
+                    color: "var(--primary)",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    textAlign: "left",
+                  }}
+                >
+                  <MessageSquare style={{ width: "1rem", height: "1rem" }} />
+                  {t("feedback")}
+                </button>
+              </div>
             </nav>
           </SheetContent>
         </Sheet>

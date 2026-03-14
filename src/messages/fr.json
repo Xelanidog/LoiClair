@@ -11,7 +11,8 @@
     "openMenu": "Ouvrir le menu",
     "navMenu": "Menu de navigation",
     "searchPlaceholder": "Rechercher par titre ou auteur…",
-    "clearSearch": "Effacer la recherche"
+    "clearSearch": "Effacer la recherche",
+    "feedback": "Une idée ? Un problème ?"
   },
   "nav": {
     "dashboard": "Tableau de bord",
@@ -51,7 +52,8 @@
     "email": "Email",
     "github": "GitHub Issues",
     "publicData": "Données publiques officielles",
-    "language": "Langue"
+    "language": "Langue",
+    "contribute": "Contribuer"
   },
   "changelog": {
     "pageTitle": "Notes de version",

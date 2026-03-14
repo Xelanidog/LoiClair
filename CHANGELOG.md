@@ -46,6 +46,7 @@
 - **Page changelog redessinée** — les notes de version adoptent un style épuré avec des pastilles colorées (vert = ajouté, bleu = modifié, jaune = corrigé, gris = supprimé) et sont intégrées à la section Documentation dans la barre latérale
 
 ### Modifié
+- **Bouton « Une idée ? Un problème ? » dans la navigation** — le bouton de signalement/idée passe du coin bas droit de l'écran vers la barre de navigation en haut (pill sur desktop, item dans le menu burger sur mobile). Le bouton « Contribuer » (GitHub) est déplacé dans le pied de page
 - **Liste des dossiers — cartes entièrement cliquables** — chaque dossier dans la liste est désormais un lien cliquable sur toute sa surface, avec un label « Résumé IA → » qui apparaît au survol (bordure gauche accent + fond coloré)
 - **Page résumé IA — bordure dorée** — la carte du résumé IA est encadrée d'une fine bordure dorée dégradée avec un glow qui pulse doucement
 - **Graphique mensuel localisé** — le titre, la description et les tendances du graphique d'évolution mensuelle s'adaptent à la langue
