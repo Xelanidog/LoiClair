@@ -17,7 +17,6 @@ export default function DossierCard({
   return (
     <Link
       href={href}
-      target="_blank"
       className="flex"
       style={{
         backgroundColor: hovered ? 'var(--color-muted)' : 'transparent',
