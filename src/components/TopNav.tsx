@@ -294,11 +294,11 @@ export default function TopNav() {
                   }}
                   style={{
                     display: "flex",
-                    alignItems: "center",
+                    alignItems: "flex-start",
                     gap: "0.5rem",
                     width: "100%",
                     padding: "0.5rem 0",
-                    fontSize: "0.9375rem",
+                    fontSize: "0.8125rem",
                     fontWeight: 500,
                     color: "var(--primary)",
                     background: "none",
@@ -307,7 +307,7 @@ export default function TopNav() {
                     textAlign: "left",
                   }}
                 >
-                  <MessageSquare style={{ width: "1rem", height: "1rem" }} />
+                  <MessageSquare style={{ width: "0.875rem", height: "0.875rem", flexShrink: 0, marginTop: "0.15rem" }} />
                   {t("feedback")}
                 </button>
               </div>
