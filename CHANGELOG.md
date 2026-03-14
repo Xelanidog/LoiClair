@@ -1,177 +1,33 @@
-## 13 mars 2026 (soir)
-
-### Modifié
-- **Liste des dossiers — cartes entièrement cliquables** — chaque dossier dans la liste est désormais un lien cliquable sur toute sa surface, avec une bande latérale « Résumé IA › » qui apparaît au survol
-- **Page résumé IA — bordure dorée** — la carte du résumé IA est encadrée d'une fine bordure dorée dégradée avec un glow qui pulse doucement, pour un effet « magique »
-
-### Supprimé
-- L'ancien bouton "Dossier LoiClair avec résumé IA" (badge pill cyan) a été remplacé par la carte cliquable
-
----
-
-## 13 mars 2026
+## Semaine du 9 mars 2026
 
 ### Ajouté
 - **Interface bilingue français/anglais** — toute l'interface est désormais disponible en anglais grâce à un toggle FR/EN dans la barre latérale. La langue est mémorisée dans un cookie
-- **Résumés IA en anglais** — les résumés de lois peuvent être générés en anglais, avec un cache séparé pour chaque langue (colonne `resume_ia_en` en base)
+- **Résumés IA en anglais** — les résumés de lois peuvent être générés en anglais, avec un cache séparé pour chaque langue
 - **Traduction du guide et de la méthodologie** — les pages documentation sont disponibles en anglais
 - **Pages 404 et erreur localisées** — les pages d'erreur s'affichent dans la langue choisie, avec un lien pour signaler un bug
-
-### Modifié
-- **Graphique mensuel localisé** — le titre, la description et les tendances du graphique d'évolution mensuelle s'adaptent à la langue
-- **Recherche et filtres localisés** — le placeholder de recherche, les labels de filtres et la pagination s'affichent dans la langue choisie
-- **Entonnoir législatif localisé** — le parcours législatif dans les indicateurs clés s'affiche dans la langue active
-- **Toggle langue aligné à gauche** — le sélecteur FR/EN est calé à gauche dans la barre latérale pour un meilleur alignement visuel
-
-### Corrigé
-- **Cartes « boîte à outils » disparaissaient** — les cartes de fonctionnalités sur la page d'accueil restent visibles après un changement de langue
-- **Résumé IA cassé** — la requête de données échouait car une colonne n'existait pas encore en base ; corrigé par l'ajout de la colonne et la mise à jour du code
-
----
-
-## 14 mars 2026 (après-midi)
-
-### Ajouté
 - **Nouveau statut « Appliquée »** — les lois promulguées dont tous les décrets d'application sont publiés (ou d'application directe) sont désormais identifiées par le statut « Appliquée », avec un badge et un bullet doré
 - **Filtre « Appliquée »** — un nouveau filtre statut permet d'isoler les lois pleinement appliquées dans la liste des dossiers
-
-### Modifié
-- **Couleurs des statuts harmonisées** — chaque statut a maintenant une couleur distincte : or pour « Appliquée », vert pour « Promulguée », violet unifié pour tous les « Adopté » (Assemblée, Sénat, Parlement), rouge pour « Rejeté », orange pour « En cours »
-- **Comptabilisation des lois appliquées dans les indicateurs** — les lois « Appliquées » sont correctement comptées à la fois comme promulguées et comme appliquées dans le tableau de bord
-
----
-
-## 14 mars 2026
-
-### Modifié
-- **Section « À propos de cette loi » restructurée** — les métadonnées (statut, procédure, auteur, groupe, date de dépôt, sources) sont désormais affichées dans une grille structurée avec des labels alignés, plus lisible qu'avant
-- **Lien « Texte officiel »** — le lien vers le texte sur Légifrance a été renommé de « Lire le texte » à « Texte officiel » pour plus de clarté
-- **Label du texte résumé tronqué sur mobile** — le nom du texte est raccourci avec des points de suspension quand l'écran est trop petit
-- **Footer toujours aligné à gauche** — le pied de carte IA s'aligne naturellement à gauche quand son contenu passe sur plusieurs lignes
-
-### Corrigé
-- **Label dupliqué corrigé** — le nom du texte n'est plus répété quand il correspond au nom de l'étape (ex : « Loi promulguée » n'apparaît plus deux fois)
-
-### Supprimé
-- **Badges statut et procédure** — remplacés par des lignes dans la grille de métadonnées pour une lecture plus uniforme
-
----
-
-## 13 mars 2026 (nuit)
-
-### Ajouté
-- **Carte IA avec bordure lumineuse** — le résumé est présenté dans une carte avec une bordure teal lumineuse qui lui donne une identité visuelle distinctive
+- **Carte IA avec bordure lumineuse** — le résumé est présenté dans une carte avec une bordure dorée dégradée qui pulse doucement
 - **Lien « Discuter de ce texte avec l'IA »** — un lien doré animé en pied de carte permet d'ouvrir une discussion approfondie sur le texte via Perplexity, avec le contexte législatif pré-rempli
 - **Encart « À retenir »** — la phrase-clé de chaque résumé est mise en valeur dans un encart coloré en bas du résumé
 - **Pastilles teal sur les changements** — chaque point de la section « Ce qui change » est accompagné d'une icône check sur fond teal
-
-### Modifié
-- **Nouveau prompt IA — 3 sections conversationnelles** — le résumé passe de 4 sections techniques à 3 sections en langage courant : « Ce que dit ce texte », « Ce qui change concrètement » et « À retenir ». L'IA tutoie désormais le lecteur pour une explication plus naturelle
-- **Sélecteur de texte intégré en pied de carte** — le sélecteur est maintenant directement dans le pied de la carte IA (« Texte résumé : [version] · Lire le texte · Changer ») au lieu d'une section séparée en haut de page
-- **Carte toujours accessible** — même sur un texte invalide ou une version consolidée, la carte reste visible et le bouton « Changer » est toujours accessible
-
-### Supprimé
-- **Accordéon mobile / grille desktop** — remplacés par un affichage unique, fluide et vertical sur tous les écrans
-- **Section séparée « Sélecteur de texte »** — intégrée dans le pied de carte IA
-
----
-
-## 13 mars 2026 (soir)
-
-### Ajouté
 - **Section « En bref »** — un résumé en 2-3 phrases visible immédiatement en haut de la page, avant les sections détaillées
 - **Sélecteur de texte en haut de page** — un menu déroulant permet de choisir le texte à résumer directement sous le titre, avec les textes groupés par étape législative et triés par date
-- **Lien « Lire le texte »** — un accès direct au texte officiel sur Légifrance, visible à côté du sélecteur
 - **Label « Résumé IA »** — une icône ✨ et un intitulé identifient clairement la section comme contenu généré par intelligence artificielle
 - **Accordéons dans la timeline** — chaque étape ayant des textes associés peut être dépliée pour voir et sélectionner les textes disponibles
-- **Section « À propos de cette loi »** — les métadonnées du dossier (statut, procédure, auteur avec son rôle, sources officielles) sont regroupées dans une section dédiée avec un dégradé subtil
-
-### Modifié
-- **Nouvelle organisation de la page** — le résumé IA est désormais en haut (visible sans scroller), suivi des métadonnées, puis du parcours de la loi
-- **Accordéon mobile** — les 3 sections du résumé (Pourquoi, Changements, Impact) sont présentées en accordéon sur mobile pour un affichage plus compact
-- **Grille 3 colonnes sur desktop** — les mêmes sections s'affichent côte à côte en carte sur grand écran
-
-### Amélioré
-- **Indicateur de génération** — le message « Génération en cours… » s'affiche à côté du titre « Résumé IA » au lieu d'occuper une ligne séparée
-- **Provenance dans le sélecteur** — chaque texte indique son étape d'origine (Ass. nat., Sénat, CMP…) dans le menu déroulant
-- **Lien fil d'actu** — déplacé dans la section « À propos de cette loi » avec les sources officielles
-
-### Supprimé
-- **Ancien menu déroulant** — l'ancien sélecteur de texte (dropdown confus) a été remplacé par le nouveau sélecteur groupé par étape
-
----
-
-## 13 mars 2026 (après-midi)
-
-### Ajouté
+- **Section « À propos de cette loi »** — les métadonnées du dossier (statut, procédure, auteur avec son rôle, sources officielles) sont regroupées dans une section dédiée
 - **Bandeau titre sur la page résumé IA** — un bandeau avec dégradé subtil habille désormais le titre du dossier pour une meilleure lisibilité
-
-### Modifié
-- **Chargement plus rapide de la page résumé IA** — les données de vote sont maintenant récupérées en une seule requête au lieu de deux, ce qui réduit le temps de chargement
-- **Code interne réorganisé** — la timeline et les résultats de vote sont maintenant des composants indépendants, ce qui facilite la maintenance et les futures améliorations
-- **Optimisations de performance** — suppression de calculs redondants et recherches accélérées dans le traitement des actes législatifs
-
----
-
-## 13 mars 2026
-
-### Ajouté
-- **Durées intégrées dans la timeline** — la durée totale du parcours législatif (« Promulgué en X j ») et la durée d'application (« Appliquée en X j ») s'affichent directement sous les étapes correspondantes dans la timeline, à la place des badges séparés
+- **Durées intégrées dans la timeline** — la durée totale du parcours législatif (« Promulgué en X j ») et la durée d'application (« Appliquée en X j ») s'affichent directement sous les étapes correspondantes
 - **Icônes spéciales** — l'étape Promulguée porte une icône ✓ et l'étape Application un drapeau pour les distinguer visuellement
 - **Date d'application** — pour les lois nécessitant des décrets, l'étape Application affiche la date du dernier décret publié
 - **Application directe** — les lois d'application directe affichent « Promulguée (application directe) » avec « Promulgué et appliqué en X j » en une seule étape finale
-
-### Modifié
-- **Timeline en colonne continue** — la ligne verticale reliant les étapes est désormais ininterrompue, même quand une étape contient du texte supplémentaire (durée, détail des décrets)
-- **Suppression des badges KPI séparés** — les indicateurs de durée sont désormais intégrés directement dans la timeline
-
----
-
-## 12 mars 2026
-
-### Ajouté
 - **Timeline verticale sur la page résumé IA** — le parcours législatif d'un dossier est désormais affiché sous forme de timeline verticale avec la date de chaque étape, la durée entre deux étapes consécutives, et un point animé sur l'étape en cours
-- **Étapes post-promulgation** — après la promulgation, la timeline affiche les décrets d'application et le statut d'application de la loi (ou « Application directe » si aucun décret n'est nécessaire)
+- **Étapes post-promulgation** — après la promulgation, la timeline affiche les décrets d'application et le statut d'application de la loi
 - **Étape suivante en attente** — la timeline affiche l'étape suivante attendue (autre chambre ou promulgation) avec une ligne en pointillés
-- **Préfixe « Texte CMP »** dans le fil d'actualité — les décisions de débat en CMP dans le fil du mois affichent désormais « Texte CMP · » devant le nom de l'institution
+- **Préfixe « Texte CMP »** dans le fil d'actualité — les décisions de débat en CMP affichent désormais « Texte CMP · » devant le nom de l'institution
 - **« En cours depuis X j »** — l'étape en cours dans la timeline affiche désormais depuis combien de temps elle est active, en orange
 - **Durée de publication des décrets** — l'étape « Décrets d'application » affiche combien de temps il a fallu pour publier tous les décrets, ou « en cours depuis X j » si tous ne sont pas encore publiés
-
-### Modifié
-- **Résolutions et textes non promulguables** — les résolutions, rapports d'information et autres textes qui n'ont pas vocation à être promulgués n'affichent plus « Promulguée » comme étape suivante
-- **Simplification des indicateurs** — les badges de durée par chambre (AN, Sénat), CMP et nombre de votes sont supprimés de la page résumé IA car ces informations sont désormais directement lisibles dans la timeline
-- **Durées sur les lignes de connexion** — les durées entre étapes sont affichées sur la ligne reliant deux étapes (et non sous le nom de l'étape), pour éviter toute ambiguïté
-- **Espacement uniforme** — toutes les étapes de la timeline ont désormais le même espacement vertical
-
-### Corrigé
-- **Ordre des étapes** — le Conseil constitutionnel et la CMP s'affichent désormais à la bonne position chronologique (et non après la promulgation)
-- **Dates erronées filtrées** — les décrets dont la date est antérieure au dépôt du dossier (données issues d'anciennes législatures) sont exclus de la timeline
-- **Statut d'application** — quand une loi est 100 % appliquée, l'étape « Application » est correctement marquée comme terminée dans la timeline
-
----
-
-## Semaine du 11 mars 2026
-
-### Ajouté
 - **Filtres en panneau sur mobile** — sur la page des dossiers législatifs, les filtres sont regroupés dans un panneau qui s'ouvre depuis un bouton "Filtres", pour une navigation plus fluide sur téléphone
-
-### Modifié
-- **Optimisation mobile générale** — espacement réduit en haut des pages, marges latérales ajustées, meilleure utilisation de l'espace sur petit écran
-- **Page d'accueil plus compacte sur mobile** — le héro et les sections prennent moins de place verticale, les espaces entre sections sont réduits
-- Les filtres (statut, dates, types, groupes, thèmes) s'affichent en pleine largeur sur mobile pour plus de lisibilité
-- Le bouton "Signaler" devient **"Une idée ? Un problème ?"** — il permet désormais de proposer des idées de fonctionnalités en plus de signaler des bugs
-- La modale s'ouvre sur un écran de choix entre "Signaler un problème" et "Proposer une idée", avec un formulaire adapté à chaque cas
-
-### Corrigé
-- **Filtres sur Safari** — le panneau de filtres mobile ne s'affichait plus correctement sur Safari (il apparaissait aussi sur grand écran). Corrigé pour que les filtres inline s'affichent sur desktop et le panneau uniquement sur mobile
-- **Clavier mobile sur les filtres** — le clavier virtuel ne s'ouvre plus automatiquement à l'ouverture du panneau de filtres sur mobile (Safari)
-- **Logo "LoiClair" cohérent** — la taille et le lien du logo en haut à gauche sont maintenant identiques sur toutes les pages (redirige vers la page d'accueil)
-
----
-
-## Semaine du 10 mars 2026
-
-### Ajouté
 - Multi-sélection des filtres par type de carte dans le fil d'actualité — on peut maintenant combiner plusieurs filtres en même temps
 - Indicateurs d'application des lois dans les KPIs — nouveau funnel et graphiques montrant combien de décrets d'application ont été pris pour chaque loi
 - Suivi de l'application des lois dans le fil d'actualité — les cartes de décrets d'application apparaissent dans le flux
@@ -182,12 +38,60 @@
 - Page "Notes de version" accessible depuis le pied de page — historique complet des évolutions du site, organisé par semaine avec sections dépliables
 
 ### Modifié
+- **Liste des dossiers — cartes entièrement cliquables** — chaque dossier dans la liste est désormais un lien cliquable sur toute sa surface, avec une bande latérale « Résumé IA › » qui apparaît au survol
+- **Page résumé IA — bordure dorée** — la carte du résumé IA est encadrée d'une fine bordure dorée dégradée avec un glow qui pulse doucement
+- **Graphique mensuel localisé** — le titre, la description et les tendances du graphique d'évolution mensuelle s'adaptent à la langue
+- **Recherche et filtres localisés** — le placeholder de recherche, les labels de filtres et la pagination s'affichent dans la langue choisie
+- **Entonnoir législatif localisé** — le parcours législatif dans les indicateurs clés s'affiche dans la langue active
+- **Notes de version bilingues** — la page notes de version s'affiche en français ou en anglais selon la langue choisie
+- **Toggle langue aligné à gauche** — le sélecteur FR/EN est calé à gauche dans la barre latérale pour un meilleur alignement visuel
+- **Couleurs des statuts harmonisées** — chaque statut a maintenant une couleur distincte : or pour « Appliquée », vert pour « Promulguée », violet unifié pour tous les « Adopté », rouge pour « Rejeté », orange pour « En cours »
+- **Comptabilisation des lois appliquées dans les indicateurs** — les lois « Appliquées » sont correctement comptées à la fois comme promulguées et comme appliquées dans le tableau de bord
+- **Section « À propos de cette loi » restructurée** — les métadonnées sont désormais affichées dans une grille structurée avec des labels alignés, plus lisible qu'avant
+- **Lien « Texte officiel »** — le lien vers le texte sur Légifrance a été renommé de « Lire le texte » à « Texte officiel » pour plus de clarté
+- **Label du texte résumé tronqué sur mobile** — le nom du texte est raccourci avec des points de suspension quand l'écran est trop petit
+- **Footer toujours aligné à gauche** — le pied de carte IA s'aligne naturellement à gauche quand son contenu passe sur plusieurs lignes
+- **Nouveau prompt IA — 3 sections conversationnelles** — le résumé passe de 4 sections techniques à 3 sections en langage courant : « Ce que dit ce texte », « Ce qui change concrètement » et « À retenir »
+- **Sélecteur de texte intégré en pied de carte** — le sélecteur est maintenant directement dans le pied de la carte IA au lieu d'une section séparée en haut de page
+- **Carte toujours accessible** — même sur un texte invalide ou une version consolidée, la carte reste visible et le bouton « Changer » est toujours accessible
+- **Nouvelle organisation de la page** — le résumé IA est désormais en haut (visible sans scroller), suivi des métadonnées, puis du parcours de la loi
+- **Indicateur de génération** — le message « Génération en cours… » s'affiche à côté du titre « Résumé IA » au lieu d'occuper une ligne séparée
+- **Provenance dans le sélecteur** — chaque texte indique son étape d'origine (Ass. nat., Sénat, CMP…) dans le menu déroulant
+- **Chargement plus rapide de la page résumé IA** — les données de vote sont maintenant récupérées en une seule requête au lieu de deux
+- **Code interne réorganisé** — la timeline et les résultats de vote sont maintenant des composants indépendants
+- **Timeline en colonne continue** — la ligne verticale reliant les étapes est désormais ininterrompue
+- **Résolutions et textes non promulguables** — les résolutions et rapports d'information n'affichent plus « Promulguée » comme étape suivante
+- **Simplification des indicateurs** — les badges de durée par chambre sont supprimés car ces informations sont désormais lisibles dans la timeline
+- **Durées sur les lignes de connexion** — les durées entre étapes sont affichées sur la ligne reliant deux étapes, pour éviter toute ambiguïté
+- **Espacement uniforme** — toutes les étapes de la timeline ont désormais le même espacement vertical
+- **Optimisation mobile générale** — espacement réduit en haut des pages, marges latérales ajustées, meilleure utilisation de l'espace sur petit écran
+- **Page d'accueil plus compacte sur mobile** — le héro et les sections prennent moins de place verticale
+- Les filtres (statut, dates, types, groupes, thèmes) s'affichent en pleine largeur sur mobile pour plus de lisibilité
+- Le bouton "Signaler" devient **"Une idée ? Un problème ?"** — il permet désormais de proposer des idées de fonctionnalités en plus de signaler des bugs
+- La modale s'ouvre sur un écran de choix entre "Signaler un problème" et "Proposer une idée", avec un formulaire adapté à chaque cas
 - Le "Fil du mois" a été renommé en "Fil d'actualité" partout sur le site pour plus de clarté
 
 ### Corrigé
+- **Cartes « boîte à outils » disparaissaient** — les cartes de fonctionnalités sur la page d'accueil restent visibles après un changement de langue
+- **Résumé IA cassé** — la requête de données échouait car une colonne n'existait pas encore en base ; corrigé par l'ajout de la colonne et la mise à jour du code
+- **Label dupliqué corrigé** — le nom du texte n'est plus répété quand il correspond au nom de l'étape
+- **Ordre des étapes** — le Conseil constitutionnel et la CMP s'affichent désormais à la bonne position chronologique
+- **Dates erronées filtrées** — les décrets dont la date est antérieure au dépôt du dossier sont exclus de la timeline
+- **Statut d'application** — quand une loi est 100 % appliquée, l'étape « Application » est correctement marquée comme terminée dans la timeline
+- **Filtres sur Safari** — le panneau de filtres mobile ne s'affichait plus correctement sur Safari. Corrigé pour que les filtres inline s'affichent sur desktop et le panneau uniquement sur mobile
+- **Clavier mobile sur les filtres** — le clavier virtuel ne s'ouvre plus automatiquement à l'ouverture du panneau de filtres sur mobile (Safari)
+- **Logo "LoiClair" cohérent** — la taille et le lien du logo en haut à gauche sont maintenant identiques sur toutes les pages
 - L'ordre du fil d'actualité dans les pages dossier affiche maintenant les événements récents en premier
 - Suppression du flickering lors du streaming des résumés IA (deux corrections successives pour les cas cachés et non-cachés)
 - Correction du pipeline pour rattraper les lois enrichies sans lien de texte
+
+### Supprimé
+- L'ancien bouton "Dossier LoiClair avec résumé IA" (badge pill cyan) a été remplacé par la carte cliquable
+- **Badges statut et procédure** — remplacés par des lignes dans la grille de métadonnées pour une lecture plus uniforme
+- **Accordéon mobile / grille desktop** — remplacés par un affichage unique, fluide et vertical sur tous les écrans
+- **Section séparée « Sélecteur de texte »** — intégrée dans le pied de carte IA
+- **Ancien menu déroulant** — l'ancien sélecteur de texte (dropdown confus) a été remplacé par le nouveau sélecteur groupé par étape
+- **Badges KPI séparés** — les indicateurs de durée sont désormais intégrés directement dans la timeline
 
 ---
 

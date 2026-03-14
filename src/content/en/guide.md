@@ -342,4 +342,4 @@ The **Documentation** section, accessible from the left menu, brings together fo
 
 ## Release notes
 
-The **Release notes** page, accessible from the site's footer, traces the complete history of LoiClair's developments. Each week is summarised with new features, modifications and corrections made. Sections are expandable: the most recent week is open by default, previous ones can be consulted with a single click.
+The **Release notes** page, accessible from the site's footer, traces the complete history of LoiClair's developments. Each week is summarised with new features, modifications and corrections made. Sections are expandable: the most recent week is open by default, previous ones can be consulted with a single click. The content is displayed in the selected language (French or English).

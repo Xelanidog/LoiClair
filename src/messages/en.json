@@ -42,6 +42,10 @@
     "releaseNotes": "Release notes",
     "publicData": "Official public data"
   },
+  "changelog": {
+    "pageTitle": "Release Notes",
+    "pageDescription": "All LoiClair updates, explained simply."
+  },
   "signaler": {
     "fabLabel": "Idea? Problem?",
     "fabTooltip": "Suggest an idea or report a problem",

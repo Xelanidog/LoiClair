@@ -342,4 +342,4 @@ La section **Documentation**, accessible dans le menu de gauche, rassemble quatr
 
 ## Notes de version
 
-La page **Notes de version**, accessible depuis le pied de page du site, retrace l'historique complet des évolutions de LoiClair. Chaque semaine est résumée avec les nouvelles fonctionnalités, les modifications et les corrections apportées. Les sections sont dépliables : la semaine la plus récente est ouverte par défaut, les précédentes peuvent être consultées en un clic.
+La page **Notes de version**, accessible depuis le pied de page du site, retrace l'historique complet des évolutions de LoiClair. Chaque semaine est résumée avec les nouvelles fonctionnalités, les modifications et les corrections apportées. Les sections sont dépliables : la semaine la plus récente est ouverte par défaut, les précédentes peuvent être consultées en un clic. Le contenu s'affiche dans la langue choisie (français ou anglais).

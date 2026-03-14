@@ -42,6 +42,10 @@
     "releaseNotes": "Notes de version",
     "publicData": "Données publiques officielles"
   },
+  "changelog": {
+    "pageTitle": "Notes de version",
+    "pageDescription": "Toutes les évolutions de LoiClair, expliquées simplement."
+  },
   "signaler": {
     "fabLabel": "Une idée ? Un problème ?",
     "fabTooltip": "Proposer une idée ou signaler un problème",

@@ -1,10 +1,14 @@
 import fs from 'fs/promises'
 import path from 'path'
 import ChangelogAccordion, { type ChangelogSection } from '@/components/ChangelogAccordion'
+import { getLocale, getTranslations } from 'next-intl/server'
 
-export const metadata = {
-  title: 'Notes de version — LoiClair',
-  description: 'Historique des évolutions de LoiClair, le tableau de bord citoyen de l\'activité législative française.',
+export async function generateMetadata() {
+  const t = await getTranslations('changelog')
+  return {
+    title: `${t('pageTitle')} — LoiClair`,
+    description: t('pageDescription'),
+  }
 }
 
 function parseChangelog(markdown: string): ChangelogSection[] {
@@ -41,8 +45,12 @@ function parseChangelog(markdown: string): ChangelogSection[] {
 }
 
 export default async function ChangelogPage() {
+  const locale = await getLocale()
+  const t = await getTranslations('changelog')
+
+  const filename = locale === 'en' ? 'CHANGELOG-en.md' : 'CHANGELOG.md'
   const content = await fs.readFile(
-    path.join(process.cwd(), 'CHANGELOG.md'),
+    path.join(process.cwd(), filename),
     'utf-8'
   )
   const sections = parseChangelog(content)
@@ -50,9 +58,9 @@ export default async function ChangelogPage() {
   return (
     <div className="container mx-auto p-6 max-w-7xl">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold mb-3">Notes de version</h1>
+        <h1 className="text-2xl font-bold mb-3">{t('pageTitle')}</h1>
         <p className="text-muted-foreground">
-          Toutes les évolutions de LoiClair, expliquées simplement.
+          {t('pageDescription')}
         </p>
       </div>
       <ChangelogAccordion sections={sections} />
